@@ -136,7 +136,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
 
       setSubmitted(true);
       toast.success("Checklist enviado com sucesso!");
-      setTimeout(() => navigate("/"), 2000);
+      setTimeout(() => navigate("/tryout"), 2000);
     } catch (error: any) {
       console.error("Submit error:", error);
       toast.error("Erro ao enviar checklist", { description: error.message });

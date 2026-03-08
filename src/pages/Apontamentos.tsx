@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, FileBarChart, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ const Apontamentos = () => {
   const qc = useQueryClient();
   const [tab, setTab] = useState("defeito_processo");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -43,7 +45,25 @@ const Apontamentos = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const filtered = items.filter((i) => i.tipo === tab);
+  const filters: FilterConfig[] = useMemo(() => {
+    const partNumbers = [...new Set(items.map((i) => i.part_number).filter(Boolean))] as string[];
+    const responsaveis = [...new Set(items.map((i) => i.responsavel).filter(Boolean))] as string[];
+    const statuses = [...new Set(items.map((i) => i.status).filter(Boolean))] as string[];
+    return [
+      { key: "part_number", label: "Part Number", options: partNumbers },
+      { key: "responsavel", label: "Responsável", options: responsaveis },
+      { key: "status", label: "Status", options: statuses },
+    ];
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    return items
+      .filter((i) => i.tipo === tab)
+      .filter((i) =>
+        matchesSearch(i, ["numero", "titulo", "responsavel", "part_number", "part_name", "descricao"]) &&
+        matchesFilters(i)
+      );
+  }, [items, tab, search, filterValues]);
 
   const statusColors: Record<string, string> = {
     aberto: "bg-blue-500/10 text-blue-600",
@@ -95,6 +115,15 @@ const Apontamentos = () => {
           </Button>
         </div>
 
+        <MasterListFilter
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="defeito_processo">Defeito Processo</TabsTrigger>
@@ -110,7 +139,7 @@ const Apontamentos = () => {
             ) : filtered.length === 0 ? (
               <div className="form-section text-center py-12">
                 <FileBarChart className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Nenhum apontamento nesta categoria.</p>
+                <p className="text-muted-foreground">Nenhum apontamento encontrado.</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -118,14 +147,17 @@ const Apontamentos = () => {
                   <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1 flex-1 min-w-0">
-                        <h3 className="font-heading font-semibold text-foreground">{item.titulo}</h3>
+                        <div className="flex items-center gap-2">
+                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                          <h3 className="font-heading font-semibold text-foreground">{item.titulo}</h3>
+                        </div>
                         <p className="text-sm text-muted-foreground">{item.descricao}</p>
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                           <span>Resp: {item.responsavel}</span>
                           <span>•</span>
                           <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                           {item.part_number && <><span>•</span><span>PN: {item.part_number}</span></>}
-                          {item.quantidade > 1 && <><span>•</span><span>Qtd: {item.quantidade}</span></>}
+                          {item.quantidade && item.quantidade > 1 && <><span>•</span><span>Qtd: {item.quantidade}</span></>}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
@@ -161,9 +193,7 @@ const Apontamentos = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este apontamento? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir este apontamento? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

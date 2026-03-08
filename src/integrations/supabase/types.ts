@@ -92,6 +92,7 @@ export type Database = {
           descricao: string
           id: string
           linha: string | null
+          numero: string | null
           observacoes: string | null
           part_name: string | null
           part_number: string | null
@@ -114,6 +115,7 @@ export type Database = {
           descricao: string
           id?: string
           linha?: string | null
+          numero?: string | null
           observacoes?: string | null
           part_name?: string | null
           part_number?: string | null
@@ -136,6 +138,7 @@ export type Database = {
           descricao?: string
           id?: string
           linha?: string | null
+          numero?: string | null
           observacoes?: string | null
           part_name?: string | null
           part_number?: string | null
@@ -161,6 +164,7 @@ export type Database = {
           id: string
           items: Json
           nome: string
+          numero: string | null
           updated_at: string
         }
         Insert: {
@@ -171,6 +175,7 @@ export type Database = {
           id?: string
           items?: Json
           nome: string
+          numero?: string | null
           updated_at?: string
         }
         Update: {
@@ -181,6 +186,7 @@ export type Database = {
           id?: string
           items?: Json
           nome?: string
+          numero?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -268,6 +274,7 @@ export type Database = {
           fornecedor: string | null
           id: string
           linha: string | null
+          numero: string | null
           observacoes: string | null
           pontuacao_obtida: number | null
           pontuacao_total: number | null
@@ -284,6 +291,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           linha?: string | null
+          numero?: string | null
           observacoes?: string | null
           pontuacao_obtida?: number | null
           pontuacao_total?: number | null
@@ -300,6 +308,7 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           linha?: string | null
+          numero?: string | null
           observacoes?: string | null
           pontuacao_obtida?: number | null
           pontuacao_total?: number | null
@@ -347,6 +356,7 @@ export type Database = {
           id: string
           linha: string | null
           motivo: string | null
+          numero: string | null
           observacoes: string | null
           part_name: string | null
           part_number: string | null
@@ -368,6 +378,7 @@ export type Database = {
           id?: string
           linha?: string | null
           motivo?: string | null
+          numero?: string | null
           observacoes?: string | null
           part_name?: string | null
           part_number?: string | null
@@ -389,6 +400,7 @@ export type Database = {
           id?: string
           linha?: string | null
           motivo?: string | null
+          numero?: string | null
           observacoes?: string | null
           part_name?: string | null
           part_number?: string | null
@@ -477,6 +489,7 @@ export type Database = {
           modulo: string
           needs_improvement: boolean
           nome: string
+          numero: string | null
           part_name: string
           part_number: string
           projeto: string
@@ -500,6 +513,7 @@ export type Database = {
           modulo: string
           needs_improvement?: boolean
           nome: string
+          numero?: string | null
           part_name: string
           part_number: string
           projeto: string
@@ -523,6 +537,7 @@ export type Database = {
           modulo?: string
           needs_improvement?: boolean
           nome?: string
+          numero?: string | null
           part_name?: string
           part_number?: string
           projeto?: string
@@ -542,6 +557,7 @@ export type Database = {
           id: string
           items: Json
           nome: string
+          numero: string | null
           updated_at: string
         }
         Insert: {
@@ -552,6 +568,7 @@ export type Database = {
           id?: string
           items?: Json
           nome: string
+          numero?: string | null
           updated_at?: string
         }
         Update: {
@@ -562,6 +579,7 @@ export type Database = {
           id?: string
           items?: Json
           nome?: string
+          numero?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, AlertTriangle, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -15,6 +16,7 @@ const AlertaQualidade = () => {
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas_qualidade"],
@@ -40,6 +42,24 @@ const AlertaQualidade = () => {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const filters: FilterConfig[] = useMemo(() => {
+    const partNumbers = [...new Set(alertas.map((a) => a.part_number).filter(Boolean))] as string[];
+    const emitentes = [...new Set(alertas.map((a) => a.emitente).filter(Boolean))] as string[];
+    const statuses = [...new Set(alertas.map((a) => a.status).filter(Boolean))] as string[];
+    return [
+      { key: "part_number", label: "Part Number", options: partNumbers },
+      { key: "emitente", label: "Emitente", options: emitentes },
+      { key: "status", label: "Status", options: statuses },
+    ];
+  }, [alertas]);
+
+  const filtered = useMemo(() => {
+    return alertas.filter((a) => 
+      matchesSearch(a, ["numero_alerta", "titulo", "emitente", "part_number", "part_name", "responsavel"]) &&
+      matchesFilters(a)
+    );
+  }, [alertas, search, filterValues]);
 
   const statusColors: Record<string, string> = {
     ativo: "bg-red-500/10 text-red-600",
@@ -90,18 +110,27 @@ const AlertaQualidade = () => {
           </Button>
         </div>
 
+        <MasterListFilter
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
           </div>
-        ) : alertas.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Nenhum alerta registrado.</p>
+            <p className="text-muted-foreground">{alertas.length === 0 ? "Nenhum alerta registrado." : "Nenhum resultado encontrado."}</p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {alertas.map((a) => (
+            {filtered.map((a) => (
               <div key={a.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1 min-w-0">
@@ -143,9 +172,7 @@ const AlertaQualidade = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este alerta? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir este alerta? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

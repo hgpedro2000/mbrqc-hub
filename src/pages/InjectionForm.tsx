@@ -37,6 +37,8 @@ const InjectionForm = () => {
   const [partName, setPartName] = useState("");
   const [projeto, setProjeto] = useState("");
   const [modulo, setModulo] = useState("");
+  const [razaoTryout, setRazaoTryout] = useState("");
+  const [razaoTryoutOutro, setRazaoTryoutOutro] = useState("");
 
   // Peças
   const [totalPecas, setTotalPecas] = useState<number>(0);

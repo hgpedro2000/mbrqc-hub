@@ -101,7 +101,7 @@ const Index = () => {
   const AdminActions = ({ id, table }: { id: string; table: string }) => {
     if (!isAdmin) return null;
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
           <Pencil className="w-3.5 h-3.5" />
         </Button>

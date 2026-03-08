@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -51,15 +51,26 @@ const Index = () => {
                 Try-Out Control
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard")}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={signOut}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">
             Controle de Try-Out

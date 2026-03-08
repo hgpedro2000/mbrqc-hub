@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
+import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
             <Route path="/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
             <Route path="/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

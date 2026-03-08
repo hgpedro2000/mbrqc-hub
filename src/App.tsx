@@ -10,6 +10,9 @@ import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Auditorias from "./pages/Auditorias";
+import AuditoriaForm from "./pages/AuditoriaForm";
+import AuditoriaDashboard from "./pages/AuditoriaDashboard";
 import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
@@ -48,8 +51,12 @@ const App = () => (
             <Route path="/tryout/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
             <Route path="/tryout/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             
+            {/* Auditorias module */}
+            <Route path="/auditorias" element={<ProtectedRoute><Auditorias /></ProtectedRoute>} />
+            <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
+            <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
+            
             {/* Other modules - coming soon */}
-            <Route path="/auditorias" element={<ProtectedRoute><ComingSoon title="Auditorias" /></ProtectedRoute>} />
             <Route path="/contencao" element={<ProtectedRoute><ComingSoon title="Contenção" /></ProtectedRoute>} />
             <Route path="/apontamentos" element={<ProtectedRoute><ComingSoon title="Apontamentos" /></ProtectedRoute>} />
             <Route path="/alerta-qualidade" element={<ProtectedRoute><ComingSoon title="Alerta de Qualidade" /></ProtectedRoute>} />

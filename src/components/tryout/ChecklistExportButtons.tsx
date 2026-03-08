@@ -20,6 +20,7 @@ function formatValue(key: string, value: any): string {
   if (key === "data") return new Date(value).toLocaleDateString("pt-BR");
   if (key === "needs_improvement") return value ? "Sim" : "Não";
   if (key === "improvement_category") return value ? `Categoria ${value}` : "—";
+  if (key === "rate") return `${Number(value).toFixed(1)}%`;
   return String(value);
 }
 
@@ -35,7 +36,23 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
     Valor: formatValue(key, data[key]),
   }));
 
-  // Add checklist items for painting/assembly
+  // Defects for injection
+  if (checklistType === "injection_checklists" && data.defects) {
+    const defects = data.defects as any[];
+    if (defects.length > 0) {
+      rows.push({ Campo: "", Valor: "" });
+      rows.push({ Campo: "DEFEITOS", Valor: "" });
+      defects.forEach((d, i) => {
+        rows.push({ Campo: `Defeito #${i + 1}`, Valor: d.description || "—" });
+        rows.push({ Campo: "Melhoria necessária", Valor: d.needs_improvement ? "Sim" : "Não" });
+        if (d.improvement_category) {
+          rows.push({ Campo: "Categoria", Valor: `Categoria ${d.improvement_category}` });
+        }
+      });
+    }
+  }
+
+  // Checklist items for painting/assembly
   if (checklistType !== "injection_checklists" && data.items) {
     const items = data.items as string[];
     const checked = (data.checked_items || []) as string[];
@@ -66,7 +83,7 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
   slide1.addText(`${numero ? `#${numero} • ` : ""}${data.nome || ""} • ${formatValue("data", data.data)}`, { x: 0.5, y: 2.8, w: 12, h: 0.6, fontSize: 18, color: "555555" });
   slide1.addText("Hyundai Mobis — Try-Out Control", { x: 0.5, y: 4.5, w: 12, h: 0.5, fontSize: 12, color: "999999" });
 
-  // Data slide(s)
+  // Data slide
   const midpoint = Math.ceil(fields.length / 2);
   const leftFields = fields.slice(0, midpoint);
   const rightFields = fields.slice(midpoint);
@@ -99,6 +116,39 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
     border: { type: "solid", pt: 0.5, color: "CCCCCC" },
     rowH: 0.35,
   });
+
+  // Defects slide for injection
+  if (checklistType === "injection_checklists" && data.defects) {
+    const defects = data.defects as any[];
+    if (defects.length > 0) {
+      const slideDefects = pptx.addSlide();
+      slideDefects.addText("Defeitos Encontrados", { x: 0.5, y: 0.3, w: 12, h: 0.6, fontSize: 22, bold: true, color: "003366" });
+
+      const defectRows: pptxgen.TableRow[] = [
+        [
+          { text: "#", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+          { text: "Descrição", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+          { text: "Melhoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+          { text: "Categoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+        ],
+      ];
+      defects.forEach((d, i) => {
+        defectRows.push([
+          { text: String(i + 1), options: { fontSize: 9 } },
+          { text: d.description || "—", options: { fontSize: 9 } },
+          { text: d.needs_improvement ? "Sim" : "Não", options: { fontSize: 9, color: d.needs_improvement ? "CC3333" : "227722" } },
+          { text: d.improvement_category ? `Cat. ${d.improvement_category}` : "—", options: { fontSize: 9 } },
+        ]);
+      });
+
+      slideDefects.addTable(defectRows, {
+        x: 0.5, y: 1.1, w: 12,
+        colW: [1, 7, 2, 2],
+        border: { type: "solid", pt: 0.5, color: "CCCCCC" },
+        rowH: 0.3,
+      });
+    }
+  }
 
   // Checklist items slide for painting/assembly
   if (checklistType !== "injection_checklists" && data.items) {
@@ -134,7 +184,6 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
     const slidePhotos = pptx.addSlide();
     slidePhotos.addText("Fotos", { x: 0.5, y: 0.3, w: 12, h: 0.6, fontSize: 22, bold: true, color: "003366" });
 
-    // Load up to 6 photos
     const maxPhotos = Math.min(photos.length, 6);
     const cols = 3;
     const imgW = 3.5;
@@ -194,7 +243,6 @@ export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fi
   );
 };
 
-// Inline export buttons for list rows (small icons)
 export const RowExportButtons = ({ onView }: { onView: () => void }) => {
   return (
     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); onView(); }} title="Visualizar">

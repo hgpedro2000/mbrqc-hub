@@ -480,6 +480,7 @@ export type Database = {
           created_at: string
           cycle_time: number
           data: string
+          defects: Json | null
           dimensional: string
           fornecedor: string
           id: string
@@ -492,9 +493,13 @@ export type Database = {
           numero: string | null
           part_name: string
           part_number: string
+          pecas_ng: number | null
+          pecas_ok: number | null
           projeto: string
           qtd_tryout: number
+          rate: number | null
           tonelagem: number
+          total_pecas: number | null
           updated_at: string
           weight: number
         }
@@ -504,6 +509,7 @@ export type Database = {
           created_at?: string
           cycle_time: number
           data: string
+          defects?: Json | null
           dimensional: string
           fornecedor: string
           id?: string
@@ -516,9 +522,13 @@ export type Database = {
           numero?: string | null
           part_name: string
           part_number: string
+          pecas_ng?: number | null
+          pecas_ok?: number | null
           projeto: string
           qtd_tryout: number
+          rate?: number | null
           tonelagem: number
+          total_pecas?: number | null
           updated_at?: string
           weight: number
         }
@@ -528,6 +538,7 @@ export type Database = {
           created_at?: string
           cycle_time?: number
           data?: string
+          defects?: Json | null
           dimensional?: string
           fornecedor?: string
           id?: string
@@ -540,9 +551,13 @@ export type Database = {
           numero?: string | null
           part_name?: string
           part_number?: string
+          pecas_ng?: number | null
+          pecas_ok?: number | null
           projeto?: string
           qtd_tryout?: number
+          rate?: number | null
           tonelagem?: number
+          total_pecas?: number | null
           updated_at?: string
           weight?: number
         }

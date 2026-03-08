@@ -14,6 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas_qualidade: {
+        Row: {
+          acao_corretiva: string | null
+          acao_imediata: string | null
+          created_at: string
+          data_emissao: string
+          data_validade: string | null
+          descricao_problema: string
+          emitente: string
+          fornecedor: string | null
+          id: string
+          linha: string | null
+          numero_alerta: string
+          observacoes: string | null
+          part_name: string | null
+          part_number: string | null
+          responsavel: string | null
+          setor: string | null
+          severidade: string | null
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          acao_corretiva?: string | null
+          acao_imediata?: string | null
+          created_at?: string
+          data_emissao: string
+          data_validade?: string | null
+          descricao_problema: string
+          emitente: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          numero_alerta: string
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          acao_corretiva?: string | null
+          acao_imediata?: string | null
+          created_at?: string
+          data_emissao?: string
+          data_validade?: string | null
+          descricao_problema?: string
+          emitente?: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          numero_alerta?: string
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          responsavel?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      apontamentos: {
+        Row: {
+          acao_corretiva: string | null
+          causa_raiz: string | null
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          linha: string | null
+          observacoes: string | null
+          part_name: string | null
+          part_number: string | null
+          prazo: string | null
+          quantidade: number | null
+          responsavel: string
+          responsavel_acao: string | null
+          setor: string | null
+          severidade: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          acao_corretiva?: string | null
+          causa_raiz?: string | null
+          created_at?: string
+          data: string
+          descricao: string
+          id?: string
+          linha?: string | null
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          prazo?: string | null
+          quantidade?: number | null
+          responsavel: string
+          responsavel_acao?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          acao_corretiva?: string | null
+          causa_raiz?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          linha?: string | null
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          prazo?: string | null
+          quantidade?: number | null
+          responsavel?: string
+          responsavel_acao?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assembly_checklists: {
         Row: {
           checked_items: Json
@@ -197,6 +335,72 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+        }
+        Relationships: []
+      }
+      contencao: {
+        Row: {
+          acao_contencao: string | null
+          created_at: string
+          data: string
+          fornecedor: string | null
+          id: string
+          linha: string | null
+          motivo: string | null
+          observacoes: string | null
+          part_name: string | null
+          part_number: string | null
+          quantidade_aprovada: number | null
+          quantidade_contida: number | null
+          quantidade_rejeitada: number | null
+          responsavel: string
+          setor: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          acao_contencao?: string | null
+          created_at?: string
+          data: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          motivo?: string | null
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          quantidade_aprovada?: number | null
+          quantidade_contida?: number | null
+          quantidade_rejeitada?: number | null
+          responsavel: string
+          setor?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          acao_contencao?: string | null
+          created_at?: string
+          data?: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          motivo?: string | null
+          observacoes?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          quantidade_aprovada?: number | null
+          quantidade_contida?: number | null
+          quantidade_rejeitada?: number | null
+          responsavel?: string
+          setor?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
         }
         Relationships: []
       }

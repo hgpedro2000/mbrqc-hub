@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
+import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 
 const modules = [
   { id: "injecao", title: "Injeção Plástica", description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.", icon: Droplets, path: "/tryout/injecao", stats: "19 campos", color: "from-blue-500/10 to-blue-600/5" },

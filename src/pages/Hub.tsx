@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import logo from "@/assets/hyundai-mobis-logo.png";
 
 const modules = [
   {

@@ -8,16 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, AlertTriangle } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
+import { useAuth } from "@/contexts/AuthContext";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     numero_alerta: `AQ-${Date.now().toString().slice(-6)}`,
     titulo: "",
-    emitente: "",
+    emitente: profile?.full_name || "",
     data_emissao: new Date().toISOString().split("T")[0],
     data_validade: "",
     setor: "",
@@ -109,7 +112,7 @@ const AlertaQualidadeForm = () => {
             </div>
             <div className="space-y-2">
               <Label>Emitente</Label>
-              <Input value={form.emitente} onChange={(e) => set("emitente", e.target.value)} />
+              <Input value={form.emitente} readOnly className="bg-muted" />
             </div>
             <div className="space-y-2">
               <Label>Data Emissão</Label>
@@ -137,18 +140,14 @@ const AlertaQualidadeForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Part Number</Label>
-              <Input value={form.part_number} onChange={(e) => set("part_number", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Part Name</Label>
-              <Input value={form.part_name} onChange={(e) => set("part_name", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Fornecedor</Label>
-              <Input value={form.fornecedor} onChange={(e) => set("fornecedor", e.target.value)} />
-            </div>
+            <SupplierPartSelector
+              fornecedor={form.fornecedor}
+              partNumber={form.part_number}
+              partName={form.part_name}
+              onFornecedorChange={(v) => set("fornecedor", v)}
+              onPartNumberChange={(v) => set("part_number", v)}
+              onPartDataChange={(d) => set("part_name", d.part_name)}
+            />
             <div className="space-y-2">
               <Label>Responsável</Label>
               <Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} />

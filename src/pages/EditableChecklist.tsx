@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
-
+import { useAuth } from "@/contexts/AuthContext";
 interface ChecklistItem {
   id: string;
   label: string;
@@ -46,6 +46,7 @@ interface EditableChecklistProps {
 
 const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType, tableName }: EditableChecklistProps) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ChecklistItem[]>(defaultItems);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
@@ -54,7 +55,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const [comments, setComments] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [nome, setNome] = useState("");
+  const [nome] = useState(profile?.full_name || "");
   const [data, setData] = useState("");
 
   const addItem = () => {
@@ -182,7 +183,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Nome *</Label>
-                <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" />
+                <Input required value={nome} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Data *</Label>

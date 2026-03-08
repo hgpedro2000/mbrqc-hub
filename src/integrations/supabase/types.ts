@@ -539,6 +539,50 @@ export type Database = {
         }
         Relationships: []
       }
+      part_numbers: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          line_module: string
+          part_name: string
+          part_number: string
+          project: string
+          supplier_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          line_module?: string
+          part_name: string
+          part_number: string
+          project?: string
+          supplier_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          line_module?: string
+          part_name?: string
+          part_number?: string
+          project?: string
+          supplier_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "part_numbers_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -571,6 +615,33 @@ export type Database = {
           last_login_at?: string | null
           must_change_password?: boolean
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []

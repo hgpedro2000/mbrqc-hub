@@ -153,6 +153,8 @@ const InjectionForm = () => {
         weight: Number(formData.get("weight")),
         dimensional: formData.get("dimensional") as string,
         comentarios: (formData.get("comentarios") as string) || null,
+        razao_tryout: razaoTryout,
+        razao_tryout_outro: razaoTryoutOutro,
         total_pecas: totalPecas,
         pecas_ok: pecasOK,
         pecas_ng: pecasNG,

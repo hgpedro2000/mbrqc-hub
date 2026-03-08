@@ -26,6 +26,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: string } | null>(null);
   const [activeTab, setActiveTab] = useState("injecao");
+  const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: injectionData = [] } = useQuery({

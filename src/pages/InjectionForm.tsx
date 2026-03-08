@@ -264,6 +264,26 @@ const InjectionForm = () => {
             <h3 className="form-section-title">Dados da Peça</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
+                <Label>Razão do Tryout *</Label>
+                <Select value={razaoTryout} onValueChange={(v) => { setRazaoTryout(v); if (v !== "Outro") setRazaoTryoutOutro(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a razão" /></SelectTrigger>
+                  <SelectContent>
+                    {["EO", "4M", "Melhoria", "Correção", "Novo Carro", "Outro"].map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{razaoTryout === "Outro" ? "Especifique *" : "Detalhe (opcional)"}</Label>
+                <Input
+                  placeholder={razaoTryout === "Outro" ? "Descreva a razão..." : "Detalhe adicional..."}
+                  value={razaoTryoutOutro}
+                  onChange={(e) => setRazaoTryoutOutro(e.target.value)}
+                  required={razaoTryout === "Outro"}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
                 <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
               </div>

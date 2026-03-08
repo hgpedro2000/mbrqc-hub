@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
+import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 
 const modules = [
   { id: "injecao", title: "Injeção Plástica", description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.", icon: Droplets, path: "/tryout/injecao", stats: "19 campos", color: "from-blue-500/10 to-blue-600/5" },
@@ -25,6 +26,7 @@ const Index = () => {
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: string } | null>(null);
   const [activeTab, setActiveTab] = useState("injecao");
+  const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: injectionData = [] } = useQuery({
@@ -99,7 +101,7 @@ const Index = () => {
   const AdminActions = ({ id, table }: { id: string; table: string }) => {
     if (!isAdmin) return null;
     return (
-      <div className="flex gap-1">
+      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
           <Pencil className="w-3.5 h-3.5" />
         </Button>
@@ -111,6 +113,11 @@ const Index = () => {
   };
 
   const renderList = (data: any[], filtered: any[], table: string, Icon: any, hasRichData: boolean) => {
+    const typeMap: Record<string, "injection_checklists" | "painting_checklists" | "assembly_checklists"> = {
+      injection_checklists: "injection_checklists",
+      painting_checklists: "painting_checklists",
+      assembly_checklists: "assembly_checklists",
+    };
     if (filtered.length === 0) {
       return (
         <div className="form-section text-center py-8">
@@ -122,7 +129,11 @@ const Index = () => {
     return (
       <div className="grid gap-3">
         {filtered.map((item: any) => (
-          <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
+          <div
+            key={item.id}
+            className="form-section hover:border-accent/30 transition-colors cursor-pointer"
+            onClick={() => setViewTarget({ id: item.id, type: typeMap[table] })}
+          >
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -137,7 +148,12 @@ const Index = () => {
                   <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              <AdminActions id={item.id} table={table} />
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
+                <AdminActions id={item.id} table={table} />
+              </div>
             </div>
           </div>
         ))}
@@ -245,6 +261,12 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ChecklistViewDialog
+        open={!!viewTarget}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        checklistId={viewTarget?.id || null}
+        checklistType={viewTarget?.type || "injection_checklists"}
+      />
     </div>
   );
 };

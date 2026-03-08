@@ -34,6 +34,7 @@ const modules = [
 ];
 
 const Index = () => {
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
 
   return (

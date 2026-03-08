@@ -7,7 +7,7 @@ const modules = [
 {
   id: "injecao",
   title: "Injeção Plástica",
-  description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
+  description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
   icon: Droplets,
   path: "/tryout/injecao",
   stats: "19 campos",

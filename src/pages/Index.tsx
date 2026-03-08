@@ -27,7 +27,7 @@ const modules = [
     title: "Montagem e Finalização",
     description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
     icon: Wrench,
-    path: "/montagem",
+    path: "/tryout/montagem",
     stats: "Editável",
     color: "from-emerald-500/10 to-green-500/5",
   },

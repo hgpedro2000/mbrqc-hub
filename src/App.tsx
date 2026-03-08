@@ -41,6 +41,7 @@ const App = () => (
             <Route path="/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
             <Route path="/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
             <Route path="/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

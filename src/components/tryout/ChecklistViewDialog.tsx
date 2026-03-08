@@ -157,6 +157,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     {d?.nome} • {formatValue("data", d?.data)}
                     {d?.fornecedor ? ` • ${d.fornecedor}` : ""}
                   </p>
+                  </div>
                 </div>
                 <ChecklistExportButtons
                   data={data}

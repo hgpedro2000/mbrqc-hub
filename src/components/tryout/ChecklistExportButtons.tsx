@@ -86,10 +86,16 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
   const typeLabel = getTypeLabel(checklistType);
   const numero = data.numero || "";
 
-  // Title slide
+  // Title slide with logo
   const slide1 = pptx.addSlide();
-  slide1.addText(`Checklist de ${typeLabel}`, { x: 0.5, y: 1.5, w: 12, h: 1.2, fontSize: 32, bold: true, color: "003366" });
-  slide1.addText(`${numero ? `#${numero} • ` : ""}${data.nome || ""} • ${formatValue("data", data.data)}`, { x: 0.5, y: 2.8, w: 12, h: 0.6, fontSize: 18, color: "555555" });
+  try {
+    const logoResp = await fetch(hyundaiMobisLogo);
+    const logoBlob = await logoResp.blob();
+    const logoBase64 = await blobToBase64(logoBlob);
+    slide1.addImage({ data: logoBase64, x: 0.5, y: 0.5, w: 2.5, h: 0.8 });
+  } catch { /* skip logo */ }
+  slide1.addText(`Checklist de ${typeLabel}`, { x: 0.5, y: 1.8, w: 12, h: 1.2, fontSize: 32, bold: true, color: "003366" });
+  slide1.addText(`${numero ? `#${numero} • ` : ""}${data.nome || ""} • ${formatValue("data", data.data)}`, { x: 0.5, y: 3.1, w: 12, h: 0.6, fontSize: 18, color: "555555" });
   slide1.addText("Hyundai Mobis — Try-Out Control", { x: 0.5, y: 4.5, w: 12, h: 0.5, fontSize: 12, color: "999999" });
 
   // Data slide

@@ -16,7 +16,7 @@ const modules = [
 {
   id: "pintura",
   title: "Pintura",
-  description: "Checklist editável para processo de pintura com upload de fotos e controle de qualidade.",
+  description: "Checklist para processo de pintura com upload de fotos e controle de qualidade.",
   icon: Paintbrush,
   path: "/tryout/pintura",
   stats: "Editável",

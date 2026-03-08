@@ -42,8 +42,10 @@ const ChangePassword = () => {
           .eq("id", user.id);
       }
 
-      toast.success("Senha alterada com sucesso!");
-      navigate("/");
+      // Sign out so user logs in with new password
+      await supabase.auth.signOut();
+      toast.success("Senha alterada com sucesso! Faça login com a nova senha.");
+      navigate("/login");
     } catch (error: any) {
       toast.error(error.message || "Erro ao alterar senha");
     } finally {

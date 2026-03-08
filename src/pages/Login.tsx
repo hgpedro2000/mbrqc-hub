@@ -48,7 +48,7 @@ const Login = () => {
           <img src={logo} alt="Hyundai Mobis" className="h-16 mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-heading font-bold text-foreground">Quality Control-Hub </h1>
           <p className="text-muted-foreground mt-1">
-            {isSignUp ? "Crie sua conta para acessar" : "Entre para acessar os checklists"}
+            {isSignUp ? "Crie sua conta para acessar" : "Entre para acessar os módulos"}
           </p>
         </div>
 

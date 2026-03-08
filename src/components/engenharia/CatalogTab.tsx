@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+import ExcelExportButton from "./ExcelExportButton";
 
 interface CatalogTabProps {
   tableName: "defects" | "responsibilities";

@@ -14,7 +14,171 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      assembly_checklists: {
+        Row: {
+          checked_items: Json
+          comentarios: string | null
+          created_at: string
+          data: string
+          id: string
+          items: Json
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          checked_items?: Json
+          comentarios?: string | null
+          created_at?: string
+          data: string
+          id?: string
+          items?: Json
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          checked_items?: Json
+          comentarios?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          items?: Json
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      checklist_photos: {
+        Row: {
+          checklist_id: string
+          checklist_type: string
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+        }
+        Insert: {
+          checklist_id: string
+          checklist_type: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+        }
+        Update: {
+          checklist_id?: string
+          checklist_type?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      injection_checklists: {
+        Row: {
+          comentarios: string | null
+          cooling_time: number
+          created_at: string
+          cycle_time: number
+          data: string
+          dimensional: string
+          fornecedor: string
+          id: string
+          improvement_category: number | null
+          injetora: string
+          materia_prima: string
+          modulo: string
+          needs_improvement: boolean
+          nome: string
+          part_name: string
+          part_number: string
+          projeto: string
+          qtd_tryout: number
+          tonelagem: number
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          comentarios?: string | null
+          cooling_time: number
+          created_at?: string
+          cycle_time: number
+          data: string
+          dimensional: string
+          fornecedor: string
+          id?: string
+          improvement_category?: number | null
+          injetora: string
+          materia_prima: string
+          modulo: string
+          needs_improvement?: boolean
+          nome: string
+          part_name: string
+          part_number: string
+          projeto: string
+          qtd_tryout: number
+          tonelagem: number
+          updated_at?: string
+          weight: number
+        }
+        Update: {
+          comentarios?: string | null
+          cooling_time?: number
+          created_at?: string
+          cycle_time?: number
+          data?: string
+          dimensional?: string
+          fornecedor?: string
+          id?: string
+          improvement_category?: number | null
+          injetora?: string
+          materia_prima?: string
+          modulo?: string
+          needs_improvement?: boolean
+          nome?: string
+          part_name?: string
+          part_number?: string
+          projeto?: string
+          qtd_tryout?: number
+          tonelagem?: number
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      painting_checklists: {
+        Row: {
+          checked_items: Json
+          comentarios: string | null
+          created_at: string
+          data: string
+          id: string
+          items: Json
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          checked_items?: Json
+          comentarios?: string | null
+          created_at?: string
+          data: string
+          id?: string
+          items?: Json
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          checked_items?: Json
+          comentarios?: string | null
+          created_at?: string
+          data?: string
+          id?: string
+          items?: Json
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

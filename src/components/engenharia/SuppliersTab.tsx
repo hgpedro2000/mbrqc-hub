@@ -9,6 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+
+const SUPPLIER_COLUMNS: ColumnMapping[] = [
+  { excelHeader: "Código", dbField: "code", label: "Código", required: true },
+  { excelHeader: "Nome", dbField: "name", label: "Nome", required: true },
+];
 
 const SuppliersTab = () => {
   const qc = useQueryClient();

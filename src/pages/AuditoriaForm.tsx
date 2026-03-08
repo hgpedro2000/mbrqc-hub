@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
+import { useAuth } from "@/contexts/AuthContext";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
@@ -16,9 +18,10 @@ type Conformidade = "conforme" | "nao_conforme" | "na" | "parcial";
 
 const AuditoriaForm = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [tipo, setTipo] = useState<string>("processo");
   const [titulo, setTitulo] = useState("");
-  const [auditor, setAuditor] = useState("");
+  const [auditor, setAuditor] = useState(profile?.full_name || "");
   const [data, setData] = useState(new Date().toISOString().split("T")[0]);
   const [setor, setSetor] = useState("");
   const [linha, setLinha] = useState("");
@@ -61,7 +64,6 @@ const AuditoriaForm = () => {
     setSaving(true);
 
     try {
-      // Calculate scores
       const answered = Object.values(responses);
       const total = answered.filter((r) => r.conformidade && r.conformidade !== "na").length;
       const obtained = answered.filter((r) => r.conformidade === "conforme").length +
@@ -87,7 +89,6 @@ const AuditoriaForm = () => {
 
       if (error) throw error;
 
-      // Insert responses
       const responsesToInsert = Object.entries(responses)
         .filter(([_, r]) => r.conformidade)
         .map(([itemId, r]) => ({
@@ -137,7 +138,6 @@ const AuditoriaForm = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
-        {/* Header info */}
         <div className="form-section">
           <h2 className="form-section-title">Informações Gerais</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,7 +158,7 @@ const AuditoriaForm = () => {
             </div>
             <div className="space-y-2">
               <Label>Auditor</Label>
-              <Input value={auditor} onChange={(e) => setAuditor(e.target.value)} placeholder="Nome do auditor" />
+              <Input value={auditor} readOnly className="bg-muted" />
             </div>
             <div className="space-y-2">
               <Label>Data</Label>
@@ -191,15 +191,18 @@ const AuditoriaForm = () => {
               </>
             )}
             {tipo === "fornecedor" && (
-              <div className="space-y-2">
-                <Label>Fornecedor</Label>
-                <Input value={fornecedor} onChange={(e) => setFornecedor(e.target.value)} placeholder="Nome do fornecedor" />
-              </div>
+              <SupplierPartSelector
+                fornecedor={fornecedor}
+                partNumber=""
+                partName=""
+                onFornecedorChange={setFornecedor}
+                onPartNumberChange={() => {}}
+                onPartDataChange={() => {}}
+              />
             )}
           </div>
         </div>
 
-        {/* Checklist items by category */}
         {categories.map((cat) => (
           <div key={cat} className="form-section">
             <h2 className="form-section-title">{cat}</h2>
@@ -238,7 +241,6 @@ const AuditoriaForm = () => {
           </div>
         ))}
 
-        {/* Observations */}
         <div className="form-section">
           <h2 className="form-section-title">Observações Gerais</h2>
           <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} placeholder="Observações adicionais..." rows={4} />

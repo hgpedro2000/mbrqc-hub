@@ -8,16 +8,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, FileBarChart } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
+import { useAuth } from "@/contexts/AuthContext";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 const ApontamentoForm = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     tipo: "defeito_processo",
     titulo: "",
-    responsavel: "",
+    responsavel: profile?.full_name || "",
     data: new Date().toISOString().split("T")[0],
     setor: "",
     linha: "",
@@ -115,7 +118,7 @@ const ApontamentoForm = () => {
             </div>
             <div className="space-y-2">
               <Label>Responsável</Label>
-              <Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} />
+              <Input value={form.responsavel} readOnly className="bg-muted" />
             </div>
             <div className="space-y-2">
               <Label>Data</Label>
@@ -143,14 +146,14 @@ const ApontamentoForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Part Number</Label>
-              <Input value={form.part_number} onChange={(e) => set("part_number", e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Part Name</Label>
-              <Input value={form.part_name} onChange={(e) => set("part_name", e.target.value)} />
-            </div>
+            <SupplierPartSelector
+              fornecedor=""
+              partNumber={form.part_number}
+              partName={form.part_name}
+              onFornecedorChange={() => {}}
+              onPartNumberChange={(v) => set("part_number", v)}
+              onPartDataChange={(d) => set("part_name", d.part_name)}
+            />
           </div>
         </div>
 

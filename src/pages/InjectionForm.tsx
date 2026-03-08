@@ -9,15 +9,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { useAuth } from "@/contexts/AuthContext";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 
 const InjectionForm = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
   const [needsImprovement, setNeedsImprovement] = useState<string>("");
   const [improvementCategory, setImprovementCategory] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Supplier/Part cascading state
+  const [fornecedor, setFornecedor] = useState("");
+  const [partNumber, setPartNumber] = useState("");
+  const [partName, setPartName] = useState("");
+  const [projeto, setProjeto] = useState("");
+  const [modulo, setModulo] = useState("");
+
+  const handlePartDataChange = (data: { part_name: string; project: string; line_module: string }) => {
+    setPartName(data.part_name);
+    setProjeto(data.project);
+    setModulo(data.line_module);
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -44,13 +60,13 @@ const InjectionForm = () => {
       const { data, error } = await supabase
         .from("injection_checklists")
         .insert({
-          nome: formData.get("nome") as string,
+          nome: profile?.full_name || (formData.get("nome") as string),
           data: formData.get("data") as string,
-          fornecedor: formData.get("fornecedor") as string,
-          projeto: formData.get("projeto") as string,
-          part_number: formData.get("partNumber") as string,
-          part_name: formData.get("partName") as string,
-          modulo: formData.get("modulo") as string,
+          fornecedor,
+          projeto,
+          part_number: partNumber,
+          part_name: partName,
+          modulo,
           qtd_tryout: Number(formData.get("qtdTryout")),
           materia_prima: formData.get("materiaPrima") as string,
           injetora: formData.get("injetora") as string,
@@ -69,26 +85,18 @@ const InjectionForm = () => {
       if (error) throw error;
 
       if (photos.length > 0 && data) {
-        await uploadPhotos(
-          photos.map((p) => p.file),
-          data.id,
-          "injection"
-        );
+        await uploadPhotos(photos.map((p) => p.file), data.id, "injection");
       }
 
       setSubmitted(true);
-      toast.success("Checklist enviado com sucesso!", {
-        description: "Os dados foram registrados.",
-      });
+      toast.success("Checklist enviado com sucesso!");
       setTimeout(() => {
         setSubmitted(false);
         navigate("/tryout");
       }, 2000);
     } catch (error: any) {
       console.error("Submit error:", error);
-      toast.error("Erro ao enviar checklist", {
-        description: error.message,
-      });
+      toast.error("Erro ao enviar checklist", { description: error.message });
     } finally {
       setLoading(false);
     }
@@ -133,20 +141,22 @@ const InjectionForm = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nome">Nome *</Label>
-                <Input id="nome" name="nome" required placeholder="Seu nome" />
+                <Input id="nome" name="nome" required value={profile?.full_name || ""} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="data">Data *</Label>
                 <Input id="data" name="data" type="date" required />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="fornecedor">Fornecedor *</Label>
-                <Input id="fornecedor" name="fornecedor" required placeholder="Nome do fornecedor" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="projeto">Projeto *</Label>
-                <Input id="projeto" name="projeto" required placeholder="Nome do projeto" />
-              </div>
+              <SupplierPartSelector
+                fornecedor={fornecedor}
+                partNumber={partNumber}
+                partName={partName}
+                projeto={projeto}
+                modulo={modulo}
+                onFornecedorChange={setFornecedor}
+                onPartNumberChange={setPartNumber}
+                onPartDataChange={handlePartDataChange}
+              />
             </div>
           </div>
 
@@ -154,18 +164,6 @@ const InjectionForm = () => {
           <div className="form-section">
             <h3 className="form-section-title">Dados da Peça</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="partNumber">Part Number *</Label>
-                <Input id="partNumber" name="partNumber" required placeholder="Ex: ABC-12345" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="partName">Part Name *</Label>
-                <Input id="partName" name="partName" required placeholder="Nome da peça" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="modulo">Módulo *</Label>
-                <Input id="modulo" name="modulo" required placeholder="Módulo" />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
                 <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" />
@@ -215,9 +213,7 @@ const InjectionForm = () => {
               <div className="space-y-2">
                 <Label>Será necessária alguma melhoria? *</Label>
                 <Select required onValueChange={setNeedsImprovement} value={needsImprovement}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="sim">Sim</SelectItem>
                     <SelectItem value="nao">Não</SelectItem>
@@ -228,14 +224,10 @@ const InjectionForm = () => {
                 <div className="space-y-2 opacity-0 animate-fade-in">
                   <Label>Categoria da melhoria *</Label>
                   <Select required onValueChange={setImprovementCategory} value={improvementCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione a categoria" />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                        <SelectItem key={n} value={String(n)}>
-                          Categoria {n}
-                        </SelectItem>
+                        <SelectItem key={n} value={String(n)}>Categoria {n}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -254,14 +246,7 @@ const InjectionForm = () => {
               <Camera className="w-5 h-5" />
               Fotos
             </h3>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handlePhotoUpload}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
             <Button
               type="button"
               variant="outline"

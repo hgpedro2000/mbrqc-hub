@@ -119,6 +119,7 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

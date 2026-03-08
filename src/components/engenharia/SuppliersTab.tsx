@@ -114,6 +114,7 @@ const SuppliersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

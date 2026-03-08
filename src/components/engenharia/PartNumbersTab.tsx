@@ -177,6 +177,7 @@ const PartNumbersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

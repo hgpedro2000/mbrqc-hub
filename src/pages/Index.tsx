@@ -9,7 +9,7 @@ const modules = [
     title: "Injeção Plástica",
     description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
     icon: Droplets,
-    path: "/injecao",
+    path: "/tryout/injecao",
     stats: "19 campos",
     color: "from-blue-500/10 to-blue-600/5",
   },

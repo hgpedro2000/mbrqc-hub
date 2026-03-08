@@ -25,7 +25,7 @@ const modules = [
 {
   id: "montagem",
   title: "Montagem e Finalização",
-  description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
+  description: "Checklist para montagem final, verificação de acabamento e controle dimensional.",
   icon: Wrench,
   path: "/tryout/montagem",
   stats: "Editável",

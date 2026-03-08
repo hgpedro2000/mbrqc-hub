@@ -101,6 +101,27 @@ const PartNumbersTab = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Part Numbers</h2>
         <div className="flex gap-2">
+          <ExcelExportButton
+            data={partNumbers.map((p: any) => ({
+              supplier_code: p.suppliers?.code || "",
+              supplier_name: p.suppliers?.name || "",
+              part_number: p.part_number,
+              part_name: p.part_name,
+              project: p.project,
+              line_module: p.line_module,
+              active: p.active,
+            }))}
+            columns={[
+              { header: "Fornecedor (Código)", key: "supplier_code" },
+              { header: "Fornecedor (Nome)", key: "supplier_name" },
+              { header: "Part Number", key: "part_number" },
+              { header: "Part Name", key: "part_name" },
+              { header: "Projeto", key: "project" },
+              { header: "Módulo de Linha", key: "line_module" },
+              { header: "Ativo", key: "active" },
+            ]}
+            fileName="part_numbers"
+          />
           <ExcelImportDialog
             title="Part Numbers"
             columns={PN_COLUMNS}

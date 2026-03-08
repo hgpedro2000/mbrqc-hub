@@ -77,6 +77,15 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">{title}</h2>
         <div className="flex gap-2">
+          <ExcelExportButton
+            data={items}
+            columns={[
+              { header: codeLabel, key: "code" },
+              { header: "Descrição", key: "description" },
+              { header: "Ativo", key: "active" },
+            ]}
+            fileName={tableName}
+          />
           <ExcelImportDialog
             title={title}
             columns={[

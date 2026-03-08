@@ -70,8 +70,12 @@ const App = () => (
             {/* Tryout */}
             <Route path="/tryout" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/tryout/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
+            <Route path="/tryout/injecao/editar/:id" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
             <Route path="/tryout/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
+            <Route path="/tryout/pintura/editar/:id" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
             <Route path="/tryout/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
+            <Route path="/tryout/montagem/editar/:id" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
+            <Route path="/tryout/registros" element={<ProtectedRoute><TryoutRegistros /></ProtectedRoute>} />
             <Route path="/tryout/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             
             {/* Auditorias */}

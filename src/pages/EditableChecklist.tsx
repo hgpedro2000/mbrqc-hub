@@ -164,7 +164,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/tryout")}
             className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -188,7 +188,7 @@ const Dashboard = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/tryout")}}
           className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)]"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

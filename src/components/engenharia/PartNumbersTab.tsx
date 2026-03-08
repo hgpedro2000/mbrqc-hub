@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+import ExcelExportButton from "./ExcelExportButton";
 
 const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Fornecedor (Código)", dbField: "supplier_code", label: "Fornecedor", required: true },

@@ -42,13 +42,24 @@ const Index = () => {
       {/* Header */}
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-8 md:py-12">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-              <ClipboardCheck className="w-5 h-5 text-accent-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                <ClipboardCheck className="w-5 h-5 text-accent-foreground" />
+              </div>
+              <span className="text-sm font-medium tracking-wider uppercase opacity-80">
+                Try-Out Control
+              </span>
             </div>
-            <span className="text-sm font-medium tracking-wider uppercase opacity-80">
-              Try-Out Control
-            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
           </div>
           <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">
             Controle de Try-Out

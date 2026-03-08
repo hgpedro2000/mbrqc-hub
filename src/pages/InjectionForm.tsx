@@ -75,6 +75,8 @@ const InjectionForm = () => {
       setModulo(existing.modulo);
       setTotalPecas((existing as any).total_pecas || 0);
       setPecasNG((existing as any).pecas_ng || 0);
+      setRazaoTryout((existing as any).razao_tryout || "");
+      setRazaoTryoutOutro((existing as any).razao_tryout_outro || "");
       const existingDefects = (existing as any).defects as any[] | undefined;
       if (existingDefects && existingDefects.length > 0) {
         setDefects(existingDefects.map((d: any) => ({

@@ -47,6 +47,132 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_items: {
+        Row: {
+          active: boolean | null
+          audit_type: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          sort_order: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          audit_type: string
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          sort_order?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          audit_type?: string
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      audit_responses: {
+        Row: {
+          audit_item_id: string
+          auditoria_id: string
+          conformidade: string | null
+          created_at: string
+          id: string
+          observacao: string | null
+          score: number | null
+        }
+        Insert: {
+          audit_item_id: string
+          auditoria_id: string
+          conformidade?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          score?: number | null
+        }
+        Update: {
+          audit_item_id?: string
+          auditoria_id?: string
+          conformidade?: string | null
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_responses_audit_item_id_fkey"
+            columns: ["audit_item_id"]
+            isOneToOne: false
+            referencedRelation: "audit_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_responses_auditoria_id_fkey"
+            columns: ["auditoria_id"]
+            isOneToOne: false
+            referencedRelation: "auditorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auditorias: {
+        Row: {
+          auditor: string
+          created_at: string
+          data: string
+          fornecedor: string | null
+          id: string
+          linha: string | null
+          observacoes: string | null
+          pontuacao_obtida: number | null
+          pontuacao_total: number | null
+          setor: string | null
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          auditor: string
+          created_at?: string
+          data: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          observacoes?: string | null
+          pontuacao_obtida?: number | null
+          pontuacao_total?: number | null
+          setor?: string | null
+          status?: string
+          tipo: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          auditor?: string
+          created_at?: string
+          data?: string
+          fornecedor?: string | null
+          id?: string
+          linha?: string | null
+          observacoes?: string | null
+          pontuacao_obtida?: number | null
+          pontuacao_total?: number | null
+          setor?: string | null
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       checklist_photos: {
         Row: {
           checklist_id: string
@@ -71,6 +197,36 @@ export type Database = {
           file_name?: string
           file_path?: string
           id?: string
+        }
+        Relationships: []
+      }
+      dropdown_options: {
+        Row: {
+          active: boolean | null
+          category: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number | null
+          value: string
+        }
+        Insert: {
+          active?: boolean | null
+          category: string
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number | null
+          value: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number | null
+          value?: string
         }
         Relationships: []
       }
@@ -179,15 +335,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -314,6 +494,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

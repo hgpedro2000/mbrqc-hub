@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
-
+import { useAuth } from "@/contexts/AuthContext";
 interface ChecklistItem {
   id: string;
   label: string;

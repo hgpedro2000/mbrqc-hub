@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3 } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -9,7 +9,7 @@ const modules = [
     title: "Injeção Plástica",
     description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
     icon: Droplets,
-    path: "/injecao",
+    path: "/tryout/injecao",
     stats: "19 campos",
     color: "from-blue-500/10 to-blue-600/5",
   },
@@ -18,7 +18,7 @@ const modules = [
     title: "Pintura",
     description: "Checklist editável para processo de pintura com upload de fotos e controle de qualidade.",
     icon: Paintbrush,
-    path: "/pintura",
+    path: "/tryout/pintura",
     stats: "Editável",
     color: "from-amber-500/10 to-orange-500/5",
   },
@@ -27,7 +27,7 @@ const modules = [
     title: "Montagem e Finalização",
     description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
     icon: Wrench,
-    path: "/montagem",
+    path: "/tryout/montagem",
     stats: "Editável",
     color: "from-emerald-500/10 to-green-500/5",
   },
@@ -55,7 +55,16 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/")}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Hub
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/tryout/dashboard")}
                 className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
               >
                 <BarChart3 className="w-4 h-4 mr-2" />

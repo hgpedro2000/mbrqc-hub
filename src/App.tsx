@@ -4,11 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import Hub from "./pages/Hub";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,11 +39,21 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
-            <Route path="/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
-            <Route path="/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
+            
+            {/* Tryout module */}
+            <Route path="/tryout" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tryout/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
+            <Route path="/tryout/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
+            <Route path="/tryout/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
+            <Route path="/tryout/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            
+            {/* Other modules - coming soon */}
+            <Route path="/auditorias" element={<ProtectedRoute><ComingSoon title="Auditorias" /></ProtectedRoute>} />
+            <Route path="/contencao" element={<ProtectedRoute><ComingSoon title="Contenção" /></ProtectedRoute>} />
+            <Route path="/apontamentos" element={<ProtectedRoute><ComingSoon title="Apontamentos" /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade" element={<ProtectedRoute><ComingSoon title="Alerta de Qualidade" /></ProtectedRoute>} />
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

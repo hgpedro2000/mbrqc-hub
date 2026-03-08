@@ -4,34 +4,34 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
 const modules = [
-  {
-    id: "injecao",
-    title: "Injeção Plástica",
-    description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
-    icon: Droplets,
-    path: "/tryout/injecao",
-    stats: "19 campos",
-    color: "from-blue-500/10 to-blue-600/5",
-  },
-  {
-    id: "pintura",
-    title: "Pintura",
-    description: "Checklist editável para processo de pintura com upload de fotos e controle de qualidade.",
-    icon: Paintbrush,
-    path: "/tryout/pintura",
-    stats: "Editável",
-    color: "from-amber-500/10 to-orange-500/5",
-  },
-  {
-    id: "montagem",
-    title: "Montagem e Finalização",
-    description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
-    icon: Wrench,
-    path: "/tryout/montagem",
-    stats: "Editável",
-    color: "from-emerald-500/10 to-green-500/5",
-  },
-];
+{
+  id: "injecao",
+  title: "Injeção Plástica",
+  description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
+  icon: Droplets,
+  path: "/tryout/injecao",
+  stats: "19 campos",
+  color: "from-blue-500/10 to-blue-600/5"
+},
+{
+  id: "pintura",
+  title: "Pintura",
+  description: "Checklist editável para processo de pintura com upload de fotos e controle de qualidade.",
+  icon: Paintbrush,
+  path: "/tryout/pintura",
+  stats: "Editável",
+  color: "from-amber-500/10 to-orange-500/5"
+},
+{
+  id: "montagem",
+  title: "Montagem e Finalização",
+  description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
+  icon: Wrench,
+  path: "/tryout/montagem",
+  stats: "Editável",
+  color: "from-emerald-500/10 to-green-500/5"
+}];
+
 
 const Index = () => {
   const { signOut, user } = useAuth();
@@ -56,8 +56,8 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/")}
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-              >
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+                
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Hub
               </Button>
@@ -65,8 +65,8 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/tryout/dashboard")}
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-              >
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+                
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
@@ -74,18 +74,18 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={signOut}
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-              >
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+                
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair
               </Button>
             </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">
-            Controle de Try-Out
+             Try-Out
           </h1>
           <p className="mt-2 text-primary-foreground/70 max-w-xl text-lg">
-            Selecione o módulo do processo para iniciar o preenchimento do checklist.
+            Selecione o módulo do processo para iniciar o checklist.
           </p>
         </div>
       </header>
@@ -93,13 +93,13 @@ const Index = () => {
       {/* Modules */}
       <main className="container mx-auto px-4 -mt-6 pb-12">
         <div className="grid gap-6 md:grid-cols-3">
-          {modules.map((mod, i) => (
-            <div
-              key={mod.id}
-              className="module-card opacity-0 animate-fade-in"
-              style={{ animationDelay: `${i * 100}ms` }}
-              onClick={() => navigate(mod.path)}
-            >
+          {modules.map((mod, i) =>
+          <div
+            key={mod.id}
+            className="module-card opacity-0 animate-fade-in"
+            style={{ animationDelay: `${i * 100}ms` }}
+            onClick={() => navigate(mod.path)}>
+            
               <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
               <div className="relative">
                 <div className="module-card-icon">
@@ -119,11 +119,11 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Index;

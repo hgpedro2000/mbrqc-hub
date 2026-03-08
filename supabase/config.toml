@@ -2,3 +2,6 @@ project_id = "fjsayyuuukmedrjmvexj"
 
 [functions.auth-login-by-number]
 verify_jwt = false
+
+[functions.create-user-admin]
+verify_jwt = false

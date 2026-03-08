@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+import ExcelExportButton from "./ExcelExportButton";
 
 const SUPPLIER_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Código", dbField: "code", label: "Código", required: true },
@@ -74,6 +75,15 @@ const SuppliersTab = () => {
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Fornecedores</h2>
         <div className="flex gap-2">
+          <ExcelExportButton
+            data={suppliers}
+            columns={[
+              { header: "Código", key: "code" },
+              { header: "Nome", key: "name" },
+              { header: "Ativo", key: "active" },
+            ]}
+            fileName="fornecedores"
+          />
           <ExcelImportDialog
             title="Fornecedores"
             columns={SUPPLIER_COLUMNS}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistExportButtons } from "./ChecklistExportButtons";
 import { FileText, AlertTriangle, Camera, Gauge, Package, Settings, ClipboardCheck } from "lucide-react";
+import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 
 interface ChecklistViewDialogProps {
   open: boolean;
@@ -135,7 +136,9 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
             {/* Report Header */}
             <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-6 pt-6 pb-4">
               <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1.5">
+                <div className="flex items-center gap-4">
+                  <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 w-auto object-contain" />
+                  <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold`}>
                       {getTypeLabel(checklistType)}
@@ -154,6 +157,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     {d?.nome} • {formatValue("data", d?.data)}
                     {d?.fornecedor ? ` • ${d.fornecedor}` : ""}
                   </p>
+                  </div>
                 </div>
                 <ChecklistExportButtons
                   data={data}

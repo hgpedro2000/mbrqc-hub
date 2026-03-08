@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
+import Engenharia from "./pages/Engenharia";
 import Auditorias from "./pages/Auditorias";
 import AuditoriaForm from "./pages/AuditoriaForm";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";

@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import {
-  ClipboardCheck,
   LogOut,
   Beaker,
   ShieldCheck,

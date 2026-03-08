@@ -37,6 +37,8 @@ const InjectionForm = () => {
   const [partName, setPartName] = useState("");
   const [projeto, setProjeto] = useState("");
   const [modulo, setModulo] = useState("");
+  const [razaoTryout, setRazaoTryout] = useState("");
+  const [razaoTryoutOutro, setRazaoTryoutOutro] = useState("");
 
   // Peças
   const [totalPecas, setTotalPecas] = useState<number>(0);
@@ -73,6 +75,8 @@ const InjectionForm = () => {
       setModulo(existing.modulo);
       setTotalPecas((existing as any).total_pecas || 0);
       setPecasNG((existing as any).pecas_ng || 0);
+      setRazaoTryout((existing as any).razao_tryout || "");
+      setRazaoTryoutOutro((existing as any).razao_tryout_outro || "");
       const existingDefects = (existing as any).defects as any[] | undefined;
       if (existingDefects && existingDefects.length > 0) {
         setDefects(existingDefects.map((d: any) => ({
@@ -149,6 +153,8 @@ const InjectionForm = () => {
         weight: Number(formData.get("weight")),
         dimensional: formData.get("dimensional") as string,
         comentarios: (formData.get("comentarios") as string) || null,
+        razao_tryout: razaoTryout,
+        razao_tryout_outro: razaoTryoutOutro,
         total_pecas: totalPecas,
         pecas_ok: pecasOK,
         pecas_ng: pecasNG,
@@ -259,6 +265,26 @@ const InjectionForm = () => {
           <div className="form-section">
             <h3 className="form-section-title">Dados da Peça</h3>
             <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Razão do Tryout *</Label>
+                <Select value={razaoTryout} onValueChange={(v) => { setRazaoTryout(v); if (v !== "Outro") setRazaoTryoutOutro(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a razão" /></SelectTrigger>
+                  <SelectContent>
+                    {["EO", "4M", "Melhoria", "Correção", "Novo Carro", "Outro"].map((opt) => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{razaoTryout === "Outro" ? "Especifique *" : "Detalhe (opcional)"}</Label>
+                <Input
+                  placeholder={razaoTryout === "Outro" ? "Descreva a razão..." : "Detalhe adicional..."}
+                  value={razaoTryoutOutro}
+                  onChange={(e) => setRazaoTryoutOutro(e.target.value)}
+                  required={razaoTryout === "Outro"}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
                 <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />

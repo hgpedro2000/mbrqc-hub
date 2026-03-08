@@ -498,6 +498,8 @@ export type Database = {
           projeto: string
           qtd_tryout: number
           rate: number | null
+          razao_tryout: string | null
+          razao_tryout_outro: string | null
           tonelagem: number
           total_pecas: number | null
           updated_at: string
@@ -527,6 +529,8 @@ export type Database = {
           projeto: string
           qtd_tryout: number
           rate?: number | null
+          razao_tryout?: string | null
+          razao_tryout_outro?: string | null
           tonelagem: number
           total_pecas?: number | null
           updated_at?: string
@@ -556,6 +560,8 @@ export type Database = {
           projeto?: string
           qtd_tryout?: number
           rate?: number | null
+          razao_tryout?: string | null
+          razao_tryout_outro?: string | null
           tonelagem?: number
           total_pecas?: number | null
           updated_at?: string

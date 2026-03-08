@@ -36,6 +36,14 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
     Valor: formatValue(key, data[key]),
   }));
 
+  // Add razao_tryout fields if present (injection)
+  if (checklistType === "injection_checklists" && data.razao_tryout) {
+    rows.splice(0, 0, { Campo: "Razão do Tryout", Valor: data.razao_tryout });
+    if (data.razao_tryout_outro) {
+      rows.splice(1, 0, { Campo: "Detalhe da Razão", Valor: data.razao_tryout_outro });
+    }
+  }
+
   // Defects for injection
   if (checklistType === "injection_checklists" && data.defects) {
     const defects = data.defects as any[];

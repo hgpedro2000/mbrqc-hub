@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistExportButtons } from "./ChecklistExportButtons";
 import { FileText, AlertTriangle, Camera, Gauge, Package, Settings, ClipboardCheck } from "lucide-react";
+import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 
 interface ChecklistViewDialogProps {
   open: boolean;

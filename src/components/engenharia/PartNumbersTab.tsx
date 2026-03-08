@@ -10,6 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+
+const PN_COLUMNS: ColumnMapping[] = [
+  { excelHeader: "Fornecedor (Código)", dbField: "supplier_code", label: "Fornecedor", required: true },
+  { excelHeader: "Part Number", dbField: "part_number", label: "Part Number", required: true },
+  { excelHeader: "Part Name", dbField: "part_name", label: "Part Name", required: true },
+  { excelHeader: "Projeto", dbField: "project", label: "Projeto" },
+  { excelHeader: "Módulo de Linha", dbField: "line_module", label: "Módulo" },
+];
 
 const PartNumbersTab = () => {
   const qc = useQueryClient();

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, List } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 
@@ -64,9 +64,16 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
+                onClick={() => navigate("/tryout/registros")}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
+                <List className="w-4 h-4 mr-2" />
+                Registros
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate("/tryout/dashboard")}
                 className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-                
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>

@@ -261,8 +261,13 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ChecklistViewDialog
+        open={!!viewTarget}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        checklistId={viewTarget?.id || null}
+        checklistType={viewTarget?.type || "injection_checklists"}
+      />
     </div>
   );
-};
 
 export default Index;

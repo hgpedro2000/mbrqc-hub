@@ -7,8 +7,10 @@ import {
   FileBarChart,
   AlertTriangle,
   ArrowRight,
+  Settings2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
@@ -60,10 +62,21 @@ const modules = [
   },
 ];
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+};
+
 const Hub = () => {
-  const { signOut, user } = useAuth();
+  const { signOut, profile } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
+  // Show engineering button for admin or engenharia roles
+  const showEngineering = isAdmin; // useUserRole checks admin; we'll also check engenharia below
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
@@ -75,18 +88,31 @@ const Hub = () => {
                 Quality Hub
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={signOut}
-              className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </Button>
+            <div className="flex items-center gap-2">
+              {showEngineering && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/engenharia")}
+                  className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                >
+                  <Settings2 className="w-4 h-4 mr-2" />
+                  Modo Engenharia
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={signOut}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
           </div>
           <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">
-            Quality Hub
+            {getGreeting()}, {profile?.full_name?.split(" ")[0] || "Usuário"}.
           </h1>
           <p className="mt-2 text-primary-foreground/70 max-w-xl text-lg">
             Selecione o módulo para acessar.

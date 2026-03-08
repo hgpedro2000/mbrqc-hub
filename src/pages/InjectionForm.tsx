@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 
 const InjectionForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
   const { profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
@@ -22,12 +25,41 @@ const InjectionForm = () => {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Supplier/Part cascading state
   const [fornecedor, setFornecedor] = useState("");
   const [partNumber, setPartNumber] = useState("");
   const [partName, setPartName] = useState("");
   const [projeto, setProjeto] = useState("");
   const [modulo, setModulo] = useState("");
+
+  // Edit mode: form field defaults
+  const [defaults, setDefaults] = useState<Record<string, any>>({});
+
+  const { data: existing } = useQuery({
+    queryKey: ["injection-edit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("injection_checklists")
+        .select("*")
+        .eq("id", id!)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    if (existing) {
+      setFornecedor(existing.fornecedor);
+      setPartNumber(existing.part_number);
+      setPartName(existing.part_name);
+      setProjeto(existing.projeto);
+      setModulo(existing.modulo);
+      setNeedsImprovement(existing.needs_improvement ? "sim" : "nao");
+      setImprovementCategory(existing.improvement_category ? String(existing.improvement_category) : "");
+      setDefaults(existing);
+    }
+  }, [existing]);
 
   const handlePartDataChange = (data: { part_name: string; project: string; line_module: string }) => {
     setPartName(data.part_name);
@@ -38,12 +70,7 @@ const InjectionForm = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const newPhotos = Array.from(files).map((f) => ({
-      name: f.name,
-      url: URL.createObjectURL(f),
-      file: f,
-    }));
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    setPhotos((prev) => [...prev, ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]);
   };
 
   const removePhoto = (index: number) => {
@@ -56,44 +83,46 @@ const InjectionForm = () => {
 
     try {
       const formData = new FormData(e.currentTarget);
+      const payload = {
+        nome: profile?.full_name || (formData.get("nome") as string),
+        data: formData.get("data") as string,
+        fornecedor,
+        projeto,
+        part_number: partNumber,
+        part_name: partName,
+        modulo,
+        qtd_tryout: Number(formData.get("qtdTryout")),
+        materia_prima: formData.get("materiaPrima") as string,
+        injetora: formData.get("injetora") as string,
+        tonelagem: Number(formData.get("tonelagem")),
+        cycle_time: Number(formData.get("cycleTime")),
+        cooling_time: Number(formData.get("coolingTime")),
+        weight: Number(formData.get("weight")),
+        dimensional: formData.get("dimensional") as string,
+        needs_improvement: needsImprovement === "sim",
+        improvement_category: needsImprovement === "sim" ? Number(improvementCategory) : null,
+        comentarios: (formData.get("comentarios") as string) || null,
+      };
 
-      const { data, error } = await supabase
-        .from("injection_checklists")
-        .insert({
-          nome: profile?.full_name || (formData.get("nome") as string),
-          data: formData.get("data") as string,
-          fornecedor,
-          projeto,
-          part_number: partNumber,
-          part_name: partName,
-          modulo,
-          qtd_tryout: Number(formData.get("qtdTryout")),
-          materia_prima: formData.get("materiaPrima") as string,
-          injetora: formData.get("injetora") as string,
-          tonelagem: Number(formData.get("tonelagem")),
-          cycle_time: Number(formData.get("cycleTime")),
-          cooling_time: Number(formData.get("coolingTime")),
-          weight: Number(formData.get("weight")),
-          dimensional: formData.get("dimensional") as string,
-          needs_improvement: needsImprovement === "sim",
-          improvement_category: needsImprovement === "sim" ? Number(improvementCategory) : null,
-          comentarios: (formData.get("comentarios") as string) || null,
-        })
-        .select("id")
-        .single();
+      let recordId: string;
 
-      if (error) throw error;
+      if (isEdit) {
+        const { error } = await supabase.from("injection_checklists").update(payload).eq("id", id!);
+        if (error) throw error;
+        recordId = id!;
+      } else {
+        const { data, error } = await supabase.from("injection_checklists").insert(payload).select("id").single();
+        if (error) throw error;
+        recordId = data.id;
+      }
 
-      if (photos.length > 0 && data) {
-        await uploadPhotos(photos.map((p) => p.file), data.id, "injection");
+      if (photos.length > 0) {
+        await uploadPhotos(photos.map((p) => p.file), recordId, "injection");
       }
 
       setSubmitted(true);
-      toast.success("Checklist enviado com sucesso!");
-      setTimeout(() => {
-        setSubmitted(false);
-        navigate("/tryout");
-      }, 2000);
+      toast.success(isEdit ? "Checklist atualizado!" : "Checklist enviado com sucesso!");
+      setTimeout(() => navigate("/tryout/registros"), 2000);
     } catch (error: any) {
       console.error("Submit error:", error);
       toast.error("Erro ao enviar checklist", { description: error.message });
@@ -109,7 +138,7 @@ const InjectionForm = () => {
           <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-10 h-10 text-success" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-foreground">Enviado!</h2>
+          <h2 className="text-2xl font-heading font-bold text-foreground">{isEdit ? "Atualizado!" : "Enviado!"}</h2>
           <p className="text-muted-foreground mt-2">Redirecionando...</p>
         </div>
       </div>
@@ -128,14 +157,13 @@ const InjectionForm = () => {
             <span className="text-sm">Voltar</span>
           </button>
           <h1 className="text-2xl md:text-3xl font-heading font-bold">
-            Processo de Injeção Plástica
+            {isEdit ? "Editar Checklist de Injeção" : "Processo de Injeção Plástica"}
           </h1>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Identificação */}
           <div className="form-section">
             <h3 className="form-section-title">Identificação</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -145,7 +173,7 @@ const InjectionForm = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="data">Data *</Label>
-                <Input id="data" name="data" type="date" required />
+                <Input id="data" name="data" type="date" required defaultValue={defaults.data || ""} key={defaults.data || "new"} />
               </div>
               <SupplierPartSelector
                 fornecedor={fornecedor}
@@ -160,55 +188,52 @@ const InjectionForm = () => {
             </div>
           </div>
 
-          {/* Peça */}
           <div className="form-section">
             <h3 className="form-section-title">Dados da Peça</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
-                <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" />
+                <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
               </div>
             </div>
           </div>
 
-          {/* Parâmetros */}
           <div className="form-section">
             <h3 className="form-section-title">Parâmetros de Processo</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="materiaPrima">Matéria-Prima *</Label>
-                <Input id="materiaPrima" name="materiaPrima" required placeholder="Tipo de material" />
+                <Input id="materiaPrima" name="materiaPrima" required placeholder="Tipo de material" defaultValue={defaults.materia_prima || ""} key={`mp-${defaults.materia_prima}`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="injetora">Injetora *</Label>
-                <Input id="injetora" name="injetora" required placeholder="Identificação da injetora" />
+                <Input id="injetora" name="injetora" required placeholder="Identificação da injetora" defaultValue={defaults.injetora || ""} key={`inj-${defaults.injetora}`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tonelagem">Tonelagem da Máquina *</Label>
-                <Input id="tonelagem" name="tonelagem" type="number" required placeholder="Em toneladas" />
+                <Input id="tonelagem" name="tonelagem" type="number" required placeholder="Em toneladas" defaultValue={defaults.tonelagem || ""} key={`ton-${defaults.tonelagem}`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cycleTime">Cycle Time (s) *</Label>
-                <Input id="cycleTime" name="cycleTime" type="number" step="0.1" required placeholder="Segundos" />
+                <Input id="cycleTime" name="cycleTime" type="number" step="0.1" required placeholder="Segundos" defaultValue={defaults.cycle_time || ""} key={`ct-${defaults.cycle_time}`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="coolingTime">Cooling Time (s) *</Label>
-                <Input id="coolingTime" name="coolingTime" type="number" step="0.1" required placeholder="Segundos" />
+                <Input id="coolingTime" name="coolingTime" type="number" step="0.1" required placeholder="Segundos" defaultValue={defaults.cooling_time || ""} key={`cool-${defaults.cooling_time}`} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="weight">Weight (g) *</Label>
-                <Input id="weight" name="weight" type="number" step="0.01" required placeholder="Gramas" />
+                <Input id="weight" name="weight" type="number" step="0.01" required placeholder="Gramas" defaultValue={defaults.weight || ""} key={`w-${defaults.weight}`} />
               </div>
             </div>
           </div>
 
-          {/* Dimensional e Melhorias */}
           <div className="form-section">
             <h3 className="form-section-title">Avaliação</h3>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="dimensional">Dimensional *</Label>
-                <Input id="dimensional" name="dimensional" required placeholder="Resultado dimensional" />
+                <Input id="dimensional" name="dimensional" required placeholder="Resultado dimensional" defaultValue={defaults.dimensional || ""} key={`dim-${defaults.dimensional}`} />
               </div>
               <div className="space-y-2">
                 <Label>Será necessária alguma melhoria? *</Label>
@@ -235,12 +260,11 @@ const InjectionForm = () => {
               )}
               <div className="space-y-2">
                 <Label htmlFor="comentarios">Comentários gerais</Label>
-                <Textarea id="comentarios" name="comentarios" placeholder="Observações adicionais..." rows={4} />
+                <Textarea id="comentarios" name="comentarios" placeholder="Observações adicionais..." rows={4} defaultValue={defaults.comentarios || ""} key={`com-${defaults.comentarios}`} />
               </div>
             </div>
           </div>
 
-          {/* Fotos */}
           <div className="form-section">
             <h3 className="form-section-title">
               <Camera className="w-5 h-5" />
@@ -274,7 +298,6 @@ const InjectionForm = () => {
             )}
           </div>
 
-          {/* Submit */}
           <Button
             type="submit"
             size="lg"
@@ -284,12 +307,12 @@ const InjectionForm = () => {
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Enviando...
+                {isEdit ? "Salvando..." : "Enviando..."}
               </>
             ) : (
               <>
                 <Send className="w-5 h-5 mr-2" />
-                Enviar Checklist
+                {isEdit ? "Salvar Alterações" : "Enviar Checklist"}
               </>
             )}
           </Button>

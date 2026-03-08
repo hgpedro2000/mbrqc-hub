@@ -404,6 +404,33 @@ export type Database = {
         }
         Relationships: []
       }
+      defects: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       dropdown_options: {
         Row: {
           active: boolean | null
@@ -615,6 +642,33 @@ export type Database = {
           last_login_at?: string | null
           must_change_password?: boolean
           status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      responsibilities: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          description: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
           updated_at?: string
         }
         Relationships: []

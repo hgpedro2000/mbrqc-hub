@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Save, ShieldCheck, Loader2 } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
@@ -18,6 +18,8 @@ type Conformidade = "conforme" | "nao_conforme" | "na" | "parcial";
 
 const AuditoriaForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
   const { profile } = useAuth();
   const [tipo, setTipo] = useState<string>("processo");
   const [titulo, setTitulo] = useState("");
@@ -27,11 +29,61 @@ const AuditoriaForm = () => {
   const [linha, setLinha] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [status, setStatus] = useState("aberta");
   const [responses, setResponses] = useState<Record<string, { conformidade: Conformidade; observacao: string }>>({});
   const [saving, setSaving] = useState(false);
 
   const { data: setores = [] } = useDropdownOptions("setor");
   const { data: linhas = [] } = useDropdownOptions("linha");
+
+  // Load existing auditoria for edit
+  const { data: existing, isLoading: loadingExisting } = useQuery({
+    queryKey: ["auditoria-edit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("auditorias").select("*").eq("id", id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEdit,
+  });
+
+  // Load existing responses for edit
+  const { data: existingResponses = [] } = useQuery({
+    queryKey: ["auditoria-responses-edit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("audit_responses").select("*").eq("auditoria_id", id!);
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    if (existing) {
+      setTipo(existing.tipo);
+      setTitulo(existing.titulo);
+      setAuditor(existing.auditor);
+      setData(existing.data);
+      setSetor(existing.setor || "");
+      setLinha(existing.linha || "");
+      setFornecedor(existing.fornecedor || "");
+      setObservacoes(existing.observacoes || "");
+      setStatus(existing.status);
+    }
+  }, [existing]);
+
+  useEffect(() => {
+    if (existingResponses.length > 0) {
+      const mapped: Record<string, { conformidade: Conformidade; observacao: string }> = {};
+      existingResponses.forEach((r) => {
+        mapped[r.audit_item_id] = {
+          conformidade: (r.conformidade || "na") as Conformidade,
+          observacao: r.observacao || "",
+        };
+      });
+      setResponses(mapped);
+    }
+  }, [existingResponses]);
 
   const { data: auditItems = [] } = useQuery({
     queryKey: ["audit_items", tipo],
@@ -69,42 +121,70 @@ const AuditoriaForm = () => {
       const obtained = answered.filter((r) => r.conformidade === "conforme").length +
         answered.filter((r) => r.conformidade === "parcial").length * 0.5;
 
-      const { data: auditoria, error } = await supabase
-        .from("auditorias")
-        .insert({
-          tipo,
-          titulo,
-          auditor,
-          data,
-          setor: setor || null,
-          linha: linha || null,
-          fornecedor: fornecedor || null,
-          observacoes: observacoes || null,
-          status: "concluida",
-          pontuacao_total: total,
-          pontuacao_obtida: obtained,
-        })
-        .select()
-        .single();
+      const payload = {
+        tipo,
+        titulo,
+        auditor,
+        data,
+        setor: setor || null,
+        linha: linha || null,
+        fornecedor: fornecedor || null,
+        observacoes: observacoes || null,
+        status: isEdit ? status : "concluida",
+        pontuacao_total: total,
+        pontuacao_obtida: obtained,
+      };
 
-      if (error) throw error;
+      if (isEdit) {
+        const { error } = await supabase.from("auditorias").update(payload).eq("id", id!);
+        if (error) throw error;
 
-      const responsesToInsert = Object.entries(responses)
-        .filter(([_, r]) => r.conformidade)
-        .map(([itemId, r]) => ({
-          auditoria_id: auditoria.id,
-          audit_item_id: itemId,
-          conformidade: r.conformidade,
-          observacao: r.observacao || null,
-          score: r.conformidade === "conforme" ? 1 : r.conformidade === "parcial" ? 0 : 0,
-        }));
+        // Delete old responses and insert new ones
+        await supabase.from("audit_responses").delete().eq("auditoria_id", id!);
 
-      if (responsesToInsert.length > 0) {
-        const { error: respError } = await supabase.from("audit_responses").insert(responsesToInsert);
-        if (respError) throw respError;
+        const responsesToInsert = Object.entries(responses)
+          .filter(([_, r]) => r.conformidade)
+          .map(([itemId, r]) => ({
+            auditoria_id: id!,
+            audit_item_id: itemId,
+            conformidade: r.conformidade,
+            observacao: r.observacao || null,
+            score: r.conformidade === "conforme" ? 1 : r.conformidade === "parcial" ? 0 : 0,
+          }));
+
+        if (responsesToInsert.length > 0) {
+          const { error: respError } = await supabase.from("audit_responses").insert(responsesToInsert);
+          if (respError) throw respError;
+        }
+
+        toast.success("Auditoria atualizada!");
+      } else {
+        const { data: auditoria, error } = await supabase
+          .from("auditorias")
+          .insert(payload)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        const responsesToInsert = Object.entries(responses)
+          .filter(([_, r]) => r.conformidade)
+          .map(([itemId, r]) => ({
+            auditoria_id: auditoria.id,
+            audit_item_id: itemId,
+            conformidade: r.conformidade,
+            observacao: r.observacao || null,
+            score: r.conformidade === "conforme" ? 1 : r.conformidade === "parcial" ? 0 : 0,
+          }));
+
+        if (responsesToInsert.length > 0) {
+          const { error: respError } = await supabase.from("audit_responses").insert(responsesToInsert);
+          if (respError) throw respError;
+        }
+
+        toast.success("Auditoria salva com sucesso!");
       }
 
-      toast.success("Auditoria salva com sucesso!");
       navigate("/auditorias");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
@@ -120,6 +200,14 @@ const AuditoriaForm = () => {
     na: "border-muted bg-muted/10",
   };
 
+  if (isEdit && loadingExisting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
@@ -132,7 +220,7 @@ const AuditoriaForm = () => {
           </div>
           <div className="flex items-center gap-3 mt-4">
             <ShieldCheck className="w-8 h-8" />
-            <h1 className="text-2xl font-heading font-bold">Nova Auditoria</h1>
+            <h1 className="text-2xl font-heading font-bold">{isEdit ? "Editar Auditoria" : "Nova Auditoria"}</h1>
           </div>
         </div>
       </header>
@@ -152,13 +240,27 @@ const AuditoriaForm = () => {
                 </SelectContent>
               </Select>
             </div>
+            {isEdit && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="aberta">Aberta</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Título</Label>
               <Input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex: Auditoria Linha 1 - Março" />
             </div>
             <div className="space-y-2">
               <Label>Auditor</Label>
-              <Input value={auditor} readOnly className="bg-muted" />
+              <Input value={auditor} onChange={(e) => setAuditor(e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} />
             </div>
             <div className="space-y-2">
               <Label>Data</Label>
@@ -249,7 +351,7 @@ const AuditoriaForm = () => {
         <div className="flex gap-3">
           <Button onClick={handleSave} disabled={saving} className="gap-2">
             <Save className="w-4 h-4" />
-            {saving ? "Salvando..." : "Salvar Auditoria"}
+            {saving ? "Salvando..." : isEdit ? "Atualizar Auditoria" : "Salvar Auditoria"}
           </Button>
           <Button variant="outline" onClick={() => navigate("/auditorias")}>Cancelar</Button>
         </div>

@@ -76,21 +76,25 @@ const App = () => (
             {/* Auditorias */}
             <Route path="/auditorias" element={<ProtectedRoute><Auditorias /></ProtectedRoute>} />
             <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
+            <Route path="/auditorias/editar/:id" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
             <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
             
             {/* Contenção */}
             <Route path="/contencao" element={<ProtectedRoute><Contencao /></ProtectedRoute>} />
             <Route path="/contencao/nova" element={<ProtectedRoute><ContencaoForm /></ProtectedRoute>} />
+            <Route path="/contencao/editar/:id" element={<ProtectedRoute><ContencaoForm /></ProtectedRoute>} />
             <Route path="/contencao/dashboard" element={<ProtectedRoute><ContencaoDashboard /></ProtectedRoute>} />
             
             {/* Apontamentos */}
             <Route path="/apontamentos" element={<ProtectedRoute><Apontamentos /></ProtectedRoute>} />
             <Route path="/apontamentos/novo" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
+            <Route path="/apontamentos/editar/:id" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
             <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ApontamentoDashboard /></ProtectedRoute>} />
             
             {/* Alertas de Qualidade */}
             <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/dashboard" element={<ProtectedRoute><AlertaQualidadeDashboard /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />

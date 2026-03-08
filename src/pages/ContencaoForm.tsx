@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Save, ShieldAlert, Loader2 } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
@@ -15,6 +16,8 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 
 const ContencaoForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
   const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -32,8 +35,42 @@ const ContencaoForm = () => {
     quantidade_rejeitada: 0,
     motivo: "",
     acao_contencao: "",
+    status: "aberta",
     observacoes: "",
   });
+
+  const { data: existing, isLoading: loadingExisting } = useQuery({
+    queryKey: ["contencao-edit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contencao").select("*").eq("id", id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    if (existing) {
+      setForm({
+        tipo: existing.tipo,
+        titulo: existing.titulo,
+        responsavel: existing.responsavel,
+        data: existing.data,
+        setor: existing.setor || "",
+        linha: existing.linha || "",
+        part_number: existing.part_number || "",
+        part_name: existing.part_name || "",
+        fornecedor: existing.fornecedor || "",
+        quantidade_contida: existing.quantidade_contida || 0,
+        quantidade_aprovada: existing.quantidade_aprovada || 0,
+        quantidade_rejeitada: existing.quantidade_rejeitada || 0,
+        motivo: existing.motivo || "",
+        acao_contencao: existing.acao_contencao || "",
+        status: existing.status,
+        observacoes: existing.observacoes || "",
+      });
+    }
+  }, [existing]);
 
   const { data: setores = [] } = useDropdownOptions("setor");
   const { data: linhas = [] } = useDropdownOptions("linha");
@@ -47,7 +84,7 @@ const ContencaoForm = () => {
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("contencao").insert({
+      const payload = {
         ...form,
         setor: form.setor || null,
         linha: form.linha || null,
@@ -55,9 +92,17 @@ const ContencaoForm = () => {
         observacoes: form.observacoes || null,
         motivo: form.motivo || null,
         acao_contencao: form.acao_contencao || null,
-      });
-      if (error) throw error;
-      toast.success("Contenção registrada!");
+      };
+
+      if (isEdit) {
+        const { error } = await supabase.from("contencao").update(payload).eq("id", id!);
+        if (error) throw error;
+        toast.success("Contenção atualizada!");
+      } else {
+        const { error } = await supabase.from("contencao").insert(payload);
+        if (error) throw error;
+        toast.success("Contenção registrada!");
+      }
       navigate("/contencao");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
@@ -65,6 +110,14 @@ const ContencaoForm = () => {
       setSaving(false);
     }
   };
+
+  if (isEdit && loadingExisting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,7 +131,7 @@ const ContencaoForm = () => {
           </div>
           <div className="flex items-center gap-3 mt-4">
             <ShieldAlert className="w-8 h-8" />
-            <h1 className="text-2xl font-heading font-bold">Nova Contenção</h1>
+            <h1 className="text-2xl font-heading font-bold">{isEdit ? "Editar Contenção" : "Nova Contenção"}</h1>
           </div>
         </div>
       </header>
@@ -97,13 +150,27 @@ const ContencaoForm = () => {
                 </SelectContent>
               </Select>
             </div>
+            {isEdit && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="aberta">Aberta</SelectItem>
+                    <SelectItem value="em_andamento">Em Andamento</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Título</Label>
               <Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Descrição da contenção" />
             </div>
             <div className="space-y-2">
               <Label>Responsável</Label>
-              <Input value={form.responsavel} readOnly className="bg-muted" />
+              <Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} />
             </div>
             <div className="space-y-2">
               <Label>Data</Label>
@@ -133,9 +200,7 @@ const ContencaoForm = () => {
               partName={form.part_name}
               onFornecedorChange={(v) => set("fornecedor", v)}
               onPartNumberChange={(v) => set("part_number", v)}
-              onPartDataChange={(d) => {
-                set("part_name", d.part_name);
-              }}
+              onPartDataChange={(d) => set("part_name", d.part_name)}
             />
           </div>
         </div>
@@ -178,7 +243,7 @@ const ContencaoForm = () => {
 
         <div className="flex gap-3">
           <Button onClick={handleSave} disabled={saving} className="gap-2">
-            <Save className="w-4 h-4" /> {saving ? "Salvando..." : "Salvar"}
+            <Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Salvar"}
           </Button>
           <Button variant="outline" onClick={() => navigate("/contencao")}>Cancelar</Button>
         </div>

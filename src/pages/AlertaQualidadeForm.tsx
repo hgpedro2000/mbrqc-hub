@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, AlertTriangle, Loader2 } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
@@ -15,6 +16,8 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = !!id;
   const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -33,8 +36,43 @@ const AlertaQualidadeForm = () => {
     acao_corretiva: "",
     responsavel: "",
     severidade: "media",
+    status: "ativo",
     observacoes: "",
   });
+
+  const { data: existing, isLoading: loadingExisting } = useQuery({
+    queryKey: ["alerta-edit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("alertas_qualidade").select("*").eq("id", id!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    if (existing) {
+      setForm({
+        numero_alerta: existing.numero_alerta,
+        titulo: existing.titulo,
+        emitente: existing.emitente,
+        data_emissao: existing.data_emissao,
+        data_validade: existing.data_validade || "",
+        setor: existing.setor || "",
+        linha: existing.linha || "",
+        part_number: existing.part_number || "",
+        part_name: existing.part_name || "",
+        fornecedor: existing.fornecedor || "",
+        descricao_problema: existing.descricao_problema,
+        acao_imediata: existing.acao_imediata || "",
+        acao_corretiva: existing.acao_corretiva || "",
+        responsavel: existing.responsavel || "",
+        severidade: existing.severidade || "media",
+        status: existing.status,
+        observacoes: existing.observacoes || "",
+      });
+    }
+  }, [existing]);
 
   const { data: setores = [] } = useDropdownOptions("setor");
   const { data: linhas = [] } = useDropdownOptions("linha");
@@ -48,7 +86,7 @@ const AlertaQualidadeForm = () => {
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("alertas_qualidade").insert({
+      const payload = {
         ...form,
         data_validade: form.data_validade || null,
         setor: form.setor || null,
@@ -58,9 +96,17 @@ const AlertaQualidadeForm = () => {
         acao_corretiva: form.acao_corretiva || null,
         responsavel: form.responsavel || null,
         observacoes: form.observacoes || null,
-      });
-      if (error) throw error;
-      toast.success("Alerta de qualidade emitido!");
+      };
+
+      if (isEdit) {
+        const { error } = await supabase.from("alertas_qualidade").update(payload).eq("id", id!);
+        if (error) throw error;
+        toast.success("Alerta atualizado!");
+      } else {
+        const { error } = await supabase.from("alertas_qualidade").insert(payload);
+        if (error) throw error;
+        toast.success("Alerta de qualidade emitido!");
+      }
       navigate("/alerta-qualidade");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");
@@ -68,6 +114,14 @@ const AlertaQualidadeForm = () => {
       setSaving(false);
     }
   };
+
+  if (isEdit && loadingExisting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +135,7 @@ const AlertaQualidadeForm = () => {
           </div>
           <div className="flex items-center gap-3 mt-4">
             <AlertTriangle className="w-8 h-8" />
-            <h1 className="text-2xl font-heading font-bold">Novo Alerta de Qualidade</h1>
+            <h1 className="text-2xl font-heading font-bold">{isEdit ? "Editar Alerta" : "Novo Alerta de Qualidade"}</h1>
           </div>
         </div>
       </header>
@@ -106,13 +160,27 @@ const AlertaQualidadeForm = () => {
                 </SelectContent>
               </Select>
             </div>
+            {isEdit && (
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={(v) => set("status", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="em_verificacao">Em Verificação</SelectItem>
+                    <SelectItem value="encerrado">Encerrado</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Título</Label>
               <Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Título do alerta" />
             </div>
             <div className="space-y-2">
               <Label>Emitente</Label>
-              <Input value={form.emitente} readOnly className="bg-muted" />
+              <Input value={form.emitente} onChange={(e) => set("emitente", e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} />
             </div>
             <div className="space-y-2">
               <Label>Data Emissão</Label>
@@ -179,7 +247,7 @@ const AlertaQualidadeForm = () => {
 
         <div className="flex gap-3">
           <Button onClick={handleSave} disabled={saving} className="gap-2">
-            <Save className="w-4 h-4" /> {saving ? "Salvando..." : "Emitir Alerta"}
+            <Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Emitir Alerta"}
           </Button>
           <Button variant="outline" onClick={() => navigate("/alerta-qualidade")}>Cancelar</Button>
         </div>

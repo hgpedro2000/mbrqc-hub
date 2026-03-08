@@ -1,19 +1,23 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Send, X, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { uploadPhotos } from "@/lib/uploadPhotos";
 
 const InjectionForm = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [photos, setPhotos] = useState<{ name: string; url: string }[]>([]);
+  const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
   const [needsImprovement, setNeedsImprovement] = useState<string>("");
+  const [improvementCategory, setImprovementCategory] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -21,6 +25,7 @@ const InjectionForm = () => {
     const newPhotos = Array.from(files).map((f) => ({
       name: f.name,
       url: URL.createObjectURL(f),
+      file: f,
     }));
     setPhotos((prev) => [...prev, ...newPhotos]);
   };
@@ -29,16 +34,64 @@ const InjectionForm = () => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("Checklist enviado com sucesso!", {
-      description: "Os dados foram registrados.",
-    });
-    setTimeout(() => {
-      setSubmitted(false);
-      navigate("/");
-    }, 2000);
+    setLoading(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+
+      const { data, error } = await supabase
+        .from("injection_checklists")
+        .insert({
+          nome: formData.get("nome") as string,
+          data: formData.get("data") as string,
+          fornecedor: formData.get("fornecedor") as string,
+          projeto: formData.get("projeto") as string,
+          part_number: formData.get("partNumber") as string,
+          part_name: formData.get("partName") as string,
+          modulo: formData.get("modulo") as string,
+          qtd_tryout: Number(formData.get("qtdTryout")),
+          materia_prima: formData.get("materiaPrima") as string,
+          injetora: formData.get("injetora") as string,
+          tonelagem: Number(formData.get("tonelagem")),
+          cycle_time: Number(formData.get("cycleTime")),
+          cooling_time: Number(formData.get("coolingTime")),
+          weight: Number(formData.get("weight")),
+          dimensional: formData.get("dimensional") as string,
+          needs_improvement: needsImprovement === "sim",
+          improvement_category: needsImprovement === "sim" ? Number(improvementCategory) : null,
+          comentarios: (formData.get("comentarios") as string) || null,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      if (photos.length > 0 && data) {
+        await uploadPhotos(
+          photos.map((p) => p.file),
+          data.id,
+          "injection"
+        );
+      }
+
+      setSubmitted(true);
+      toast.success("Checklist enviado com sucesso!", {
+        description: "Os dados foram registrados.",
+      });
+      setTimeout(() => {
+        setSubmitted(false);
+        navigate("/");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast.error("Erro ao enviar checklist", {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -80,19 +133,19 @@ const InjectionForm = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nome">Nome *</Label>
-                <Input id="nome" required placeholder="Seu nome" />
+                <Input id="nome" name="nome" required placeholder="Seu nome" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="data">Data *</Label>
-                <Input id="data" type="date" required />
+                <Input id="data" name="data" type="date" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="fornecedor">Fornecedor *</Label>
-                <Input id="fornecedor" required placeholder="Nome do fornecedor" />
+                <Input id="fornecedor" name="fornecedor" required placeholder="Nome do fornecedor" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="projeto">Projeto *</Label>
-                <Input id="projeto" required placeholder="Nome do projeto" />
+                <Input id="projeto" name="projeto" required placeholder="Nome do projeto" />
               </div>
             </div>
           </div>
@@ -103,19 +156,19 @@ const InjectionForm = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="partNumber">Part Number *</Label>
-                <Input id="partNumber" required placeholder="Ex: ABC-12345" />
+                <Input id="partNumber" name="partNumber" required placeholder="Ex: ABC-12345" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="partName">Part Name *</Label>
-                <Input id="partName" required placeholder="Nome da peça" />
+                <Input id="partName" name="partName" required placeholder="Nome da peça" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="modulo">Módulo *</Label>
-                <Input id="modulo" required placeholder="Módulo" />
+                <Input id="modulo" name="modulo" required placeholder="Módulo" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
-                <Input id="qtdTryout" type="number" required min={1} placeholder="0" />
+                <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" />
               </div>
             </div>
           </div>
@@ -126,27 +179,27 @@ const InjectionForm = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="materiaPrima">Matéria-Prima *</Label>
-                <Input id="materiaPrima" required placeholder="Tipo de material" />
+                <Input id="materiaPrima" name="materiaPrima" required placeholder="Tipo de material" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="injetora">Injetora *</Label>
-                <Input id="injetora" required placeholder="Identificação da injetora" />
+                <Input id="injetora" name="injetora" required placeholder="Identificação da injetora" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tonelagem">Tonelagem da Máquina *</Label>
-                <Input id="tonelagem" type="number" required placeholder="Em toneladas" />
+                <Input id="tonelagem" name="tonelagem" type="number" required placeholder="Em toneladas" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cycleTime">Cycle Time (s) *</Label>
-                <Input id="cycleTime" type="number" step="0.1" required placeholder="Segundos" />
+                <Input id="cycleTime" name="cycleTime" type="number" step="0.1" required placeholder="Segundos" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="coolingTime">Cooling Time (s) *</Label>
-                <Input id="coolingTime" type="number" step="0.1" required placeholder="Segundos" />
+                <Input id="coolingTime" name="coolingTime" type="number" step="0.1" required placeholder="Segundos" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="weight">Weight (g) *</Label>
-                <Input id="weight" type="number" step="0.01" required placeholder="Gramas" />
+                <Input id="weight" name="weight" type="number" step="0.01" required placeholder="Gramas" />
               </div>
             </div>
           </div>
@@ -157,7 +210,7 @@ const InjectionForm = () => {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="dimensional">Dimensional *</Label>
-                <Input id="dimensional" required placeholder="Resultado dimensional" />
+                <Input id="dimensional" name="dimensional" required placeholder="Resultado dimensional" />
               </div>
               <div className="space-y-2">
                 <Label>Será necessária alguma melhoria? *</Label>
@@ -174,7 +227,7 @@ const InjectionForm = () => {
               {needsImprovement === "sim" && (
                 <div className="space-y-2 opacity-0 animate-fade-in">
                   <Label>Categoria da melhoria *</Label>
-                  <Select required>
+                  <Select required onValueChange={setImprovementCategory} value={improvementCategory}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
@@ -190,7 +243,7 @@ const InjectionForm = () => {
               )}
               <div className="space-y-2">
                 <Label htmlFor="comentarios">Comentários gerais</Label>
-                <Textarea id="comentarios" placeholder="Observações adicionais..." rows={4} />
+                <Textarea id="comentarios" name="comentarios" placeholder="Observações adicionais..." rows={4} />
               </div>
             </div>
           </div>
@@ -237,9 +290,23 @@ const InjectionForm = () => {
           </div>
 
           {/* Submit */}
-          <Button type="submit" size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            <Send className="w-5 h-5 mr-2" />
-            Enviar Checklist
+          <Button
+            type="submit"
+            size="lg"
+            disabled={loading}
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Send className="w-5 h-5 mr-2" />
+                Enviar Checklist
+              </>
+            )}
           </Button>
         </form>
       </main>

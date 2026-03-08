@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { uploadPhotos } from "@/lib/uploadPhotos";
 
 interface ChecklistItem {
   id: string;
@@ -25,22 +27,33 @@ const defaultPaintingItems: ChecklistItem[] = [
   { id: "8", label: "Sem contaminação ou partículas", type: "check" },
 ];
 
+const defaultAssemblyItems: ChecklistItem[] = [
+  { id: "1", label: "Encaixe correto de todos os componentes", type: "check" },
+  { id: "2", label: "Torques aplicados conforme especificação", type: "check" },
+  { id: "3", label: "Sem folgas ou ruídos", type: "check" },
+  { id: "4", label: "Acabamento superficial conforme padrão", type: "check" },
+  { id: "5", label: "Funcionalidade testada e aprovada", type: "check" },
+  { id: "6", label: "Etiqueta de identificação aplicada", type: "check" },
+];
+
 interface EditableChecklistProps {
   title: string;
   headerLabel: string;
   defaultItems: ChecklistItem[];
+  checklistType: "painting" | "assembly";
+  tableName: "painting_checklists" | "assembly_checklists";
 }
 
-const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChecklistProps) => {
+const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType, tableName }: EditableChecklistProps) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ChecklistItem[]>(defaultItems);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [textValues, setTextValues] = useState<Record<string, string>>({});
   const [newItemLabel, setNewItemLabel] = useState("");
-  const [photos, setPhotos] = useState<{ name: string; url: string }[]>([]);
+  const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
   const [comments, setComments] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState("");
   const [data, setData] = useState("");
 
@@ -76,7 +89,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
     if (!files) return;
     setPhotos((prev) => [
       ...prev,
-      ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f) })),
+      ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f })),
     ]);
   };
 
@@ -84,15 +97,52 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nome || !data) {
       toast.error("Preencha nome e data.");
       return;
     }
-    setSubmitted(true);
-    toast.success("Checklist enviado com sucesso!");
-    setTimeout(() => navigate("/"), 2000);
+    setLoading(true);
+
+    try {
+      const itemsData = items.map((item) => ({
+        id: item.id,
+        label: item.label,
+      }));
+      const checkedData = Array.from(checkedItems);
+
+      const { data: record, error } = await supabase
+        .from(tableName)
+        .insert({
+          nome,
+          data,
+          items: itemsData,
+          checked_items: checkedData,
+          comentarios: comments || null,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+
+      if (photos.length > 0 && record) {
+        await uploadPhotos(
+          photos.map((p) => p.file),
+          record.id,
+          checklistType
+        );
+      }
+
+      setSubmitted(true);
+      toast.success("Checklist enviado com sucesso!");
+      setTimeout(() => navigate("/"), 2000);
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      toast.error("Erro ao enviar checklist", { description: error.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -127,7 +177,6 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Identificação */}
           <div className="form-section">
             <h3 className="form-section-title">Identificação</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -142,7 +191,6 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
             </div>
           </div>
 
-          {/* Checklist */}
           <div className="form-section">
             <h3 className="form-section-title">Checklist</h3>
             <div className="space-y-3">
@@ -178,7 +226,6 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
             </div>
           </div>
 
-          {/* Comentários */}
           <div className="form-section">
             <h3 className="form-section-title">Comentários</h3>
             <Textarea
@@ -189,7 +236,6 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
             />
           </div>
 
-          {/* Fotos */}
           <div className="form-section">
             <h3 className="form-section-title">
               <Camera className="w-5 h-5" />
@@ -230,9 +276,23 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
             )}
           </div>
 
-          <Button type="submit" size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            <Send className="w-5 h-5 mr-2" />
-            Enviar Checklist
+          <Button
+            type="submit"
+            size="lg"
+            disabled={loading}
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Send className="w-5 h-5 mr-2" />
+                Enviar Checklist
+              </>
+            )}
           </Button>
         </form>
       </main>
@@ -240,21 +300,13 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems }: EditableChe
   );
 };
 
-// Painting Page
-const defaultAssemblyItems: ChecklistItem[] = [
-  { id: "1", label: "Encaixe correto de todos os componentes", type: "check" },
-  { id: "2", label: "Torques aplicados conforme especificação", type: "check" },
-  { id: "3", label: "Sem folgas ou ruídos", type: "check" },
-  { id: "4", label: "Acabamento superficial conforme padrão", type: "check" },
-  { id: "5", label: "Funcionalidade testada e aprovada", type: "check" },
-  { id: "6", label: "Etiqueta de identificação aplicada", type: "check" },
-];
-
 export const PaintingPage = () => (
   <EditableChecklistPage
     title="Processo de Pintura"
     headerLabel="Checklist editável — adicione ou remova itens conforme necessário"
     defaultItems={defaultPaintingItems}
+    checklistType="painting"
+    tableName="painting_checklists"
   />
 );
 
@@ -263,5 +315,7 @@ export const AssemblyPage = () => (
     title="Montagem e Finalização"
     headerLabel="Checklist editável — adicione ou remova itens conforme necessário"
     defaultItems={defaultAssemblyItems}
+    checklistType="assembly"
+    tableName="assembly_checklists"
   />
 );

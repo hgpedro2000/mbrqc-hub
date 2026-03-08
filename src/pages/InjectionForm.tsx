@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,14 @@ import { uploadPhotos } from "@/lib/uploadPhotos";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
+import { Separator } from "@/components/ui/separator";
+
+interface DefectEntry {
+  description: string;
+  needs_improvement: boolean;
+  improvement_category: string;
+  photos: { name: string; url: string; file: File }[];
+}
 
 const InjectionForm = () => {
   const navigate = useNavigate();
@@ -19,9 +27,8 @@ const InjectionForm = () => {
   const isEdit = !!id;
   const { profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const defectFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
-  const [needsImprovement, setNeedsImprovement] = useState<string>("");
-  const [improvementCategory, setImprovementCategory] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +38,16 @@ const InjectionForm = () => {
   const [projeto, setProjeto] = useState("");
   const [modulo, setModulo] = useState("");
 
-  // Edit mode: form field defaults
+  // Peças
+  const [totalPecas, setTotalPecas] = useState<number>(0);
+  const [pecasNG, setPecasNG] = useState<number>(0);
+  const pecasOK = Math.max(0, totalPecas - pecasNG);
+  const rate = totalPecas > 0 ? ((pecasOK / totalPecas) * 100).toFixed(1) : "0.0";
+
+  // Defeitos
+  const [defects, setDefects] = useState<DefectEntry[]>([]);
+
+  // Edit mode defaults
   const [defaults, setDefaults] = useState<Record<string, any>>({});
 
   const { data: existing } = useQuery({
@@ -55,8 +71,17 @@ const InjectionForm = () => {
       setPartName(existing.part_name);
       setProjeto(existing.projeto);
       setModulo(existing.modulo);
-      setNeedsImprovement(existing.needs_improvement ? "sim" : "nao");
-      setImprovementCategory(existing.improvement_category ? String(existing.improvement_category) : "");
+      setTotalPecas((existing as any).total_pecas || 0);
+      setPecasNG((existing as any).pecas_ng || 0);
+      const existingDefects = (existing as any).defects as any[] | undefined;
+      if (existingDefects && existingDefects.length > 0) {
+        setDefects(existingDefects.map((d: any) => ({
+          description: d.description || "",
+          needs_improvement: d.needs_improvement || false,
+          improvement_category: d.improvement_category || "",
+          photos: [],
+        })));
+      }
       setDefaults(existing);
     }
   }, [existing]);
@@ -77,13 +102,37 @@ const InjectionForm = () => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  // Defect handlers
+  const addDefect = () => {
+    setDefects((prev) => [...prev, { description: "", needs_improvement: false, improvement_category: "", photos: [] }]);
+  };
+
+  const removeDefect = (index: number) => {
+    setDefects((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDefect = (index: number, field: keyof DefectEntry, value: any) => {
+    setDefects((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+  };
+
+  const addDefectPhoto = (defectIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const newPhotos = Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }));
+    setDefects((prev) => prev.map((d, i) => i === defectIndex ? { ...d, photos: [...d.photos, ...newPhotos] } : d));
+  };
+
+  const removeDefectPhoto = (defectIndex: number, photoIndex: number) => {
+    setDefects((prev) => prev.map((d, i) => i === defectIndex ? { ...d, photos: d.photos.filter((_, pi) => pi !== photoIndex) } : d));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const formData = new FormData(e.currentTarget);
-      const payload = {
+      const payload: Record<string, any> = {
         nome: profile?.full_name || (formData.get("nome") as string),
         data: formData.get("data") as string,
         fornecedor,
@@ -99,9 +148,18 @@ const InjectionForm = () => {
         cooling_time: Number(formData.get("coolingTime")),
         weight: Number(formData.get("weight")),
         dimensional: formData.get("dimensional") as string,
-        needs_improvement: needsImprovement === "sim",
-        improvement_category: needsImprovement === "sim" ? Number(improvementCategory) : null,
         comentarios: (formData.get("comentarios") as string) || null,
+        total_pecas: totalPecas,
+        pecas_ok: pecasOK,
+        pecas_ng: pecasNG,
+        rate: totalPecas > 0 ? parseFloat(((pecasOK / totalPecas) * 100).toFixed(2)) : 0,
+        needs_improvement: defects.some(d => d.needs_improvement),
+        improvement_category: null,
+        defects: defects.map((d) => ({
+          description: d.description,
+          needs_improvement: d.needs_improvement,
+          improvement_category: d.needs_improvement ? d.improvement_category : null,
+        })),
       };
 
       let recordId: string;
@@ -116,8 +174,16 @@ const InjectionForm = () => {
         recordId = data.id;
       }
 
+      // Upload general photos
       if (photos.length > 0) {
         await uploadPhotos(photos.map((p) => p.file), recordId, "injection");
+      }
+
+      // Upload defect photos
+      for (const defect of defects) {
+        if (defect.photos.length > 0) {
+          await uploadPhotos(defect.photos.map((p) => p.file), recordId, "injection");
+        }
       }
 
       setSubmitted(true);
@@ -164,6 +230,7 @@ const InjectionForm = () => {
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Identificação */}
           <div className="form-section">
             <h3 className="form-section-title">Identificação</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -188,6 +255,7 @@ const InjectionForm = () => {
             </div>
           </div>
 
+          {/* Dados da Peça */}
           <div className="form-section">
             <h3 className="form-section-title">Dados da Peça</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -195,9 +263,34 @@ const InjectionForm = () => {
                 <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
                 <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="totalPecas">Total de Peças no Tryout *</Label>
+                <Input id="totalPecas" type="number" required min={0} placeholder="0" value={totalPecas || ""} onChange={(e) => setTotalPecas(Number(e.target.value) || 0)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pecasNG">Peças NG *</Label>
+                <Input id="pecasNG" type="number" required min={0} max={totalPecas} placeholder="0" value={pecasNG || ""} onChange={(e) => setPecasNG(Math.min(Number(e.target.value) || 0, totalPecas))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pecasOK">Peças OK</Label>
+                <Input id="pecasOK" type="number" value={pecasOK} readOnly className="bg-muted font-semibold text-accent" />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="rate">Rate (%)</Label>
+                <div className="flex items-center gap-3">
+                  <Input id="rate" type="text" value={`${rate}%`} readOnly className="bg-muted font-semibold text-accent max-w-[160px]" />
+                  <div className="h-3 flex-1 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-accent transition-all duration-300"
+                      style={{ width: `${Math.min(parseFloat(rate), 100)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
+          {/* Parâmetros de Processo */}
           <div className="form-section">
             <h3 className="form-section-title">Parâmetros de Processo</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -228,6 +321,7 @@ const InjectionForm = () => {
             </div>
           </div>
 
+          {/* Avaliação - Dimensional + Comentários */}
           <div className="form-section">
             <h3 className="form-section-title">Avaliação</h3>
             <div className="space-y-4">
@@ -236,39 +330,126 @@ const InjectionForm = () => {
                 <Input id="dimensional" name="dimensional" required placeholder="Resultado dimensional" defaultValue={defaults.dimensional || ""} key={`dim-${defaults.dimensional}`} />
               </div>
               <div className="space-y-2">
-                <Label>Será necessária alguma melhoria? *</Label>
-                <Select required onValueChange={setNeedsImprovement} value={needsImprovement}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sim">Sim</SelectItem>
-                    <SelectItem value="nao">Não</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {needsImprovement === "sim" && (
-                <div className="space-y-2 opacity-0 animate-fade-in">
-                  <Label>Categoria da melhoria *</Label>
-                  <Select required onValueChange={setImprovementCategory} value={improvementCategory}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                        <SelectItem key={n} value={String(n)}>Categoria {n}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <div className="space-y-2">
                 <Label htmlFor="comentarios">Comentários gerais</Label>
                 <Textarea id="comentarios" name="comentarios" placeholder="Observações adicionais..." rows={4} defaultValue={defaults.comentarios || ""} key={`com-${defaults.comentarios}`} />
               </div>
             </div>
           </div>
 
+          {/* Defeitos */}
+          <div className="form-section">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="form-section-title mb-0">Defeitos</h3>
+              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5">
+                <Plus className="w-4 h-4" /> Adicionar Defeito
+              </Button>
+            </div>
+
+            {defects.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-lg">
+                Nenhum defeito registrado. Clique em "+ Adicionar Defeito" para incluir.
+              </p>
+            )}
+
+            <div className="space-y-4">
+              {defects.map((defect, idx) => (
+                <div key={idx} className="border border-border rounded-lg p-4 space-y-3 bg-card">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-foreground">Defeito #{idx + 1}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeDefect(idx)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Descrição do defeito *</Label>
+                    <Input
+                      required
+                      placeholder="Descreva o defeito encontrado"
+                      value={defect.description}
+                      onChange={(e) => updateDefect(idx, "description", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Será necessária alguma melhoria?</Label>
+                    <Select
+                      value={defect.needs_improvement ? "sim" : "nao"}
+                      onValueChange={(v) => updateDefect(idx, "needs_improvement", v === "sim")}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sim">Sim</SelectItem>
+                        <SelectItem value="nao">Não</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {defect.needs_improvement && (
+                    <div className="space-y-2 opacity-0 animate-fade-in">
+                      <Label>Categoria da melhoria *</Label>
+                      <Select
+                        required
+                        value={defect.improvement_category}
+                        onValueChange={(v) => updateDefect(idx, "improvement_category", v)}
+                      >
+                        <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                            <SelectItem key={n} value={String(n)}>Categoria {n}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Defect photos */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5"><Camera className="w-4 h-4" /> Fotos do defeito</Label>
+                    <input
+                      ref={(el) => { defectFileRefs.current[idx] = el; }}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => addDefectPhoto(idx, e)}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => defectFileRefs.current[idx]?.click()}
+                      className="w-full border-dashed border-2 h-12 text-muted-foreground hover:text-foreground hover:border-accent"
+                    >
+                      <Camera className="w-4 h-4 mr-2" /> Adicionar fotos
+                    </Button>
+                    {defect.photos.length > 0 && (
+                      <div className="grid grid-cols-4 gap-2 mt-2">
+                        {defect.photos.map((photo, pi) => (
+                          <div key={pi} className="relative group rounded-lg overflow-hidden aspect-square border border-border">
+                            <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => removeDefectPhoto(idx, pi)}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Fotos Gerais */}
           <div className="form-section">
             <h3 className="form-section-title">
               <Camera className="w-5 h-5" />
-              Fotos
+              Fotos Gerais
             </h3>
             <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
             <Button

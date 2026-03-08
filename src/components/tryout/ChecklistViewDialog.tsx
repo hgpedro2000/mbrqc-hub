@@ -24,6 +24,10 @@ const fieldLabels: Record<string, string> = {
   part_name: "Part Name",
   modulo: "Módulo",
   qtd_tryout: "Qtd Try-Out",
+  total_pecas: "Total de Peças",
+  pecas_ok: "Peças OK",
+  pecas_ng: "Peças NG",
+  rate: "Rate (%)",
   materia_prima: "Matéria-Prima",
   injetora: "Injetora",
   tonelagem: "Tonelagem (t)",
@@ -31,16 +35,14 @@ const fieldLabels: Record<string, string> = {
   cooling_time: "Cooling Time (s)",
   weight: "Weight (g)",
   dimensional: "Dimensional",
-  needs_improvement: "Necessita Melhoria",
-  improvement_category: "Categoria Melhoria",
   comentarios: "Comentários",
 };
 
 const injectionFields = [
   "numero", "nome", "data", "fornecedor", "projeto", "part_number", "part_name",
-  "modulo", "qtd_tryout", "materia_prima", "injetora", "tonelagem",
-  "cycle_time", "cooling_time", "weight", "dimensional",
-  "needs_improvement", "improvement_category", "comentarios",
+  "modulo", "qtd_tryout", "total_pecas", "pecas_ok", "pecas_ng", "rate",
+  "materia_prima", "injetora", "tonelagem",
+  "cycle_time", "cooling_time", "weight", "dimensional", "comentarios",
 ];
 
 const simpleFields = ["numero", "nome", "data", "comentarios"];
@@ -48,8 +50,7 @@ const simpleFields = ["numero", "nome", "data", "comentarios"];
 function formatValue(key: string, value: any): string {
   if (value === null || value === undefined || value === "") return "—";
   if (key === "data") return new Date(value).toLocaleDateString("pt-BR");
-  if (key === "needs_improvement") return value ? "Sim" : "Não";
-  if (key === "improvement_category") return value ? `Categoria ${value}` : "—";
+  if (key === "rate") return `${Number(value).toFixed(1)}%`;
   return String(value);
 }
 
@@ -92,6 +93,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
   const checkedItems = (data as any)?.checked_items as string[] | undefined;
   const items = (data as any)?.items as string[] | undefined;
+  const defects = (data as any)?.defects as any[] | undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -129,6 +131,44 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                 </div>
               ))}
             </div>
+
+            {/* Rate bar for injection */}
+            {checklistType === "injection_checklists" && (data as any)?.total_pecas > 0 && (
+              <div className="space-y-1">
+                <div className="h-3 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-300"
+                    style={{ width: `${Math.min(Number((data as any).rate) || 0, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Defects for injection */}
+            {checklistType === "injection_checklists" && defects && defects.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Defeitos ({defects.length})</p>
+                  <div className="space-y-3">
+                    {defects.map((defect: any, idx: number) => (
+                      <div key={idx} className="border border-border rounded-lg p-3 bg-card space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground">Defeito #{idx + 1}</span>
+                          {defect.needs_improvement && (
+                            <Badge variant="destructive" className="text-[10px]">Melhoria necessária</Badge>
+                          )}
+                          {defect.improvement_category && (
+                            <Badge variant="secondary" className="text-[10px]">Cat. {defect.improvement_category}</Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground">{defect.description || "—"}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Checklist items for painting/assembly */}
             {isChecklist && items && items.length > 0 && (

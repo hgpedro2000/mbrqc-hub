@@ -165,11 +165,11 @@ const InjectionForm = () => {
       let recordId: string;
 
       if (isEdit) {
-        const { error } = await supabase.from("injection_checklists").update(payload).eq("id", id!);
+        const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", id!);
         if (error) throw error;
         recordId = id!;
       } else {
-        const { data, error } = await supabase.from("injection_checklists").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("injection_checklists").insert(payload as any).select("id").single();
         if (error) throw error;
         recordId = data.id;
       }

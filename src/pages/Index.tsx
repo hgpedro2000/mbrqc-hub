@@ -7,7 +7,7 @@ const modules = [
 {
   id: "injecao",
   title: "Injeção Plástica",
-  description: "Checklist completo para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
+  description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.",
   icon: Droplets,
   path: "/tryout/injecao",
   stats: "19 campos",
@@ -16,7 +16,7 @@ const modules = [
 {
   id: "pintura",
   title: "Pintura",
-  description: "Checklist editável para processo de pintura com upload de fotos e controle de qualidade.",
+  description: "Checklist para processo de pintura com upload de fotos e controle de qualidade.",
   icon: Paintbrush,
   path: "/tryout/pintura",
   stats: "Editável",
@@ -25,7 +25,7 @@ const modules = [
 {
   id: "montagem",
   title: "Montagem e Finalização",
-  description: "Checklist editável para montagem final, verificação de acabamento e controle dimensional.",
+  description: "Checklist para montagem final, verificação de acabamento e controle dimensional.",
   icon: Wrench,
   path: "/tryout/montagem",
   stats: "Editável",

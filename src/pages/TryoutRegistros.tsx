@@ -1,70 +1,67 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import logo from "@/assets/hyundai-mobis-logo.png";
 
 const TryoutRegistros = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: string } | null>(null);
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
-  const { data: injectionData = [] } = useQuery({
+  const { data: injectionData = [], isLoading: loadingInj } = useQuery({
     queryKey: ["injection-checklists"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("injection_checklists")
-        .select("id, nome, data, fornecedor, part_number, part_name, projeto, created_at")
+        .select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: paintingData = [] } = useQuery({
+  const { data: paintingData = [], isLoading: loadingPaint } = useQuery({
     queryKey: ["painting-checklists"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("painting_checklists")
-        .select("id, nome, data, created_at")
+        .select("id, numero, nome, data, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: assemblyData = [] } = useQuery({
+  const { data: assemblyData = [], isLoading: loadingAsm } = useQuery({
     queryKey: ["assembly-checklists"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assembly_checklists")
-        .select("id, nome, data, created_at")
+        .select("id, numero, nome, data, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
 
+  const isLoading = loadingInj || loadingPaint || loadingAsm;
+
   const deleteMutation = useMutation({
     mutationFn: async ({ id, table }: { id: string; table: string }) => {
-      // Delete related photos first
       await supabase.from("checklist_photos").delete().eq("checklist_id", id);
       const { error } = await supabase.from(table as any).delete().eq("id", id);
       if (error) throw error;
@@ -76,10 +73,42 @@ const TryoutRegistros = () => {
       queryClient.invalidateQueries({ queryKey: ["assembly-checklists"] });
       setDeleteTarget(null);
     },
-    onError: (error: any) => {
-      toast.error("Erro ao excluir", { description: error.message });
-    },
+    onError: (error: any) => toast.error("Erro ao excluir", { description: error.message }),
   });
+
+  // Filters for injection tab (has richer data)
+  const injFilters: FilterConfig[] = useMemo(() => {
+    const projetos = [...new Set(injectionData.map((i) => i.projeto).filter(Boolean))] as string[];
+    const fornecedores = [...new Set(injectionData.map((i) => i.fornecedor).filter(Boolean))] as string[];
+    const usuarios = [...new Set(injectionData.map((i) => i.nome).filter(Boolean))] as string[];
+    return [
+      { key: "projeto", label: "Projeto", options: projetos },
+      { key: "fornecedor", label: "Fornecedor", options: fornecedores },
+      { key: "nome", label: "Usuário", options: usuarios },
+    ];
+  }, [injectionData]);
+
+  const genericFilters: FilterConfig[] = useMemo(() => {
+    const allNames = [...new Set([...paintingData.map((i) => i.nome), ...assemblyData.map((i) => i.nome)].filter(Boolean))] as string[];
+    return [
+      { key: "nome", label: "Usuário", options: allNames },
+    ];
+  }, [paintingData, assemblyData]);
+
+  const filteredInj = useMemo(() => 
+    injectionData.filter((i) =>
+      matchesSearch(i, ["numero", "nome", "part_number", "part_name", "fornecedor", "projeto"]) && matchesFilters(i)
+    ), [injectionData, search, filterValues]);
+
+  const filteredPaint = useMemo(() =>
+    paintingData.filter((i) =>
+      matchesSearch(i, ["numero", "nome"]) && matchesFilters(i)
+    ), [paintingData, search, filterValues]);
+
+  const filteredAsm = useMemo(() =>
+    assemblyData.filter((i) =>
+      matchesSearch(i, ["numero", "nome"]) && matchesFilters(i)
+    ), [assemblyData, search, filterValues]);
 
   const getEditPath = (table: string, id: string) => {
     if (table === "injection_checklists") return `/tryout/injecao/editar/${id}`;
@@ -91,34 +120,60 @@ const TryoutRegistros = () => {
     if (!isAdmin) return null;
     return (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(getEditPath(table, id))}>
-          <Pencil className="w-4 h-4" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
+          <Pencil className="w-3.5 h-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteTarget({ id, table })}>
-          <Trash2 className="w-4 h-4" />
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
+          <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
     );
   };
 
+  const [activeTab, setActiveTab] = useState("injecao");
+
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
-          <button
-            onClick={() => navigate("/tryout")}
-            className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Voltar</span>
-          </button>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">Registros de Try-Out</h1>
-          <p className="text-primary-foreground/70 text-sm mt-1">Visualize todos os checklists enviados</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground">
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+              <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mt-4">
+            <Droplets className="w-8 h-8" />
+            <div>
+              <h1 className="text-2xl font-heading font-bold">Registros de Try-Out</h1>
+              <p className="text-primary-foreground/70 text-sm">Lista mestra de checklists de Injeção, Pintura e Montagem</p>
+            </div>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        <Tabs defaultValue="injecao">
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={() => navigate("/tryout/injecao")} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Checklist
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/tryout/dashboard")} className="gap-2">
+            <BarChart3 className="w-4 h-4" /> Dashboard
+          </Button>
+        </div>
+
+        <MasterListFilter
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={activeTab === "injecao" ? injFilters : genericFilters}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
+
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); }}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="injecao" className="gap-2">
               <Droplets className="w-4 h-4" /> Injeção ({injectionData.length})
@@ -131,53 +186,94 @@ const TryoutRegistros = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="injecao" className="space-y-3 mt-4">
-            {injectionData.length === 0 && <p className="text-muted-foreground text-center py-8">Nenhum registro de injeção.</p>}
-            {injectionData.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-sm">{item.part_number}</span>
-                      <Badge variant="secondary">{item.fornecedor}</Badge>
+          <TabsContent value="injecao" className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+            ) : filteredInj.length === 0 ? (
+              <div className="form-section text-center py-12">
+                <Droplets className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">{injectionData.length === 0 ? "Nenhum registro de injeção." : "Nenhum resultado encontrado."}</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredInj.map((item) => (
+                  <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                          <span className="font-heading font-semibold text-foreground">{item.part_number}</span>
+                          <Badge variant="secondary">{item.fornecedor}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <span>{item.nome}</span>
+                          <span>•</span>
+                          <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                      </div>
+                      <AdminActions id={item.id} table="injection_checklists" />
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{item.part_name} • {item.projeto}</p>
-                    <p className="text-xs text-muted-foreground">{item.nome} — {item.data}</p>
                   </div>
-                  <AdminActions id={item.id} table="injection_checklists" />
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="pintura" className="space-y-3 mt-4">
-            {paintingData.length === 0 && <p className="text-muted-foreground text-center py-8">Nenhum registro de pintura.</p>}
-            {paintingData.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{item.nome}</p>
-                    <p className="text-xs text-muted-foreground">Data: {item.data}</p>
+          <TabsContent value="pintura" className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+            ) : filteredPaint.length === 0 ? (
+              <div className="form-section text-center py-12">
+                <Paintbrush className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">{paintingData.length === 0 ? "Nenhum registro de pintura." : "Nenhum resultado encontrado."}</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredPaint.map((item) => (
+                  <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                          <span className="font-heading font-semibold text-foreground">{item.nome}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                      <AdminActions id={item.id} table="painting_checklists" />
+                    </div>
                   </div>
-                  <AdminActions id={item.id} table="painting_checklists" />
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </div>
+            )}
           </TabsContent>
 
-          <TabsContent value="montagem" className="space-y-3 mt-4">
-            {assemblyData.length === 0 && <p className="text-muted-foreground text-center py-8">Nenhum registro de montagem.</p>}
-            {assemblyData.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">{item.nome}</p>
-                    <p className="text-xs text-muted-foreground">Data: {item.data}</p>
+          <TabsContent value="montagem" className="mt-4">
+            {isLoading ? (
+              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+            ) : filteredAsm.length === 0 ? (
+              <div className="form-section text-center py-12">
+                <Wrench className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">{assemblyData.length === 0 ? "Nenhum registro de montagem." : "Nenhum resultado encontrado."}</p>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {filteredAsm.map((item) => (
+                  <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                          <span className="font-heading font-semibold text-foreground">{item.nome}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                      <AdminActions id={item.id} table="assembly_checklists" />
+                    </div>
                   </div>
-                  <AdminActions id={item.id} table="assembly_checklists" />
-                </CardContent>
-              </Card>
-            ))}
+                ))}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
@@ -190,10 +286,7 @@ const TryoutRegistros = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}
-            >
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

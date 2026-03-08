@@ -183,7 +183,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>Nome *</Label>
-                <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" />
+                <Input required value={nome} readOnly className="bg-muted" />
               </div>
               <div className="space-y-2">
                 <Label>Data *</Label>

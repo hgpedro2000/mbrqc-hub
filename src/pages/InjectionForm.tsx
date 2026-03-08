@@ -82,7 +82,7 @@ const InjectionForm = () => {
       });
       setTimeout(() => {
         setSubmitted(false);
-        navigate("/");
+        navigate("/tryout");
       }, 2000);
     } catch (error: any) {
       console.error("Submit error:", error);

@@ -90,8 +90,8 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
   const fields = checklistType === "injection_checklists" ? injectionFields : simpleFields;
   const isChecklist = checklistType !== "injection_checklists";
 
-  const checkedItems = data?.checked_items as string[] | undefined;
-  const items = data?.items as string[] | undefined;
+  const checkedItems = (data as any)?.checked_items as string[] | undefined;
+  const items = (data as any)?.items as string[] | undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

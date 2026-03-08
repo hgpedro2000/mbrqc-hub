@@ -10,6 +10,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+
+const PN_COLUMNS: ColumnMapping[] = [
+  { excelHeader: "Fornecedor (Código)", dbField: "supplier_code", label: "Fornecedor", required: true },
+  { excelHeader: "Part Number", dbField: "part_number", label: "Part Number", required: true },
+  { excelHeader: "Part Name", dbField: "part_name", label: "Part Name", required: true },
+  { excelHeader: "Projeto", dbField: "project", label: "Projeto" },
+  { excelHeader: "Módulo de Linha", dbField: "line_module", label: "Módulo" },
+];
 
 const PartNumbersTab = () => {
   const qc = useQueryClient();
@@ -90,6 +99,41 @@ const PartNumbersTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Part Numbers</h2>
+        <div className="flex gap-2">
+          <ExcelImportDialog
+            title="Part Numbers"
+            columns={PN_COLUMNS}
+            checkDuplicates={async (rows) => {
+              const pns = rows.map((r) => r.part_number);
+              const { data } = await supabase.from("part_numbers").select("part_number").in("part_number", pns);
+              const existing = new Set((data || []).map((d) => d.part_number));
+              return rows.map((r) => existing.has(r.part_number));
+            }}
+            onImport={async (rows) => {
+              // Resolve supplier codes to IDs
+              const codes = [...new Set(rows.map((r) => r.supplier_code))];
+              const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes);
+              const codeToId = new Map((suppData || []).map((s) => [s.code, s.id]));
+              
+              const toInsert = rows
+                .filter((r) => codeToId.has(r.supplier_code))
+                .map((r) => ({
+                  supplier_id: codeToId.get(r.supplier_code)!,
+                  part_number: r.part_number,
+                  part_name: r.part_name,
+                  project: r.project || "",
+                  line_module: r.line_module || "",
+                }));
+
+              const skipped = rows.length - toInsert.length;
+              if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado com os códigos informados.");
+              
+              const { error } = await supabase.from("part_numbers").insert(toInsert);
+              if (error) throw error;
+              qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
+              toast.success(`${toInsert.length} part number(s) importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s) (fornecedor não encontrado).` : ""}`);
+            }}
+          />
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
@@ -133,6 +177,7 @@ const PartNumbersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

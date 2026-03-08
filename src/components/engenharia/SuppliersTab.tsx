@@ -9,6 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
+
+const SUPPLIER_COLUMNS: ColumnMapping[] = [
+  { excelHeader: "Código", dbField: "code", label: "Código", required: true },
+  { excelHeader: "Nome", dbField: "name", label: "Nome", required: true },
+];
 
 const SuppliersTab = () => {
   const qc = useQueryClient();
@@ -67,6 +73,23 @@ const SuppliersTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Fornecedores</h2>
+        <div className="flex gap-2">
+          <ExcelImportDialog
+            title="Fornecedores"
+            columns={SUPPLIER_COLUMNS}
+            checkDuplicates={async (rows) => {
+              const codes = rows.map((r) => r.code);
+              const { data } = await supabase.from("suppliers").select("code").in("code", codes);
+              const existing = new Set((data || []).map((d) => d.code));
+              return rows.map((r) => existing.has(r.code));
+            }}
+            onImport={async (rows) => {
+              const { error } = await supabase.from("suppliers").insert(rows.map((r) => ({ code: r.code, name: r.name })));
+              if (error) throw error;
+              qc.invalidateQueries({ queryKey: ["eng-suppliers"] });
+              toast.success(`${rows.length} fornecedor(es) importado(s)!`);
+            }}
+          />
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
@@ -91,6 +114,7 @@ const SuppliersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

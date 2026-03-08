@@ -70,9 +70,7 @@ const Hub = () => {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-accent-foreground" />
-              </div>
+              <img src={logo} alt="Hyundai Mobis" className="h-10 object-contain" />
               <span className="text-sm font-medium tracking-wider uppercase opacity-80">
                 Quality Hub
               </span>

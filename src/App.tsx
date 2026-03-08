@@ -13,7 +13,15 @@ import Login from "./pages/Login";
 import Auditorias from "./pages/Auditorias";
 import AuditoriaForm from "./pages/AuditoriaForm";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";
-import ComingSoon from "./pages/ComingSoon";
+import Contencao from "./pages/Contencao";
+import ContencaoForm from "./pages/ContencaoForm";
+import ContencaoDashboard from "./pages/ContencaoDashboard";
+import Apontamentos from "./pages/Apontamentos";
+import ApontamentoForm from "./pages/ApontamentoForm";
+import ApontamentoDashboard from "./pages/ApontamentoDashboard";
+import AlertaQualidade from "./pages/AlertaQualidade";
+import AlertaQualidadeForm from "./pages/AlertaQualidadeForm";
+import AlertaQualidadeDashboard from "./pages/AlertaQualidadeDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,22 +52,32 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
             
-            {/* Tryout module */}
+            {/* Tryout */}
             <Route path="/tryout" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/tryout/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
             <Route path="/tryout/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
             <Route path="/tryout/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
             <Route path="/tryout/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             
-            {/* Auditorias module */}
+            {/* Auditorias */}
             <Route path="/auditorias" element={<ProtectedRoute><Auditorias /></ProtectedRoute>} />
             <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
             <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
             
-            {/* Other modules - coming soon */}
-            <Route path="/contencao" element={<ProtectedRoute><ComingSoon title="Contenção" /></ProtectedRoute>} />
-            <Route path="/apontamentos" element={<ProtectedRoute><ComingSoon title="Apontamentos" /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade" element={<ProtectedRoute><ComingSoon title="Alerta de Qualidade" /></ProtectedRoute>} />
+            {/* Contenção */}
+            <Route path="/contencao" element={<ProtectedRoute><Contencao /></ProtectedRoute>} />
+            <Route path="/contencao/nova" element={<ProtectedRoute><ContencaoForm /></ProtectedRoute>} />
+            <Route path="/contencao/dashboard" element={<ProtectedRoute><ContencaoDashboard /></ProtectedRoute>} />
+            
+            {/* Apontamentos */}
+            <Route path="/apontamentos" element={<ProtectedRoute><Apontamentos /></ProtectedRoute>} />
+            <Route path="/apontamentos/novo" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
+            <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ApontamentoDashboard /></ProtectedRoute>} />
+            
+            {/* Alertas de Qualidade */}
+            <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/dashboard" element={<ProtectedRoute><AlertaQualidadeDashboard /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

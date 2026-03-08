@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 
 interface CatalogTabProps {
   tableName: "defects" | "responsibilities";

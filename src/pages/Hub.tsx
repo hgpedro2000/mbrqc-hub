@@ -70,7 +70,7 @@ const Hub = () => {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Hyundai Mobis" className="h-10 object-contain" />
+              <img src={logo} alt="Hyundai Mobis" className="h-10 object-contain bg-white rounded-md px-2 py-1" />
               <span className="text-sm font-medium tracking-wider uppercase opacity-80">
                 Quality Hub
               </span>

@@ -1,18 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ShieldAlert, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 const Contencao = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const qc = useQueryClient();
   const [tab, setTab] = useState("interno_mbr");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["contencao"],
@@ -24,6 +28,19 @@ const Contencao = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("contencao").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contencao"] });
+      toast.success("Contenção excluída com sucesso!");
+      setDeleteId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const filtered = items.filter((i) => i.tipo === tab);
@@ -98,7 +115,7 @@ const Contencao = () => {
                 {filtered.map((item) => (
                   <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1 min-w-0">
                         <h3 className="font-heading font-semibold text-foreground">{item.titulo}</h3>
                         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                           <span>Resp: {item.responsavel}</span>
@@ -108,10 +125,20 @@ const Contencao = () => {
                         </div>
                         {item.motivo && <p className="text-sm text-muted-foreground mt-1">Motivo: {item.motivo}</p>}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className={`status-badge ${statusColors[item.status]}`}>
                           {statusLabels[item.status]}
                         </span>
+                        {isAdmin && (
+                          <div className="flex gap-1 mt-2">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}>
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
@@ -126,6 +153,23 @@ const Contencao = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta contenção? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

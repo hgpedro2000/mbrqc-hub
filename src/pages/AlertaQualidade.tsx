@@ -1,16 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, AlertTriangle, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 const AlertaQualidade = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const qc = useQueryClient();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas_qualidade"],
@@ -22,6 +26,19 @@ const AlertaQualidade = () => {
       if (error) throw error;
       return data;
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("alertas_qualidade").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alertas_qualidade"] });
+      toast.success("Alerta excluído com sucesso!");
+      setDeleteId(null);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const statusColors: Record<string, string> = {
@@ -87,7 +104,7 @@ const AlertaQualidade = () => {
             {alertas.map((a) => (
               <div key={a.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{a.numero_alerta}</span>
                       <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
@@ -101,9 +118,19 @@ const AlertaQualidade = () => {
                       {a.responsavel && <><span>•</span><span>Resp: {a.responsavel}</span></>}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className={`status-badge ${statusColors[a.status]}`}>{statusLabels[a.status]}</span>
                     <span className={`status-badge ${severidadeColors[a.severidade || "media"]}`}>{(a.severidade || "media").charAt(0).toUpperCase() + (a.severidade || "media").slice(1)}</span>
+                    {isAdmin && (
+                      <div className="flex gap-1 mt-2">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(a.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -111,6 +138,23 @@ const AlertaQualidade = () => {
           </div>
         )}
       </main>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este alerta? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

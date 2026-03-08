@@ -23,7 +23,7 @@ const Login = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: window.location.origin }
         });
         if (error) throw error;
         toast.success("Conta criada! Verifique seu email para confirmar.");
@@ -47,7 +47,7 @@ const Login = () => {
           <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
             <ClipboardCheck className="w-7 h-7 text-accent-foreground" />
           </div>
-          <h1 className="text-2xl font-heading font-bold text-foreground">Try-Out Control</h1>
+          <h1 className="text-2xl font-heading font-bold text-foreground">Quality Control-Hub </h1>
           <p className="text-muted-foreground mt-1">
             {isSignUp ? "Crie sua conta para acessar" : "Entre para acessar os checklists"}
           </p>
@@ -62,8 +62,8 @@ const Login = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-            />
+              placeholder="seu@email.com" />
+            
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
@@ -74,39 +74,39 @@ const Login = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-            />
+              placeholder="Mínimo 6 caracteres" />
+            
           </div>
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12"
-          >
-            {loading ? (
-              "Aguarde..."
-            ) : isSignUp ? (
-              <>
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12">
+            
+            {loading ?
+            "Aguarde..." :
+            isSignUp ?
+            <>
                 <UserPlus className="w-4 h-4 mr-2" />
                 Criar Conta
-              </>
-            ) : (
-              <>
+              </> :
+
+            <>
                 <LogIn className="w-4 h-4 mr-2" />
                 Entrar
               </>
-            )}
+            }
           </Button>
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
-            className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
+            className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+            
             {isSignUp ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
           </button>
         </form>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Login;

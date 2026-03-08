@@ -113,6 +113,11 @@ const Index = () => {
   };
 
   const renderList = (data: any[], filtered: any[], table: string, Icon: any, hasRichData: boolean) => {
+    const typeMap: Record<string, "injection_checklists" | "painting_checklists" | "assembly_checklists"> = {
+      injection_checklists: "injection_checklists",
+      painting_checklists: "painting_checklists",
+      assembly_checklists: "assembly_checklists",
+    };
     if (filtered.length === 0) {
       return (
         <div className="form-section text-center py-8">
@@ -124,7 +129,11 @@ const Index = () => {
     return (
       <div className="grid gap-3">
         {filtered.map((item: any) => (
-          <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
+          <div
+            key={item.id}
+            className="form-section hover:border-accent/30 transition-colors cursor-pointer"
+            onClick={() => setViewTarget({ id: item.id, type: typeMap[table] })}
+          >
             <div className="flex items-start justify-between">
               <div className="space-y-1 flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -139,7 +148,12 @@ const Index = () => {
                   <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              <AdminActions id={item.id} table={table} />
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
+                <AdminActions id={item.id} table={table} />
+              </div>
             </div>
           </div>
         ))}

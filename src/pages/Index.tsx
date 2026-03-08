@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, List } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 

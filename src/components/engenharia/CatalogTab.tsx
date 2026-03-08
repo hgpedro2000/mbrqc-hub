@@ -75,6 +75,26 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">{title}</h2>
+        <div className="flex gap-2">
+          <ExcelImportDialog
+            title={title}
+            columns={[
+              { excelHeader: codeLabel, dbField: "code", label: codeLabel, required: true },
+              { excelHeader: "Descrição", dbField: "description", label: "Descrição", required: true },
+            ]}
+            checkDuplicates={async (rows) => {
+              const codes = rows.map((r) => r.code);
+              const { data } = await supabase.from(tableName).select("code").in("code", codes);
+              const existing = new Set((data || []).map((d: any) => d.code));
+              return rows.map((r) => existing.has(r.code));
+            }}
+            onImport={async (rows) => {
+              const { error } = await supabase.from(tableName).insert(rows.map((r) => ({ code: r.code, description: r.description })));
+              if (error) throw error;
+              qc.invalidateQueries({ queryKey: [`eng-${tableName}`] });
+              toast.success(`${rows.length} item(s) importado(s)!`);
+            }}
+          />
         <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>

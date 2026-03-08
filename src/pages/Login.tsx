@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus } from "lucide-react";
+import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -44,9 +45,7 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-xl bg-accent flex items-center justify-center mx-auto mb-4">
-            <ClipboardCheck className="w-7 h-7 text-accent-foreground" />
-          </div>
+          <img src={logo} alt="Hyundai Mobis" className="h-16 mx-auto mb-4 object-contain" />
           <h1 className="text-2xl font-heading font-bold text-foreground">Quality Control-Hub </h1>
           <p className="text-muted-foreground mt-1">
             {isSignUp ? "Crie sua conta para acessar" : "Entre para acessar os checklists"}

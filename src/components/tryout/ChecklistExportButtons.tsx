@@ -92,7 +92,7 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
     const logoResp = await fetch(hyundaiMobisLogo);
     const logoBlob = await logoResp.blob();
     const logoBase64 = await blobToBase64(logoBlob);
-    slide1.addImage({ data: logoBase64, x: 0.5, y: 0.5, w: 2.5, h: 0.8 });
+    slide1.addImage({ data: logoBase64, x: 0.5, y: 0.3, w: 3.5, h: 1.2 });
   } catch { /* skip logo */ }
   slide1.addText(`Checklist de ${typeLabel}`, { x: 0.5, y: 1.8, w: 12, h: 1.2, fontSize: 32, bold: true, color: "003366" });
   slide1.addText(`${numero ? `#${numero} • ` : ""}${data.nome || ""} • ${formatValue("data", data.data)}`, { x: 0.5, y: 3.1, w: 12, h: 0.6, fontSize: 18, color: "555555" });

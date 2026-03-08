@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldCheck, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -15,6 +16,7 @@ const Auditorias = () => {
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: auditorias = [], isLoading } = useQuery({
     queryKey: ["auditorias"],
@@ -30,7 +32,6 @@ const Auditorias = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Delete responses first, then the auditoria
       await supabase.from("audit_responses").delete().eq("auditoria_id", id);
       const { error } = await supabase.from("auditorias").delete().eq("id", id);
       if (error) throw error;
@@ -43,24 +44,35 @@ const Auditorias = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const filters: FilterConfig[] = useMemo(() => {
+    const tipos = [...new Set(auditorias.map((a) => a.tipo).filter(Boolean))] as string[];
+    const auditores = [...new Set(auditorias.map((a) => a.auditor).filter(Boolean))] as string[];
+    const statuses = [...new Set(auditorias.map((a) => a.status).filter(Boolean))] as string[];
+    return [
+      { key: "tipo", label: "Tipo", options: tipos },
+      { key: "auditor", label: "Auditor", options: auditores },
+      { key: "status", label: "Status", options: statuses },
+    ];
+  }, [auditorias]);
+
+  const filtered = useMemo(() => {
+    return auditorias.filter((a) =>
+      matchesSearch(a, ["numero", "titulo", "auditor", "setor", "fornecedor"]) &&
+      matchesFilters(a)
+    );
+  }, [auditorias, search, filterValues]);
+
   const statusColors: Record<string, string> = {
     aberta: "bg-blue-500/10 text-blue-600",
     em_andamento: "bg-amber-500/10 text-amber-600",
     concluida: "bg-emerald-500/10 text-emerald-600",
     cancelada: "bg-red-500/10 text-red-600",
   };
-
   const statusLabels: Record<string, string> = {
-    aberta: "Aberta",
-    em_andamento: "Em Andamento",
-    concluida: "Concluída",
-    cancelada: "Cancelada",
+    aberta: "Aberta", em_andamento: "Em Andamento", concluida: "Concluída", cancelada: "Cancelada",
   };
-
   const tipoLabels: Record<string, string> = {
-    processo: "Processo",
-    produto: "Produto",
-    fornecedor: "Fornecedor",
+    processo: "Processo", produto: "Produto", fornecedor: "Fornecedor",
   };
 
   return (
@@ -74,9 +86,7 @@ const Auditorias = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <div className="flex items-center gap-2">
-              {isAdmin && <EngineeringMode module="Auditorias" />}
-            </div>
+            {isAdmin && <EngineeringMode module="Auditorias" />}
           </div>
           <div className="flex items-center gap-3 mt-4">
             <ShieldCheck className="w-8 h-8" />
@@ -98,29 +108,34 @@ const Auditorias = () => {
           </Button>
         </div>
 
+        <MasterListFilter
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
           </div>
-        ) : auditorias.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Nenhuma auditoria registrada ainda.</p>
-            <Button className="mt-4" onClick={() => navigate("/auditorias/nova")}>
-              <Plus className="w-4 h-4 mr-2" /> Criar primeira auditoria
-            </Button>
+            <p className="text-muted-foreground">{auditorias.length === 0 ? "Nenhuma auditoria registrada." : "Nenhum resultado encontrado."}</p>
           </div>
         ) : (
           <div className="grid gap-4">
-            {auditorias.map((a) => (
-              <div
-                key={a.id}
-                className="form-section cursor-pointer hover:border-accent/30 transition-colors"
-                onClick={() => navigate(`/auditorias/${a.id}`)}
-              >
+            {filtered.map((a) => (
+              <div key={a.id} className="form-section cursor-pointer hover:border-accent/30 transition-colors" onClick={() => navigate(`/auditorias/${a.id}`)}>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1 min-w-0">
-                    <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
+                    <div className="flex items-center gap-2">
+                      {a.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{a.numero}</span>}
+                      <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
+                    </div>
                     <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                       <span>Auditor: {a.auditor}</span>
                       <span>•</span>
@@ -130,12 +145,8 @@ const Auditorias = () => {
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <div className="flex items-center gap-2">
-                      <span className={`status-badge ${statusColors[a.status]}`}>
-                        {statusLabels[a.status]}
-                      </span>
-                      <span className="status-badge bg-card text-foreground border">
-                        {tipoLabels[a.tipo]}
-                      </span>
+                      <span className={`status-badge ${statusColors[a.status]}`}>{statusLabels[a.status]}</span>
+                      <span className="status-badge bg-card text-foreground border">{tipoLabels[a.tipo]}</span>
                     </div>
                     {isAdmin && (
                       <div className="flex gap-1 mt-2">
@@ -149,14 +160,12 @@ const Auditorias = () => {
                     )}
                   </div>
                 </div>
-                {a.pontuacao_total > 0 && (
+                {a.pontuacao_total && Number(a.pontuacao_total) > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">Pontuação:</span>
                       <span className="font-semibold">{a.pontuacao_obtida}/{a.pontuacao_total}</span>
-                      <span className="text-muted-foreground">
-                        ({((Number(a.pontuacao_obtida) / Number(a.pontuacao_total)) * 100).toFixed(0)}%)
-                      </span>
+                      <span className="text-muted-foreground">({((Number(a.pontuacao_obtida) / Number(a.pontuacao_total)) * 100).toFixed(0)}%)</span>
                     </div>
                   </div>
                 )}
@@ -170,9 +179,7 @@ const Auditorias = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta auditoria e todas as suas respostas? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir esta auditoria e todas as suas respostas? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2 } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ const Contencao = () => {
   const qc = useQueryClient();
   const [tab, setTab] = useState("interno_mbr");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["contencao"],
@@ -43,7 +45,25 @@ const Contencao = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const filtered = items.filter((i) => i.tipo === tab);
+  const filters: FilterConfig[] = useMemo(() => {
+    const partNumbers = [...new Set(items.map((i) => i.part_number).filter(Boolean))] as string[];
+    const responsaveis = [...new Set(items.map((i) => i.responsavel).filter(Boolean))] as string[];
+    const statuses = [...new Set(items.map((i) => i.status).filter(Boolean))] as string[];
+    return [
+      { key: "part_number", label: "Part Number", options: partNumbers },
+      { key: "responsavel", label: "Responsável", options: responsaveis },
+      { key: "status", label: "Status", options: statuses },
+    ];
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    return items
+      .filter((i) => i.tipo === tab)
+      .filter((i) =>
+        matchesSearch(i, ["numero", "titulo", "responsavel", "part_number", "part_name", "fornecedor"]) &&
+        matchesFilters(i)
+      );
+  }, [items, tab, search, filterValues]);
 
   const statusColors: Record<string, string> = {
     aberta: "bg-blue-500/10 text-blue-600",
@@ -51,12 +71,8 @@ const Contencao = () => {
     concluida: "bg-emerald-500/10 text-emerald-600",
     cancelada: "bg-red-500/10 text-red-600",
   };
-
   const statusLabels: Record<string, string> = {
-    aberta: "Aberta",
-    em_andamento: "Em Andamento",
-    concluida: "Concluída",
-    cancelada: "Cancelada",
+    aberta: "Aberta", em_andamento: "Em Andamento", concluida: "Concluída", cancelada: "Cancelada",
   };
 
   return (
@@ -70,9 +86,7 @@ const Contencao = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <div className="flex items-center gap-2">
-              {isAdmin && <EngineeringMode module="Contenção" />}
-            </div>
+            {isAdmin && <EngineeringMode module="Contenção" />}
           </div>
           <div className="flex items-center gap-3 mt-4">
             <ShieldAlert className="w-8 h-8" />
@@ -94,6 +108,15 @@ const Contencao = () => {
           </Button>
         </div>
 
+        <MasterListFilter
+          searchValue={search}
+          onSearchChange={setSearch}
+          filters={filters}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+        />
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="interno_mbr">Estoque Interno MBR</TabsTrigger>
@@ -108,7 +131,7 @@ const Contencao = () => {
             ) : filtered.length === 0 ? (
               <div className="form-section text-center py-12">
                 <ShieldAlert className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">Nenhuma contenção registrada nesta categoria.</p>
+                <p className="text-muted-foreground">Nenhuma contenção encontrada.</p>
               </div>
             ) : (
               <div className="grid gap-4">
@@ -116,7 +139,10 @@ const Contencao = () => {
                   <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="space-y-1 flex-1 min-w-0">
-                        <h3 className="font-heading font-semibold text-foreground">{item.titulo}</h3>
+                        <div className="flex items-center gap-2">
+                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                          <h3 className="font-heading font-semibold text-foreground">{item.titulo}</h3>
+                        </div>
                         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                           <span>Resp: {item.responsavel}</span>
                           <span>•</span>
@@ -126,9 +152,7 @@ const Contencao = () => {
                         {item.motivo && <p className="text-sm text-muted-foreground mt-1">Motivo: {item.motivo}</p>}
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
-                        <span className={`status-badge ${statusColors[item.status]}`}>
-                          {statusLabels[item.status]}
-                        </span>
+                        <span className={`status-badge ${statusColors[item.status]}`}>{statusLabels[item.status]}</span>
                         {isAdmin && (
                           <div className="flex gap-1 mt-2">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}>
@@ -158,9 +182,7 @@ const Contencao = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir esta contenção? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir esta contenção? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

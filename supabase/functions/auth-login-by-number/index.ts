@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     const internalEmail = `${employee_number}@internal.qhub`;
 
     // Sign in with the internal email
-    const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseAnon = createClient(supabaseUrl, anonKey);
 
     const { data: authData, error: authError } = await supabaseAnon.auth.signInWithPassword({

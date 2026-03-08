@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Droplets, Paintbrush, Wrench, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,9 +17,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  ResponsiveContainer,
-  LineChart,
-  Line,
 } from "recharts";
 
 const IMPROVEMENT_CATEGORIES: Record<number, string> = {
@@ -31,22 +27,18 @@ const IMPROVEMENT_CATEGORIES: Record<number, string> = {
   5: "Material",
 };
 
-const PIE_COLORS = [
-  "hsl(210, 80%, 55%)",
-  "hsl(38, 92%, 50%)",
-  "hsl(152, 60%, 40%)",
-  "hsl(0, 72%, 50%)",
-  "hsl(270, 60%, 55%)",
-];
-
 interface InjectionRow {
   projeto: string;
+  fornecedor: string;
+  part_number: string;
+  part_name: string;
   needs_improvement: boolean;
   improvement_category: number | null;
   created_at: string;
   cycle_time: number;
   cooling_time: number;
   weight: number;
+  dimensional: string;
 }
 
 const Dashboard = () => {
@@ -59,7 +51,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       const [injRes, paintRes, assemblyRes] = await Promise.all([
-        supabase.from("injection_checklists").select("projeto, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight"),
+        supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight, dimensional"),
         supabase.from("painting_checklists").select("id", { count: "exact", head: true }),
         supabase.from("assembly_checklists").select("id", { count: "exact", head: true }),
       ]);
@@ -71,263 +63,288 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // KPIs
+  // --- Data aggregations ---
   const totalInjection = injectionData.length;
   const totalAll = totalInjection + paintingCount + assemblyCount;
-  const needsImprovement = injectionData.filter((d) => d.needs_improvement).length;
-  const improvementRate = totalInjection > 0 ? Math.round((needsImprovement / totalInjection) * 100) : 0;
 
-  // Try-outs por projeto
-  const projectMap = new Map<string, number>();
+  // Supplier table + horizontal bar data
+  const supplierMap = new Map<string, { ok: number; ng: number; pns: Set<string> }>();
   injectionData.forEach((d) => {
-    projectMap.set(d.projeto, (projectMap.get(d.projeto) || 0) + 1);
+    const existing = supplierMap.get(d.fornecedor) || { ok: 0, ng: 0, pns: new Set<string>() };
+    if (d.needs_improvement) existing.ng++;
+    else existing.ok++;
+    existing.pns.add(d.part_number);
+    supplierMap.set(d.fornecedor, existing);
   });
-  const projectData = Array.from(projectMap.entries())
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 10);
+  const supplierData = Array.from(supplierMap.entries())
+    .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
+    .sort((a, b) => b.total - a.total);
 
-  // Melhorias por categoria
-  const categoryMap = new Map<number, number>();
+  // Donut charts data: Weight OK/NG, Dimensional OK/NG, Appearance (Visual) OK/NG
+  const getDonutData = (filterFn: (d: InjectionRow) => boolean) => {
+    const ok = injectionData.filter((d) => !d.needs_improvement || !filterFn(d)).length;
+    const ng = injectionData.filter((d) => d.needs_improvement && filterFn(d)).length;
+    return [
+      { name: "OK", value: ok },
+      { name: "NG", value: ng },
+    ];
+  };
+  const weightDonut = getDonutData((d) => d.improvement_category === 5); // Material ~ Weight
+  const dimensionalDonut = getDonutData((d) => d.improvement_category === 1);
+  const appearanceDonut = getDonutData((d) => d.improvement_category === 2);
+
+  // Main Failure Mode (improvement categories breakdown)
+  const failureMap = new Map<string, number>();
   injectionData.forEach((d) => {
     if (d.needs_improvement && d.improvement_category) {
-      categoryMap.set(d.improvement_category, (categoryMap.get(d.improvement_category) || 0) + 1);
+      const label = IMPROVEMENT_CATEGORIES[d.improvement_category] || `Cat ${d.improvement_category}`;
+      failureMap.set(label, (failureMap.get(label) || 0) + 1);
     }
   });
-  const categoryData = Array.from(categoryMap.entries()).map(([key, value]) => ({
-    name: IMPROVEMENT_CATEGORIES[key] || `Cat ${key}`,
-    value,
-  }));
+  const failureModeData = Array.from(failureMap.entries())
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
 
-  // Timeline - try-outs por mês
-  const monthMap = new Map<string, number>();
-  injectionData.forEach((d) => {
-    const date = new Date(d.created_at);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    monthMap.set(key, (monthMap.get(key) || 0) + 1);
-  });
-  const timelineData = Array.from(monthMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, count]) => ({ month, count }));
+  // Problem type data
+  const problemTypes = [
+    { type: "Dimensional", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 1).length },
+    { type: "Visual", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 2).length },
+    { type: "Funcional", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 3).length },
+    { type: "Processo", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 4).length },
+    { type: "Material", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 5).length },
+  ];
+  const totalProblems = problemTypes.reduce((a, b) => a + b.qty, 0);
 
-  // Média de cycle_time por projeto
-  const cycleMap = new Map<string, { total: number; count: number }>();
-  injectionData.forEach((d) => {
-    const existing = cycleMap.get(d.projeto) || { total: 0, count: 0 };
-    cycleMap.set(d.projeto, { total: existing.total + d.cycle_time, count: existing.count + 1 });
-  });
-  const cycleData = Array.from(cycleMap.entries())
-    .map(([name, { total, count }]) => ({ name, avg: Math.round((total / count) * 10) / 10 }))
-    .sort((a, b) => b.avg - a.avg)
-    .slice(0, 8);
+  // Main issues (NG items list)
+  const mainIssues = injectionData
+    .filter((d) => d.needs_improvement)
+    .slice(0, 8)
+    .map((d) => ({
+      supplier: d.fornecedor,
+      pn: d.part_number,
+      description: d.part_name,
+      category: d.improvement_category ? IMPROVEMENT_CATEGORIES[d.improvement_category] : "—",
+    }));
 
   const chartConfig = {
-    value: { label: "Quantidade", color: "hsl(210, 80%, 55%)" },
-    count: { label: "Try-outs", color: "hsl(152, 60%, 40%)" },
-    avg: { label: "Tempo Médio (s)", color: "hsl(38, 92%, 50%)" },
+    ok: { label: "OK", color: "hsl(0, 65%, 45%)" },
+    ng: { label: "NG", color: "hsl(140, 60%, 45%)" },
+    value: { label: "Quantidade", color: "hsl(210, 70%, 60%)" },
   };
+
+  const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-[hsl(220,20%,10%)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-info border-t-transparent rounded-full" />
       </div>
     );
   }
 
+  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-[hsl(220,10%,30%)] px-3 py-1.5 border border-[hsl(220,10%,40%)]">
+      <h3 className="text-sm font-bold text-[hsl(0,0%,90%)] text-center tracking-wide">{children}</h3>
+    </div>
+  );
+
+  const DonutChart = ({ data, title }: { data: { name: string; value: number }[]; title: string }) => {
+    const total = data.reduce((a, b) => a + b.value, 0);
+    const okPct = total > 0 ? ((data[0].value / total) * 100).toFixed(1) : "0";
+    const ngPct = total > 0 ? ((data[1].value / total) * 100).toFixed(1) : "0";
+    return (
+      <div className="flex flex-col items-center">
+        <p className="text-xs font-bold text-[hsl(0,0%,85%)] mb-1">{title}</p>
+        <div className="relative w-24 h-24">
+          <ChartContainer config={chartConfig} className="h-24 w-24">
+            <PieChart>
+              <Pie data={data} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" strokeWidth={0}>
+                {data.map((_, i) => (
+                  <Cell key={i} fill={DONUT_COLORS[i]} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-[hsl(0,0%,80%)]">{total}ea</span>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-1">
+          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}</span>
+          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}</span>
+        </div>
+        <div className="flex gap-3">
+          <span className="text-[9px] text-[hsl(0,0%,60%)]">■OK</span>
+          <span className="text-[9px] text-[hsl(0,0%,60%)]">■NG</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="gradient-header">
-        <div className="container mx-auto px-4 py-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
-          </Button>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold">Dashboard</h1>
-          <p className="mt-2 text-primary-foreground/70 text-lg">
-            Indicadores e gráficos dos try-outs realizados.
-          </p>
+    <div className="min-h-screen bg-[hsl(220,20%,10%)]">
+      {/* Header */}
+      <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-4 py-3 flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/")}
+          className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)]"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
+        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-lg text-[hsl(0,0%,50%)]">☐</span>
+          <h1 className="text-xl font-bold text-[hsl(0,0%,90%)] font-heading tracking-wide">
+            Suppliers Try-Outs Status
+          </h1>
         </div>
-      </header>
+        <div className="ml-auto text-xs text-[hsl(0,0%,50%)]">
+          Total: {totalAll} registros
+        </div>
+      </div>
 
-      <main className="container mx-auto px-4 -mt-6 pb-12 space-y-6">
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-info/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-info" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Registros</p>
-                <p className="text-2xl font-heading font-bold">{totalAll}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Droplets className="w-6 h-6 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Injeção</p>
-                <p className="text-2xl font-heading font-bold">{totalInjection}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                <Paintbrush className="w-6 h-6 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Pintura</p>
-                <p className="text-2xl font-heading font-bold">{paintingCount}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Wrench className="w-6 h-6 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Montagem</p>
-                <p className="text-2xl font-heading font-bold">{assemblyCount}</p>
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main grid */}
+      <main className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* LEFT: General Quality Incoming Status table */}
+        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+          <SectionHeader>General Quality Incoming Status</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium">Fornecedor</th>
+                <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium">Qty PN</th>
+                <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium" colSpan={2}>
+                  <div>T/Out Status</div>
+                  <div className="flex text-[10px] text-[hsl(0,0%,55%)]">
+                    <span className="flex-1">OK</span>
+                    <span className="flex-1">NG</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplierData.map((s, i) => (
+                <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-2 py-1 text-[hsl(210,70%,60%)] underline cursor-pointer">{s.name}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
+                </tr>
+              ))}
+              <tr className="bg-[hsl(220,10%,20%)] font-bold">
+                <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{totalInjection}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ok, 0)}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ng, 0)}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* Improvement indicator */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-warning/10 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Precisam Melhoria</p>
-                <p className="text-2xl font-heading font-bold">{needsImprovement}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-success/10 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Taxa de Aprovação</p>
-                <p className="text-2xl font-heading font-bold">{100 - improvementRate}%</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* CENTER: Supplier T/Out Status (horizontal bars) */}
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+          <SectionHeader>Supplier T/Out Status</SectionHeader>
+          <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier T/Outs OK vs NG</p>
+          {supplierData.length > 0 ? (
+            <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 70, right: 30, top: 5, bottom: 5 }}>
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" width={65} tick={{ fontSize: 10, fill: "hsl(0,0%,70%)" }} axisLine={false} tickLine={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="ok" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
+                <Bar dataKey="ng" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <p className="text-[hsl(0,0%,50%)] text-xs text-center py-12">Sem dados.</p>
+          )}
         </div>
 
-        {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Try-outs por Projeto */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Try-outs por Projeto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {projectData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <BarChart data={projectData} layout="vertical" margin={{ left: 80, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis type="category" dataKey="name" width={75} tick={{ fontSize: 12 }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="value" fill="hsl(210, 80%, 55%)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-12">Nenhum dado de injeção registrado.</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* RIGHT: Donuts + Failure Mode */}
+        <div className="lg:col-span-5 flex flex-col gap-3">
+          {/* Donut charts row */}
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3">
+            <SectionHeader>Try Out Attendance Status</SectionHeader>
+            <div className="flex justify-around mt-3">
+              <DonutChart data={weightDonut} title="Weight" />
+              <DonutChart data={dimensionalDonut} title="Dimensional" />
+              <DonutChart data={appearanceDonut} title="Appearance" />
+            </div>
+          </div>
 
-          {/* Melhorias por Categoria */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Melhorias por Categoria</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {categoryData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <PieChart>
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      dataKey="value"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {categoryData.map((_, index) => (
-                        <Cell key={index} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-12">Nenhuma melhoria registrada.</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Main Failure Mode */}
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1">
+            <SectionHeader>Main Failure Mode</SectionHeader>
+            {failureModeData.length > 0 ? (
+              <ChartContainer config={chartConfig} className="h-[180px] w-full">
+                <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,60%)" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
+                  <YAxis hide />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>
+                    {failureModeData.map((_, i) => (
+                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <p className="text-[hsl(0,0%,50%)] text-xs text-center py-8">Sem dados.</p>
+            )}
+          </div>
+        </div>
 
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Try-outs por Mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {timelineData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <LineChart data={timelineData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Line type="monotone" dataKey="count" stroke="hsl(152, 60%, 40%)" strokeWidth={2} dot={{ r: 4 }} />
-                  </LineChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-12">Sem dados no período.</p>
-              )}
-            </CardContent>
-          </Card>
+        {/* BOTTOM LEFT: Try-Out Data - Problem */}
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+          <SectionHeader>Try-Out Data – Problem</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Type</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Qty</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {problemTypes.map((p, i) => (
+                <tr key={p.type} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{p.type}</td>
+                  <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{p.qty}</td>
+                  <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{totalProblems > 0 ? ((p.qty / totalProblems) * 100).toFixed(0) : 0}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Cycle time médio por projeto */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-heading">Tempo de Ciclo Médio por Projeto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {cycleData.length > 0 ? (
-                <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <BarChart data={cycleData} margin={{ left: 20, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-30} textAnchor="end" height={60} />
-                    <YAxis />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="avg" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <p className="text-muted-foreground text-sm text-center py-12">Nenhum dado disponível.</p>
+        {/* BOTTOM RIGHT: Main Issues table */}
+        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+          <SectionHeader>Main Issues</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Supplier</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">PN</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Description</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mainIssues.length > 0 ? mainIssues.map((issue, i) => (
+                <tr key={i} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.supplier}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.pn}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={4} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
               )}
-            </CardContent>
-          </Card>
+            </tbody>
+          </table>
         </div>
       </main>
     </div>

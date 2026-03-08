@@ -10,6 +10,9 @@ import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ChangePassword from "./pages/ChangePassword";
 import Auditorias from "./pages/Auditorias";
 import AuditoriaForm from "./pages/AuditoriaForm";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";
@@ -27,7 +30,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   if (loading) {
     return (
@@ -38,6 +41,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  // Redirect to change password if must_change_password is true
+  if (profile?.must_change_password && window.location.pathname !== "/alterar-senha") {
+    return <Navigate to="/alterar-senha" replace />;
+  }
+
   return <>{children}</>;
 };
 
@@ -50,6 +59,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/esqueci-senha" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/alterar-senha" element={<ChangePassword />} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
             
             {/* Tryout */}

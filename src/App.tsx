@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
 import Dashboard from "./pages/Dashboard";
+import TryoutRegistros from "./pages/TryoutRegistros";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";

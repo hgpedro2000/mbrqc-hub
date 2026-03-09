@@ -37,7 +37,7 @@ function getTypeLabel(type: string) {
   return "Montagem";
 }
 
-function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels: Record<string, string>, checklistType: string) {
+function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels: Record<string, string>, checklistType: string, catMap?: Record<string, string>, defectMap?: Record<string, string>) {
   const rows = fields.map((key) => ({
     Campo: fieldLabels[key] || key,
     Valor: formatValue(key, data[key]),
@@ -61,7 +61,10 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
         rows.push({ Campo: `Defeito #${i + 1}`, Valor: d.description || "—" });
         rows.push({ Campo: "Melhoria necessária", Valor: d.needs_improvement ? "Sim" : "Não" });
         if (d.improvement_category) {
-          rows.push({ Campo: "Categoria", Valor: `Categoria ${d.improvement_category}` });
+          rows.push({ Campo: "Categoria da Melhoria", Valor: catMap?.[d.improvement_category] || `Categoria ${d.improvement_category}` });
+        }
+        if (d.failure_mode) {
+          rows.push({ Campo: "Modo de Falha", Valor: defectMap?.[d.failure_mode] || d.failure_mode });
         }
       });
     }

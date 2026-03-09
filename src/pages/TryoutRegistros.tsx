@@ -135,20 +135,20 @@ const TryoutRegistros = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground">
-                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+            <div className="flex items-center gap-2 md:gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">Voltar</span>
               </Button>
-              <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+              <img src={logo} alt="Hyundai Mobis" className="h-6 md:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-4">
-            <Droplets className="w-8 h-8" />
+          <div className="flex items-center gap-2 md:gap-3 mt-3 md:mt-4">
+            <Droplets className="w-6 h-6 md:w-8 md:h-8 shrink-0" />
             <div>
-              <h1 className="text-2xl font-heading font-bold">Registros de Try-Out</h1>
-              <p className="text-primary-foreground/70 text-sm">Lista mestra de checklists de Injeção, Pintura e Montagem</p>
+              <h1 className="text-lg md:text-2xl font-heading font-bold">Registros de Try-Out</h1>
+              <p className="text-primary-foreground/70 text-xs md:text-sm">Lista mestra de checklists</p>
             </div>
           </div>
         </div>

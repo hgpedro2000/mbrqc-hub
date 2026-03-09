@@ -518,21 +518,37 @@ const InjectionForm = () => {
             </div>
           </div>
 
-          {/* Fotos Gerais */}
-          <div className="form-section">
+          {/* Peça OK - somente quando NG = 0 */}
+          <div className={`form-section ${pecasNG > 0 ? "opacity-50 pointer-events-none" : ""}`}>
             <h3 className="form-section-title">
               <Camera className="w-5 h-5" />
-              Fotos Gerais
+              Peça OK
+              {pecasNG > 0 && <span className="text-xs text-muted-foreground ml-2">(Habilitado apenas quando NG = 0)</span>}
             </h3>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
+            
+            {pecasNG === 0 && totalPecas > 0 && (
+              <div className="mb-4 space-y-2">
+                <Label>Tipo de Foto *</Label>
+                <Select value={photoType} onValueChange={setPhotoType} disabled={pecasNG > 0}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o tipo de foto" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="peca_referencia">Peça Referência</SelectItem>
+                    <SelectItem value="peca_final">Peça Final</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={pecasNG > 0} />
             <Button
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full border-dashed border-2 h-20 text-muted-foreground hover:text-foreground hover:border-accent"
+              disabled={pecasNG > 0}
+              className="w-full border-dashed border-2 h-20 text-muted-foreground hover:text-foreground hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Camera className="w-5 h-5 mr-2" />
-              Clique para adicionar fotos
+              {pecasNG > 0 ? "Fotos bloqueadas quando há peças NG" : "Clique para adicionar fotos"}
             </Button>
             {photos.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">

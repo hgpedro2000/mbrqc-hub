@@ -217,7 +217,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                 <>
                   <div>
                     <SectionHeader icon={FileText} title="Identificação" />
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 bg-card rounded-lg border border-border p-3 md:p-4">
                       {identificationFields.map((key) => (
                         <DataField key={key} label={fieldLabels[key] || key} value={formatValue(key, d[key])} />
                       ))}

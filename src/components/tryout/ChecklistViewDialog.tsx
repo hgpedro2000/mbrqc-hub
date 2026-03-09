@@ -168,6 +168,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   checklistType={checklistType}
                   fields={fields}
                   fieldLabels={fieldLabels}
+                  contentRef={contentRef}
                 />
               </div>
             </div>

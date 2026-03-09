@@ -142,15 +142,15 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                 <div className="flex items-center gap-3 md:gap-4">
                   <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-16 w-auto object-contain" />
                   <div className="space-y-1 md:space-y-1.5">
-                  <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                    <Badge className={`${getTypeBadgeClass(checklistType)} h-8 px-4 inline-flex items-center leading-none font-semibold text-[10px] md:text-xs`}>
+                   <div className="flex items-center gap-2 flex-nowrap">
+                    <Badge className={`${getTypeBadgeClass(checklistType)} h-[29px] px-4 py-0 inline-flex items-center justify-center leading-none font-semibold text-[11px] shrink-0`}>
                       {getTypeLabel(checklistType)}
                     </Badge>
                     {d?.numero && (
-                      <span className="inline-flex h-8 items-center font-mono text-xs md:text-sm font-bold text-primary leading-none">#{d.numero}</span>
+                      <span className="inline-flex h-[29px] items-center justify-center font-mono text-sm font-bold text-primary leading-none shrink-0">#{d.numero}</span>
                     )}
                     {d?.razao_tryout && (
-                      <Badge variant="outline" className="h-8 px-4 inline-flex items-center leading-none text-[10px] md:text-xs">{d.razao_tryout}</Badge>
+                      <Badge variant="outline" className="h-[29px] px-4 py-0 inline-flex items-center justify-center leading-none text-[11px] shrink-0">{d.razao_tryout}</Badge>
                     )}
                   </div>
                   <h2 className="text-sm md:text-lg font-bold text-foreground">

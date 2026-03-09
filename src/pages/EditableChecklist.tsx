@@ -210,16 +210,20 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
                   <span className={`flex-1 text-sm ${checkedItems.has(item.id) ? "line-through text-muted-foreground" : "text-foreground"}`}>
                     {item.label}
                   </span>
-                  <button type="button" onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {isAdmin && (
+                    <button type="button" onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
-            <div className="flex gap-2 mt-4">
-              <Input value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} placeholder="Adicionar novo item..." onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())} />
-              <Button type="button" variant="outline" onClick={addItem} size="icon"><Plus className="w-4 h-4" /></Button>
-            </div>
+            {isAdmin && (
+              <div className="flex gap-2 mt-4">
+                <Input value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} placeholder="Adicionar novo item..." onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())} />
+                <Button type="button" variant="outline" onClick={addItem} size="icon"><Plus className="w-4 h-4" /></Button>
+              </div>
+            )}
           </div>
 
           <div className="form-section">

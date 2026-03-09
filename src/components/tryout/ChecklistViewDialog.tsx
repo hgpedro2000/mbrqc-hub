@@ -176,7 +176,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                       {getTypeLabel(checklistType)}
                     </Badge>
                     {d?.numero && (
-                      <span className="inline-flex h-[29px] items-center justify-center font-mono text-sm font-bold text-primary leading-none shrink-0">#{d.numero}</span>
+                      <span className="inline-flex h-[29px] px-3 items-center justify-center font-mono text-sm font-bold text-primary leading-none shrink-0 bg-green-50 rounded-full border border-green-200">#{d.numero}</span>
                     )}
                     {d?.razao_tryout && (
                       <Badge variant="outline" className="h-[29px] px-4 py-0 inline-flex items-center justify-center leading-none text-[11px] shrink-0 bg-yellow-100 border-yellow-300 text-yellow-800">{d.razao_tryout}</Badge>

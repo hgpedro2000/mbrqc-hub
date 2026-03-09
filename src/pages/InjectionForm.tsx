@@ -471,13 +471,34 @@ const InjectionForm = () => {
                       >
                         <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                            <SelectItem key={n} value={String(n)}>Categoria {n}</SelectItem>
+                          {defectCategories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.code}>{cat.code} - {cat.description}</SelectItem>
                           ))}
+                          {(!defectCategories || defectCategories.length === 0) && (
+                            <SelectItem value="_empty" disabled>Nenhuma categoria cadastrada</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <Label>Modo de Falha</Label>
+                    <Select
+                      value={defect.failure_mode}
+                      onValueChange={(v) => updateDefect(idx, "failure_mode", v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o modo de falha" /></SelectTrigger>
+                      <SelectContent>
+                        {defectsList?.map((def) => (
+                          <SelectItem key={def.id} value={def.code}>{def.code} - {def.description}</SelectItem>
+                        ))}
+                        {(!defectsList || defectsList.length === 0) && (
+                          <SelectItem value="_empty" disabled>Nenhum defeito cadastrado</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   {/* Defect photos */}
                   <div className="space-y-2">

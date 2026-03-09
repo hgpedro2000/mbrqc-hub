@@ -320,7 +320,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                           )}
 
                           {defect.improvement_category && (
-                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-muted text-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-orange-300 bg-orange-500 text-white text-[12px] font-semibold whitespace-nowrap shrink-0">
                               {catMap[defect.improvement_category] || `Cat. ${defect.improvement_category}`}
                             </span>
                           )}

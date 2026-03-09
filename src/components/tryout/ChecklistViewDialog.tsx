@@ -312,7 +312,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               {photos.length > 0 && (
                 <div>
                   <SectionHeader icon={Camera} title={`Fotos (${photos.length})`} />
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
                     {photos.map((photo) => {
                       const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(photo.file_path);
                       return (

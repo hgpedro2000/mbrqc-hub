@@ -29,6 +29,7 @@ const InjectionForm = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const defectFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
+  const [photoType, setPhotoType] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 

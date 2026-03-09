@@ -362,7 +362,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div ref={dashboardRef} className="min-h-screen bg-[hsl(220,20%,10%)]">
+    <div className="min-h-screen bg-[hsl(220,20%,10%)]">
       {/* Header */}
       <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-3 md:px-4 py-2 md:py-3 flex items-center gap-2 md:gap-4 flex-wrap">
         <Button

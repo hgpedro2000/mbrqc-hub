@@ -251,7 +251,7 @@ const Dashboard = () => {
             <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
               <BarChart data={supplierData} layout="vertical" margin={{ left: 70, right: 30, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={65} tick={{ fontSize: 10, fill: "hsl(0,0%,70%)" }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={65} tick={{ fontSize: 10, fill: "hsl(0,0%,100%)" }} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
                 <Bar dataKey="ng" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />

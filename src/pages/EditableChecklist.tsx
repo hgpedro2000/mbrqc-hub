@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface ChecklistItem {
   id: string;

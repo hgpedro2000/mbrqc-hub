@@ -286,11 +286,11 @@ const Dashboard = () => {
     // --- RIGHT TOP: Try Out Attendance Status (donuts) ---
     s1.addText("Try Out Attendance Status", { x: 8.7, y: 0.7, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
 
-    const donutSets = [
-      { title: "Weight", data: weightDonut, x: 8.8 },
-      { title: "Dimensional", data: dimensionalDonut, x: 10.2 },
-      { title: "Appearance", data: appearanceDonut, x: 11.6 },
-    ];
+    const donutSets = donutDataSets.slice(0, 3).map((ds, i) => ({
+      title: ds.label,
+      data: ds.data,
+      x: 8.8 + i * 1.4,
+    }));
     donutSets.forEach(({ title, data, x }) => {
       s1.addText(title, { x, y: 1.05, w: 1.2, h: 0.2, fontSize: 7, color: TXT, bold: true, align: "center" });
       const total = data[0].value + data[1].value;

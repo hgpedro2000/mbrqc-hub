@@ -107,18 +107,33 @@ const Dashboard = () => {
     .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
     .sort((a, b) => b.total - a.total);
 
-  // Donut charts data: Weight OK/NG, Dimensional OK/NG, Appearance (Visual) OK/NG
-  const getDonutData = (filterFn: (d: InjectionRow) => boolean) => {
-    const ok = injectionData.filter((d) => !d.needs_improvement || !filterFn(d)).length;
-    const ng = injectionData.filter((d) => d.needs_improvement && filterFn(d)).length;
-    return [
-      { name: "OK", value: ok },
-      { name: "NG", value: ng },
-    ];
-  };
-  const weightDonut = getDonutData((d) => d.improvement_category === 5); // Material ~ Weight
-  const dimensionalDonut = getDonutData((d) => d.improvement_category === 1);
-  const appearanceDonut = getDonutData((d) => d.improvement_category === 2);
+  // Donut charts data: based on top 3 defect categories from defects array
+  const catCountMap = new Map<string, { ok: number; ng: number }>();
+  injectionData.forEach((d) => {
+    const defects = d.defects as any[] | null;
+    if (defects && defects.length > 0) {
+      defects.forEach((def: any) => {
+        if (def.improvement_category) {
+          const label = defectCatMap.get(def.improvement_category) || def.improvement_category;
+          const existing = catCountMap.get(label) || { ok: 0, ng: 0 };
+          existing.ng++;
+          catCountMap.set(label, existing);
+        }
+      });
+    }
+  });
+  // Fill OK counts (total checklists minus NG for each category)
+  const totalChecklists = injectionData.length;
+  const topCategories = Array.from(catCountMap.entries())
+    .sort((a, b) => b[1].ng - a[1].ng)
+    .slice(0, 3);
+  const donutDataSets = topCategories.map(([label, counts]) => ({
+    label,
+    data: [
+      { name: "OK", value: totalChecklists - counts.ng },
+      { name: "NG", value: counts.ng },
+    ],
+  }));
 
   // Main Failure Mode — from defects[].failure_mode field
   const failureMap = new Map<string, number>();
@@ -271,11 +286,11 @@ const Dashboard = () => {
     // --- RIGHT TOP: Try Out Attendance Status (donuts) ---
     s1.addText("Try Out Attendance Status", { x: 8.7, y: 0.7, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
 
-    const donutSets = [
-      { title: "Weight", data: weightDonut, x: 8.8 },
-      { title: "Dimensional", data: dimensionalDonut, x: 10.2 },
-      { title: "Appearance", data: appearanceDonut, x: 11.6 },
-    ];
+    const donutSets = donutDataSets.slice(0, 3).map((ds, i) => ({
+      title: ds.label,
+      data: ds.data,
+      x: 8.8 + i * 1.4,
+    }));
     donutSets.forEach(({ title, data, x }) => {
       s1.addText(title, { x, y: 1.05, w: 1.2, h: 0.2, fontSize: 7, color: TXT, bold: true, align: "center" });
       const total = data[0].value + data[1].value;
@@ -508,9 +523,11 @@ const Dashboard = () => {
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3">
             <SectionHeader>Try Out Attendance Status</SectionHeader>
             <div className="flex justify-around mt-3">
-              <DonutChart data={weightDonut} title="Weight" />
-              <DonutChart data={dimensionalDonut} title="Dimensional" />
-              <DonutChart data={appearanceDonut} title="Appearance" />
+              {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
+                <DonutChart key={i} data={ds.data} title={ds.label} />
+              )) : (
+                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de categoria.</p>
+              )}
             </div>
           </div>
 
@@ -521,7 +538,7 @@ const Dashboard = () => {
               <ChartContainer config={chartConfig} className="h-[180px] w-full">
                 <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,60%)" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,100%)" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>

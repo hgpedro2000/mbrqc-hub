@@ -261,11 +261,18 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   }
 
   try {
+    if (typeof document !== "undefined" && "fonts" in document) {
+      await (document as Document & { fonts: FontFaceSet }).fonts.ready;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
     const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
       windowWidth: 768,
+      scrollX: 0,
+      scrollY: -window.scrollY,
     });
 
     const imgData = canvas.toDataURL("image/png");

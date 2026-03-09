@@ -133,6 +133,23 @@ const InjectionForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Validation: if NG > 0, at least one defect required
+    if (pecasNG > 0 && defects.length === 0) {
+      toast.error("É necessário registrar pelo menos um defeito quando há peças NG.");
+      return;
+    }
+
+    // Validation: if NG = 0, photo required with type
+    if (pecasNG === 0 && totalPecas > 0 && photos.length === 0) {
+      toast.error("É necessário inserir pelo menos uma foto de Peça OK.");
+      return;
+    }
+    if (pecasNG === 0 && totalPecas > 0 && !photoType) {
+      toast.error("Selecione o tipo de foto (Peça Referência ou Peça Final).");
+      return;
+    }
+
     setLoading(true);
 
     try {

@@ -18,6 +18,8 @@ interface ExportProps {
   fields: string[];
   fieldLabels: Record<string, string>;
   contentRef?: React.RefObject<HTMLDivElement>;
+  catMap?: Record<string, string>;
+  defectMap?: Record<string, string>;
 }
 
 function formatValue(key: string, value: any): string {
@@ -35,7 +37,7 @@ function getTypeLabel(type: string) {
   return "Montagem";
 }
 
-function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels: Record<string, string>, checklistType: string) {
+function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels: Record<string, string>, checklistType: string, catMap?: Record<string, string>, defectMap?: Record<string, string>) {
   const rows = fields.map((key) => ({
     Campo: fieldLabels[key] || key,
     Valor: formatValue(key, data[key]),
@@ -59,7 +61,10 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
         rows.push({ Campo: `Defeito #${i + 1}`, Valor: d.description || "—" });
         rows.push({ Campo: "Melhoria necessária", Valor: d.needs_improvement ? "Sim" : "Não" });
         if (d.improvement_category) {
-          rows.push({ Campo: "Categoria", Valor: `Categoria ${d.improvement_category}` });
+          rows.push({ Campo: "Categoria da Melhoria", Valor: catMap?.[d.improvement_category] || `Categoria ${d.improvement_category}` });
+        }
+        if (d.failure_mode) {
+          rows.push({ Campo: "Modo de Falha", Valor: defectMap?.[d.failure_mode] || d.failure_mode });
         }
       });
     }
@@ -84,7 +89,7 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
   XLSX.writeFile(wb, `checklist-${getTypeLabel(checklistType)}-${numero}.xlsx`);
 }
 
-async function exportToPptx(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string) {
+async function exportToPptx(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string, catMap?: Record<string, string>, defectMap?: Record<string, string>) {
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
   const typeLabel = getTypeLabel(checklistType);
@@ -149,6 +154,7 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
           { text: "Descrição", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
           { text: "Melhoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
           { text: "Categoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+          { text: "Modo de Falha", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
         ],
       ];
       defects.forEach((d, i) => {
@@ -156,13 +162,14 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
           { text: String(i + 1), options: { fontSize: 9 } },
           { text: d.description || "—", options: { fontSize: 9 } },
           { text: d.needs_improvement ? "Sim" : "Não", options: { fontSize: 9, color: d.needs_improvement ? "CC3333" : "227722" } },
-          { text: d.improvement_category ? `Cat. ${d.improvement_category}` : "—", options: { fontSize: 9 } },
+          { text: d.improvement_category ? (catMap?.[d.improvement_category] || `Cat. ${d.improvement_category}`) : "—", options: { fontSize: 9 } },
+          { text: d.failure_mode ? (defectMap?.[d.failure_mode] || d.failure_mode) : "—", options: { fontSize: 9 } },
         ]);
       });
 
       slideDefects.addTable(defectRows, {
         x: 0.5, y: 1.1, w: 12,
-        colW: [1, 7, 2, 2],
+        colW: [0.8, 5, 1.5, 2.5, 2.7],
         border: { type: "solid", pt: 0.5, color: "CCCCCC" },
         rowH: 0.3,
       });
@@ -305,7 +312,7 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   }
 }
 
-export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef }: ExportProps) => {
+export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef, catMap, defectMap }: ExportProps) => {
   const numero = data?.numero || "";
 
   return (
@@ -323,10 +330,10 @@ export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fi
         >
           <FileText className="w-4 h-4" /> PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportToExcel(data, fields, fieldLabels, checklistType)} className="gap-2">
+        <DropdownMenuItem onClick={() => exportToExcel(data, fields, fieldLabels, checklistType, catMap, defectMap)} className="gap-2">
           <FileSpreadsheet className="w-4 h-4" /> Excel (.xlsx)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportToPptx(data, photos, fields, fieldLabels, checklistType)} className="gap-2">
+        <DropdownMenuItem onClick={() => exportToPptx(data, photos, fields, fieldLabels, checklistType, catMap, defectMap)} className="gap-2">
           <Presentation className="w-4 h-4" /> PowerPoint (.pptx)
         </DropdownMenuItem>
       </DropdownMenuContent>

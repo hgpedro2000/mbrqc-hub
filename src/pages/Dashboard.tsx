@@ -532,10 +532,10 @@ const Dashboard = () => {
           </div>
 
           {/* Main Failure Mode */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1 rounded-lg">
             <SectionHeader>Main Failure Mode</SectionHeader>
             {failureModeData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
+              <ChartContainer config={chartConfig} className="h-[200px] md:h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
                 <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />

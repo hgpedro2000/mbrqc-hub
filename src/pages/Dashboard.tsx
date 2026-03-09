@@ -230,7 +230,7 @@ const Dashboard = () => {
         chartColors: ["C8A828", "A84420"],
         showTitle: false,
         showValue: false,
-        dataLabelPosition: "none" as pptxgen.DataLabelPosition,
+        dataLabelPosition: "none" as never,
         plotArea: { fill: { color: BG } },
       });
       const okPct = total > 0 ? ((data[0].value / total) * 100).toFixed(1) : "0";

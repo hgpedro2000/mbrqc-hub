@@ -302,7 +302,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
                       <div key={idx} className="border border-border rounded-lg p-4 bg-card">
-                        <div className="flex items-center gap-2 flex-nowrap mb-2 leading-none">
+                        <div className="flex items-center gap-2 flex-wrap mb-2 leading-none">
                           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[12px] font-bold shrink-0">
                             {idx + 1}
                           </span>
@@ -319,7 +319,13 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
                           {defect.improvement_category && (
                             <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-muted text-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
-                              Cat. {defect.improvement_category}
+                              {catMap[defect.improvement_category] || `Cat. ${defect.improvement_category}`}
+                            </span>
+                          )}
+
+                          {defect.failure_mode && (
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-accent text-accent-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                              {defectMap[defect.failure_mode] || defect.failure_mode}
                             </span>
                           )}
                         </div>

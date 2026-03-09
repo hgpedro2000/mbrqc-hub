@@ -50,13 +50,23 @@ const Dashboard = () => {
   const [assemblyCount, setAssemblyCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [suppliersMap, setSuppliersMap] = useState<Map<string, string>>(new Map());
+
   useEffect(() => {
     const fetchData = async () => {
-      const [injRes, paintRes, assemblyRes] = await Promise.all([
+      const [injRes, paintRes, assemblyRes, suppRes] = await Promise.all([
         supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight, dimensional"),
         supabase.from("painting_checklists").select("id", { count: "exact", head: true }),
         supabase.from("assembly_checklists").select("id", { count: "exact", head: true }),
+        supabase.from("suppliers").select("code, name"),
       ]);
+      // Build a map: code -> name, and name -> name (for legacy data stored by name)
+      const sMap = new Map<string, string>();
+      (suppRes.data || []).forEach((s: { code: string; name: string }) => {
+        sMap.set(s.code.toUpperCase(), s.name);
+        sMap.set(s.name.toUpperCase(), s.name);
+      });
+      setSuppliersMap(sMap);
       setInjectionData((injRes.data as InjectionRow[]) || []);
       setPaintingCount(paintRes.count || 0);
       setAssemblyCount(assemblyRes.count || 0);
@@ -69,14 +79,20 @@ const Dashboard = () => {
   const totalInjection = injectionData.length;
   const totalAll = totalInjection + paintingCount + assemblyCount;
 
+  // Helper to resolve supplier name from catalog
+  const resolveSupplierName = (raw: string) => {
+    return suppliersMap.get(raw.toUpperCase()) || raw;
+  };
+
   // Supplier table + horizontal bar data
   const supplierMap = new Map<string, { ok: number; ng: number; pns: Set<string> }>();
   injectionData.forEach((d) => {
-    const existing = supplierMap.get(d.fornecedor) || { ok: 0, ng: 0, pns: new Set<string>() };
+    const resolvedName = resolveSupplierName(d.fornecedor);
+    const existing = supplierMap.get(resolvedName) || { ok: 0, ng: 0, pns: new Set<string>() };
     if (d.needs_improvement) existing.ng++;
     else existing.ok++;
     existing.pns.add(d.part_number);
-    supplierMap.set(d.fornecedor, existing);
+    supplierMap.set(resolvedName, existing);
   });
   const supplierData = Array.from(supplierMap.entries())
     .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
@@ -122,7 +138,7 @@ const Dashboard = () => {
     .filter((d) => d.needs_improvement)
     .slice(0, 8)
     .map((d) => ({
-      supplier: d.fornecedor,
+      supplier: resolveSupplierName(d.fornecedor),
       pn: d.part_number,
       description: d.part_name,
       category: d.improvement_category ? IMPROVEMENT_CATEGORIES[d.improvement_category] : "—",

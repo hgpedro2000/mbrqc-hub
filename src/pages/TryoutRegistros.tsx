@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -12,14 +12,18 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 
 const TryoutRegistros = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: string } | null>(null);
+  const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: injectionData = [], isLoading: loadingInj } = useQuery({
@@ -27,7 +31,7 @@ const TryoutRegistros = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("injection_checklists")
-        .select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_at")
+        .select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -39,7 +43,7 @@ const TryoutRegistros = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("painting_checklists")
-        .select("id, numero, nome, data, created_at")
+        .select("id, numero, nome, data, created_by, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -51,7 +55,7 @@ const TryoutRegistros = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assembly_checklists")
-        .select("id, numero, nome, data, created_at")
+        .select("id, numero, nome, data, created_by, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
@@ -116,16 +120,24 @@ const TryoutRegistros = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const AdminActions = ({ id, table }: { id: string; table: string }) => {
-    if (!isAdmin) return null;
+  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+    const isOwner = user && createdBy === user.id;
+    const canEdit = isAdmin || isOwner;
     return (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
-          <Pencil className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id, type: table as any }); }}>
+          <Eye className="w-3.5 h-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        {canEdit && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {isAdmin && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     );
   };
@@ -218,7 +230,7 @@ const TryoutRegistros = () => {
                           <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                         </div>
                       </div>
-                      <AdminActions id={item.id} table="injection_checklists" />
+                      <EditActions id={item.id} table="injection_checklists" createdBy={item.created_by} />
                     </div>
                   </div>
                 ))}
@@ -246,7 +258,7 @@ const TryoutRegistros = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p>
                       </div>
-                      <AdminActions id={item.id} table="painting_checklists" />
+                      <EditActions id={item.id} table="painting_checklists" createdBy={item.created_by} />
                     </div>
                   </div>
                 ))}
@@ -274,7 +286,7 @@ const TryoutRegistros = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p>
                       </div>
-                      <AdminActions id={item.id} table="assembly_checklists" />
+                      <EditActions id={item.id} table="assembly_checklists" createdBy={item.created_by} />
                     </div>
                   </div>
                 ))}
@@ -298,6 +310,12 @@ const TryoutRegistros = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ChecklistViewDialog
+        open={!!viewTarget}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        checklistId={viewTarget?.id || null}
+        checklistType={viewTarget?.type || "injection_checklists"}
+      />
     </div>
   );
 };

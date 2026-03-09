@@ -20,7 +20,7 @@ const modules = [
 ];
 
 const Index = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
@@ -32,7 +32,7 @@ const Index = () => {
   const { data: injectionData = [] } = useQuery({
     queryKey: ["injection-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -41,7 +41,7 @@ const Index = () => {
   const { data: paintingData = [] } = useQuery({
     queryKey: ["painting-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -50,7 +50,7 @@ const Index = () => {
   const { data: assemblyData = [] } = useQuery({
     queryKey: ["assembly-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -98,16 +98,20 @@ const Index = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const AdminActions = ({ id, table }: { id: string; table: string }) => {
-    if (!isAdmin) return null;
+  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+    const isOwner = user && createdBy === user.id;
+    const canEdit = isAdmin || isOwner;
+    if (!canEdit) return null;
     return (
       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
           <Pencil className="w-3.5 h-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        {isAdmin && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     );
   };
@@ -152,7 +156,7 @@ const Index = () => {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
-                <AdminActions id={item.id} table={table} />
+                <EditActions id={item.id} table={table} createdBy={item.created_by} />
               </div>
             </div>
           </div>

@@ -131,7 +131,9 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
         if (error) throw error;
         recordId = id!;
       } else {
-        const { data: record, error } = await supabase.from(tableName).insert(payload).select("id").single();
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single();
         if (error) throw error;
         recordId = record.id;
       }

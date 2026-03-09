@@ -89,7 +89,7 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
   XLSX.writeFile(wb, `checklist-${getTypeLabel(checklistType)}-${numero}.xlsx`);
 }
 
-async function exportToPptx(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string) {
+async function exportToPptx(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string, catMap?: Record<string, string>, defectMap?: Record<string, string>) {
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
   const typeLabel = getTypeLabel(checklistType);

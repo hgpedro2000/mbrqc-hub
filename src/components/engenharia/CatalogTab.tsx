@@ -13,7 +13,7 @@ import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
 
 interface CatalogTabProps {
-  tableName: "defects" | "responsibilities";
+  tableName: "defects" | "responsibilities" | "defect_categories";
   title: string;
   codeLabel: string;
   codePlaceholder: string;

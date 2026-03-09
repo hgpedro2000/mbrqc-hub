@@ -31,11 +31,12 @@ const Engenharia = () => {
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="usuarios">Usuários</TabsTrigger>
             <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
             <TabsTrigger value="partnumbers">Part Numbers</TabsTrigger>
             <TabsTrigger value="defeitos">Defeitos</TabsTrigger>
+            <TabsTrigger value="cat_defeitos">Cat. Defeito</TabsTrigger>
             <TabsTrigger value="responsabilidades">Responsab.</TabsTrigger>
           </TabsList>
 
@@ -57,6 +58,15 @@ const Engenharia = () => {
               title="Defeitos"
               codeLabel="Código"
               codePlaceholder="Ex: DEF001"
+            />
+          </TabsContent>
+
+          <TabsContent value="cat_defeitos" className="form-section">
+            <CatalogTab
+              tableName="defect_categories"
+              title="Categoria de Defeito"
+              codeLabel="Código"
+              codePlaceholder="Ex: CAT001"
             />
           </TabsContent>
 

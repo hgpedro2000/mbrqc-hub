@@ -413,7 +413,7 @@ const InjectionForm = () => {
             )}
 
             {pecasNG > 0 && defects.length === 0 && (
-              <div className="text-sm text-amber-600 dark:text-amber-500 text-center py-6 border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-950/20">
+              <div className="text-sm text-destructive text-center py-6 border border-destructive/30 rounded-lg bg-destructive/5">
                 ⚠️ É necessário registrar pelo menos um defeito quando há peças NG.
               </div>
             )}

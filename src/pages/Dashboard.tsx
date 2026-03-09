@@ -137,53 +137,181 @@ const Dashboard = () => {
   const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
 
   const exportToPptx = async () => {
-    if (!dashboardRef.current) return;
+    const pptx = new pptxgen();
+    pptx.layout = "LAYOUT_WIDE";
+    const BG = "1a2035";
+    const HEADER_BG = "2a3040";
+    const TXT = "E0E0E0";
+    const TXT_DIM = "999999";
+    const BORDER_CLR = "3a4050";
+    const OK_CLR = "B33B3B";
+    const NG_CLR = "3B8F3B";
+    const ACCENT = "5B9BD5";
 
-    // Temporarily hide the export button during capture
-    const exportBtn = dashboardRef.current.querySelector('[data-export-btn]') as HTMLElement;
-    const backBtn = dashboardRef.current.querySelector('[data-back-btn]') as HTMLElement;
-    if (exportBtn) exportBtn.style.display = 'none';
-    if (backBtn) backBtn.style.display = 'none';
+    // ===== SLIDE 1: Top section =====
+    const s1 = pptx.addSlide();
+    s1.background = { color: BG };
 
-    try {
-      const canvas = await html2canvas(dashboardRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-        logging: false,
+    // Title
+    s1.addText("Suppliers Try-Outs Status", { x: 0.3, y: 0.15, w: 8, h: 0.45, fontSize: 18, color: "FFFFFF", bold: true });
+    s1.addText(`Total: ${totalAll}`, { x: 10, y: 0.15, w: 3, h: 0.45, fontSize: 11, color: TXT_DIM, align: "right" });
+
+    // --- LEFT: General Quality Incoming Status table ---
+    s1.addText("General Quality Incoming Status", { x: 0.3, y: 0.7, w: 3.8, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+
+    const supRows: pptxgen.TableRow[] = [
+      [
+        { text: "Fornecedor", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8 } },
+        { text: "Qty PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+        { text: "OK", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+        { text: "NG", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+      ],
+    ];
+    supplierData.forEach((s, i) => {
+      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
+      supRows.push([
+        { text: s.name, options: { color: ACCENT, fontSize: 8, fill: { color: rowBg } } },
+        { text: String(s.qtyPN), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+        { text: String(s.ok), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+        { text: String(s.ng), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+      ]);
+    });
+    // Total row
+    supRows.push([
+      { text: "TTL", options: { bold: true, color: TXT, fontSize: 8, fill: { color: HEADER_BG } } },
+      { text: String(totalInjection), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(supplierData.reduce((a, b) => a + b.ok, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(supplierData.reduce((a, b) => a + b.ng, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+    ]);
+    s1.addTable(supRows, { x: 0.3, y: 1.05, w: 3.8, colW: [1.6, 0.7, 0.7, 0.7], fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+
+    // --- CENTER: Supplier T/Out Status (horizontal bar chart) ---
+    s1.addText("Supplier T/Out Status", { x: 4.3, y: 0.7, w: 4.2, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    s1.addText("❖ Status of Supplier T/Outs OK vs NG", { x: 4.3, y: 1.05, w: 4.2, h: 0.2, fontSize: 7, color: TXT_DIM });
+
+    if (supplierData.length > 0) {
+      s1.addChart(pptx.ChartType.bar, [
+        { name: "OK", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ok) },
+        { name: "NG", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ng) },
+      ], {
+        x: 4.3, y: 1.3, w: 4.2, h: 3.5,
+        barDir: "bar",
+        barGrouping: "stacked",
+        chartColors: [OK_CLR, NG_CLR],
+        showValue: false,
+        catAxisLabelColor: "FFFFFF",
+        catAxisLabelFontSize: 8,
+        valAxisHidden: true,
+        catAxisLineShow: false,
+        valAxisLineShow: false,
+        plotArea: { fill: { color: BG } },
+        showLegend: true,
+        legendPos: "b",
+        legendColor: TXT_DIM,
+        legendFontSize: 7,
       });
-
-      if (exportBtn) exportBtn.style.display = '';
-      if (backBtn) backBtn.style.display = '';
-
-      const imgData = canvas.toDataURL("image/png");
-
-      const pptx = new pptxgen();
-      pptx.layout = "LAYOUT_WIDE";
-
-      const slide = pptx.addSlide();
-      slide.background = { color: "1a1f2e" };
-
-      // Calculate dimensions to fit 13.33 x 7.5 (widescreen) while maintaining aspect ratio
-      const canvasRatio = canvas.width / canvas.height;
-      const slideW = 13.33;
-      const slideH = 7.5;
-      let w = slideW;
-      let h = w / canvasRatio;
-      if (h > slideH) {
-        h = slideH;
-        w = h * canvasRatio;
-      }
-      const x = (slideW - w) / 2;
-      const y = (slideH - h) / 2;
-
-      slide.addImage({ data: imgData, x, y, w, h });
-
-      await pptx.writeFile({ fileName: "Dashboard_TryOut_Status.pptx" });
-    } catch {
-      if (exportBtn) exportBtn.style.display = '';
-      if (backBtn) backBtn.style.display = '';
     }
+
+    // --- RIGHT TOP: Try Out Attendance Status (donuts) ---
+    s1.addText("Try Out Attendance Status", { x: 8.7, y: 0.7, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+
+    const donutSets = [
+      { title: "Weight", data: weightDonut, x: 8.8 },
+      { title: "Dimensional", data: dimensionalDonut, x: 10.2 },
+      { title: "Appearance", data: appearanceDonut, x: 11.6 },
+    ];
+    donutSets.forEach(({ title, data, x }) => {
+      s1.addText(title, { x, y: 1.05, w: 1.2, h: 0.2, fontSize: 7, color: TXT, bold: true, align: "center" });
+      const total = data[0].value + data[1].value;
+      s1.addChart(pptx.ChartType.doughnut, [
+        { name: title, labels: ["OK", "NG"], values: [data[0].value, data[1].value] },
+      ], {
+        x, y: 1.3, w: 1.2, h: 1.4,
+        chartColors: ["C8A828", "A84420"],
+        showTitle: false,
+        showValue: false,
+        dataLabelPosition: "none" as pptxgen.DataLabelPosition,
+        plotArea: { fill: { color: BG } },
+      });
+      const okPct = total > 0 ? ((data[0].value / total) * 100).toFixed(1) : "0";
+      const ngPct = total > 0 ? ((data[1].value / total) * 100).toFixed(1) : "0";
+      s1.addText(`OK ${okPct}%  NG ${ngPct}%`, { x, y: 2.75, w: 1.2, h: 0.2, fontSize: 6, color: TXT_DIM, align: "center" });
+    });
+
+    // --- RIGHT BOTTOM: Main Failure Mode (bar chart) ---
+    s1.addText("Main Failure Mode", { x: 8.7, y: 3.1, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+
+    if (failureModeData.length > 0) {
+      s1.addChart(pptx.ChartType.bar, [
+        { name: "Qty", labels: failureModeData.map(f => f.name), values: failureModeData.map(f => f.value) },
+      ], {
+        x: 8.7, y: 3.45, w: 4.3, h: 2.0,
+        barDir: "col",
+        chartColors: [ACCENT],
+        showValue: true,
+        dataLabelColor: TXT,
+        dataLabelFontSize: 8,
+        dataLabelPosition: "outEnd",
+        catAxisLabelColor: TXT_DIM,
+        catAxisLabelFontSize: 7,
+        valAxisHidden: true,
+        catAxisLineShow: false,
+        valAxisLineShow: false,
+        plotArea: { fill: { color: BG } },
+        showLegend: false,
+      });
+    }
+
+    // ===== SLIDE 2: Bottom section =====
+    const s2 = pptx.addSlide();
+    s2.background = { color: BG };
+
+    // --- LEFT: Try-Out Data – Problem ---
+    s2.addText("Try-Out Data – Problem", { x: 0.3, y: 0.3, w: 4.5, h: 0.3, fontSize: 12, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+
+    const probRows: pptxgen.TableRow[] = [
+      [
+        { text: "Type", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+        { text: "Qty", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9, align: "center" } },
+        { text: "%", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9, align: "center" } },
+      ],
+    ];
+    problemTypes.forEach((p, i) => {
+      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
+      probRows.push([
+        { text: p.type, options: { color: TXT, fontSize: 9, fill: { color: rowBg } } },
+        { text: String(p.qty), options: { color: TXT, fontSize: 9, align: "center", fill: { color: rowBg } } },
+        { text: `${totalProblems > 0 ? ((p.qty / totalProblems) * 100).toFixed(0) : 0}%`, options: { color: TXT, fontSize: 9, align: "center", fill: { color: rowBg } } },
+      ]);
+    });
+    s2.addTable(probRows, { x: 0.3, y: 0.7, w: 4.5, colW: [2, 1.25, 1.25], fontSize: 9, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+
+    // --- RIGHT: Main Issues ---
+    s2.addText("Main Issues", { x: 5, y: 0.3, w: 8, h: 0.3, fontSize: 12, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+
+    const issueRows: pptxgen.TableRow[] = [
+      [
+        { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+        { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+        { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+        { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+      ],
+    ];
+    mainIssues.forEach((issue, i) => {
+      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
+      issueRows.push([
+        { text: issue.supplier, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
+        { text: issue.pn, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
+        { text: issue.description, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
+        { text: issue.category, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
+      ]);
+    });
+    if (mainIssues.length === 0) {
+      issueRows.push([{ text: "Sem issues registrados.", options: { color: TXT_DIM, fontSize: 8, fill: { color: "1e2538" }, colspan: 4, align: "center" } }]);
+    }
+    s2.addTable(issueRows, { x: 5, y: 0.7, w: 8, colW: [2, 1.5, 3, 1.5], fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+
+    await pptx.writeFile({ fileName: "Dashboard_TryOut_Status.pptx" });
   };
 
   if (loading) {

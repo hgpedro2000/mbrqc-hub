@@ -136,6 +136,23 @@ const UsersTab = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingId(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user-admin", {
+        body: { user_id: userId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      toast.success("Usuário excluído com sucesso!");
+      qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+      qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const toggleStatus = async (id: string, status: string) => {
     const newStatus = status === "active" ? "inactive" : "active";
     await supabase.from("profiles").update({ status: newStatus }).eq("id", id);

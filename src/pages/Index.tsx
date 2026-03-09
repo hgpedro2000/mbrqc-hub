@@ -15,8 +15,8 @@ import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 
 const modules = [
   { id: "injecao", title: "Injeção Plástica", description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.", icon: Droplets, path: "/tryout/injecao", stats: "19 campos", color: "from-blue-500/10 to-blue-600/5" },
-  { id: "pintura", title: "Pintura", description: "Checklist para processo de pintura com upload de fotos e controle de qualidade.", icon: Paintbrush, path: "/tryout/pintura", stats: "Editável", color: "from-amber-500/10 to-orange-500/5" },
-  { id: "montagem", title: "Montagem e Finalização", description: "Checklist para montagem final, verificação de acabamento e controle dimensional.", icon: Wrench, path: "/tryout/montagem", stats: "Editável", color: "from-emerald-500/10 to-green-500/5" },
+  { id: "pintura", title: "Pintura", description: "Checklist para processo de pintura com upload de fotos e controle de qualidade.", icon: Paintbrush, path: "/tryout/pintura", stats: "Incompleto", color: "from-amber-500/10 to-orange-500/5" },
+  { id: "montagem", title: "Montagem e Finalização", description: "Checklist para montagem final, verificação de acabamento e controle dimensional.", icon: Wrench, path: "/tryout/montagem", stats: "Incompleto", color: "from-emerald-500/10 to-green-500/5" },
 ];
 
 const Index = () => {

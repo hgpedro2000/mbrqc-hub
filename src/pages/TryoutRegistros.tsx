@@ -120,16 +120,24 @@ const TryoutRegistros = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const AdminActions = ({ id, table }: { id: string; table: string }) => {
-    if (!isAdmin) return null;
+  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+    const isOwner = user && createdBy === user.id;
+    const canEdit = isAdmin || isOwner;
     return (
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
-          <Pencil className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id, type: table as any }); }}>
+          <Eye className="w-3.5 h-3.5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
-          <Trash2 className="w-3.5 h-3.5" />
-        </Button>
+        {canEdit && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {isAdmin && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        )}
       </div>
     );
   };

@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose,
 } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistExportButtons } from "./ChecklistExportButtons";

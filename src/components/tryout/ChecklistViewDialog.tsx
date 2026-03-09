@@ -119,6 +119,35 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
     enabled: !!checklistId && open,
   });
 
+  const { data: defectCategories = [] } = useQuery({
+    queryKey: ["defect_categories_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defect_categories")
+        .select("code, description")
+        .eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: checklistType === "injection_checklists" && open,
+  });
+
+  const { data: defectsList = [] } = useQuery({
+    queryKey: ["defects_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defects")
+        .select("code, description")
+        .eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: checklistType === "injection_checklists" && open,
+  });
+
+  const catMap = useMemo(() => Object.fromEntries(defectCategories.map(c => [c.code, `${c.code} - ${c.description}`])), [defectCategories]);
+  const defectMap = useMemo(() => Object.fromEntries(defectsList.map(d => [d.code, `${d.code} - ${d.description}`])), [defectsList]);
+
   const fields = checklistType === "injection_checklists" ? injectionFields : simpleFields;
   const isChecklist = checklistType !== "injection_checklists";
   const d = data as any;

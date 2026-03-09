@@ -302,7 +302,18 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
     pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
 
     const typeLabel = getTypeLabel(checklistType);
-    pdf.save(`checklist-${typeLabel}-${numero || "export"}.pdf`);
+    const fileName = `checklist-${typeLabel}-${numero || "export"}.pdf`;
+    
+    // Force download via anchor element (avoids mobile browsers opening PDF in same tab)
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   } finally {
     exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
     if (parent) {

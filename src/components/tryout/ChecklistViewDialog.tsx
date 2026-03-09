@@ -143,14 +143,14 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-16 w-auto object-contain" />
                   <div className="space-y-1 md:space-y-1.5">
                   <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
-                    <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold text-[10px] md:text-xs`}>
+                    <Badge className={`${getTypeBadgeClass(checklistType)} h-8 px-4 inline-flex items-center leading-none font-semibold text-[10px] md:text-xs`}>
                       {getTypeLabel(checklistType)}
                     </Badge>
                     {d?.numero && (
-                      <span className="font-mono text-xs md:text-sm font-bold text-primary">#{d.numero}</span>
+                      <span className="inline-flex h-8 items-center font-mono text-xs md:text-sm font-bold text-primary leading-none">#{d.numero}</span>
                     )}
                     {d?.razao_tryout && (
-                      <Badge variant="outline" className="text-[10px] md:text-xs">{d.razao_tryout}</Badge>
+                      <Badge variant="outline" className="h-8 px-4 inline-flex items-center leading-none text-[10px] md:text-xs">{d.razao_tryout}</Badge>
                     )}
                   </div>
                   <h2 className="text-sm md:text-lg font-bold text-foreground">

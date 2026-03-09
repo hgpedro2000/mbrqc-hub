@@ -161,7 +161,7 @@
   }
 
   .form-section {
-    @apply rounded-xl border border-border bg-card p-6 space-y-4;
+    @apply rounded-xl border border-border bg-card p-4 md:p-6 space-y-3 md:space-y-4;
   }
 
   .form-section-title {

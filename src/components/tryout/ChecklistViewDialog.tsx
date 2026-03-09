@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -89,6 +90,8 @@ const DataField = ({ label, value, highlight }: { label: string; value: string; 
 );
 
 const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }: ChecklistViewDialogProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["checklist-view", checklistType, checklistId],
     queryFn: async () => {
@@ -132,7 +135,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         ) : data ? (
-          <div className="flex flex-col">
+          <div className="flex flex-col" ref={contentRef}>
             {/* Report Header */}
             <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
@@ -165,6 +168,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   checklistType={checklistType}
                   fields={fields}
                   fieldLabels={fieldLabels}
+                  contentRef={contentRef}
                 />
               </div>
             </div>

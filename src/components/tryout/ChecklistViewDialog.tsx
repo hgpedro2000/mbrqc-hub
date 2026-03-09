@@ -172,18 +172,18 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
             <div className="px-6 py-5 space-y-6">
               {/* Rate KPI Banner for injection */}
               {checklistType === "injection_checklists" && d?.total_pecas > 0 && (
-                <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-3 md:p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+                    <div className="hidden sm:flex w-12 h-12 rounded-full bg-primary/10 items-center justify-center shrink-0">
                       <Gauge className="w-6 h-6 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Taxa de Aprovação</p>
+                    <div className="flex-1 w-full">
+                      <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">Taxa de Aprovação</p>
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-bold ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
+                        <span className={`text-2xl md:text-3xl font-bold ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
                           {rate.toFixed(1)}%
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs md:text-sm text-muted-foreground">
                           ({d.pecas_ok} OK / {d.total_pecas} total)
                         </span>
                       </div>
@@ -194,17 +194,17 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-3 md:gap-4 text-center w-full sm:w-auto">
                       <div>
-                        <p className="text-lg font-bold text-foreground">{d.total_pecas}</p>
+                        <p className="text-base md:text-lg font-bold text-foreground">{d.total_pecas}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">Total</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-emerald-600">{d.pecas_ok}</p>
+                        <p className="text-base md:text-lg font-bold text-emerald-600">{d.pecas_ok}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">OK</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-destructive">{d.pecas_ng}</p>
+                        <p className="text-base md:text-lg font-bold text-destructive">{d.pecas_ng}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">NG</p>
                       </div>
                     </div>

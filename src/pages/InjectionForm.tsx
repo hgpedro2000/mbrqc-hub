@@ -185,6 +185,7 @@ const InjectionForm = () => {
           description: d.description,
           needs_improvement: d.needs_improvement,
           improvement_category: d.needs_improvement ? d.improvement_category : null,
+          failure_mode: d.failure_mode || null,
         })),
       };
 

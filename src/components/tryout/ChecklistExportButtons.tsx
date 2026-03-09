@@ -154,6 +154,7 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
           { text: "Descrição", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
           { text: "Melhoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
           { text: "Categoria", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
+          { text: "Modo de Falha", options: { bold: true, fontSize: 10, fill: { color: "003366" }, color: "FFFFFF" } },
         ],
       ];
       defects.forEach((d, i) => {
@@ -161,7 +162,8 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
           { text: String(i + 1), options: { fontSize: 9 } },
           { text: d.description || "—", options: { fontSize: 9 } },
           { text: d.needs_improvement ? "Sim" : "Não", options: { fontSize: 9, color: d.needs_improvement ? "CC3333" : "227722" } },
-          { text: d.improvement_category ? `Cat. ${d.improvement_category}` : "—", options: { fontSize: 9 } },
+          { text: d.improvement_category ? (catMap?.[d.improvement_category] || `Cat. ${d.improvement_category}`) : "—", options: { fontSize: 9 } },
+          { text: d.failure_mode ? (defectMap?.[d.failure_mode] || d.failure_mode) : "—", options: { fontSize: 9 } },
         ]);
       });
 

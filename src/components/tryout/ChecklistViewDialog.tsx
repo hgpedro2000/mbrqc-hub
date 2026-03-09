@@ -273,22 +273,23 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
                       <div key={idx} className="border border-border rounded-lg p-4 bg-card">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap mb-2">
                           <div className="w-7 h-7 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                             <span className="text-xs font-bold leading-none text-center">{idx + 1}</span>
                           </div>
 
-                          <Badge variant="secondary" className="h-7 px-3 inline-flex items-center justify-center leading-none text-xs font-semibold whitespace-nowrap">
+                          <Badge variant="secondary" className="h-7 px-2.5 sm:px-3 py-0 inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">
                             Defeito #{idx + 1}
                           </Badge>
 
                           {defect.needs_improvement && (
-                            <Badge variant="destructive" className="h-7 px-3 inline-flex items-center justify-center leading-none text-xs font-semibold whitespace-nowrap">Melhoria necessária</Badge>
+                            <Badge variant="destructive" className="h-7 px-2.5 sm:px-3 py-0 inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">Melhoria necessária</Badge>
                           )}
                           {defect.improvement_category && (
-                            <Badge variant="secondary" className="h-7 px-3 inline-flex items-center justify-center leading-none text-xs font-semibold whitespace-nowrap">Cat. {defect.improvement_category}</Badge>
+                            <Badge variant="secondary" className="h-7 px-2.5 sm:px-3 py-0 inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">Cat. {defect.improvement_category}</Badge>
                           )}
                         </div>
+                        <p className="text-sm text-foreground pl-8">{defect.description || "—"}</p>
                         <p className="text-sm text-foreground pl-8">{defect.description || "—"}</p>
                       </div>
                     ))}

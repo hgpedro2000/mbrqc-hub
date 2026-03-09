@@ -18,6 +18,7 @@ interface DefectEntry {
   description: string;
   needs_improvement: boolean;
   improvement_category: string;
+  failure_mode: string;
   photos: { name: string; url: string; file: File }[];
 }
 

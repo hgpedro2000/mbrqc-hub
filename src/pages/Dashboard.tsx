@@ -538,7 +538,7 @@ const Dashboard = () => {
               <ChartContainer config={chartConfig} className="h-[180px] w-full">
                 <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,100%)" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>

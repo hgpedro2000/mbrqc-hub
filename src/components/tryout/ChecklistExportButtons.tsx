@@ -169,7 +169,7 @@ async function exportToPptx(data: Record<string, any>, photos: any[], fields: st
 
       slideDefects.addTable(defectRows, {
         x: 0.5, y: 1.1, w: 12,
-        colW: [1, 7, 2, 2],
+        colW: [0.8, 5, 1.5, 2.5, 2.7],
         border: { type: "solid", pt: 0.5, color: "CCCCCC" },
         rowH: 0.3,
       });

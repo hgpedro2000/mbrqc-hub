@@ -262,54 +262,50 @@ const Dashboard = () => {
       });
     }
 
-    // ===== SLIDE 2: Bottom section =====
-    const s2 = pptx.addSlide();
-    s2.background = { color: BG };
-
-    // --- LEFT: Try-Out Data – Problem ---
-    s2.addText("Try-Out Data – Problem", { x: 0.3, y: 0.3, w: 4.5, h: 0.3, fontSize: 12, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    // --- BOTTOM LEFT: Try-Out Data – Problem (on same slide) ---
+    s1.addText("Try-Out Data – Problem", { x: 0.3, y: 5.1, w: 3.8, h: 0.25, fontSize: 9, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
 
     const probRows: pptxgen.TableRow[] = [
       [
-        { text: "Type", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
-        { text: "Qty", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9, align: "center" } },
-        { text: "%", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9, align: "center" } },
+        { text: "Type", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+        { text: "Qty", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, align: "center" } },
+        { text: "%", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, align: "center" } },
       ],
     ];
     problemTypes.forEach((p, i) => {
       const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
       probRows.push([
-        { text: p.type, options: { color: TXT, fontSize: 9, fill: { color: rowBg } } },
-        { text: String(p.qty), options: { color: TXT, fontSize: 9, align: "center", fill: { color: rowBg } } },
-        { text: `${totalProblems > 0 ? ((p.qty / totalProblems) * 100).toFixed(0) : 0}%`, options: { color: TXT, fontSize: 9, align: "center", fill: { color: rowBg } } },
+        { text: p.type, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: String(p.qty), options: { color: TXT, fontSize: 7, align: "center", fill: { color: rowBg } } },
+        { text: `${totalProblems > 0 ? ((p.qty / totalProblems) * 100).toFixed(0) : 0}%`, options: { color: TXT, fontSize: 7, align: "center", fill: { color: rowBg } } },
       ]);
     });
-    s2.addTable(probRows, { x: 0.3, y: 0.7, w: 4.5, colW: [2, 1.25, 1.25], fontSize: 9, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+    s1.addTable(probRows, { x: 0.3, y: 5.4, w: 3.8, colW: [1.6, 1.1, 1.1], fontSize: 7, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
 
-    // --- RIGHT: Main Issues ---
-    s2.addText("Main Issues", { x: 5, y: 0.3, w: 8, h: 0.3, fontSize: 12, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    // --- BOTTOM RIGHT: Main Issues (on same slide) ---
+    s1.addText("Main Issues", { x: 4.3, y: 5.1, w: 8.7, h: 0.25, fontSize: 9, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
 
     const issueRows: pptxgen.TableRow[] = [
       [
-        { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
-        { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
-        { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
-        { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9 } },
+        { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+        { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+        { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+        { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
       ],
     ];
-    mainIssues.forEach((issue, i) => {
+    mainIssues.slice(0, 8).forEach((issue, i) => {
       const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
       issueRows.push([
-        { text: issue.supplier, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
-        { text: issue.pn, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
-        { text: issue.description, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
-        { text: issue.category, options: { color: TXT, fontSize: 8, fill: { color: rowBg } } },
+        { text: issue.supplier, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.pn, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.description, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.category, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
       ]);
     });
     if (mainIssues.length === 0) {
-      issueRows.push([{ text: "Sem issues registrados.", options: { color: TXT_DIM, fontSize: 8, fill: { color: "1e2538" }, colspan: 4, align: "center" } }]);
+      issueRows.push([{ text: "Sem issues registrados.", options: { color: TXT_DIM, fontSize: 7, fill: { color: "1e2538" }, colspan: 4, align: "center" } }]);
     }
-    s2.addTable(issueRows, { x: 5, y: 0.7, w: 8, colW: [2, 1.5, 3, 1.5], fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+    s1.addTable(issueRows, { x: 4.3, y: 5.4, w: 8.7, colW: [2, 1.5, 3.5, 1.7], fontSize: 7, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
 
     await pptx.writeFile({ fileName: "Dashboard_TryOut_Status.pptx" });
   };

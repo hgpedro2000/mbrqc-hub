@@ -417,8 +417,8 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex gap-3 mt-1">
-          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}</span>
-          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}</span>
+          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}%</span>
+          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}%</span>
         </div>
         <div className="flex gap-3">
           <span className="text-[9px] text-[hsl(0,0%,60%)]">■OK</span>
@@ -535,10 +535,10 @@ const Dashboard = () => {
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1">
             <SectionHeader>Main Failure Mode</SectionHeader>
             {failureModeData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="h-[180px] w-full">
+              <ChartContainer config={chartConfig} className="h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
                 <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "hsl(0,0%,100%)" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>

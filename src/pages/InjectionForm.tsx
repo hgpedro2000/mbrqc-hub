@@ -68,6 +68,32 @@ const InjectionForm = () => {
     enabled: isEdit,
   });
 
+  const { data: defectCategories } = useQuery({
+    queryKey: ["defect_categories_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defect_categories")
+        .select("*")
+        .eq("active", true)
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: defectsList } = useQuery({
+    queryKey: ["defects_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defects")
+        .select("*")
+        .eq("active", true)
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     if (existing) {
       setFornecedor(existing.fornecedor);

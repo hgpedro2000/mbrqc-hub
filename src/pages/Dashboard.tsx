@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Download } from "lucide-react";
 import pptxgen from "pptxgenjs";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -44,6 +45,7 @@ interface InjectionRow {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const dashboardRef = React.useRef<HTMLDivElement>(null);
   const [injectionData, setInjectionData] = useState<InjectionRow[]>([]);
   const [paintingCount, setPaintingCount] = useState(0);
   const [assemblyCount, setAssemblyCount] = useState(0);
@@ -136,77 +138,53 @@ const Dashboard = () => {
   const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
 
   const exportToPptx = async () => {
-    const pptx = new pptxgen();
-    pptx.layout = "LAYOUT_WIDE";
+    if (!dashboardRef.current) return;
 
-    // Slide 1 - Summary
-    const slide1 = pptx.addSlide();
-    slide1.background = { color: "1a1f2e" };
-    slide1.addText("Suppliers Try-Outs Status", { x: 0.5, y: 0.2, w: 9, h: 0.6, fontSize: 24, color: "FFFFFF", bold: true });
-    slide1.addText(`Total Registros: ${totalAll} | Injeção: ${totalInjection} | Pintura: ${paintingCount} | Montagem: ${assemblyCount}`, { x: 0.5, y: 0.9, w: 9, h: 0.4, fontSize: 12, color: "AAAAAA" });
+    // Temporarily hide the export button during capture
+    const exportBtn = dashboardRef.current.querySelector('[data-export-btn]') as HTMLElement;
+    const backBtn = dashboardRef.current.querySelector('[data-back-btn]') as HTMLElement;
+    if (exportBtn) exportBtn.style.display = 'none';
+    if (backBtn) backBtn.style.display = 'none';
 
-    // Supplier table
-    const tableRows: pptxgen.TableRow[] = [
-      [
-        { text: "Fornecedor", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10 } },
-        { text: "Qty PN", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10, align: "center" } },
-        { text: "OK", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10, align: "center" } },
-        { text: "NG", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10, align: "center" } },
-      ],
-    ];
-    supplierData.forEach((s) => {
-      tableRows.push([
-        { text: s.name, options: { color: "CCCCCC", fontSize: 9 } },
-        { text: String(s.qtyPN), options: { color: "CCCCCC", fontSize: 9, align: "center" } },
-        { text: String(s.ok), options: { color: "CCCCCC", fontSize: 9, align: "center" } },
-        { text: String(s.ng), options: { color: "CCCCCC", fontSize: 9, align: "center" } },
-      ]);
-    });
-    slide1.addTable(tableRows, { x: 0.5, y: 1.5, w: 5, fontSize: 9, border: { type: "solid", pt: 0.5, color: "444444" } });
-
-    // Problem types table
-    const slide2 = pptx.addSlide();
-    slide2.background = { color: "1a1f2e" };
-    slide2.addText("Try-Out Data – Problem & Main Issues", { x: 0.5, y: 0.2, w: 9, h: 0.6, fontSize: 20, color: "FFFFFF", bold: true });
-
-    const probRows: pptxgen.TableRow[] = [
-      [
-        { text: "Type", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10 } },
-        { text: "Qty", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10, align: "center" } },
-        { text: "%", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 10, align: "center" } },
-      ],
-    ];
-    problemTypes.forEach((p) => {
-      probRows.push([
-        { text: p.type, options: { color: "CCCCCC", fontSize: 9 } },
-        { text: String(p.qty), options: { color: "CCCCCC", fontSize: 9, align: "center" } },
-        { text: `${totalProblems > 0 ? ((p.qty / totalProblems) * 100).toFixed(0) : 0}%`, options: { color: "CCCCCC", fontSize: 9, align: "center" } },
-      ]);
-    });
-    slide2.addTable(probRows, { x: 0.5, y: 1.0, w: 4, fontSize: 9, border: { type: "solid", pt: 0.5, color: "444444" } });
-
-    // Main issues table
-    if (mainIssues.length > 0) {
-      const issueRows: pptxgen.TableRow[] = [
-        [
-          { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 9 } },
-          { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 9 } },
-          { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 9 } },
-          { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: "2a3040" }, fontSize: 9 } },
-        ],
-      ];
-      mainIssues.forEach((issue) => {
-        issueRows.push([
-          { text: issue.supplier, options: { color: "CCCCCC", fontSize: 8 } },
-          { text: issue.pn, options: { color: "CCCCCC", fontSize: 8 } },
-          { text: issue.description, options: { color: "CCCCCC", fontSize: 8 } },
-          { text: issue.category, options: { color: "CCCCCC", fontSize: 8 } },
-        ]);
+    try {
+      const canvas = await html2canvas(dashboardRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+        logging: false,
       });
-      slide2.addTable(issueRows, { x: 5, y: 1.0, w: 8, fontSize: 8, border: { type: "solid", pt: 0.5, color: "444444" } });
-    }
 
-    await pptx.writeFile({ fileName: "Dashboard_TryOut_Status.pptx" });
+      if (exportBtn) exportBtn.style.display = '';
+      if (backBtn) backBtn.style.display = '';
+
+      const imgData = canvas.toDataURL("image/png");
+
+      const pptx = new pptxgen();
+      pptx.layout = "LAYOUT_WIDE";
+
+      const slide = pptx.addSlide();
+      slide.background = { color: "1a1f2e" };
+
+      // Calculate dimensions to fit 13.33 x 7.5 (widescreen) while maintaining aspect ratio
+      const canvasRatio = canvas.width / canvas.height;
+      const slideW = 13.33;
+      const slideH = 7.5;
+      let w = slideW;
+      let h = w / canvasRatio;
+      if (h > slideH) {
+        h = slideH;
+        w = h * canvasRatio;
+      }
+      const x = (slideW - w) / 2;
+      const y = (slideH - h) / 2;
+
+      slide.addImage({ data: imgData, x, y, w, h });
+
+      await pptx.writeFile({ fileName: "Dashboard_TryOut_Status.pptx" });
+    } catch {
+      if (exportBtn) exportBtn.style.display = '';
+      if (backBtn) backBtn.style.display = '';
+    }
   };
 
   if (loading) {
@@ -257,10 +235,11 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[hsl(220,20%,10%)]">
+    <div ref={dashboardRef} className="min-h-screen bg-[hsl(220,20%,10%)]">
       {/* Header */}
       <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-3 md:px-4 py-2 md:py-3 flex items-center gap-2 md:gap-4 flex-wrap">
         <Button
+          data-back-btn
           variant="ghost"
           size="sm"
           onClick={() => navigate("/tryout")}
@@ -277,6 +256,7 @@ const Dashboard = () => {
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {totalAll}</span>
           <Button
+            data-export-btn
             variant="outline"
             size="sm"
             onClick={exportToPptx}

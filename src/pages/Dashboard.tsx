@@ -508,8 +508,8 @@ const Dashboard = () => {
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={110} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="ok" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
-                <Bar dataKey="ng" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
+                <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
+                <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
               </BarChart>
             </ChartContainer>
           ) : (

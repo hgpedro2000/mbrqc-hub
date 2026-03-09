@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 import pptxgen from "pptxgenjs";
 import { Button } from "@/components/ui/button";
-import { Download, FileSpreadsheet, Presentation } from "lucide-react";
+import { Download, FileSpreadsheet, Presentation, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 import {

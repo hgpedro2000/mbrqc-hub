@@ -18,6 +18,8 @@ interface ExportProps {
   fields: string[];
   fieldLabels: Record<string, string>;
   contentRef?: React.RefObject<HTMLDivElement>;
+  catMap?: Record<string, string>;
+  defectMap?: Record<string, string>;
 }
 
 function formatValue(key: string, value: any): string {

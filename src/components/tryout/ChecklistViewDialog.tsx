@@ -198,6 +198,8 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   fields={fields}
                   fieldLabels={fieldLabels}
                   contentRef={contentRef}
+                  catMap={catMap}
+                  defectMap={defectMap}
                 />
               </div>
             </div>

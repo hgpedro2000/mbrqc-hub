@@ -164,28 +164,28 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-8 md:py-12">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                <ClipboardCheck className="w-5 h-5 text-accent-foreground" />
+        <div className="container mx-auto px-4 py-6 md:py-12">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
+                <ClipboardCheck className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
               </div>
-              <span className="text-sm font-medium tracking-wider uppercase opacity-80">Try-Out Control</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Try-Out Control</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Hub
+            <div className="flex items-center gap-1 md:gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-                <BarChart3 className="w-4 h-4 mr-2" /> Dashboard
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Dashboard</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10">
-                <LogOut className="w-4 h-4 mr-2" /> Sair
+              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Sair</span>
               </Button>
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">Try-Out</h1>
-          <p className="mt-2 text-primary-foreground/70 max-w-xl text-lg">Selecione o módulo do processo para iniciar o checklist.</p>
+          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Try-Out</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Selecione o módulo do processo para iniciar o checklist.</p>
         </div>
       </header>
 

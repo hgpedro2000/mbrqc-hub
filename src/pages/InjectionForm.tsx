@@ -18,6 +18,7 @@ interface DefectEntry {
   description: string;
   needs_improvement: boolean;
   improvement_category: string;
+  failure_mode: string;
   photos: { name: string; url: string; file: File }[];
 }
 
@@ -67,6 +68,32 @@ const InjectionForm = () => {
     enabled: isEdit,
   });
 
+  const { data: defectCategories } = useQuery({
+    queryKey: ["defect_categories_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defect_categories")
+        .select("*")
+        .eq("active", true)
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: defectsList } = useQuery({
+    queryKey: ["defects_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defects")
+        .select("*")
+        .eq("active", true)
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     if (existing) {
       setFornecedor(existing.fornecedor);
@@ -84,6 +111,7 @@ const InjectionForm = () => {
           description: d.description || "",
           needs_improvement: d.needs_improvement || false,
           improvement_category: d.improvement_category || "",
+          failure_mode: d.failure_mode || "",
           photos: [],
         })));
       }
@@ -109,7 +137,7 @@ const InjectionForm = () => {
 
   // Defect handlers
   const addDefect = () => {
-    setDefects((prev) => [...prev, { description: "", needs_improvement: false, improvement_category: "", photos: [] }]);
+    setDefects((prev) => [...prev, { description: "", needs_improvement: false, improvement_category: "", failure_mode: "", photos: [] }]);
   };
 
   const removeDefect = (index: number) => {
@@ -183,6 +211,7 @@ const InjectionForm = () => {
           description: d.description,
           needs_improvement: d.needs_improvement,
           improvement_category: d.needs_improvement ? d.improvement_category : null,
+          failure_mode: d.failure_mode || null,
         })),
       };
 
@@ -468,13 +497,34 @@ const InjectionForm = () => {
                       >
                         <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
                         <SelectContent>
-                          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                            <SelectItem key={n} value={String(n)}>Categoria {n}</SelectItem>
+                          {defectCategories?.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.code}>{cat.code} - {cat.description}</SelectItem>
                           ))}
+                          {(!defectCategories || defectCategories.length === 0) && (
+                            <SelectItem value="_empty" disabled>Nenhuma categoria cadastrada</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
                   )}
+
+                  <div className="space-y-2">
+                    <Label>Modo de Falha</Label>
+                    <Select
+                      value={defect.failure_mode}
+                      onValueChange={(v) => updateDefect(idx, "failure_mode", v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o modo de falha" /></SelectTrigger>
+                      <SelectContent>
+                        {defectsList?.map((def) => (
+                          <SelectItem key={def.id} value={def.code}>{def.code} - {def.description}</SelectItem>
+                        ))}
+                        {(!defectsList || defectsList.length === 0) && (
+                          <SelectItem value="_empty" disabled>Nenhum defeito cadastrado</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   {/* Defect photos */}
                   <div className="space-y-2">

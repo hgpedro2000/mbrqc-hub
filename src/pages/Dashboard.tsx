@@ -499,14 +499,14 @@ const Dashboard = () => {
         </div>
 
         {/* CENTER: Supplier T/Out Status (horizontal bars) */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden rounded-lg">
           <SectionHeader>Supplier T/Out Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier T/Outs OK vs NG</p>
           {supplierData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
-              <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
+            <ChartContainer config={chartConfig} className="h-[250px] md:h-[280px] w-full px-1">
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={110} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={80} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
                 <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />

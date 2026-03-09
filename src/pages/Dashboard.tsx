@@ -138,7 +138,7 @@ const Dashboard = () => {
     .filter((d) => d.needs_improvement)
     .slice(0, 8)
     .map((d) => ({
-      supplier: d.fornecedor,
+      supplier: resolveSupplierName(d.fornecedor),
       pn: d.part_number,
       description: d.part_name,
       category: d.improvement_category ? IMPROVEMENT_CATEGORIES[d.improvement_category] : "—",

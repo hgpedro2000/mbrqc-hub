@@ -246,6 +246,7 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   if (!contentRef.current) return;
 
   const el = contentRef.current;
+
   // Hide export buttons during capture
   const exportBtns = el.querySelectorAll("[data-export-btn]");
   exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
@@ -259,36 +260,52 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
     parent.style.overflow = "visible";
   }
 
+  const A4_WIDTH_MM = 210;
+  const A4_HEIGHT_MM = 297;
+  const MARGIN_MM = 10;
+  const CONTENT_WIDTH_MM = A4_WIDTH_MM - MARGIN_MM * 2;
+  const CONTENT_HEIGHT_MM = A4_HEIGHT_MM - MARGIN_MM * 2;
+  const SECTION_GAP_MM = 3;
+
   try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: 768,
-    });
+    const sections = Array.from(el.querySelectorAll("[data-pdf-section]")) as HTMLElement[];
 
-    const imgData = canvas.toDataURL("image/png");
-    const imgW = canvas.width;
-    const imgH = canvas.height;
+    if (sections.length === 0) return;
 
-    // A4 dimensions in mm
-    const pdfW = 210;
-    const margin = 8;
-    const contentW = pdfW - margin * 2;
-    const contentH = (imgH * contentW) / imgW;
+    const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    let currentY = MARGIN_MM;
 
-    const pdf = new jsPDF({
-      orientation: contentH > 297 - margin * 2 ? "portrait" : "portrait",
-      unit: "mm",
-      format: [pdfW, Math.max(contentH + margin * 2, 297)],
-    });
+    for (let i = 0; i < sections.length; i++) {
+      const section = sections[i];
 
-    pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
+      const canvas = await html2canvas(section, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: 768,
+      });
+
+      const widthPx = canvas.width / 2;
+      const heightPx = canvas.height / 2;
+      const scaleFactor = CONTENT_WIDTH_MM / widthPx;
+      const heightMM = heightPx * scaleFactor;
+
+      const remainingSpace = A4_HEIGHT_MM - MARGIN_MM - currentY;
+
+      // If section doesn't fit, add new page
+      if (heightMM > remainingSpace && currentY > MARGIN_MM) {
+        pdf.addPage();
+        currentY = MARGIN_MM;
+      }
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", MARGIN_MM, currentY, CONTENT_WIDTH_MM, heightMM);
+      currentY += heightMM + SECTION_GAP_MM;
+    }
 
     const typeLabel = getTypeLabel(checklistType);
     pdf.save(`checklist-${typeLabel}-${numero || "export"}.pdf`);
   } finally {
-    // Restore
     exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
     if (parent) {
       parent.style.maxHeight = prevMaxH || "";

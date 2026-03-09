@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,25 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Loader2, UserPlus } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 const UsersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("user");
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [resettingId, setResettingId] = useState<string | null>(null);
+
+  // Edit state
+  const [editId, setEditId] = useState("");
+  const [editEmployeeNumber, setEditEmployeeNumber] = useState("");
+  const [editFullName, setEditFullName] = useState("");
+  const [editRole, setEditRole] = useState("user");
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["eng-profiles"],
@@ -62,6 +70,67 @@ const UsersTab = () => {
       toast.error(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleEdit = (profile: any) => {
+    setEditId(profile.id);
+    setEditEmployeeNumber(profile.employee_number);
+    setEditFullName(profile.full_name);
+    setEditRole(getRoleForUser(profile.id));
+    setEditOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editFullName || !editEmployeeNumber) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    setSaving(true);
+    try {
+      // Update profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ full_name: editFullName, employee_number: editEmployeeNumber })
+        .eq("id", editId);
+      if (profileError) throw profileError;
+
+      // Update role - delete existing and insert new
+      const { error: deleteError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", editId);
+      if (deleteError) throw deleteError;
+
+      const { error: roleError } = await supabase
+        .from("user_roles")
+        .insert({ user_id: editId, role: editRole as any });
+      if (roleError) throw roleError;
+
+      toast.success("Perfil atualizado com sucesso!");
+      qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+      qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+      setEditOpen(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    setResettingId(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { user_id: userId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      toast.success("Senha resetada para 'admin123'. O usuário será obrigado a redefinir no próximo login.");
+      qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setResettingId(null);
     }
   };
 
@@ -126,6 +195,40 @@ const UsersTab = () => {
         </Dialog>
       </div>
 
+      {/* Edit Profile Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Número do Usuário *</Label>
+              <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder="Ex: 3501165" inputMode="numeric" />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome Completo *</Label>
+              <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} placeholder="Nome completo" />
+            </div>
+            <div className="space-y-2">
+              <Label>Perfil</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Padrão</SelectItem>
+                  <SelectItem value="engenharia">Engenharia</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSaveEdit} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
@@ -137,6 +240,7 @@ const UsersTab = () => {
               <TableHead>Perfil</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Último Login</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -151,10 +255,30 @@ const UsersTab = () => {
                 <TableCell className="text-sm text-muted-foreground">
                   {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
                 </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleResetPassword(p.id)}
+                      disabled={resettingId === p.id}
+                      title="Resetar senha"
+                    >
+                      {resettingId === p.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <KeyRound className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
             {profiles.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum usuário cadastrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum usuário cadastrado</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

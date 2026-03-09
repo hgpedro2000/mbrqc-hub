@@ -20,8 +20,10 @@ import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 const TryoutRegistros = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: string } | null>(null);
+  const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: injectionData = [], isLoading: loadingInj } = useQuery({

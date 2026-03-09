@@ -1,5 +1,7 @@
 import * as XLSX from "xlsx";
 import pptxgen from "pptxgenjs";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet, Presentation, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +9,7 @@ import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import React from "react";
 
 interface ExportProps {
   data: Record<string, any>;
@@ -14,6 +17,7 @@ interface ExportProps {
   checklistType: string;
   fields: string[];
   fieldLabels: Record<string, string>;
+  contentRef?: React.RefObject<HTMLDivElement>;
 }
 
 function formatValue(key: string, value: any): string {

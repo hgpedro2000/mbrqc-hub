@@ -304,8 +304,18 @@ const InjectionForm = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="qtdTryout">Quantas vez esse Tryout foi feito ?*</Label>
-                <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
+                <Label htmlFor="qtdTryout">Quantas vezes esse Tryout foi feito?*</Label>
+                <Select name="qtdTryout" required defaultValue={defaults.qtd_tryout?.toString() || ""} key={`qt-${defaults.qtd_tryout}`}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1ª</SelectItem>
+                    <SelectItem value="2">2ª</SelectItem>
+                    <SelectItem value="3">3ª</SelectItem>
+                    <SelectItem value="4">4ª</SelectItem>
+                    <SelectItem value="5">5ª</SelectItem>
+                    <SelectItem value="6">6ª</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="totalPecas">Total de Peças no Tryout *</Label>

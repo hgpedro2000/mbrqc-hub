@@ -31,14 +31,16 @@ const Engenharia = () => {
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="usuarios">Usuários</TabsTrigger>
-            <TabsTrigger value="fornecedores">Fornecedores</TabsTrigger>
-            <TabsTrigger value="partnumbers">Part Numbers</TabsTrigger>
-            <TabsTrigger value="defeitos">Defeitos</TabsTrigger>
-            <TabsTrigger value="cat_defeitos">Cat. Defeito</TabsTrigger>
-            <TabsTrigger value="responsabilidades">Responsab.</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6 h-auto">
+              <TabsTrigger value="usuarios" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Usuários</TabsTrigger>
+              <TabsTrigger value="fornecedores" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Fornecedores</TabsTrigger>
+              <TabsTrigger value="partnumbers" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Part Numbers</TabsTrigger>
+              <TabsTrigger value="defeitos" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Defeitos</TabsTrigger>
+              <TabsTrigger value="cat_defeitos" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Cat. Defeito</TabsTrigger>
+              <TabsTrigger value="responsabilidades" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Responsab.</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="usuarios" className="form-section">
             <UsersTab />

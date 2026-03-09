@@ -55,7 +55,7 @@ const MasterListFilter = ({
               value={filterValues[filter.key] || "all"}
               onValueChange={(v) => onFilterChange(filter.key, v)}
             >
-              <SelectTrigger className="w-auto min-w-[140px] h-9 text-xs">
+              <SelectTrigger className="w-full sm:w-auto min-w-[120px] md:min-w-[140px] h-9 text-xs">
                 <SelectValue placeholder={filter.label} />
               </SelectTrigger>
               <SelectContent>

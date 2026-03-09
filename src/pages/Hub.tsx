@@ -80,41 +80,41 @@ const Hub = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-8 md:py-12">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="Hyundai Mobis" className="h-10 object-contain bg-white rounded-md px-2 py-1" />
-              <span className="text-sm font-medium tracking-wider uppercase opacity-80">
+        <div className="container mx-auto px-4 py-6 md:py-12">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 md:gap-3">
+              <img src={logo} alt="Hyundai Mobis" className="h-8 md:h-10 object-contain bg-white rounded-md px-2 py-1" />
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">
                 Quality Hub
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               {showEngineering && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate("/engenharia")}
-                  className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                  className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3"
                 >
-                  <Settings2 className="w-4 h-4 mr-2" />
-                  Modo Engenharia
+                  <Settings2 className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Modo Engenharia</span>
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={signOut}
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
+                <LogOut className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">Sair</span>
               </Button>
             </div>
           </div>
-          <h1 className="text-3xl md:text-4xl font-heading font-bold mt-4">
+          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
             {getGreeting()}, {profile?.full_name?.split(" ")[0] || "Usuário"}.
           </h1>
-          <p className="mt-2 text-primary-foreground/70 max-w-xl text-lg">
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">
             Selecione o módulo para acessar.
           </p>
         </div>

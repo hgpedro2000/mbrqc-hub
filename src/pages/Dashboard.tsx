@@ -184,31 +184,30 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[hsl(220,20%,10%)]">
       {/* Header */}
-      <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-4 py-3 flex items-center gap-4">
+      <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-3 md:px-4 py-2 md:py-3 flex items-center gap-2 md:gap-4 flex-wrap">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigate("/tryout")}
-          className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)]"
+          className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)] px-2"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
+          <ArrowLeft className="w-4 h-4 md:mr-2" />
+          <span className="hidden md:inline">Voltar</span>
         </Button>
-        <div className="flex items-center gap-2">
-          <span className="text-lg text-[hsl(0,0%,50%)]">☐</span>
-          <h1 className="text-xl font-bold text-[hsl(0,0%,90%)] font-heading tracking-wide">
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-sm md:text-xl font-bold text-[hsl(0,0%,90%)] font-heading tracking-wide truncate">
             Suppliers Try-Outs Status
           </h1>
         </div>
-        <div className="ml-auto text-xs text-[hsl(0,0%,50%)]">
-          Total: {totalAll} registros
+        <div className="ml-auto text-[10px] md:text-xs text-[hsl(0,0%,50%)]">
+          Total: {totalAll}
         </div>
       </div>
 
       {/* Main grid */}
-      <main className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
         {/* LEFT: General Quality Incoming Status table */}
-        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto">
           <SectionHeader>General Quality Incoming Status</SectionHeader>
           <table className="w-full text-xs">
             <thead>
@@ -244,7 +243,7 @@ const Dashboard = () => {
         </div>
 
         {/* CENTER: Supplier T/Out Status (horizontal bars) */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden">
           <SectionHeader>Supplier T/Out Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier T/Outs OK vs NG</p>
           {supplierData.length > 0 ? (
@@ -321,7 +320,7 @@ const Dashboard = () => {
         </div>
 
         {/* BOTTOM RIGHT: Main Issues table */}
-        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto">
           <SectionHeader>Main Issues</SectionHeader>
           <table className="w-full text-xs">
             <thead>

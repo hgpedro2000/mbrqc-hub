@@ -126,7 +126,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] md:w-full">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -134,26 +134,26 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
         ) : data ? (
           <div className="flex flex-col">
             {/* Report Header */}
-            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-6 pt-6 pb-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-4">
-                  <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-16 w-auto object-contain" />
-                  <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold`}>
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-16 w-auto object-contain" />
+                  <div className="space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                    <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold text-[10px] md:text-xs`}>
                       {getTypeLabel(checklistType)}
                     </Badge>
                     {d?.numero && (
-                      <span className="font-mono text-sm font-bold text-primary">#{d.numero}</span>
+                      <span className="font-mono text-xs md:text-sm font-bold text-primary">#{d.numero}</span>
                     )}
                     {d?.razao_tryout && (
-                      <Badge variant="outline" className="text-xs">{d.razao_tryout}</Badge>
+                      <Badge variant="outline" className="text-[10px] md:text-xs">{d.razao_tryout}</Badge>
                     )}
                   </div>
-                  <h2 className="text-lg font-bold text-foreground">
+                  <h2 className="text-sm md:text-lg font-bold text-foreground">
                     Relatório de Checklist — {getTypeLabel(checklistType)}
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
                     {d?.nome} • {formatValue("data", d?.data)}
                     {d?.fornecedor ? ` • ${d.fornecedor}` : ""}
                   </p>
@@ -169,21 +169,21 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               </div>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="px-4 md:px-6 py-4 md:py-5 space-y-5 md:space-y-6">
               {/* Rate KPI Banner for injection */}
               {checklistType === "injection_checklists" && d?.total_pecas > 0 && (
-                <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-3 md:p-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
+                    <div className="hidden sm:flex w-12 h-12 rounded-full bg-primary/10 items-center justify-center shrink-0">
                       <Gauge className="w-6 h-6 text-primary" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Taxa de Aprovação</p>
+                    <div className="flex-1 w-full">
+                      <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">Taxa de Aprovação</p>
                       <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-bold ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
+                        <span className={`text-2xl md:text-3xl font-bold ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
                           {rate.toFixed(1)}%
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs md:text-sm text-muted-foreground">
                           ({d.pecas_ok} OK / {d.total_pecas} total)
                         </span>
                       </div>
@@ -194,17 +194,17 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="grid grid-cols-3 gap-3 md:gap-4 text-center w-full sm:w-auto">
                       <div>
-                        <p className="text-lg font-bold text-foreground">{d.total_pecas}</p>
+                        <p className="text-base md:text-lg font-bold text-foreground">{d.total_pecas}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">Total</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-emerald-600">{d.pecas_ok}</p>
+                        <p className="text-base md:text-lg font-bold text-emerald-600">{d.pecas_ok}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">OK</p>
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-destructive">{d.pecas_ng}</p>
+                        <p className="text-base md:text-lg font-bold text-destructive">{d.pecas_ng}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">NG</p>
                       </div>
                     </div>
@@ -217,7 +217,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                 <>
                   <div>
                     <SectionHeader icon={FileText} title="Identificação" />
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 bg-card rounded-lg border border-border p-3 md:p-4">
                       {identificationFields.map((key) => (
                         <DataField key={key} label={fieldLabels[key] || key} value={formatValue(key, d[key])} />
                       ))}
@@ -312,7 +312,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               {photos.length > 0 && (
                 <div>
                   <SectionHeader icon={Camera} title={`Fotos (${photos.length})`} />
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
                     {photos.map((photo) => {
                       const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(photo.file_path);
                       return (

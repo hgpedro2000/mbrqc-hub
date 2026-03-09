@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose,
 } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ChecklistExportButtons } from "./ChecklistExportButtons";
@@ -158,14 +159,18 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] md:w-full">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] md:w-full [&>button:last-child]:hidden">
+        {/* Custom close button on the left */}
+        <DialogClose className="absolute left-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Fechar</span>
+        </DialogClose>
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         ) : data ? (
           <div className="flex flex-col" ref={contentRef}>
-            {/* Report Header */}
             <div data-pdf-section className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                 <div className="flex items-center gap-3 md:gap-4">

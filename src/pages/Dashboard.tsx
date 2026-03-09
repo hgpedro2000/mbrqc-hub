@@ -50,13 +50,23 @@ const Dashboard = () => {
   const [assemblyCount, setAssemblyCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const [suppliersMap, setSuppliersMap] = useState<Map<string, string>>(new Map());
+
   useEffect(() => {
     const fetchData = async () => {
-      const [injRes, paintRes, assemblyRes] = await Promise.all([
+      const [injRes, paintRes, assemblyRes, suppRes] = await Promise.all([
         supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight, dimensional"),
         supabase.from("painting_checklists").select("id", { count: "exact", head: true }),
         supabase.from("assembly_checklists").select("id", { count: "exact", head: true }),
+        supabase.from("suppliers").select("code, name"),
       ]);
+      // Build a map: code -> name, and name -> name (for legacy data stored by name)
+      const sMap = new Map<string, string>();
+      (suppRes.data || []).forEach((s: { code: string; name: string }) => {
+        sMap.set(s.code.toUpperCase(), s.name);
+        sMap.set(s.name.toUpperCase(), s.name);
+      });
+      setSuppliersMap(sMap);
       setInjectionData((injRes.data as InjectionRow[]) || []);
       setPaintingCount(paintRes.count || 0);
       setAssemblyCount(assemblyRes.count || 0);

@@ -243,7 +243,7 @@ const Dashboard = () => {
         </div>
 
         {/* CENTER: Supplier T/Out Status (horizontal bars) */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden">
           <SectionHeader>Supplier T/Out Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier T/Outs OK vs NG</p>
           {supplierData.length > 0 ? (

@@ -242,139 +242,77 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-function exportToPdf(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string) {
-  const typeLabel = getTypeLabel(checklistType);
-  const numero = data.numero || "";
-  const dateStr = formatValue("data", data.data);
+async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, checklistType: string, numero: string) {
+  if (!contentRef.current) return;
 
-  const styles = `
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; color: #222; background: #fff; padding: 24px; font-size: 11px; }
-    .header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #003366; padding-bottom: 12px; margin-bottom: 16px; }
-    .header img { height: 48px; }
-    .header-text h1 { font-size: 18px; color: #003366; margin-bottom: 2px; }
-    .header-text p { font-size: 11px; color: #666; }
-    .section-title { font-size: 13px; font-weight: 700; color: #003366; text-transform: uppercase; letter-spacing: 1px; margin: 14px 0 6px; border-bottom: 1px solid #ddd; padding-bottom: 3px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 16px; margin-bottom: 8px; }
-    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 2px 12px; margin-bottom: 8px; }
-    .field label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .field p { font-size: 11px; color: #222; font-weight: 500; margin-top: 1px; }
-    .kpi-bar { background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 16px; }
-    .kpi-value { font-size: 22px; font-weight: 700; }
-    .kpi-ok { color: #16a34a; }
-    .kpi-warn { color: #d97706; }
-    .kpi-bad { color: #dc2626; }
-    .kpi-details { font-size: 10px; color: #666; }
-    table { width: 100%; border-collapse: collapse; margin-top: 4px; margin-bottom: 8px; }
-    th { background: #003366; color: #fff; font-size: 9px; text-align: left; padding: 4px 6px; }
-    td { border-bottom: 1px solid #eee; padding: 3px 6px; font-size: 10px; }
-    tr:nth-child(even) td { background: #f8f9fa; }
-    .check-ok { color: #16a34a; font-weight: 600; }
-    .check-ng { color: #dc2626; font-weight: 600; }
-    .footer { margin-top: 16px; border-top: 1px solid #ddd; padding-top: 6px; text-align: center; font-size: 9px; color: #999; }
-    .photos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 6px; }
-    .photos img { width: 100%; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; }
-    @media print { body { padding: 12px; } }
-  `;
+  const el = contentRef.current;
+  // Hide export buttons during capture
+  const exportBtns = el.querySelectorAll("[data-export-btn]");
+  exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
 
-  const identificationFields = ["numero", "nome", "data", "fornecedor", "projeto", "part_number", "part_name", "modulo"];
-  const pieceDataFields = ["razao_tryout", "razao_tryout_outro", "qtd_tryout", "total_pecas", "pecas_ok", "pecas_ng"];
-  const processFields = ["materia_prima", "injetora", "tonelagem", "cycle_time", "cooling_time", "weight"];
-  const evaluationFields = ["dimensional", "comentarios"];
-
-  const isInjection = checklistType === "injection_checklists";
-  const defects = data.defects as any[] | undefined;
-  const items = data.items as string[] | undefined;
-  const checkedItems = (data.checked_items || []) as string[];
-  const rate = data.rate ? Number(data.rate) : 0;
-
-  const renderField = (key: string) =>
-    `<div class="field"><label>${fieldLabels[key] || key}</label><p>${formatValue(key, data[key])}</p></div>`;
-
-  let body = `
-    <div class="header">
-      <img src="${hyundaiMobisLogo}" alt="Hyundai Mobis" />
-      <div class="header-text">
-        <h1>Checklist de ${typeLabel}${numero ? ` #${numero}` : ""}</h1>
-        <p>${data.nome || ""} • ${dateStr}${data.fornecedor ? ` • ${data.fornecedor}` : ""}</p>
-      </div>
-    </div>
-  `;
-
-  if (isInjection) {
-    // KPI
-    if (data.total_pecas > 0) {
-      const kpiClass = rate >= 90 ? "kpi-ok" : rate >= 70 ? "kpi-warn" : "kpi-bad";
-      body += `
-        <div class="kpi-bar">
-          <span class="kpi-value ${kpiClass}">${rate.toFixed(1)}%</span>
-          <span class="kpi-details">${data.pecas_ok} OK / ${data.total_pecas} total (${data.pecas_ng} NG)</span>
-        </div>
-      `;
-    }
-
-    body += `<div class="section-title">Identificação</div><div class="grid-4">${identificationFields.map(renderField).join("")}</div>`;
-    body += `<div class="section-title">Dados da Peça</div><div class="grid">${pieceDataFields.filter(k => !(k === "razao_tryout_outro" && !data.razao_tryout_outro)).map(renderField).join("")}</div>`;
-    body += `<div class="section-title">Parâmetros de Processo</div><div class="grid">${processFields.map(renderField).join("")}</div>`;
-    body += `<div class="section-title">Avaliação</div><div class="grid">${evaluationFields.map(renderField).join("")}</div>`;
-
-    // Defects
-    if (defects && defects.length > 0) {
-      body += `<div class="section-title">Defeitos (${defects.length})</div>`;
-      body += `<table><tr><th>#</th><th>Descrição</th><th>Melhoria</th><th>Categoria</th></tr>`;
-      defects.forEach((d: any, i: number) => {
-        body += `<tr><td>${i + 1}</td><td>${d.description || "—"}</td><td class="${d.needs_improvement ? "check-ng" : "check-ok"}">${d.needs_improvement ? "Sim" : "Não"}</td><td>${d.improvement_category ? `Cat. ${d.improvement_category}` : "—"}</td></tr>`;
-      });
-      body += `</table>`;
-    }
-  } else {
-    body += `<div class="section-title">Informações</div><div class="grid">${fields.map(renderField).join("")}</div>`;
-
-    if (items && items.length > 0) {
-      body += `<div class="section-title">Itens do Checklist</div>`;
-      body += `<table><tr><th>Item</th><th>Status</th></tr>`;
-      items.forEach((item: string) => {
-        const ok = checkedItems.includes(item);
-        body += `<tr><td>${item}</td><td class="${ok ? "check-ok" : "check-ng"}">${ok ? "✓ Conforme" : "✗ Não conforme"}</td></tr>`;
-      });
-      body += `</table>`;
-    }
+  // Temporarily expand to full height (no scroll clipping)
+  const parent = el.closest("[class*='overflow-y-auto']") as HTMLElement | null;
+  const prevMaxH = parent?.style.maxHeight;
+  const prevOverflow = parent?.style.overflow;
+  if (parent) {
+    parent.style.maxHeight = "none";
+    parent.style.overflow = "visible";
   }
 
-  // Photos
-  if (photos.length > 0) {
-    body += `<div class="section-title">Fotos (${photos.length})</div><div class="photos">`;
-    photos.forEach((photo) => {
-      const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(photo.file_path);
-      body += `<img src="${urlData.publicUrl}" alt="${photo.file_name}" />`;
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      windowWidth: 768,
     });
-    body += `</div>`;
-  }
 
-  body += `<div class="footer">Hyundai Mobis — Try-Out Control • Gerado em ${new Date().toLocaleDateString("pt-BR")}</div>`;
+    const imgData = canvas.toDataURL("image/png");
+    const imgW = canvas.width;
+    const imgH = canvas.height;
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Checklist ${typeLabel} ${numero}</title><style>${styles}</style></head><body>${body}</body></html>`;
+    // A4 dimensions in mm
+    const pdfW = 210;
+    const margin = 8;
+    const contentW = pdfW - margin * 2;
+    const contentH = (imgH * contentW) / imgW;
 
-  const printWindow = window.open("", "_blank");
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+    const pdf = new jsPDF({
+      orientation: contentH > 297 - margin * 2 ? "portrait" : "portrait",
+      unit: "mm",
+      format: [pdfW, Math.max(contentH + margin * 2, 297)],
+    });
+
+    pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
+
+    const typeLabel = getTypeLabel(checklistType);
+    pdf.save(`checklist-${typeLabel}-${numero || "export"}.pdf`);
+  } finally {
+    // Restore
+    exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
+    if (parent) {
+      parent.style.maxHeight = prevMaxH || "";
+      parent.style.overflow = prevOverflow || "";
+    }
   }
 }
 
-export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels }: ExportProps) => {
+export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef }: ExportProps) => {
+  const numero = data?.numero || "";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
+        <Button variant="outline" size="sm" className="gap-1.5" data-export-btn>
           <Download className="w-4 h-4" /> Exportar
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => exportToPdf(data, photos, fields, fieldLabels, checklistType)} className="gap-2">
+        <DropdownMenuItem
+          onClick={() => contentRef && exportToPdfFromRef(contentRef, checklistType, numero)}
+          className="gap-2"
+          disabled={!contentRef}
+        >
           <FileText className="w-4 h-4" /> PDF
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => exportToExcel(data, fields, fieldLabels, checklistType)} className="gap-2">

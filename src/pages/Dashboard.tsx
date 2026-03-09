@@ -206,7 +206,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main grid */}
-      <main className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-3">
+      <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
         {/* LEFT: General Quality Incoming Status table */}
         <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
           <SectionHeader>General Quality Incoming Status</SectionHeader>

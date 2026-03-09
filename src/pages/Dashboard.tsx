@@ -44,7 +44,7 @@ interface InjectionRow {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const dashboardRef = React.useRef<HTMLDivElement>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
   const [injectionData, setInjectionData] = useState<InjectionRow[]>([]);
   const [paintingCount, setPaintingCount] = useState(0);
   const [assemblyCount, setAssemblyCount] = useState(0);

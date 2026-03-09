@@ -523,9 +523,11 @@ const Dashboard = () => {
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3">
             <SectionHeader>Try Out Attendance Status</SectionHeader>
             <div className="flex justify-around mt-3">
-              <DonutChart data={weightDonut} title="Weight" />
-              <DonutChart data={dimensionalDonut} title="Dimensional" />
-              <DonutChart data={appearanceDonut} title="Appearance" />
+              {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
+                <DonutChart key={i} data={ds.data} title={ds.label} />
+              )) : (
+                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de categoria.</p>
+              )}
             </div>
           </div>
 

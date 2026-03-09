@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3 } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,10 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 
 const TryoutRegistros = () => {
   const navigate = useNavigate();

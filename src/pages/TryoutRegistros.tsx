@@ -174,15 +174,21 @@ const TryoutRegistros = () => {
         />
 
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); }}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="injecao" className="gap-2">
-              <Droplets className="w-4 h-4" /> Injeção ({injectionData.length})
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="injecao" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Droplets className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> 
+              <span className="truncate">Injeção</span>
+              <span className="hidden sm:inline">({injectionData.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="pintura" className="gap-2">
-              <Paintbrush className="w-4 h-4" /> Pintura ({paintingData.length})
+            <TabsTrigger value="pintura" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Paintbrush className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="truncate">Pintura</span>
+              <span className="hidden sm:inline">({paintingData.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="montagem" className="gap-2">
-              <Wrench className="w-4 h-4" /> Montagem ({assemblyData.length})
+            <TabsTrigger value="montagem" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="truncate">Montagem</span>
+              <span className="hidden sm:inline">({assemblyData.length})</span>
             </TabsTrigger>
           </TabsList>
 

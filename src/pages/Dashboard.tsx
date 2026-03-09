@@ -136,6 +136,20 @@ const Dashboard = () => {
 
   const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
 
+  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => (
+    <text
+      x={x}
+      y={y}
+      dx={-4}
+      dy={4}
+      textAnchor="end"
+      fill="hsl(0 0% 100%)"
+      style={{ fill: "hsl(0 0% 100%)", fontSize: "11px", fontWeight: 500 }}
+    >
+      {payload?.value ?? ""}
+    </text>
+  );
+
   const exportToPptx = async () => {
     const pptx = new pptxgen();
     pptx.layout = "LAYOUT_WIDE";
@@ -435,7 +449,7 @@ const Dashboard = () => {
             <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
               <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: "#FFFFFF", fontWeight: 500 }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={110} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
                 <Bar dataKey="ng" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />

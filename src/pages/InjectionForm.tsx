@@ -110,7 +110,7 @@ const InjectionForm = () => {
 
   // Defect handlers
   const addDefect = () => {
-    setDefects((prev) => [...prev, { description: "", needs_improvement: false, improvement_category: "", photos: [] }]);
+    setDefects((prev) => [...prev, { description: "", needs_improvement: false, improvement_category: "", failure_mode: "", photos: [] }]);
   };
 
   const removeDefect = (index: number) => {

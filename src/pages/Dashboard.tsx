@@ -20,14 +20,6 @@ import {
   Cell,
 } from "recharts";
 
-const IMPROVEMENT_CATEGORIES: Record<number, string> = {
-  1: "Dimensional",
-  2: "Visual",
-  3: "Funcional",
-  4: "Processo",
-  5: "Material",
-};
-
 interface InjectionRow {
   projeto: string;
   fornecedor: string;
@@ -35,6 +27,7 @@ interface InjectionRow {
   part_name: string;
   needs_improvement: boolean;
   improvement_category: number | null;
+  defects: any[] | null;
   created_at: string;
   cycle_time: number;
   cooling_time: number;

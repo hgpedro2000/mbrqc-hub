@@ -126,7 +126,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] md:w-full">
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />

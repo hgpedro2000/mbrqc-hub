@@ -258,7 +258,7 @@ const TryoutRegistros = () => {
                         </div>
                         <p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p>
                       </div>
-                      <AdminActions id={item.id} table="painting_checklists" />
+                      <EditActions id={item.id} table="painting_checklists" createdBy={item.created_by} />
                     </div>
                   </div>
                 ))}

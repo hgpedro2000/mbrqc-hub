@@ -160,6 +160,7 @@ export type Database = {
           checked_items: Json
           comentarios: string | null
           created_at: string
+          created_by: string | null
           data: string
           id: string
           items: Json
@@ -171,6 +172,7 @@ export type Database = {
           checked_items?: Json
           comentarios?: string | null
           created_at?: string
+          created_by?: string | null
           data: string
           id?: string
           items?: Json
@@ -182,6 +184,7 @@ export type Database = {
           checked_items?: Json
           comentarios?: string | null
           created_at?: string
+          created_by?: string | null
           data?: string
           id?: string
           items?: Json
@@ -505,6 +508,7 @@ export type Database = {
           comentarios: string | null
           cooling_time: number
           created_at: string
+          created_by: string | null
           cycle_time: number
           data: string
           defects: Json | null
@@ -536,6 +540,7 @@ export type Database = {
           comentarios?: string | null
           cooling_time: number
           created_at?: string
+          created_by?: string | null
           cycle_time: number
           data: string
           defects?: Json | null
@@ -567,6 +572,7 @@ export type Database = {
           comentarios?: string | null
           cooling_time?: number
           created_at?: string
+          created_by?: string | null
           cycle_time?: number
           data?: string
           defects?: Json | null
@@ -601,6 +607,7 @@ export type Database = {
           checked_items: Json
           comentarios: string | null
           created_at: string
+          created_by: string | null
           data: string
           id: string
           items: Json
@@ -612,6 +619,7 @@ export type Database = {
           checked_items?: Json
           comentarios?: string | null
           created_at?: string
+          created_by?: string | null
           data: string
           id?: string
           items?: Json
@@ -623,6 +631,7 @@ export type Database = {
           checked_items?: Json
           comentarios?: string | null
           created_at?: string
+          created_by?: string | null
           data?: string
           id?: string
           items?: Json

@@ -578,7 +578,7 @@ const Dashboard = () => {
         </div>
 
         {/* BOTTOM RIGHT: Main Issues table */}
-        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto">
+        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
           <table className="w-full text-xs">
             <thead>

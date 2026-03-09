@@ -154,8 +154,8 @@ const TryoutRegistros = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-wrap gap-3">
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-4 md:space-y-6">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <Button onClick={() => navigate("/tryout/injecao")} className="gap-2">
             <Plus className="w-4 h-4" /> Novo Checklist
           </Button>

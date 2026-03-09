@@ -417,8 +417,8 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="flex gap-3 mt-1">
-          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}</span>
-          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}</span>
+          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}%</span>
+          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}%</span>
         </div>
         <div className="flex gap-3">
           <span className="text-[9px] text-[hsl(0,0%,60%)]">■OK</span>

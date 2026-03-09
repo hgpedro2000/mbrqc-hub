@@ -449,7 +449,7 @@ const Dashboard = () => {
             <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
               <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: "#FFFFFF", fontWeight: 500 }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={110} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
                 <Bar dataKey="ng" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />

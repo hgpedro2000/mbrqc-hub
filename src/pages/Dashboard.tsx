@@ -520,9 +520,9 @@ const Dashboard = () => {
         {/* RIGHT: Donuts + Failure Mode */}
         <div className="lg:col-span-5 flex flex-col gap-3">
           {/* Donut charts row */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
             <SectionHeader>Try Out Attendance Status</SectionHeader>
-            <div className="flex justify-around mt-3">
+            <div className="flex justify-around mt-3 flex-wrap gap-2">
               {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
                 <DonutChart key={i} data={ds.data} title={ds.label} />
               )) : (

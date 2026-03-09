@@ -286,7 +286,7 @@ const InjectionForm = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="qtdTryout">Quantidade de Try-Out *</Label>
+                <Label htmlFor="qtdTryout">Quantas vez esse Tryout foi feito ?*</Label>
                 <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
               </div>
               <div className="space-y-2">

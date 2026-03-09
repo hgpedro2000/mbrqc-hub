@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -118,6 +118,35 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
     },
     enabled: !!checklistId && open,
   });
+
+  const { data: defectCategories = [] } = useQuery({
+    queryKey: ["defect_categories_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defect_categories")
+        .select("code, description")
+        .eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: checklistType === "injection_checklists" && open,
+  });
+
+  const { data: defectsList = [] } = useQuery({
+    queryKey: ["defects_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("defects")
+        .select("code, description")
+        .eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: checklistType === "injection_checklists" && open,
+  });
+
+  const catMap = useMemo(() => Object.fromEntries(defectCategories.map(c => [c.code, `${c.code} - ${c.description}`])), [defectCategories]);
+  const defectMap = useMemo(() => Object.fromEntries(defectsList.map(d => [d.code, `${d.code} - ${d.description}`])), [defectsList]);
 
   const fields = checklistType === "injection_checklists" ? injectionFields : simpleFields;
   const isChecklist = checklistType !== "injection_checklists";
@@ -273,7 +302,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
                       <div key={idx} className="border border-border rounded-lg p-4 bg-card">
-                        <div className="flex items-center gap-2 flex-nowrap mb-2 leading-none">
+                        <div className="flex items-center gap-2 flex-wrap mb-2 leading-none">
                           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[12px] font-bold shrink-0">
                             {idx + 1}
                           </span>
@@ -290,7 +319,13 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
                           {defect.improvement_category && (
                             <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-muted text-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
-                              Cat. {defect.improvement_category}
+                              {catMap[defect.improvement_category] || `Cat. ${defect.improvement_category}`}
+                            </span>
+                          )}
+
+                          {defect.failure_mode && (
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-accent text-accent-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                              {defectMap[defect.failure_mode] || defect.failure_mode}
                             </span>
                           )}
                         </div>

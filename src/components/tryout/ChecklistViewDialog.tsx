@@ -326,7 +326,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                           )}
 
                           {defect.failure_mode && (
-                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-accent text-accent-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-blue-300 bg-blue-500 text-white text-[12px] font-semibold whitespace-nowrap shrink-0">
                               {defectMap[defect.failure_mode] || defect.failure_mode}
                             </span>
                           )}

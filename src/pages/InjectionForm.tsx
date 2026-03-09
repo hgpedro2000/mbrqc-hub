@@ -85,6 +85,7 @@ const InjectionForm = () => {
           description: d.description || "",
           needs_improvement: d.needs_improvement || false,
           improvement_category: d.improvement_category || "",
+          failure_mode: d.failure_mode || "",
           photos: [],
         })));
       }

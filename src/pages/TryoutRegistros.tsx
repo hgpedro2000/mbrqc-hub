@@ -230,7 +230,7 @@ const TryoutRegistros = () => {
                           <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                         </div>
                       </div>
-                      <AdminActions id={item.id} table="injection_checklists" />
+                      <EditActions id={item.id} table="injection_checklists" createdBy={item.created_by} />
                     </div>
                   </div>
                 ))}

@@ -156,7 +156,7 @@ const Index = () => {
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
-                <AdminActions id={item.id} table={table} />
+                <EditActions id={item.id} table={table} createdBy={item.created_by} />
               </div>
             </div>
           </div>

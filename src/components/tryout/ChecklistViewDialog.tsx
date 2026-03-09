@@ -296,7 +296,6 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                         </div>
                         <p className="text-sm text-foreground pl-10">{defect.description || "—"}</p>
                       </div>
-                      </div>
                     ))}
                   </div>
                 </div>

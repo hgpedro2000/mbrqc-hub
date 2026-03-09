@@ -20,14 +20,6 @@ import {
   Cell,
 } from "recharts";
 
-const IMPROVEMENT_CATEGORIES: Record<number, string> = {
-  1: "Dimensional",
-  2: "Visual",
-  3: "Funcional",
-  4: "Processo",
-  5: "Material",
-};
-
 interface InjectionRow {
   projeto: string;
   fornecedor: string;
@@ -35,6 +27,7 @@ interface InjectionRow {
   part_name: string;
   needs_improvement: boolean;
   improvement_category: number | null;
+  defects: any[] | null;
   created_at: string;
   cycle_time: number;
   cooling_time: number;
@@ -51,22 +44,38 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const [suppliersMap, setSuppliersMap] = useState<Map<string, string>>(new Map());
+  const [defectCatMap, setDefectCatMap] = useState<Map<string, string>>(new Map());
+  const [defectsLabelMap, setDefectsLabelMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const fetchData = async () => {
-      const [injRes, paintRes, assemblyRes, suppRes] = await Promise.all([
-        supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight, dimensional"),
+      const [injRes, paintRes, assemblyRes, suppRes, catRes, defRes] = await Promise.all([
+        supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, defects, created_at, cycle_time, cooling_time, weight, dimensional"),
         supabase.from("painting_checklists").select("id", { count: "exact", head: true }),
         supabase.from("assembly_checklists").select("id", { count: "exact", head: true }),
         supabase.from("suppliers").select("code, name"),
+        supabase.from("defect_categories").select("code, description").eq("active", true),
+        supabase.from("defects").select("code, description").eq("active", true),
       ]);
-      // Build a map: code -> name, and name -> name (for legacy data stored by name)
       const sMap = new Map<string, string>();
       (suppRes.data || []).forEach((s: { code: string; name: string }) => {
         sMap.set(s.code.toUpperCase(), s.name);
         sMap.set(s.name.toUpperCase(), s.name);
       });
       setSuppliersMap(sMap);
+
+      const cMap = new Map<string, string>();
+      (catRes.data || []).forEach((c: { code: string; description: string }) => {
+        cMap.set(c.code, `${c.code} - ${c.description}`);
+      });
+      setDefectCatMap(cMap);
+
+      const dMap = new Map<string, string>();
+      (defRes.data || []).forEach((d: { code: string; description: string }) => {
+        dMap.set(d.code, `${d.code} - ${d.description}`);
+      });
+      setDefectsLabelMap(dMap);
+
       setInjectionData((injRes.data as InjectionRow[]) || []);
       setPaintingCount(paintRes.count || 0);
       setAssemblyCount(assemblyRes.count || 0);
@@ -111,38 +120,55 @@ const Dashboard = () => {
   const dimensionalDonut = getDonutData((d) => d.improvement_category === 1);
   const appearanceDonut = getDonutData((d) => d.improvement_category === 2);
 
-  // Main Failure Mode (improvement categories breakdown)
+  // Main Failure Mode — from defects[].failure_mode field
   const failureMap = new Map<string, number>();
   injectionData.forEach((d) => {
-    if (d.needs_improvement && d.improvement_category) {
-      const label = IMPROVEMENT_CATEGORIES[d.improvement_category] || `Cat ${d.improvement_category}`;
-      failureMap.set(label, (failureMap.get(label) || 0) + 1);
+    const defects = d.defects as any[] | null;
+    if (defects && defects.length > 0) {
+      defects.forEach((def: any) => {
+        if (def.failure_mode) {
+          const label = defectsLabelMap.get(def.failure_mode) || def.failure_mode;
+          failureMap.set(label, (failureMap.get(label) || 0) + 1);
+        }
+      });
     }
   });
   const failureModeData = Array.from(failureMap.entries())
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
 
-  // Problem type data
-  const problemTypes = [
-    { type: "Dimensional", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 1).length },
-    { type: "Visual", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 2).length },
-    { type: "Funcional", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 3).length },
-    { type: "Processo", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 4).length },
-    { type: "Material", qty: injectionData.filter(d => d.needs_improvement && d.improvement_category === 5).length },
-  ];
+  // Problem type data — from defects[].improvement_category field
+  const problemMap = new Map<string, number>();
+  injectionData.forEach((d) => {
+    const defects = d.defects as any[] | null;
+    if (defects && defects.length > 0) {
+      defects.forEach((def: any) => {
+        if (def.improvement_category) {
+          const label = defectCatMap.get(def.improvement_category) || def.improvement_category;
+          problemMap.set(label, (problemMap.get(label) || 0) + 1);
+        }
+      });
+    }
+  });
+  const problemTypes = Array.from(problemMap.entries())
+    .map(([type, qty]) => ({ type, qty }))
+    .sort((a, b) => b.qty - a.qty);
   const totalProblems = problemTypes.reduce((a, b) => a + b.qty, 0);
 
   // Main issues (NG items list)
   const mainIssues = injectionData
     .filter((d) => d.needs_improvement)
     .slice(0, 8)
-    .map((d) => ({
-      supplier: resolveSupplierName(d.fornecedor),
-      pn: d.part_number,
-      description: d.part_name,
-      category: d.improvement_category ? IMPROVEMENT_CATEGORIES[d.improvement_category] : "—",
-    }));
+    .map((d) => {
+      const defects = d.defects as any[] | null;
+      const firstCat = defects?.[0]?.improvement_category;
+      return {
+        supplier: resolveSupplierName(d.fornecedor),
+        pn: d.part_number,
+        description: d.part_name,
+        category: firstCat ? (defectCatMap.get(firstCat) || firstCat) : "—",
+      };
+    });
 
   const chartConfig = {
     ok: { label: "OK", color: "hsl(0, 65%, 45%)" },

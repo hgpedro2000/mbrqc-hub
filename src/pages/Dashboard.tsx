@@ -200,8 +200,17 @@ const Dashboard = () => {
             Suppliers Try-Outs Status
           </h1>
         </div>
-        <div className="ml-auto text-[10px] md:text-xs text-[hsl(0,0%,50%)]">
-          Total: {totalAll}
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {totalAll}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToPptx}
+            className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs"
+          >
+            <Download className="w-3.5 h-3.5 mr-1" />
+            PPTX
+          </Button>
         </div>
       </div>
 

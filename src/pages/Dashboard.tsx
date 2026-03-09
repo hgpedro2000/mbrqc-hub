@@ -44,22 +44,38 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   const [suppliersMap, setSuppliersMap] = useState<Map<string, string>>(new Map());
+  const [defectCatMap, setDefectCatMap] = useState<Map<string, string>>(new Map());
+  const [defectsLabelMap, setDefectsLabelMap] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     const fetchData = async () => {
-      const [injRes, paintRes, assemblyRes, suppRes] = await Promise.all([
-        supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, created_at, cycle_time, cooling_time, weight, dimensional"),
+      const [injRes, paintRes, assemblyRes, suppRes, catRes, defRes] = await Promise.all([
+        supabase.from("injection_checklists").select("projeto, fornecedor, part_number, part_name, needs_improvement, improvement_category, defects, created_at, cycle_time, cooling_time, weight, dimensional"),
         supabase.from("painting_checklists").select("id", { count: "exact", head: true }),
         supabase.from("assembly_checklists").select("id", { count: "exact", head: true }),
         supabase.from("suppliers").select("code, name"),
+        supabase.from("defect_categories").select("code, description").eq("active", true),
+        supabase.from("defects").select("code, description").eq("active", true),
       ]);
-      // Build a map: code -> name, and name -> name (for legacy data stored by name)
       const sMap = new Map<string, string>();
       (suppRes.data || []).forEach((s: { code: string; name: string }) => {
         sMap.set(s.code.toUpperCase(), s.name);
         sMap.set(s.name.toUpperCase(), s.name);
       });
       setSuppliersMap(sMap);
+
+      const cMap = new Map<string, string>();
+      (catRes.data || []).forEach((c: { code: string; description: string }) => {
+        cMap.set(c.code, `${c.code} - ${c.description}`);
+      });
+      setDefectCatMap(cMap);
+
+      const dMap = new Map<string, string>();
+      (defRes.data || []).forEach((d: { code: string; description: string }) => {
+        dMap.set(d.code, `${d.code} - ${d.description}`);
+      });
+      setDefectsLabelMap(dMap);
+
       setInjectionData((injRes.data as InjectionRow[]) || []);
       setPaintingCount(paintRes.count || 0);
       setAssemblyCount(assemblyRes.count || 0);

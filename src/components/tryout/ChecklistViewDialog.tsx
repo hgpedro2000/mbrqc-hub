@@ -169,7 +169,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               </div>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
+            <div className="px-4 md:px-6 py-4 md:py-5 space-y-5 md:space-y-6">
               {/* Rate KPI Banner for injection */}
               {checklistType === "injection_checklists" && d?.total_pecas > 0 && (
                 <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-3 md:p-4">

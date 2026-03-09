@@ -178,18 +178,18 @@ const EngineeringMode = ({ module }: EngineeringModeProps) => {
           Modo Engenharia
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto w-[95vw] md:w-full p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle className="font-heading">Modo Engenharia — {module}</DialogTitle>
+          <DialogTitle className="font-heading text-base md:text-lg">Modo Engenharia — {module}</DialogTitle>
         </DialogHeader>
 
         {module === "Auditorias" && (
           <Tabs defaultValue="items_processo">
-            <TabsList className="w-full">
-              <TabsTrigger value="items_processo">Itens Processo</TabsTrigger>
-              <TabsTrigger value="items_produto">Itens Produto</TabsTrigger>
-              <TabsTrigger value="items_fornecedor">Itens Fornecedor</TabsTrigger>
-              <TabsTrigger value="dropdowns">Dropdowns</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 h-auto">
+              <TabsTrigger value="items_processo" className="text-xs md:text-sm px-2 py-1.5">Itens Processo</TabsTrigger>
+              <TabsTrigger value="items_produto" className="text-xs md:text-sm px-2 py-1.5">Itens Produto</TabsTrigger>
+              <TabsTrigger value="items_fornecedor" className="text-xs md:text-sm px-2 py-1.5">Itens Fornecedor</TabsTrigger>
+              <TabsTrigger value="dropdowns" className="text-xs md:text-sm px-2 py-1.5">Dropdowns</TabsTrigger>
             </TabsList>
             <TabsContent value="items_processo" className="mt-4">
               <AuditItemManager auditType="processo" />

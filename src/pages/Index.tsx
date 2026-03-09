@@ -20,7 +20,7 @@ const modules = [
 ];
 
 const Index = () => {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();

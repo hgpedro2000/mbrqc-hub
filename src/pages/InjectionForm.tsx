@@ -222,7 +222,9 @@ const InjectionForm = () => {
         if (error) throw error;
         recordId = id!;
       } else {
-        const { data, error } = await supabase.from("injection_checklists").insert(payload as any).select("id").single();
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data, error } = await supabase.from("injection_checklists").insert(insertPayload as any).select("id").single();
         if (error) throw error;
         recordId = data.id;
       }

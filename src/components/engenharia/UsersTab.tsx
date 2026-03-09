@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 const UsersTab = () => {
@@ -21,6 +22,7 @@ const UsersTab = () => {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Edit state
   const [editId, setEditId] = useState("");
@@ -131,6 +133,23 @@ const UsersTab = () => {
       toast.error(e.message);
     } finally {
       setResettingId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    setDeletingId(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user-admin", {
+        body: { user_id: userId },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      toast.success("Usuário excluído com sucesso!");
+      qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+      qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -273,6 +292,27 @@ const UsersTab = () => {
                         <KeyRound className="w-4 h-4" />
                       )}
                     </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" title="Excluir usuário" className="text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                          {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja excluir <strong>{p.full_name}</strong>? Esta ação não pode ser desfeita.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Excluir
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </TableCell>
               </TableRow>

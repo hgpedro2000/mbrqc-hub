@@ -382,7 +382,6 @@ const Dashboard = () => {
         <div className="ml-auto flex items-center gap-2">
           <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {totalAll}</span>
           <Button
-            data-export-btn
             variant="outline"
             size="sm"
             onClick={exportToPptx}

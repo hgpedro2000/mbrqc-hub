@@ -134,26 +134,26 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
         ) : data ? (
           <div className="flex flex-col">
             {/* Report Header */}
-            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-6 pt-6 pb-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-4">
-                  <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-16 w-auto object-contain" />
-                  <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold`}>
+            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-16 w-auto object-contain" />
+                  <div className="space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
+                    <Badge className={`${getTypeBadgeClass(checklistType)} font-semibold text-[10px] md:text-xs`}>
                       {getTypeLabel(checklistType)}
                     </Badge>
                     {d?.numero && (
-                      <span className="font-mono text-sm font-bold text-primary">#{d.numero}</span>
+                      <span className="font-mono text-xs md:text-sm font-bold text-primary">#{d.numero}</span>
                     )}
                     {d?.razao_tryout && (
-                      <Badge variant="outline" className="text-xs">{d.razao_tryout}</Badge>
+                      <Badge variant="outline" className="text-[10px] md:text-xs">{d.razao_tryout}</Badge>
                     )}
                   </div>
-                  <h2 className="text-lg font-bold text-foreground">
+                  <h2 className="text-sm md:text-lg font-bold text-foreground">
                     Relatório de Checklist — {getTypeLabel(checklistType)}
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] md:text-xs text-muted-foreground">
                     {d?.nome} • {formatValue("data", d?.data)}
                     {d?.fornecedor ? ` • ${d.fornecedor}` : ""}
                   </p>

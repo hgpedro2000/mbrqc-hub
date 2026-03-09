@@ -52,6 +52,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const { id } = useParams();
   const isEdit = !!id;
   const { profile } = useAuth();
+  const { isAdmin } = useUserRole();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<ChecklistItem[]>(defaultItems);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());

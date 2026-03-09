@@ -394,12 +394,31 @@ const InjectionForm = () => {
           <div className="form-section">
             <div className="flex items-center justify-between mb-3">
               <h3 className="form-section-title mb-0">Defeitos</h3>
-              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={addDefect} 
+                className="gap-1.5"
+                disabled={pecasNG === 0}
+              >
                 <Plus className="w-4 h-4" /> Adicionar Defeito
               </Button>
             </div>
 
-            {defects.length === 0 && (
+            {pecasNG === 0 && (
+              <div className="text-sm text-muted-foreground text-center py-6 border border-border rounded-lg bg-muted/30">
+                Defeitos bloqueados quando não há peças NG.
+              </div>
+            )}
+
+            {pecasNG > 0 && defects.length === 0 && (
+              <div className="text-sm text-amber-600 dark:text-amber-500 text-center py-6 border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50 dark:bg-amber-950/20">
+                ⚠️ É necessário registrar pelo menos um defeito quando há peças NG.
+              </div>
+            )}
+
+            {pecasNG > 0 && defects.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-lg">
                 Nenhum defeito registrado. Clique em "+ Adicionar Defeito" para incluir.
               </p>

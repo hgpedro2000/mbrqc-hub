@@ -137,7 +137,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
         ) : data ? (
           <div className="flex flex-col" ref={contentRef}>
             {/* Report Header */}
-            <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
+            <div data-pdf-section className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
                 <div className="flex items-center gap-3 md:gap-4">
                   <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-16 w-auto object-contain" />
@@ -176,7 +176,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
             <div className="px-4 md:px-6 py-4 md:py-5 space-y-5 md:space-y-6">
               {/* Rate KPI Banner for injection */}
               {checklistType === "injection_checklists" && d?.total_pecas > 0 && (
-                <div className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-3 md:p-4">
+                <div data-pdf-section className="rounded-xl border border-border bg-gradient-to-r from-card to-muted/30 p-3 md:p-4">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4">
                     <div className="hidden sm:flex w-12 h-12 rounded-full bg-primary/10 items-center justify-center shrink-0">
                       <Gauge className="w-6 h-6 text-primary" />
@@ -219,7 +219,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               {/* Identification Section */}
               {checklistType === "injection_checklists" ? (
                 <>
-                  <div>
+                  <div data-pdf-section>
                     <SectionHeader icon={FileText} title="Identificação" />
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 bg-card rounded-lg border border-border p-3 md:p-4">
                       {identificationFields.map((key) => (
@@ -228,7 +228,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     </div>
                   </div>
 
-                  <div>
+                  <div data-pdf-section>
                     <SectionHeader icon={Package} title="Dados da Peça" />
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
                       {pieceDataFields.filter(k => !(k === "razao_tryout_outro" && !d.razao_tryout_outro)).map((key) => (
@@ -237,7 +237,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     </div>
                   </div>
 
-                  <div>
+                  <div data-pdf-section>
                     <SectionHeader icon={Settings} title="Parâmetros de Processo" />
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
                       {processFields.map((key) => (
@@ -246,7 +246,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     </div>
                   </div>
 
-                  <div>
+                  <div data-pdf-section>
                     <SectionHeader icon={ClipboardCheck} title="Avaliação" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
                       {evaluationFields.map((key) => (
@@ -256,7 +256,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   </div>
                 </>
               ) : (
-                <div>
+                <div data-pdf-section>
                   <SectionHeader icon={FileText} title="Informações" />
                   <div className="grid grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
                     {simpleFields.map((key) => (
@@ -268,7 +268,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
               {/* Defects for injection */}
               {checklistType === "injection_checklists" && defects && defects.length > 0 && (
-                <div>
+                <div data-pdf-section>
                   <SectionHeader icon={AlertTriangle} title={`Defeitos (${defects.length})`} />
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
@@ -294,7 +294,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
               {/* Checklist items for painting/assembly */}
               {isChecklist && items && items.length > 0 && (
-                <div>
+                <div data-pdf-section>
                   <SectionHeader icon={ClipboardCheck} title="Itens do Checklist" />
                   <div className="bg-card rounded-lg border border-border divide-y divide-border">
                     {items.map((item: string, idx: number) => {
@@ -314,7 +314,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
 
               {/* Photos */}
               {photos.length > 0 && (
-                <div>
+                <div data-pdf-section>
                   <SectionHeader icon={Camera} title={`Fotos (${photos.length})`} />
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3">
                     {photos.map((photo) => {
@@ -331,7 +331,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
             </div>
 
             {/* Footer */}
-            <div className="border-t border-border px-6 py-3 bg-muted/30 text-center">
+            <div data-pdf-section className="border-t border-border px-6 py-3 bg-muted/30 text-center">
               <p className="text-[10px] text-muted-foreground">
                 Hyundai Mobis — Try-Out Control • Gerado em {new Date().toLocaleDateString("pt-BR")}
               </p>

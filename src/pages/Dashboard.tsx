@@ -555,7 +555,7 @@ const Dashboard = () => {
         </div>
 
         {/* BOTTOM LEFT: Try-Out Data - Problem */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-x-auto">
           <SectionHeader>Try-Out Data – Problem</SectionHeader>
           <table className="w-full text-xs">
             <thead>

@@ -107,18 +107,33 @@ const Dashboard = () => {
     .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
     .sort((a, b) => b.total - a.total);
 
-  // Donut charts data: Weight OK/NG, Dimensional OK/NG, Appearance (Visual) OK/NG
-  const getDonutData = (filterFn: (d: InjectionRow) => boolean) => {
-    const ok = injectionData.filter((d) => !d.needs_improvement || !filterFn(d)).length;
-    const ng = injectionData.filter((d) => d.needs_improvement && filterFn(d)).length;
-    return [
-      { name: "OK", value: ok },
-      { name: "NG", value: ng },
-    ];
-  };
-  const weightDonut = getDonutData((d) => d.improvement_category === 5); // Material ~ Weight
-  const dimensionalDonut = getDonutData((d) => d.improvement_category === 1);
-  const appearanceDonut = getDonutData((d) => d.improvement_category === 2);
+  // Donut charts data: based on top 3 defect categories from defects array
+  const catCountMap = new Map<string, { ok: number; ng: number }>();
+  injectionData.forEach((d) => {
+    const defects = d.defects as any[] | null;
+    if (defects && defects.length > 0) {
+      defects.forEach((def: any) => {
+        if (def.improvement_category) {
+          const label = defectCatMap.get(def.improvement_category) || def.improvement_category;
+          const existing = catCountMap.get(label) || { ok: 0, ng: 0 };
+          existing.ng++;
+          catCountMap.set(label, existing);
+        }
+      });
+    }
+  });
+  // Fill OK counts (total checklists minus NG for each category)
+  const totalChecklists = injectionData.length;
+  const topCategories = Array.from(catCountMap.entries())
+    .sort((a, b) => b[1].ng - a[1].ng)
+    .slice(0, 3);
+  const donutDataSets = topCategories.map(([label, counts]) => ({
+    label,
+    data: [
+      { name: "OK", value: totalChecklists - counts.ng },
+      { name: "NG", value: counts.ng },
+    ],
+  }));
 
   // Main Failure Mode — from defects[].failure_mode field
   const failureMap = new Map<string, number>();

@@ -29,6 +29,7 @@ const InjectionForm = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const defectFileRefs = useRef<Record<number, HTMLInputElement | null>>({});
   const [photos, setPhotos] = useState<{ name: string; url: string; file: File }[]>([]);
+  const [photoType, setPhotoType] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -132,6 +133,23 @@ const InjectionForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Validation: if NG > 0, at least one defect required
+    if (pecasNG > 0 && defects.length === 0) {
+      toast.error("É necessário registrar pelo menos um defeito quando há peças NG.");
+      return;
+    }
+
+    // Validation: if NG = 0, photo required with type
+    if (pecasNG === 0 && totalPecas > 0 && photos.length === 0) {
+      toast.error("É necessário inserir pelo menos uma foto de Peça OK.");
+      return;
+    }
+    if (pecasNG === 0 && totalPecas > 0 && !photoType) {
+      toast.error("Selecione o tipo de foto (Peça Referência ou Peça Final).");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -286,8 +304,18 @@ const InjectionForm = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="qtdTryout">Quantas vez esse Tryout foi feito ?*</Label>
-                <Input id="qtdTryout" name="qtdTryout" type="number" required min={1} placeholder="0" defaultValue={defaults.qtd_tryout || ""} key={`qt-${defaults.qtd_tryout}`} />
+                <Label htmlFor="qtdTryout">Quantas vezes esse Tryout foi feito?*</Label>
+                <Select name="qtdTryout" required defaultValue={defaults.qtd_tryout?.toString() || ""} key={`qt-${defaults.qtd_tryout}`}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1ª</SelectItem>
+                    <SelectItem value="2">2ª</SelectItem>
+                    <SelectItem value="3">3ª</SelectItem>
+                    <SelectItem value="4">4ª</SelectItem>
+                    <SelectItem value="5">5ª</SelectItem>
+                    <SelectItem value="6">6ª</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="totalPecas">Total de Peças no Tryout *</Label>
@@ -366,12 +394,31 @@ const InjectionForm = () => {
           <div className="form-section">
             <div className="flex items-center justify-between mb-3">
               <h3 className="form-section-title mb-0">Defeitos</h3>
-              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5">
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={addDefect} 
+                className="gap-1.5"
+                disabled={pecasNG === 0}
+              >
                 <Plus className="w-4 h-4" /> Adicionar Defeito
               </Button>
             </div>
 
-            {defects.length === 0 && (
+            {pecasNG === 0 && (
+              <div className="text-sm text-muted-foreground text-center py-6 border border-border rounded-lg bg-muted/30">
+                Defeitos bloqueados quando não há peças NG.
+              </div>
+            )}
+
+            {pecasNG > 0 && defects.length === 0 && (
+              <div className="text-sm text-destructive text-center py-6 border border-destructive/30 rounded-lg bg-destructive/5">
+                ⚠️ É necessário registrar pelo menos um defeito quando há peças NG.
+              </div>
+            )}
+
+            {pecasNG > 0 && defects.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-lg">
                 Nenhum defeito registrado. Clique em "+ Adicionar Defeito" para incluir.
               </p>
@@ -471,21 +518,37 @@ const InjectionForm = () => {
             </div>
           </div>
 
-          {/* Fotos Gerais */}
-          <div className="form-section">
+          {/* Peça OK - somente quando NG = 0 */}
+          <div className={`form-section ${pecasNG > 0 ? "opacity-50 pointer-events-none" : ""}`}>
             <h3 className="form-section-title">
               <Camera className="w-5 h-5" />
-              Fotos Gerais
+              Peça OK
+              {pecasNG > 0 && <span className="text-xs text-muted-foreground ml-2">(Habilitado apenas quando NG = 0)</span>}
             </h3>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
+            
+            {pecasNG === 0 && totalPecas > 0 && (
+              <div className="mb-4 space-y-2">
+                <Label>Tipo de Foto *</Label>
+                <Select value={photoType} onValueChange={setPhotoType} disabled={pecasNG > 0}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o tipo de foto" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="peca_referencia">Peça Referência</SelectItem>
+                    <SelectItem value="peca_final">Peça Final</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} disabled={pecasNG > 0} />
             <Button
               type="button"
               variant="outline"
               onClick={() => fileInputRef.current?.click()}
-              className="w-full border-dashed border-2 h-20 text-muted-foreground hover:text-foreground hover:border-accent"
+              disabled={pecasNG > 0}
+              className="w-full border-dashed border-2 h-20 text-muted-foreground hover:text-foreground hover:border-accent disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Camera className="w-5 h-5 mr-2" />
-              Clique para adicionar fotos
+              {pecasNG > 0 ? "Fotos bloqueadas quando há peças NG" : "Clique para adicionar fotos"}
             </Button>
             {photos.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">

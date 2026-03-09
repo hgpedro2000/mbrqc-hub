@@ -312,7 +312,7 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   }
 }
 
-export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef }: ExportProps) => {
+export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef, catMap, defectMap }: ExportProps) => {
   const numero = data?.numero || "";
 
   return (
@@ -330,10 +330,10 @@ export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fi
         >
           <FileText className="w-4 h-4" /> PDF
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportToExcel(data, fields, fieldLabels, checklistType)} className="gap-2">
+        <DropdownMenuItem onClick={() => exportToExcel(data, fields, fieldLabels, checklistType, catMap, defectMap)} className="gap-2">
           <FileSpreadsheet className="w-4 h-4" /> Excel (.xlsx)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => exportToPptx(data, photos, fields, fieldLabels, checklistType)} className="gap-2">
+        <DropdownMenuItem onClick={() => exportToPptx(data, photos, fields, fieldLabels, checklistType, catMap, defectMap)} className="gap-2">
           <Presentation className="w-4 h-4" /> PowerPoint (.pptx)
         </DropdownMenuItem>
       </DropdownMenuContent>

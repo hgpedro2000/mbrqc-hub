@@ -463,7 +463,7 @@ const Dashboard = () => {
       {/* Main grid */}
       <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
         {/* LEFT: General Quality Incoming Status table */}
-        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto">
+        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>General Quality Incoming Status</SectionHeader>
           <table className="w-full text-xs">
             <thead>
@@ -499,14 +499,14 @@ const Dashboard = () => {
         </div>
 
         {/* CENTER: Supplier T/Out Status (horizontal bars) */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden rounded-lg">
           <SectionHeader>Supplier T/Out Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier T/Outs OK vs NG</p>
           {supplierData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="h-[280px] w-full px-1">
-              <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 30, top: 5, bottom: 5 }}>
+            <ChartContainer config={chartConfig} className="h-[250px] md:h-[280px] w-full px-1">
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={110} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={80} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
                 <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
@@ -520,9 +520,9 @@ const Dashboard = () => {
         {/* RIGHT: Donuts + Failure Mode */}
         <div className="lg:col-span-5 flex flex-col gap-3">
           {/* Donut charts row */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
             <SectionHeader>Try Out Attendance Status</SectionHeader>
-            <div className="flex justify-around mt-3">
+            <div className="flex justify-around mt-3 flex-wrap gap-2">
               {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
                 <DonutChart key={i} data={ds.data} title={ds.label} />
               )) : (
@@ -532,10 +532,10 @@ const Dashboard = () => {
           </div>
 
           {/* Main Failure Mode */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1 rounded-lg">
             <SectionHeader>Main Failure Mode</SectionHeader>
             {failureModeData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
+              <ChartContainer config={chartConfig} className="h-[200px] md:h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
                 <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
@@ -555,7 +555,7 @@ const Dashboard = () => {
         </div>
 
         {/* BOTTOM LEFT: Try-Out Data - Problem */}
-        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)]">
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-x-auto">
           <SectionHeader>Try-Out Data – Problem</SectionHeader>
           <table className="w-full text-xs">
             <thead>
@@ -578,7 +578,7 @@ const Dashboard = () => {
         </div>
 
         {/* BOTTOM RIGHT: Main Issues table */}
-        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto">
+        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
           <table className="w-full text-xs">
             <thead>

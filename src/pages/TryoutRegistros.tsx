@@ -135,27 +135,27 @@ const TryoutRegistros = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground">
-                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+            <div className="flex items-center gap-2 md:gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">Voltar</span>
               </Button>
-              <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+              <img src={logo} alt="Hyundai Mobis" className="h-6 md:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
           </div>
-          <div className="flex items-center gap-3 mt-4">
-            <Droplets className="w-8 h-8" />
+          <div className="flex items-center gap-2 md:gap-3 mt-3 md:mt-4">
+            <Droplets className="w-6 h-6 md:w-8 md:h-8 shrink-0" />
             <div>
-              <h1 className="text-2xl font-heading font-bold">Registros de Try-Out</h1>
-              <p className="text-primary-foreground/70 text-sm">Lista mestra de checklists de Injeção, Pintura e Montagem</p>
+              <h1 className="text-lg md:text-2xl font-heading font-bold">Registros de Try-Out</h1>
+              <p className="text-primary-foreground/70 text-xs md:text-sm">Lista mestra de checklists</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        <div className="flex flex-wrap gap-3">
+      <main className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-4 md:space-y-6">
+        <div className="flex flex-wrap gap-2 md:gap-3">
           <Button onClick={() => navigate("/tryout/injecao")} className="gap-2">
             <Plus className="w-4 h-4" /> Novo Checklist
           </Button>
@@ -174,15 +174,21 @@ const TryoutRegistros = () => {
         />
 
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); }}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="injecao" className="gap-2">
-              <Droplets className="w-4 h-4" /> Injeção ({injectionData.length})
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="injecao" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Droplets className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" /> 
+              <span className="truncate">Injeção</span>
+              <span className="hidden sm:inline">({injectionData.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="pintura" className="gap-2">
-              <Paintbrush className="w-4 h-4" /> Pintura ({paintingData.length})
+            <TabsTrigger value="pintura" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Paintbrush className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="truncate">Pintura</span>
+              <span className="hidden sm:inline">({paintingData.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="montagem" className="gap-2">
-              <Wrench className="w-4 h-4" /> Montagem ({assemblyData.length})
+            <TabsTrigger value="montagem" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+              <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+              <span className="truncate">Montagem</span>
+              <span className="hidden sm:inline">({assemblyData.length})</span>
             </TabsTrigger>
           </TabsList>
 

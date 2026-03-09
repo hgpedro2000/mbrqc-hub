@@ -79,14 +79,20 @@ const Dashboard = () => {
   const totalInjection = injectionData.length;
   const totalAll = totalInjection + paintingCount + assemblyCount;
 
+  // Helper to resolve supplier name from catalog
+  const resolveSupplierName = (raw: string) => {
+    return suppliersMap.get(raw.toUpperCase()) || raw;
+  };
+
   // Supplier table + horizontal bar data
   const supplierMap = new Map<string, { ok: number; ng: number; pns: Set<string> }>();
   injectionData.forEach((d) => {
-    const existing = supplierMap.get(d.fornecedor) || { ok: 0, ng: 0, pns: new Set<string>() };
+    const resolvedName = resolveSupplierName(d.fornecedor);
+    const existing = supplierMap.get(resolvedName) || { ok: 0, ng: 0, pns: new Set<string>() };
     if (d.needs_improvement) existing.ng++;
     else existing.ok++;
     existing.pns.add(d.part_number);
-    supplierMap.set(d.fornecedor, existing);
+    supplierMap.set(resolvedName, existing);
   });
   const supplierData = Array.from(supplierMap.entries())
     .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))

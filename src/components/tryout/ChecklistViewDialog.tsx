@@ -273,24 +273,29 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
                       <div key={idx} className="border border-border rounded-lg p-4 bg-card">
-                        <div className="flex items-center gap-2 flex-nowrap mb-2">
-                          <div className="w-[29px] h-[29px] rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
-                            <span className="text-[12px] font-bold leading-none text-center">{idx + 1}</span>
-                          </div>
+                        <div className="flex items-center gap-2 flex-nowrap mb-2 leading-none">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[12px] font-bold shrink-0">
+                            {idx + 1}
+                          </span>
 
-                          <Badge variant="outline" className="h-[29px] px-3 py-0 bg-muted text-foreground border-border inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">
+                          <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-muted text-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
                             Defeito #{idx + 1}
-                          </Badge>
+                          </span>
 
                           {defect.needs_improvement && (
-                            <Badge variant="destructive" className="h-[29px] px-3 py-0 inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">Melhoria necessária</Badge>
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-transparent bg-destructive text-destructive-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                              Melhoria necessária
+                            </span>
                           )}
+
                           {defect.improvement_category && (
-                            <Badge variant="outline" className="h-[29px] px-3 py-0 bg-muted text-foreground border-border inline-flex items-center justify-center leading-none text-[11px] font-semibold whitespace-nowrap shrink-0">Cat. {defect.improvement_category}</Badge>
+                            <span className="inline-flex h-8 px-4 items-center justify-center rounded-full border border-border bg-muted text-foreground text-[12px] font-semibold whitespace-nowrap shrink-0">
+                              Cat. {defect.improvement_category}
+                            </span>
                           )}
                         </div>
-                        <p className="text-sm text-foreground pl-8">{defect.description || "—"}</p>
-                        <p className="text-sm text-foreground pl-8">{defect.description || "—"}</p>
+                        <p className="text-sm text-foreground pl-10">{defect.description || "—"}</p>
+                      </div>
                       </div>
                     ))}
                   </div>

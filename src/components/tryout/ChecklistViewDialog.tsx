@@ -183,15 +183,15 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                     </div>
                     <div className="flex-1 w-full">
                       <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">Taxa de Aprovação</p>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-2xl md:text-3xl font-bold ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
+                      <div className="flex items-end gap-2.5 pb-1">
+                        <span className={`text-2xl md:text-3xl font-bold leading-none ${rate >= 90 ? "text-emerald-600" : rate >= 70 ? "text-amber-600" : "text-destructive"}`}>
                           {rate.toFixed(1)}%
                         </span>
-                        <span className="text-xs md:text-sm text-muted-foreground">
+                        <span className="text-xs md:text-sm text-muted-foreground leading-none pb-0.5">
                           ({d.pecas_ok} OK / {d.total_pecas} total)
                         </span>
                       </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden mt-2">
+                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden mt-3">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${rate >= 90 ? "bg-emerald-500" : rate >= 70 ? "bg-amber-500" : "bg-destructive"}`}
                           style={{ width: `${Math.min(rate, 100)}%` }}

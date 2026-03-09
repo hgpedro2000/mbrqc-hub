@@ -22,6 +22,7 @@ const UsersTab = () => {
   const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Edit state
   const [editId, setEditId] = useState("");

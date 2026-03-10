@@ -348,14 +348,17 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                 <div data-pdf-section>
                   <SectionHeader icon={ClipboardCheck} title="Itens do Checklist" />
                   <div className="bg-card rounded-lg border border-border divide-y divide-border">
-                    {items.map((item: string, idx: number) => {
-                      const isChecked = checkedItems?.includes(item);
+                    {items.map((item: any, idx: number) => {
+                      const itemId = typeof item === "string" ? item : item.id;
+                      const itemLabel = typeof item === "string" ? item : item.label;
+                      const isChecked = checkedItems?.some((ci: any) => (typeof ci === "string" ? ci : ci.id) === itemId);
                       return (
                         <div key={idx} className="flex items-center gap-3 px-4 py-2.5 text-sm">
                           <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${isChecked ? "bg-emerald-500/15 text-emerald-600 border border-emerald-300" : "bg-destructive/10 text-destructive border border-destructive/30"}`}>
                             {isChecked ? "✓" : "✗"}
                           </span>
-                          <span className={isChecked ? "text-foreground" : "text-muted-foreground"}>{item}</span>
+                          <span className={isChecked ? "text-foreground" : "text-muted-foreground"}>{itemLabel}</span>
+                        </div>
                         </div>
                       );
                     })}

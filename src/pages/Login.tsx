@@ -55,9 +55,9 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src={logo} alt="Hyundai Mobis" className="h-32 mx-auto mb-6 mt-10 object-contain" />
+          <img src={logo} alt="Hyundai Mobis" className="h-32 mx-auto mb-2 mt-10 object-contain" />
           <h1 className="text-2xl font-heading font-bold text-foreground">Quality Control-Hub</h1>
-          <p className="text-muted-foreground mt-1">Entre com seu número de usuário</p>
+          <p className="text-muted-foreground mt-0.5">Entre com seu número de usuário</p>
         </div>
 
         <form onSubmit={handleSubmit} className="form-section space-y-4">

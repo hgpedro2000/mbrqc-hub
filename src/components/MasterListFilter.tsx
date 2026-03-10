@@ -61,7 +61,7 @@ const MasterListFilter = ({
                 <SelectValue placeholder={filter.label} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos — {filter.label}</SelectItem>
+                <SelectItem value="all">{t("filter.allPrefix")} — {filter.label}</SelectItem>
                 {filter.options.map((opt) => (
                   <SelectItem key={opt} value={opt}>
                     {opt}

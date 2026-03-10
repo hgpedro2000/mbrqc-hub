@@ -452,7 +452,9 @@
     "newItemPlaceholder": "Novo item...",
     "itemAdded": "Item adicionado",
     "addError": "Erro ao adicionar",
-    "auditItemAdded": "Item de auditoria adicionado"
+    "auditItemAdded": "Item de auditoria adicionado",
+    "searchUser": "Buscar usuário...",
+    "modulePermissionsDesc": "Ative ou desative módulos individualmente para cada usuário. Administradores têm acesso a todos os módulos automaticamente."
   },
   "supplierSelector": {
     "supplier": "Fornecedor",

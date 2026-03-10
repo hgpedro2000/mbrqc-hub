@@ -452,7 +452,9 @@
     "newItemPlaceholder": "New item...",
     "itemAdded": "Item added",
     "addError": "Error adding",
-    "auditItemAdded": "Audit item added"
+    "auditItemAdded": "Audit item added",
+    "searchUser": "Search user...",
+    "modulePermissionsDesc": "Enable or disable modules individually for each user. Administrators have access to all modules automatically."
   },
   "supplierSelector": {
     "supplier": "Supplier",

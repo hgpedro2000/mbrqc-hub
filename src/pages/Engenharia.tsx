@@ -47,9 +47,6 @@ const Engenharia = () => {
             <UsersTab />
           </TabsContent>
 
-          <TabsContent value="modulos" className="form-section">
-            <ModulePermissionsTab />
-          </TabsContent>
 
           <TabsContent value="fornecedores" className="form-section">
             <SuppliersTab />

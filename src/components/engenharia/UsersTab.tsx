@@ -8,24 +8,15 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-<<<<<<< HEAD
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2 } from "lucide-react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-=======
 import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
 
 const UsersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-<<<<<<< HEAD
-=======
   const [modulesOpen, setModulesOpen] = useState(false);
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   const [editOpen, setEditOpen] = useState(false);
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [fullName, setFullName] = useState("");
@@ -101,14 +92,12 @@ const UsersTab = () => {
     }
     setSaving(true);
     try {
-      // Update profile
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ full_name: editFullName, employee_number: editEmployeeNumber })
         .eq("id", editId);
       if (profileError) throw profileError;
 
-      // Update role - delete existing and insert new
       const { error: deleteError } = await supabase
         .from("user_roles")
         .delete()
@@ -183,12 +172,6 @@ const UsersTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Usuários</h2>
-<<<<<<< HEAD
-        <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
-          </DialogTrigger>
-=======
         <div className="flex items-center gap-2">
           <Dialog open={modulesOpen} onOpenChange={setModulesOpen}>
             <DialogTrigger asChild>
@@ -205,7 +188,6 @@ const UsersTab = () => {
             <DialogTrigger asChild>
               <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Criar Novo Usuário</DialogTitle>
@@ -242,10 +224,7 @@ const UsersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
-<<<<<<< HEAD
-=======
         </div>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
       </div>
 
       {/* Edit Profile Dialog */}

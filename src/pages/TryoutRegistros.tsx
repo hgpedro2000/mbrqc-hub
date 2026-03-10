@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";

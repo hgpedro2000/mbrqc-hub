@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
@@ -72,10 +73,11 @@ const getGreeting = () => {
 const Hub = () => {
   const { signOut, profile } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const { enabledModules } = useEnabledModules();
   const navigate = useNavigate();
 
-  // Show engineering button for admin or engenharia roles
-  const showEngineering = isAdmin; // useUserRole checks admin; we'll also check engenharia below
+  const showEngineering = isAdmin;
+  const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id as any));
   
   return (
     <div className="min-h-screen bg-background">
@@ -122,7 +124,7 @@ const Hub = () => {
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((mod, i) => (
+          {visibleModules.map((mod, i) => (
             <div
               key={mod.id}
               className="module-card opacity-0 animate-fade-in cursor-pointer"

@@ -176,13 +176,15 @@ const InjectionForm = () => {
         rate: totalPecas > 0 ? parseFloat(((pecasOK / totalPecas) * 100).toFixed(2)) : 0,
         needs_improvement: defects.some(d => d.needs_improvement), improvement_category: null,
         defects: defects.map((d) => ({ description: d.description, needs_improvement: d.needs_improvement, improvement_category: d.needs_improvement ? d.improvement_category : null, failure_mode: d.failure_mode || null })),
+        status: "submitted",
       };
       let recordId: string;
-      if (isEdit) { const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", id!); if (error) throw error; recordId = id!; }
+      if (draftRecordId) { const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", draftRecordId); if (error) throw error; recordId = draftRecordId; }
       else { const { data: userData } = await supabase.auth.getUser(); const insertPayload = { ...payload, created_by: userData?.user?.id || null }; const { data, error } = await supabase.from("injection_checklists").insert(insertPayload as any).select("id").single(); if (error) throw error; recordId = data.id; }
       if (photos.length > 0) await uploadPhotos(photos.map((p) => p.file), recordId, "injection");
       for (const defect of defects) { if (defect.photos.length > 0) await uploadPhotos(defect.photos.map((p) => p.file), recordId, "injection"); }
       setSubmitted(true);
+      setHasChanges(false);
       toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));
       setTimeout(() => navigate("/tryout/registros"), 2000);
     } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }

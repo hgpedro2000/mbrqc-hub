@@ -217,7 +217,7 @@ const InjectionForm = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <div className="form-section">
             <h3 className="form-section-title">{t("injectionForm.identification")}</h3>
             <div className="grid gap-4 sm:grid-cols-2">

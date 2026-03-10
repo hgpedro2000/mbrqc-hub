@@ -14,12 +14,14 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useTranslation } from "react-i18next";
 
 const modules = [
   {
     id: "tryout",
-    title: "Try-Out",
-    description: "Controle de Try-Out com checklists de injeção, pintura e montagem. Dashboard com indicadores.",
+    titleKey: "modules.tryout.title",
+    descriptionKey: "modules.tryout.description",
     icon: Beaker,
     path: "/tryout",
     color: "from-blue-500/15 to-cyan-500/5",
@@ -27,8 +29,8 @@ const modules = [
   },
   {
     id: "auditorias",
-    title: "Auditorias",
-    description: "Gestão de auditorias de processo e produto com rastreabilidade completa.",
+    titleKey: "modules.auditorias.title",
+    descriptionKey: "modules.auditorias.description",
     icon: ShieldCheck,
     path: "/auditorias",
     color: "from-emerald-500/15 to-green-500/5",
@@ -36,8 +38,8 @@ const modules = [
   },
   {
     id: "contencao",
-    title: "Contenção",
-    description: "Registro e acompanhamento de ações de contenção para não conformidades.",
+    titleKey: "modules.contencao.title",
+    descriptionKey: "modules.contencao.description",
     icon: ShieldAlert,
     path: "/contencao",
     color: "from-orange-500/15 to-amber-500/5",
@@ -45,8 +47,8 @@ const modules = [
   },
   {
     id: "apontamentos",
-    title: "Apontamentos",
-    description: "Apontamentos de produção, paradas e ocorrências em tempo real.",
+    titleKey: "modules.apontamentos.title",
+    descriptionKey: "modules.apontamentos.description",
     icon: FileBarChart,
     path: "/apontamentos",
     color: "from-violet-500/15 to-purple-500/5",
@@ -54,8 +56,8 @@ const modules = [
   },
   {
     id: "alerta-qualidade",
-    title: "Alerta de Qualidade",
-    description: "Emissão e controle de alertas de qualidade com notificações e rastreabilidade.",
+    titleKey: "modules.alertaQualidade.title",
+    descriptionKey: "modules.alertaQualidade.description",
     icon: AlertTriangle,
     path: "/alerta-qualidade",
     color: "from-red-500/15 to-rose-500/5",
@@ -63,18 +65,19 @@ const modules = [
   },
 ];
 
-const getGreeting = () => {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
-  return "Boa noite";
-};
-
 const Hub = () => {
   const { signOut, profile } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { enabledModules } = useEnabledModules();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t("greeting.morning");
+    if (hour < 18) return t("greeting.afternoon");
+    return t("greeting.evening");
+  };
 
   const showEngineering = isAdmin;
   const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id as any));
@@ -91,6 +94,7 @@ const Hub = () => {
               </span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
+              <LanguageToggle />
               {showEngineering && (
                 <Button
                   variant="ghost"
@@ -99,7 +103,7 @@ const Hub = () => {
                   className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3"
                 >
                   <Settings2 className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Modo Engenharia</span>
+                  <span className="hidden md:inline">{t("common.engineering")}</span>
                 </Button>
               )}
               <Button
@@ -109,15 +113,15 @@ const Hub = () => {
                 className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3"
               >
                 <LogOut className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Sair</span>
+                <span className="hidden md:inline">{t("common.logout")}</span>
               </Button>
             </div>
           </div>
           <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
-            {getGreeting()}, {profile?.full_name?.split(" ")[0] || "Usuário"}.
+            {getGreeting()}, {profile?.full_name?.split(" ")[0] || t("hub.user")}.
           </h1>
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">
-            Selecione o módulo para acessar.
+            {t("hub.selectModule")}
           </p>
         </div>
       </header>
@@ -128,9 +132,9 @@ const Hub = () => {
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
               <ShieldAlert className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h2 className="text-xl font-heading font-semibold text-foreground mb-2">Nenhum módulo habilitado</h2>
+            <h2 className="text-xl font-heading font-semibold text-foreground mb-2">{t("hub.noModules")}</h2>
             <p className="text-muted-foreground max-w-md text-sm">
-              Você ainda não possui acesso a nenhum módulo. Entre em contato com o administrador para solicitar a ativação dos módulos necessários.
+              {t("hub.noModulesDesc")}
             </p>
           </div>
         ) : (
@@ -148,10 +152,10 @@ const Hub = () => {
                     <mod.icon className="w-7 h-7" />
                   </div>
                   <h2 className="text-xl font-heading font-semibold text-card-foreground mb-2">
-                    {mod.title}
+                    {t(mod.titleKey)}
                   </h2>
                   <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                    {mod.description}
+                    {t(mod.descriptionKey)}
                   </p>
                   <div className="flex items-center justify-end">
                     <ArrowRight className="w-5 h-5 text-muted-foreground" />

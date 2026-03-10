@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { LogIn } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
+import LanguageToggle from "@/components/LanguageToggle";
+import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,10 +27,9 @@ const Login = () => {
       });
 
       if (error || data?.error) {
-        throw new Error(data?.error || error?.message || "Erro na autenticação");
+        throw new Error(data?.error || error?.message || t("login.authError"));
       }
 
-      // Set session from the edge function response
       if (data.session) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -35,17 +37,16 @@ const Login = () => {
         });
       }
 
-      // Check if user must change password
       if (data.profile?.must_change_password) {
-        toast.info("Você precisa alterar sua senha no primeiro acesso.");
+        toast.info(t("login.mustChangePassword"));
         navigate("/alterar-senha");
         return;
       }
 
-      toast.success(`Bem-vindo, ${data.profile?.full_name || ""}!`);
+      toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || "Erro na autenticação");
+      toast.error(error.message || t("login.authError"));
     } finally {
       setLoading(false);
     }
@@ -53,16 +54,19 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="absolute top-4 right-4">
+        <LanguageToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src={logo} alt="Hyundai Mobis" className="h-40 mx-auto mb-0 mt-10 object-contain" />
-          <h1 className="text-2xl font-heading font-bold text-foreground -mt-1">Quality Control-Hub</h1>
-          <p className="text-muted-foreground mt-0">Entre com seu número de usuário</p>
+          <h1 className="text-2xl font-heading font-bold text-foreground -mt-1">{t("login.title")}</h1>
+          <p className="text-muted-foreground mt-0">{t("login.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="employeeNumber">Número do Usuário</Label>
+            <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
             <Input
               id="employeeNumber"
               type="text"
@@ -74,7 +78,7 @@ const Login = () => {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
+            <Label htmlFor="password">{t("login.password")}</Label>
             <Input
               id="password"
               type="password"
@@ -82,7 +86,7 @@ const Login = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Sua senha"
+              placeholder={t("login.password")}
             />
           </div>
           <Button
@@ -90,10 +94,10 @@ const Login = () => {
             disabled={loading}
             className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12"
           >
-            {loading ? "Aguarde..." : (
+            {loading ? t("login.wait") : (
               <>
                 <LogIn className="w-4 h-4 mr-2" />
-                Entrar
+                {t("login.enter")}
               </>
             )}
           </Button>
@@ -101,7 +105,7 @@ const Login = () => {
             to="/esqueci-senha"
             className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Esqueci minha senha
+            {t("login.forgotPassword")}
           </Link>
         </form>
       </div>

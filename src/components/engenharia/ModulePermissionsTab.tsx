@@ -136,6 +136,7 @@ const ModulePermissionsTab = () => {
                     {m.label}
                   </TableHead>
                 ))}
+                <TableHead className="text-center min-w-[90px] text-xs">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

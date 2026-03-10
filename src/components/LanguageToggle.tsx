@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 
 const BrazilFlag = () => (
-  <svg viewBox="0 0 640 480" className="w-5 h-4 rounded-sm shadow-sm border border-white/20">
+  <svg viewBox="0 0 640 480" className="w-5 h-4 rounded-sm shadow-sm border border-black/10">
     <rect width="640" height="480" fill="#009c3b" />
     <polygon points="320,40 600,240 320,440 40,240" fill="#ffdf00" />
     <circle cx="320" cy="240" r="100" fill="#002776" />
@@ -11,7 +11,7 @@ const BrazilFlag = () => (
 );
 
 const USAFlag = () => (
-  <svg viewBox="0 0 640 480" className="w-5 h-4 rounded-sm shadow-sm border border-white/20">
+  <svg viewBox="0 0 640 480" className="w-5 h-4 rounded-sm shadow-sm border border-black/10">
     <rect width="640" height="480" fill="#fff" />
     {[0, 1, 2, 3, 4, 5, 6].map((i) => (
       <rect key={i} y={i * 69.23} width="640" height={34.6} fill="#b22234" />
@@ -25,7 +25,11 @@ const USAFlag = () => (
   </svg>
 );
 
-const LanguageToggle = () => {
+interface LanguageToggleProps {
+  variant?: "header" | "login";
+}
+
+const LanguageToggle = ({ variant = "header" }: LanguageToggleProps) => {
   const { i18n } = useTranslation();
   const isPt = i18n.language === "pt";
 
@@ -33,16 +37,25 @@ const LanguageToggle = () => {
     i18n.changeLanguage(isPt ? "en" : "pt");
   };
 
+  const isLogin = variant === "login";
+
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size={isLogin ? "default" : "sm"}
       onClick={toggleLanguage}
-      className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3 gap-1.5 items-center"
+      className={
+        isLogin
+          ? "text-foreground/80 hover:text-foreground hover:bg-foreground/10 px-3 gap-2 items-center font-medium"
+          : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3 gap-1.5 items-center"
+      }
       title={isPt ? "Switch to English" : "Mudar para Português"}
     >
-      {isPt ? <USAFlag /> : <BrazilFlag />}
-      <span className="text-xs font-medium tracking-wide">{isPt ? "EN" : "PT"}</span>
+      {/* Show current language flag + label */}
+      {isPt ? <BrazilFlag /> : <USAFlag />}
+      <span className={`tracking-wide font-medium ${isLogin ? "text-sm" : "text-xs"}`}>
+        {isPt ? "PT" : "EN"}
+      </span>
     </Button>
   );
 };

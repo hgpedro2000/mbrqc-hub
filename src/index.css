@@ -152,8 +152,13 @@
   }
 
   .module-card-icon {
+<<<<<<< HEAD
     @apply w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center 
            text-accent mb-4 transition-colors duration-300;
+=======
+    @apply w-10 h-10 md:w-14 md:h-14 rounded-xl bg-accent/10 flex items-center justify-center 
+           text-accent mb-3 md:mb-4 transition-colors duration-300;
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   }
 
   .module-card:hover .module-card-icon {
@@ -161,6 +166,7 @@
   }
 
   .form-section {
+<<<<<<< HEAD
     @apply rounded-xl border border-border bg-card p-4 md:p-6 space-y-3 md:space-y-4;
   }
 
@@ -170,9 +176,40 @@
 
   .status-badge {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+=======
+    @apply rounded-xl border border-border bg-card p-3 md:p-6 space-y-2 md:space-y-4;
+  }
+
+  .form-section-title {
+    @apply text-base md:text-lg font-heading font-semibold text-foreground flex items-center gap-2;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium;
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   }
 
   .gradient-header {
     @apply bg-gradient-to-r from-primary to-primary/80 text-primary-foreground;
   }
+<<<<<<< HEAD
+=======
+}
+
+/* Mobile-specific touch improvements */
+@media (max-width: 640px) {
+  .form-section {
+    @apply rounded-lg;
+  }
+  
+  /* Better touch targets */
+  button, a, [role="button"] {
+    min-height: 36px;
+  }
+  
+  /* Prevent horizontal overflow */
+  .container {
+    @apply px-3;
+  }
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
 }

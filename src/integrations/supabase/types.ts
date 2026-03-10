@@ -775,6 +775,33 @@ export type Database = {
         }
         Relationships: []
       }
+<<<<<<< HEAD
+=======
+      user_module_permissions: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          module: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
       user_roles: {
         Row: {
           id: string

@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
+<<<<<<< HEAD
 
 const modules = [
   { id: "injecao", title: "Injeção Plástica", description: "Checklist para processo de injeção: matéria-prima, injetora, parâmetros dimensionais e melhorias.", icon: Droplets, path: "/tryout/injecao", stats: "19 campos", color: "from-blue-500/10 to-blue-600/5" },
@@ -20,6 +21,12 @@ const modules = [
 ];
 
 const Index = () => {
+=======
+import { useTranslation } from "react-i18next";
+
+const Index = () => {
+  const { t } = useTranslation();
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
@@ -29,6 +36,15 @@ const Index = () => {
   const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
+<<<<<<< HEAD
+=======
+  const modules = [
+    { id: "injecao", title: t("tryout.injection.title"), description: t("tryout.injection.description"), icon: Droplets, path: "/tryout/injecao", stats: t("tryout.injection.stats"), color: "from-blue-500/10 to-blue-600/5" },
+    { id: "pintura", title: t("tryout.painting.title"), description: t("tryout.painting.description"), icon: Paintbrush, path: "/tryout/pintura", stats: t("tryout.painting.stats"), color: "from-amber-500/10 to-orange-500/5" },
+    { id: "montagem", title: t("tryout.assembly.title"), description: t("tryout.assembly.description"), icon: Wrench, path: "/tryout/montagem", stats: t("tryout.assembly.stats"), color: "from-emerald-500/10 to-green-500/5" },
+  ];
+
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   const { data: injectionData = [] } = useQuery({
     queryKey: ["injection-checklists"],
     queryFn: async () => {
@@ -63,13 +79,21 @@ const Index = () => {
       if (error) throw error;
     },
     onSuccess: () => {
+<<<<<<< HEAD
       toast.success("Registro excluído!");
+=======
+      toast.success(t("tryout.deleteSuccess"));
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
       queryClient.invalidateQueries({ queryKey: ["injection-checklists"] });
       queryClient.invalidateQueries({ queryKey: ["painting-checklists"] });
       queryClient.invalidateQueries({ queryKey: ["assembly-checklists"] });
       setDeleteTarget(null);
     },
+<<<<<<< HEAD
     onError: (error: any) => toast.error("Erro ao excluir", { description: error.message }),
+=======
+    onError: (error: any) => toast.error(t("tryout.deleteError"), { description: error.message }),
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   });
 
   const injFilters: FilterConfig[] = useMemo(() => {
@@ -77,6 +101,7 @@ const Index = () => {
     const fornecedores = [...new Set(injectionData.map((i) => i.fornecedor).filter(Boolean))] as string[];
     const usuarios = [...new Set(injectionData.map((i) => i.nome).filter(Boolean))] as string[];
     return [
+<<<<<<< HEAD
       { key: "projeto", label: "Projeto", options: projetos },
       { key: "fornecedor", label: "Fornecedor", options: fornecedores },
       { key: "nome", label: "Usuário", options: usuarios },
@@ -87,6 +112,18 @@ const Index = () => {
     const allNames = [...new Set([...paintingData.map((i) => i.nome), ...assemblyData.map((i) => i.nome)].filter(Boolean))] as string[];
     return [{ key: "nome", label: "Usuário", options: allNames }];
   }, [paintingData, assemblyData]);
+=======
+      { key: "projeto", label: t("supplierSelector.project"), options: projetos },
+      { key: "fornecedor", label: t("common.supplier"), options: fornecedores },
+      { key: "nome", label: t("common.name"), options: usuarios },
+    ];
+  }, [injectionData, t]);
+
+  const genericFilters: FilterConfig[] = useMemo(() => {
+    const allNames = [...new Set([...paintingData.map((i) => i.nome), ...assemblyData.map((i) => i.nome)].filter(Boolean))] as string[];
+    return [{ key: "nome", label: t("common.name"), options: allNames }];
+  }, [paintingData, assemblyData, t]);
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
 
   const filteredInj = useMemo(() => injectionData.filter((i) => matchesSearch(i, ["numero", "nome", "part_number", "part_name", "fornecedor", "projeto"]) && matchesFilters(i)), [injectionData, search, filterValues]);
   const filteredPaint = useMemo(() => paintingData.filter((i) => matchesSearch(i, ["numero", "nome"]) && matchesFilters(i)), [paintingData, search, filterValues]);
@@ -126,7 +163,11 @@ const Index = () => {
       return (
         <div className="form-section text-center py-8">
           <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+<<<<<<< HEAD
           <p className="text-muted-foreground text-sm">{data.length === 0 ? "Nenhum registro." : "Nenhum resultado encontrado."}</p>
+=======
+          <p className="text-muted-foreground text-sm">{data.length === 0 ? t("tryout.noRecords") : t("common.noResults")}</p>
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
         </div>
       );
     }
@@ -178,6 +219,7 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+<<<<<<< HEAD
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
@@ -190,11 +232,28 @@ const Index = () => {
           </div>
           <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Try-Out</h1>
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Selecione o módulo do processo para iniciar o checklist.</p>
+=======
+                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.hub")}</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.dashboard")}</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
+              </Button>
+            </div>
+          </div>
+          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("tryout.headerTitle")}</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">{t("tryout.headerSubtitle")}</p>
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
         </div>
       </header>
 
       <main className="container mx-auto px-4 -mt-6 pb-12 space-y-8">
+<<<<<<< HEAD
         {/* Module cards */}
+=======
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
         <div className="grid gap-6 md:grid-cols-3">
           {modules.map((mod, i) => (
             <div key={mod.id} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => navigate(mod.path)}>
@@ -212,9 +271,14 @@ const Index = () => {
           ))}
         </div>
 
+<<<<<<< HEAD
         {/* Master list / Registros */}
         <div>
           <h2 className="text-xl font-heading font-bold text-foreground mb-4">Registros</h2>
+=======
+        <div>
+          <h2 className="text-xl font-heading font-bold text-foreground mb-4">{t("tryout.records")}</h2>
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
 
           <MasterListFilter
             searchValue={search}
@@ -228,6 +292,7 @@ const Index = () => {
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="injecao" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
+<<<<<<< HEAD
                 <Droplets className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Injeção</span> ({injectionData.length})
               </TabsTrigger>
               <TabsTrigger value="pintura" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
@@ -235,6 +300,15 @@ const Index = () => {
               </TabsTrigger>
               <TabsTrigger value="montagem" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
                 <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Montagem</span> ({assemblyData.length})
+=======
+                <Droplets className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">{t("tryout.injection.title")}</span> ({injectionData.length})
+              </TabsTrigger>
+              <TabsTrigger value="pintura" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
+                <Paintbrush className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">{t("tryout.painting.title")}</span> ({paintingData.length})
+              </TabsTrigger>
+              <TabsTrigger value="montagem" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
+                <Wrench className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">{t("tryout.assembly.title")}</span> ({assemblyData.length})
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
               </TabsTrigger>
             </TabsList>
 
@@ -254,6 +328,7 @@ const Index = () => {
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
+<<<<<<< HEAD
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>Tem certeza que deseja excluir este checklist? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
@@ -261,6 +336,15 @@ const Index = () => {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>
               Excluir
+=======
+            <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("tryout.deleteConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>
+              {t("common.delete")}
+>>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

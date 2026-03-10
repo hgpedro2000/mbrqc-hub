@@ -138,7 +138,7 @@ const Hub = () => {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {visibleModules.map((mod, i) => (
               <div
                 key={mod.id}
@@ -148,17 +148,17 @@ const Hub = () => {
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
                 <div className="relative">
-                  <div className={`w-14 h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-4`}>
-                    <mod.icon className="w-7 h-7" />
+                  <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-3 md:mb-4`}>
+                    <mod.icon className="w-5 h-5 md:w-7 md:h-7" />
                   </div>
-                  <h2 className="text-xl font-heading font-semibold text-card-foreground mb-2">
+                  <h2 className="text-lg md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">
                     {t(mod.titleKey)}
                   </h2>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                  <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4">
                     {t(mod.descriptionKey)}
                   </p>
                   <div className="flex items-center justify-end">
-                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   </div>
                 </div>
               </div>

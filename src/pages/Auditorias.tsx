@@ -83,11 +83,11 @@ const Auditorias = () => {
             </div>
             {isAdmin && <EngineeringMode module="Auditorias" />}
           </div>
-          <div className="flex items-center gap-3 mt-4">
-            <ShieldCheck className="w-8 h-8" />
+          <div className="flex items-center gap-3 mt-3 md:mt-4">
+            <ShieldCheck className="w-6 h-6 md:w-8 md:h-8" />
             <div>
-              <h1 className="text-2xl font-heading font-bold">{t("auditorias.title")}</h1>
-              <p className="text-primary-foreground/70 text-sm">{t("auditorias.subtitle")}</p>
+              <h1 className="text-xl md:text-2xl font-heading font-bold">{t("auditorias.title")}</h1>
+              <p className="text-primary-foreground/70 text-xs md:text-sm">{t("auditorias.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -113,29 +113,29 @@ const Auditorias = () => {
             <p className="text-muted-foreground">{auditorias.length === 0 ? t("auditorias.noAudits") : t("common.noResults")}</p>
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3 md:gap-4">
             {filtered.map((a) => (
               <div key={a.id} className="form-section cursor-pointer hover:border-accent/30 transition-colors" onClick={() => navigate(`/auditorias/${a.id}`)}>
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {a.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{a.numero}</span>}
-                      <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
+                      <h3 className="font-heading font-semibold text-foreground text-sm md:text-base">{a.titulo}</h3>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
                       <span>{t("auditorias.auditor")}: {a.auditor}</span>
                       <span>•</span>
                       <span>{new Date(a.data).toLocaleDateString("pt-BR")}</span>
                       {a.setor && <><span>•</span><span>{t("common.sector")}: {a.setor}</span></>}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <div className="flex items-center gap-2">
+                  <div className="flex sm:flex-col items-center sm:items-end gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
                       <span className={`status-badge ${statusColors[a.status]}`}>{t(`auditorias.status.${a.status}`)}</span>
                       <span className="status-badge bg-card text-foreground border">{tipoLabels[a.tipo]}</span>
                     </div>
                     {isAdmin && (
-                      <div className="flex gap-1 mt-2">
+                      <div className="flex gap-1 sm:mt-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); navigate(`/auditorias/editar/${a.id}`); }}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -147,8 +147,8 @@ const Auditorias = () => {
                   </div>
                 </div>
                 {a.pontuacao_total && Number(a.pontuacao_total) > 0 && (
-                  <div className="mt-3">
-                    <div className="flex items-center gap-2 text-sm">
+                  <div className="mt-2 md:mt-3">
+                    <div className="flex items-center gap-2 text-xs md:text-sm">
                       <span className="text-muted-foreground">{t("auditorias.score")}:</span>
                       <span className="font-semibold">{a.pontuacao_obtida}/{a.pontuacao_total}</span>
                       <span className="text-muted-foreground">({((Number(a.pontuacao_obtida) / Number(a.pontuacao_total)) * 100).toFixed(0)}%)</span>

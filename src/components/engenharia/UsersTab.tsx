@@ -16,6 +16,7 @@ import ModulePermissionsTab from "./ModulePermissionsTab";
 const UsersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [modulesOpen, setModulesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [fullName, setFullName] = useState("");

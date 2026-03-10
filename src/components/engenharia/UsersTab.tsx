@@ -226,6 +226,7 @@ const UsersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}

@@ -28,6 +28,7 @@ const MasterListFilter = ({
   onFilterChange,
   onClearFilters,
 }: MasterListFilterProps) => {
+  const { t } = useTranslation();
   const hasActiveFilters = searchValue || Object.values(filterValues).some((v) => v && v !== "all");
 
   return (

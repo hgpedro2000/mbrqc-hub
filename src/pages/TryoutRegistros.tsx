@@ -125,7 +125,7 @@ const TryoutRegistros = () => {
               <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.part_number}</span><Badge variant="secondary">{item.fornecedor}</Badge></div>
+                    <div className="flex items-center gap-2 flex-wrap">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.part_number}</span><Badge variant="secondary">{item.fornecedor}</Badge>{(item as any).status === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("common.draft")}</Badge>}</div>
                     <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>
                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{item.nome}</span><span>•</span><span>{new Date(item.data).toLocaleDateString("pt-BR")}</span></div>
                   </div>

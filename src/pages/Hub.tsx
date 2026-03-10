@@ -73,10 +73,11 @@ const getGreeting = () => {
 const Hub = () => {
   const { signOut, profile } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
+  const { enabledModules } = useEnabledModules();
   const navigate = useNavigate();
 
-  // Show engineering button for admin or engenharia roles
-  const showEngineering = isAdmin; // useUserRole checks admin; we'll also check engenharia below
+  const showEngineering = isAdmin;
+  const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id));
   
   return (
     <div className="min-h-screen bg-background">

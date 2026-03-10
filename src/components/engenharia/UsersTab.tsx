@@ -174,10 +174,22 @@ const UsersTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Usuários</h2>
-        <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Dialog open={modulesOpen} onOpenChange={setModulesOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline"><LayoutGrid className="w-4 h-4 mr-1" /> Módulos</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto w-[95vw]">
+              <DialogHeader>
+                <DialogTitle>Permissões de Módulos</DialogTitle>
+              </DialogHeader>
+              <ModulePermissionsTab />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Criar Novo Usuário</DialogTitle>

@@ -73,27 +73,27 @@ const AlertaQualidade = () => {
         {isLoading ? (<div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (<div className="form-section text-center py-12"><AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground">{alertas.length === 0 ? t("alertaQualidade.noAlerts") : t("common.noResults")}</p></div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-3 md:gap-4">
             {filtered.map((a) => (
               <div key={a.id} className="form-section hover:border-accent/30 transition-colors">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{a.numero_alerta}</span>
-                      <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
+                      <h3 className="font-heading font-semibold text-foreground text-sm md:text-base">{a.titulo}</h3>
                     </div>
-                    <p className="text-sm text-muted-foreground">{a.descricao_problema}</p>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{a.descricao_problema}</p>
+                    <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground mt-1">
                       <span>{t("alertaQualidade.issuer")}: {a.emitente}</span><span>•</span><span>{new Date(a.data_emissao).toLocaleDateString("pt-BR")}</span>
                       {a.part_number && <><span>•</span><span>PN: {a.part_number}</span></>}
                       {a.responsavel && <><span>•</span><span>{t("common.responsible")}: {a.responsavel}</span></>}
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
+                  <div className="flex sm:flex-col items-center sm:items-end gap-1.5 shrink-0">
                     <span className={`status-badge ${statusColors[a.status]}`}>{t(`alertaQualidade.status.${a.status}`)}</span>
                     <span className={`status-badge ${severidadeColors[a.severidade || "media"]}`}>{t(`alertaQualidade.severity.${a.severidade || "media"}`)}</span>
                     {isAdmin && (
-                      <div className="flex gap-1 mt-2">
+                      <div className="flex gap-1 sm:mt-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>

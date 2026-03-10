@@ -8,13 +8,15 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2 } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import ModulePermissionsTab from "./ModulePermissionsTab";
 
 const UsersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [modulesOpen, setModulesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [fullName, setFullName] = useState("");
@@ -172,10 +174,22 @@ const UsersTab = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-heading font-semibold">Usuários</h2>
-        <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Dialog open={modulesOpen} onOpenChange={setModulesOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline"><LayoutGrid className="w-4 h-4 mr-1" /> Módulos</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto w-[95vw]">
+              <DialogHeader>
+                <DialogTitle>Permissões de Módulos</DialogTitle>
+              </DialogHeader>
+              <ModulePermissionsTab />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Criar Novo Usuário</DialogTitle>
@@ -212,6 +226,7 @@ const UsersTab = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}

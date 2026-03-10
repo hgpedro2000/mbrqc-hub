@@ -124,7 +124,7 @@ const Hub = () => {
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((mod, i) => (
+          {visibleModules.map((mod, i) => (
             <div
               key={mod.id}
               className="module-card opacity-0 animate-fade-in cursor-pointer"

@@ -77,7 +77,7 @@ const Hub = () => {
   const navigate = useNavigate();
 
   const showEngineering = isAdmin;
-  const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id));
+  const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id as any));
   
   return (
     <div className="min-h-screen bg-background">

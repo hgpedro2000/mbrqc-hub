@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
 
 const ModulePermissionsTab = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState<string | null>(null);

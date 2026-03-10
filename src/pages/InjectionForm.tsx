@@ -96,7 +96,7 @@ const InjectionForm = () => {
   // Track changes
   useEffect(() => {
     setHasChanges(fornecedor !== "" || partNumber !== "" || totalPecas > 0 || photos.length > 0);
-  }, [fornecedor, partNumber, totalPecas, photos, defects, comments]);
+  }, [fornecedor, partNumber, totalPecas, photos, defects]);
 
   // Browser beforeunload
   useEffect(() => {

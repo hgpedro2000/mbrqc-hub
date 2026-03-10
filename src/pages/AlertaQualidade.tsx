@@ -58,7 +58,7 @@ const AlertaQualidade = () => {
             </div>
             {isAdmin && <EngineeringMode module="Alerta de Qualidade" />}
           </div>
-          <div className="flex items-center gap-3 mt-4"><AlertTriangle className="w-8 h-8" /><div><h1 className="text-2xl font-heading font-bold">{t("alertaQualidade.title")}</h1><p className="text-primary-foreground/70 text-sm">{t("alertaQualidade.subtitle")}</p></div></div>
+          <div className="flex items-center gap-3 mt-3 md:mt-4"><AlertTriangle className="w-6 h-6 md:w-8 md:h-8" /><div><h1 className="text-xl md:text-2xl font-heading font-bold">{t("alertaQualidade.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("alertaQualidade.subtitle")}</p></div></div>
         </div>
       </header>
 

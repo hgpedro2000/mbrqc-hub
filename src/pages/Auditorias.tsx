@@ -83,11 +83,11 @@ const Auditorias = () => {
             </div>
             {isAdmin && <EngineeringMode module="Auditorias" />}
           </div>
-          <div className="flex items-center gap-3 mt-4">
-            <ShieldCheck className="w-8 h-8" />
+          <div className="flex items-center gap-3 mt-3 md:mt-4">
+            <ShieldCheck className="w-6 h-6 md:w-8 md:h-8" />
             <div>
-              <h1 className="text-2xl font-heading font-bold">{t("auditorias.title")}</h1>
-              <p className="text-primary-foreground/70 text-sm">{t("auditorias.subtitle")}</p>
+              <h1 className="text-xl md:text-2xl font-heading font-bold">{t("auditorias.title")}</h1>
+              <p className="text-primary-foreground/70 text-xs md:text-sm">{t("auditorias.subtitle")}</p>
             </div>
           </div>
         </div>

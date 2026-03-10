@@ -59,7 +59,7 @@ const Contencao = () => {
             </div>
             {isAdmin && <EngineeringMode module="Contenção" />}
           </div>
-          <div className="flex items-center gap-3 mt-4"><ShieldAlert className="w-8 h-8" /><div><h1 className="text-2xl font-heading font-bold">{t("contencao.title")}</h1><p className="text-primary-foreground/70 text-sm">{t("contencao.subtitle")}</p></div></div>
+          <div className="flex items-center gap-3 mt-3 md:mt-4"><ShieldAlert className="w-6 h-6 md:w-8 md:h-8" /><div><h1 className="text-xl md:text-2xl font-heading font-bold">{t("contencao.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("contencao.subtitle")}</p></div></div>
         </div>
       </header>
 

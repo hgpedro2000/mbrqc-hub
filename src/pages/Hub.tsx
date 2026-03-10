@@ -123,32 +123,44 @@ const Hub = () => {
       </header>
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {visibleModules.map((mod, i) => (
-            <div
-              key={mod.id}
-              className="module-card opacity-0 animate-fade-in cursor-pointer"
-              style={{ animationDelay: `${i * 80}ms` }}
-              onClick={() => navigate(mod.path)}
-            >
-              <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
-              <div className="relative">
-                <div className={`w-14 h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-4`}>
-                  <mod.icon className="w-7 h-7" />
-                </div>
-                <h2 className="text-xl font-heading font-semibold text-card-foreground mb-2">
-                  {mod.title}
-                </h2>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                  {mod.description}
-                </p>
-                <div className="flex items-center justify-end">
-                  <ArrowRight className="w-5 h-5 text-muted-foreground" />
+        {visibleModules.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <ShieldAlert className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-heading font-semibold text-foreground mb-2">Nenhum módulo habilitado</h2>
+            <p className="text-muted-foreground max-w-md text-sm">
+              Você ainda não possui acesso a nenhum módulo. Entre em contato com o administrador para solicitar a ativação dos módulos necessários.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {visibleModules.map((mod, i) => (
+              <div
+                key={mod.id}
+                className="module-card opacity-0 animate-fade-in cursor-pointer"
+                style={{ animationDelay: `${i * 80}ms` }}
+                onClick={() => navigate(mod.path)}
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
+                <div className="relative">
+                  <div className={`w-14 h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-4`}>
+                    <mod.icon className="w-7 h-7" />
+                  </div>
+                  <h2 className="text-xl font-heading font-semibold text-card-foreground mb-2">
+                    {mod.title}
+                  </h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                    {mod.description}
+                  </p>
+                  <div className="flex items-center justify-end">
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

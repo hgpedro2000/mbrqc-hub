@@ -181,16 +181,28 @@ const ModulePermissionsTab = () => {
                       </TableCell>
                     ))}
                     <TableCell className="text-center">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        disabled={userIsAdmin || saving === `all-${p.id}`}
-                        onClick={() => enableAllModules(p.id)}
-                      >
-                        {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3 mr-1" />}
-                        Ativar todos
-                      </Button>
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          disabled={userIsAdmin || saving === `all-${p.id}`}
+                          onClick={() => enableAllModules(p.id)}
+                        >
+                          {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3 mr-1" />}
+                          Ativar todos
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-destructive hover:text-destructive"
+                          disabled={userIsAdmin || saving === `none-${p.id}`}
+                          onClick={() => disableAllModules(p.id)}
+                        >
+                          {saving === `none-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3 mr-1" />}
+                          Desativar todos
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

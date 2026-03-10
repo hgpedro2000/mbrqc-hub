@@ -162,6 +162,18 @@ const ModulePermissionsTab = () => {
                         />
                       </TableCell>
                     ))}
+                    <TableCell className="text-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        disabled={userIsAdmin || saving === `all-${p.id}`}
+                        onClick={() => enableAllModules(p.id)}
+                      >
+                        {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3 mr-1" />}
+                        Ativar todos
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}

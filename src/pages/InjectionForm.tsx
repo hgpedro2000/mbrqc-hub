@@ -206,10 +206,13 @@ const InjectionForm = () => {
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
-          <button onClick={() => navigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
+          <button onClick={() => handleNavigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /><span className="text-sm">{t("common.back")}</span>
           </button>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? t("tryout.injection.editTitle") : t("tryout.injection.formTitle")}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? t("tryout.injection.editTitle") : t("tryout.injection.formTitle")}</h1>
+            {currentStatus === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-300">{t("common.draft")}</Badge>}
+          </div>
         </div>
       </header>
 

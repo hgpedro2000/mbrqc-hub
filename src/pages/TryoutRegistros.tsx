@@ -141,7 +141,7 @@ const TryoutRegistros = () => {
             : <div className="grid gap-4">{filteredPaint.map((item) => (
               <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span></div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
+                   <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span>{(item as any).status === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("common.draft")}</Badge>}</div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
                   <EditActions id={item.id} table="painting_checklists" createdBy={item.created_by} />
                 </div>
               </div>

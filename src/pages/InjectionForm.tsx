@@ -37,6 +37,13 @@ const InjectionForm = () => {
   const [photoType, setPhotoType] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const [draftRecordId, setDraftRecordId] = useState<string | null>(id || null);
+  const [currentStatus, setCurrentStatus] = useState<string>("submitted");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [fornecedor, setFornecedor] = useState("");
   const [partNumber, setPartNumber] = useState("");

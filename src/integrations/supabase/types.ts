@@ -775,8 +775,6 @@ export type Database = {
         }
         Relationships: []
       }
-<<<<<<< HEAD
-=======
       user_module_permissions: {
         Row: {
           created_at: string
@@ -801,7 +799,6 @@ export type Database = {
         }
         Relationships: []
       }
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
       user_roles: {
         Row: {
           id: string

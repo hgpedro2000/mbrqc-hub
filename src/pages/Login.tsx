@@ -7,18 +7,12 @@ import { Label } from "@/components/ui/label";
 import { LogIn } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
-<<<<<<< HEAD
-
-const Login = () => {
-  const navigate = useNavigate();
-=======
 import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslation } from "react-i18next";
 
 const Login = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,16 +27,9 @@ const Login = () => {
       });
 
       if (error || data?.error) {
-<<<<<<< HEAD
-        throw new Error(data?.error || error?.message || "Erro na autenticação");
-      }
-
-      // Set session from the edge function response
-=======
         throw new Error(data?.error || error?.message || t("login.authError"));
       }
 
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
       if (data.session) {
         await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -50,29 +37,16 @@ const Login = () => {
         });
       }
 
-<<<<<<< HEAD
-      // Check if user must change password
-      if (data.profile?.must_change_password) {
-        toast.info("Você precisa alterar sua senha no primeiro acesso.");
-=======
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
         navigate("/alterar-senha");
         return;
       }
 
-<<<<<<< HEAD
-      toast.success(`Bem-vindo, ${data.profile?.full_name || ""}!`);
-      navigate("/");
-    } catch (error: any) {
-      toast.error(error.message || "Erro na autenticação");
-=======
       toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       navigate("/");
     } catch (error: any) {
       toast.error(error.message || t("login.authError"));
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
     } finally {
       setLoading(false);
     }
@@ -80,13 +54,6 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
-<<<<<<< HEAD
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img src={logo} alt="Hyundai Mobis" className="h-16 mx-auto mb-4 object-contain" />
-          <h1 className="text-2xl font-heading font-bold text-foreground">Quality Control-Hub</h1>
-          <p className="text-muted-foreground mt-1">Entre com seu número de usuário</p>
-=======
       <div className="absolute top-4 right-4">
         <LanguageToggle variant="login" />
       </div>
@@ -95,16 +62,11 @@ const Login = () => {
           <img src={logo} alt="Hyundai Mobis" className="h-40 mx-auto mb-0 mt-10 object-contain" />
           <h1 className="text-2xl font-heading font-bold text-foreground -mt-1">{t("login.title")}</h1>
           <p className="text-muted-foreground mt-0">{t("login.subtitle")}</p>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
         </div>
 
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
-<<<<<<< HEAD
-            <Label htmlFor="employeeNumber">Número do Usuário</Label>
-=======
             <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
             <Input
               id="employeeNumber"
               type="text"
@@ -116,11 +78,7 @@ const Login = () => {
             />
           </div>
           <div className="space-y-2">
-<<<<<<< HEAD
-            <Label htmlFor="password">Senha</Label>
-=======
             <Label htmlFor="password">{t("login.password")}</Label>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
             <Input
               id="password"
               type="password"
@@ -128,11 +86,7 @@ const Login = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-<<<<<<< HEAD
-              placeholder="Sua senha"
-=======
               placeholder={t("login.password")}
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
             />
           </div>
           <Button
@@ -140,17 +94,10 @@ const Login = () => {
             disabled={loading}
             className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12"
           >
-<<<<<<< HEAD
-            {loading ? "Aguarde..." : (
-              <>
-                <LogIn className="w-4 h-4 mr-2" />
-                Entrar
-=======
             {loading ? t("login.wait") : (
               <>
                 <LogIn className="w-4 h-4 mr-2" />
                 {t("login.enter")}
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
               </>
             )}
           </Button>
@@ -158,11 +105,7 @@ const Login = () => {
             to="/esqueci-senha"
             className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-<<<<<<< HEAD
-            Esqueci minha senha
-=======
             {t("login.forgotPassword")}
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
           </Link>
         </form>
       </div>

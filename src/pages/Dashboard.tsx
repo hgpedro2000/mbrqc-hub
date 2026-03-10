@@ -18,10 +18,7 @@ import {
   PieChart,
   Pie,
   Cell,
-<<<<<<< HEAD
-=======
   LabelList,
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
 } from "recharts";
 
 interface InjectionRow {
@@ -512,17 +509,12 @@ const Dashboard = () => {
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={80} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-<<<<<<< HEAD
-                <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16} />
-                <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16} />
-=======
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16}>
                   <LabelList dataKey="ok" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />
                 </Bar>
                 <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16}>
                   <LabelList dataKey="ng" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />
                 </Bar>
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
               </BarChart>
             </ChartContainer>
           ) : (

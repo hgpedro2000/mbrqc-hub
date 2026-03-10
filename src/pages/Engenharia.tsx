@@ -33,8 +33,9 @@ const Engenharia = () => {
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6 h-auto">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-7 h-auto">
               <TabsTrigger value="usuarios" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Usuários</TabsTrigger>
+              <TabsTrigger value="modulos" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Módulos</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Fornecedores</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Part Numbers</TabsTrigger>
               <TabsTrigger value="defeitos" className="text-xs md:text-sm px-3 py-2 whitespace-nowrap">Defeitos</TabsTrigger>

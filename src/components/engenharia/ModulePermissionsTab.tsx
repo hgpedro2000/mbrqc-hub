@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
 
 const ModulePermissionsTab = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
@@ -127,14 +129,14 @@ const ModulePermissionsTab = () => {
         <h2 className="text-lg font-heading font-semibold">Permissões de Módulos</h2>
       </div>
       <p className="text-sm text-muted-foreground">
-        Ative ou desative módulos individualmente para cada usuário. Administradores têm acesso a todos os módulos automaticamente.
+        {t("engenharia.modulePermissionsDesc")}
       </p>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar usuário..."
+          placeholder={t("engenharia.searchUser")}
           className="pl-9"
         />
       </div>

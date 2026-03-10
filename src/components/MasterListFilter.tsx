@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ const MasterListFilter = ({
   onFilterChange,
   onClearFilters,
 }: MasterListFilterProps) => {
+  const { t } = useTranslation();
   const hasActiveFilters = searchValue || Object.values(filterValues).some((v) => v && v !== "all");
 
   return (
@@ -35,7 +37,7 @@ const MasterListFilter = ({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por número, título, responsável..."
+            placeholder={t("filter.searchPlaceholder")}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9"
@@ -43,7 +45,7 @@ const MasterListFilter = ({
         </div>
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onClearFilters} className="gap-1 text-muted-foreground shrink-0">
-            <X className="w-3 h-3" /> Limpar
+            <X className="w-3 h-3" /> {t("filter.clearFilters")}
           </Button>
         )}
       </div>
@@ -59,7 +61,7 @@ const MasterListFilter = ({
                 <SelectValue placeholder={filter.label} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos — {filter.label}</SelectItem>
+                <SelectItem value="all">{t("filter.allPrefix")} — {filter.label}</SelectItem>
                 {filter.options.map((opt) => (
                   <SelectItem key={opt} value={opt}>
                     {opt}

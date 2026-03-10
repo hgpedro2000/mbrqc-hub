@@ -136,7 +136,7 @@ const ModulePermissionsTab = () => {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar usuário..."
+          placeholder={t("engenharia.searchUser")}
           className="pl-9"
         />
       </div>

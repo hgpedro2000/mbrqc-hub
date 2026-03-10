@@ -362,11 +362,24 @@ const InjectionForm = () => {
             )}
           </div>
 
-          <Button type="submit" size="lg" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="button" variant="outline" size="lg" disabled={draftLoading} onClick={saveDraft} className="flex-1 font-heading font-semibold text-base h-14 gap-2">
+              {draftLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{t("common.savingDraft")}</>) : (<><Save className="w-5 h-5" />{t("common.saveDraft")}</>)}
+            </Button>
+            <Button type="submit" size="lg" disabled={loading} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
+              {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
+            </Button>
+          </div>
         </form>
       </main>
+
+      <ExitConfirmDialog
+        open={showExitDialog}
+        onSaveAndExit={async () => { await saveDraft(); setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onExitWithoutSave={() => { setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onCancel={() => { setShowExitDialog(false); setPendingNav(null); }}
+        saving={draftLoading}
+      />
     </div>
   );
 };

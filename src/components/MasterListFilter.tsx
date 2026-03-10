@@ -45,7 +45,7 @@ const MasterListFilter = ({
         </div>
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={onClearFilters} className="gap-1 text-muted-foreground shrink-0">
-            <X className="w-3 h-3" /> Limpar
+            <X className="w-3 h-3" /> {t("filter.clearFilters")}
           </Button>
         )}
       </div>

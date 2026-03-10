@@ -27,15 +27,15 @@ const TryoutRegistros = () => {
 
   const { data: injectionData = [], isLoading: loadingInj } = useQuery({
     queryKey: ["injection-checklists"],
-    queryFn: async () => { const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at").order("created_at", { ascending: false }); if (error) throw error; return data; },
+    queryFn: async () => { const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at, status").order("created_at", { ascending: false }); if (error) throw error; return data; },
   });
   const { data: paintingData = [], isLoading: loadingPaint } = useQuery({
     queryKey: ["painting-checklists"],
-    queryFn: async () => { const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false }); if (error) throw error; return data; },
+    queryFn: async () => { const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false }); if (error) throw error; return data; },
   });
   const { data: assemblyData = [], isLoading: loadingAsm } = useQuery({
     queryKey: ["assembly-checklists"],
-    queryFn: async () => { const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false }); if (error) throw error; return data; },
+    queryFn: async () => { const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false }); if (error) throw error; return data; },
   });
 
   const isLoading = loadingInj || loadingPaint || loadingAsm;

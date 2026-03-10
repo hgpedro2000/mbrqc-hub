@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, CheckCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
@@ -73,6 +74,28 @@ const ModulePermissionsTab = () => {
     }
   };
 
+  const enableAllModules = async (userId: string) => {
+    setSaving(`all-${userId}`);
+    try {
+      for (const m of ALL_MODULES) {
+        const existing = permissions.find((p: any) => p.user_id === userId && p.module === m.id);
+        if (existing) {
+          if (!existing.enabled) {
+            await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+          }
+        } else {
+          await supabase.from("user_module_permissions").insert({ user_id: userId, module: m.id, enabled: true });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      toast.success("Todos os módulos ativados");
+    } catch {
+      toast.error("Erro ao ativar módulos");
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const filteredProfiles = profiles.filter((p: any) =>
     p.full_name.toLowerCase().includes(search.toLowerCase()) ||
     p.employee_number.includes(search)
@@ -113,6 +136,7 @@ const ModulePermissionsTab = () => {
                     {m.label}
                   </TableHead>
                 ))}
+                <TableHead className="text-center min-w-[90px] text-xs">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -138,6 +162,18 @@ const ModulePermissionsTab = () => {
                         />
                       </TableCell>
                     ))}
+                    <TableCell className="text-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        disabled={userIsAdmin || saving === `all-${p.id}`}
+                        onClick={() => enableAllModules(p.id)}
+                      >
+                        {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3 mr-1" />}
+                        Ativar todos
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}

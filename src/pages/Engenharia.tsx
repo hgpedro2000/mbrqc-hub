@@ -7,6 +7,7 @@ import UsersTab from "@/components/engenharia/UsersTab";
 import SuppliersTab from "@/components/engenharia/SuppliersTab";
 import PartNumbersTab from "@/components/engenharia/PartNumbersTab";
 import CatalogTab from "@/components/engenharia/CatalogTab";
+import ModulePermissionsTab from "@/components/engenharia/ModulePermissionsTab";
 
 const Engenharia = () => {
   const navigate = useNavigate();

@@ -83,6 +83,8 @@ const InjectionForm = () => {
       setProjeto(existing.projeto); setModulo(existing.modulo);
       setTotalPecas((existing as any).total_pecas || 0); setPecasNG((existing as any).pecas_ng || 0);
       setRazaoTryout((existing as any).razao_tryout || ""); setRazaoTryoutOutro((existing as any).razao_tryout_outro || "");
+      setCurrentStatus((existing as any).status || "submitted");
+      setDraftRecordId(existing.id);
       const existingDefects = (existing as any).defects as any[] | undefined;
       if (existingDefects && existingDefects.length > 0) {
         setDefects(existingDefects.map((d: any) => ({ description: d.description || "", needs_improvement: d.needs_improvement || false, improvement_category: d.improvement_category || "", failure_mode: d.failure_mode || "", photos: [] })));
@@ -90,6 +92,60 @@ const InjectionForm = () => {
       setDefaults(existing);
     }
   }, [existing]);
+
+  // Track changes
+  useEffect(() => {
+    setHasChanges(fornecedor !== "" || partNumber !== "" || totalPecas > 0 || photos.length > 0);
+  }, [fornecedor, partNumber, totalPecas, photos, defects, comments]);
+
+  // Browser beforeunload
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => { if (hasChanges && !submitted) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasChanges, submitted]);
+
+  const handleNavigate = useCallback((path: string) => {
+    if (hasChanges && !submitted) { setPendingNav(path); setShowExitDialog(true); } else { navigate(path); }
+  }, [hasChanges, submitted, navigate]);
+
+  const buildDraftPayload = useCallback(() => {
+    const formData = formRef.current ? new FormData(formRef.current) : null;
+    return {
+      nome: profile?.full_name || "", data: formData?.get("data") as string || new Date().toISOString().split("T")[0], fornecedor, projeto,
+      part_number: partNumber, part_name: partName, modulo, qtd_tryout: Number(formData?.get("qtdTryout") || 1),
+      materia_prima: (formData?.get("materiaPrima") as string) || "", injetora: (formData?.get("injetora") as string) || "",
+      tonelagem: Number(formData?.get("tonelagem") || 0), cycle_time: Number(formData?.get("cycleTime") || 0),
+      cooling_time: Number(formData?.get("coolingTime") || 0), weight: Number(formData?.get("weight") || 0),
+      dimensional: (formData?.get("dimensional") as string) || "", comentarios: (formData?.get("comentarios") as string) || null,
+      razao_tryout: razaoTryout, razao_tryout_outro: razaoTryoutOutro,
+      total_pecas: totalPecas, pecas_ok: pecasOK, pecas_ng: pecasNG,
+      rate: totalPecas > 0 ? parseFloat(((pecasOK / totalPecas) * 100).toFixed(2)) : 0,
+      needs_improvement: defects.some(d => d.needs_improvement), improvement_category: null,
+      defects: defects.map((d) => ({ description: d.description, needs_improvement: d.needs_improvement, improvement_category: d.needs_improvement ? d.improvement_category : null, failure_mode: d.failure_mode || null })),
+      status: "draft",
+    };
+  }, [fornecedor, projeto, partNumber, partName, modulo, razaoTryout, razaoTryoutOutro, totalPecas, pecasOK, pecasNG, defects, profile]);
+
+  const saveDraft = useCallback(async () => {
+    setDraftLoading(true);
+    try {
+      const payload = buildDraftPayload();
+      if (draftRecordId) {
+        const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", draftRecordId); if (error) throw error;
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data: record, error } = await supabase.from("injection_checklists").insert(insertPayload as any).select("id").single();
+        if (error) throw error;
+        setDraftRecordId(record.id);
+      }
+      setCurrentStatus("draft");
+      setHasChanges(false);
+      toast.success(t("common.draftSaved"));
+    } catch (error: any) { console.error("Draft save error:", error); toast.error(t("common.draftSaveError"), { description: error.message }); }
+    finally { setDraftLoading(false); }
+  }, [buildDraftPayload, draftRecordId, t]);
 
   const handlePartDataChange = (data: { part_name: string; project: string; line_module: string }) => { setPartName(data.part_name); setProjeto(data.project); setModulo(data.line_module); };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files) return; setPhotos((prev) => [...prev, ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]); };

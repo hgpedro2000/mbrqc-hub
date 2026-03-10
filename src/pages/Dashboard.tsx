@@ -18,6 +18,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  LabelList,
 } from "recharts";
 
 interface InjectionRow {

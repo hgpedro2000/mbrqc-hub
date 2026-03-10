@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/hyundai-mobis-logo.png";
 

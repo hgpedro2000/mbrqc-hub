@@ -161,17 +161,6 @@
   }
 
   .form-section {
-<<<<<<< HEAD
-    @apply rounded-xl border border-border bg-card p-4 md:p-6 space-y-3 md:space-y-4;
-  }
-
-  .form-section-title {
-    @apply text-lg font-heading font-semibold text-foreground flex items-center gap-2;
-  }
-
-  .status-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
-=======
     @apply rounded-xl border border-border bg-card p-3 md:p-6 space-y-2 md:space-y-4;
   }
 
@@ -181,7 +170,6 @@
 
   .status-badge {
     @apply inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium;
->>>>>>> 853a538787cf446c7d01e628ea96edf722a8086f
   }
 
   .gradient-header {

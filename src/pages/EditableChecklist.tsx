@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadPhotos } from "@/lib/uploadPhotos";
@@ -13,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTranslation } from "react-i18next";
+import ExitConfirmDialog from "@/components/ExitConfirmDialog";
 
 interface ChecklistItem { id: string; label: string; type: "check" | "text"; }
 
@@ -53,8 +55,14 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const [comments, setComments] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
   const [nome] = useState(profile?.full_name || "");
   const [data, setData] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const [recordId, setRecordId] = useState<string | null>(id || null);
+  const [currentStatus, setCurrentStatus] = useState<string>("submitted");
 
   const { data: existing } = useQuery({
     queryKey: [`${tableName}-edit`, id],
@@ -65,10 +73,59 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   useEffect(() => {
     if (existing) {
       setData(existing.data); setComments(existing.comentarios || "");
+      setCurrentStatus((existing as any).status || "submitted");
       if (Array.isArray(existing.items) && existing.items.length > 0) setItems(existing.items.map((item: any) => ({ id: item.id, label: item.label, type: "check" as const })));
       if (Array.isArray(existing.checked_items)) setCheckedItems(new Set(existing.checked_items as string[]));
+      setRecordId(existing.id);
     }
   }, [existing]);
+
+  // Track changes
+  useEffect(() => {
+    if (!existing && !isEdit) { setHasChanges(data !== "" || comments !== "" || checkedItems.size > 0 || photos.length > 0); return; }
+    if (existing) { setHasChanges(true); }
+  }, [data, comments, checkedItems, photos, items]);
+
+  // Browser beforeunload
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => { if (hasChanges && !submitted) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasChanges, submitted]);
+
+  const handleNavigate = useCallback((path: string) => {
+    if (hasChanges && !submitted) { setPendingNav(path); setShowExitDialog(true); } else { navigate(path); }
+  }, [hasChanges, submitted, navigate]);
+
+  const buildPayload = () => {
+    const itemsData = items.map((item) => ({ id: item.id, label: item.label }));
+    const checkedData = Array.from(checkedItems);
+    return { nome, data: data || new Date().toISOString().split("T")[0], items: itemsData, checked_items: checkedData, comentarios: comments || null };
+  };
+
+  const saveDraft = useCallback(async () => {
+    setDraftLoading(true);
+    try {
+      const payload = { ...buildPayload(), status: "draft" };
+      if (recordId) {
+        const { error } = await supabase.from(tableName).update(payload as any).eq("id", recordId);
+        if (error) throw error;
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single();
+        if (error) throw error;
+        setRecordId(record.id);
+      }
+      if (photos.length > 0 && recordId) await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
+      setCurrentStatus("draft");
+      setHasChanges(false);
+      toast.success(t("common.draftSaved"));
+    } catch (error: any) {
+      console.error("Draft save error:", error);
+      toast.error(t("common.draftSaveError"), { description: error.message });
+    } finally { setDraftLoading(false); }
+  }, [recordId, items, checkedItems, comments, data, nome, photos, tableName, checklistType, t]);
 
   const addItem = () => { if (!newItemLabel.trim()) return; setItems((prev) => [...prev, { id: Date.now().toString(), label: newItemLabel.trim(), type: "check" }]); setNewItemLabel(""); };
   const removeItem = (id: string) => { setItems((prev) => prev.filter((item) => item.id !== id)); setCheckedItems((prev) => { const n = new Set(prev); n.delete(id); return n; }); };
@@ -81,14 +138,18 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     if (!nome || !data) { toast.error(t("editableChecklist.fillNameDate")); return; }
     setLoading(true);
     try {
-      const itemsData = items.map((item) => ({ id: item.id, label: item.label }));
-      const checkedData = Array.from(checkedItems);
-      const payload = { nome, data, items: itemsData, checked_items: checkedData, comentarios: comments || null };
-      let recordId: string;
-      if (isEdit) { const { error } = await supabase.from(tableName).update(payload).eq("id", id!); if (error) throw error; recordId = id!; }
-      else { const { data: userData } = await supabase.auth.getUser(); const insertPayload = { ...payload, created_by: userData?.user?.id || null }; const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single(); if (error) throw error; recordId = record.id; }
-      if (photos.length > 0) await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
+      const payload = { ...buildPayload(), status: "submitted" };
+      if (recordId) { const { error } = await supabase.from(tableName).update(payload as any).eq("id", recordId); if (error) throw error; }
+      else {
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single();
+        if (error) throw error;
+        setRecordId(record.id);
+      }
+      if (photos.length > 0 && recordId) await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
       setSubmitted(true);
+      setHasChanges(false);
       toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));
       setTimeout(() => navigate("/tryout/registros"), 2000);
     } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }
@@ -110,10 +171,13 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
-          <button onClick={() => navigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
+          <button onClick={() => handleNavigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /><span className="text-sm">{t("common.back")}</span>
           </button>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? `${t("common.edit")} ${title}` : title}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? `${t("common.edit")} ${title}` : title}</h1>
+            {currentStatus === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-300">{t("common.draft")}</Badge>}
+          </div>
           <p className="text-primary-foreground/70 text-sm mt-1">{headerLabel}</p>
         </div>
       </header>
@@ -167,11 +231,24 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
             )}
           </div>
 
-          <Button type="submit" size="lg" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="button" variant="outline" size="lg" disabled={draftLoading} onClick={saveDraft} className="flex-1 font-heading font-semibold text-base h-14 gap-2">
+              {draftLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{t("common.savingDraft")}</>) : (<><Save className="w-5 h-5" />{t("common.saveDraft")}</>)}
+            </Button>
+            <Button type="submit" size="lg" disabled={loading} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
+              {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
+            </Button>
+          </div>
         </form>
       </main>
+
+      <ExitConfirmDialog
+        open={showExitDialog}
+        onSaveAndExit={async () => { await saveDraft(); setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onExitWithoutSave={() => { setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onCancel={() => { setShowExitDialog(false); setPendingNav(null); }}
+        saving={draftLoading}
+      />
     </div>
   );
 };

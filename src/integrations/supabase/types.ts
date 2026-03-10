@@ -166,6 +166,7 @@ export type Database = {
           items: Json
           nome: string
           numero: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -178,6 +179,7 @@ export type Database = {
           items?: Json
           nome: string
           numero?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -190,6 +192,7 @@ export type Database = {
           items?: Json
           nome?: string
           numero?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -531,6 +534,7 @@ export type Database = {
           rate: number | null
           razao_tryout: string | null
           razao_tryout_outro: string | null
+          status: string
           tonelagem: number
           total_pecas: number | null
           updated_at: string
@@ -563,6 +567,7 @@ export type Database = {
           rate?: number | null
           razao_tryout?: string | null
           razao_tryout_outro?: string | null
+          status?: string
           tonelagem: number
           total_pecas?: number | null
           updated_at?: string
@@ -595,6 +600,7 @@ export type Database = {
           rate?: number | null
           razao_tryout?: string | null
           razao_tryout_outro?: string | null
+          status?: string
           tonelagem?: number
           total_pecas?: number | null
           updated_at?: string
@@ -613,6 +619,7 @@ export type Database = {
           items: Json
           nome: string
           numero: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -625,6 +632,7 @@ export type Database = {
           items?: Json
           nome: string
           numero?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -637,6 +645,7 @@ export type Database = {
           items?: Json
           nome?: string
           numero?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []

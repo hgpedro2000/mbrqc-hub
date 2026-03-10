@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import ExitConfirmDialog from "@/components/ExitConfirmDialog";
 
 interface DefectEntry {
   description: string;
@@ -35,6 +37,13 @@ const InjectionForm = () => {
   const [photoType, setPhotoType] = useState<string>("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [draftLoading, setDraftLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const [draftRecordId, setDraftRecordId] = useState<string | null>(id || null);
+  const [currentStatus, setCurrentStatus] = useState<string>("submitted");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [fornecedor, setFornecedor] = useState("");
   const [partNumber, setPartNumber] = useState("");
@@ -74,6 +83,8 @@ const InjectionForm = () => {
       setProjeto(existing.projeto); setModulo(existing.modulo);
       setTotalPecas((existing as any).total_pecas || 0); setPecasNG((existing as any).pecas_ng || 0);
       setRazaoTryout((existing as any).razao_tryout || ""); setRazaoTryoutOutro((existing as any).razao_tryout_outro || "");
+      setCurrentStatus((existing as any).status || "submitted");
+      setDraftRecordId(existing.id);
       const existingDefects = (existing as any).defects as any[] | undefined;
       if (existingDefects && existingDefects.length > 0) {
         setDefects(existingDefects.map((d: any) => ({ description: d.description || "", needs_improvement: d.needs_improvement || false, improvement_category: d.improvement_category || "", failure_mode: d.failure_mode || "", photos: [] })));
@@ -81,6 +92,60 @@ const InjectionForm = () => {
       setDefaults(existing);
     }
   }, [existing]);
+
+  // Track changes
+  useEffect(() => {
+    setHasChanges(fornecedor !== "" || partNumber !== "" || totalPecas > 0 || photos.length > 0);
+  }, [fornecedor, partNumber, totalPecas, photos, defects]);
+
+  // Browser beforeunload
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => { if (hasChanges && !submitted) { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasChanges, submitted]);
+
+  const handleNavigate = useCallback((path: string) => {
+    if (hasChanges && !submitted) { setPendingNav(path); setShowExitDialog(true); } else { navigate(path); }
+  }, [hasChanges, submitted, navigate]);
+
+  const buildDraftPayload = useCallback(() => {
+    const formData = formRef.current ? new FormData(formRef.current) : null;
+    return {
+      nome: profile?.full_name || "", data: formData?.get("data") as string || new Date().toISOString().split("T")[0], fornecedor, projeto,
+      part_number: partNumber, part_name: partName, modulo, qtd_tryout: Number(formData?.get("qtdTryout") || 1),
+      materia_prima: (formData?.get("materiaPrima") as string) || "", injetora: (formData?.get("injetora") as string) || "",
+      tonelagem: Number(formData?.get("tonelagem") || 0), cycle_time: Number(formData?.get("cycleTime") || 0),
+      cooling_time: Number(formData?.get("coolingTime") || 0), weight: Number(formData?.get("weight") || 0),
+      dimensional: (formData?.get("dimensional") as string) || "", comentarios: (formData?.get("comentarios") as string) || null,
+      razao_tryout: razaoTryout, razao_tryout_outro: razaoTryoutOutro,
+      total_pecas: totalPecas, pecas_ok: pecasOK, pecas_ng: pecasNG,
+      rate: totalPecas > 0 ? parseFloat(((pecasOK / totalPecas) * 100).toFixed(2)) : 0,
+      needs_improvement: defects.some(d => d.needs_improvement), improvement_category: null,
+      defects: defects.map((d) => ({ description: d.description, needs_improvement: d.needs_improvement, improvement_category: d.needs_improvement ? d.improvement_category : null, failure_mode: d.failure_mode || null })),
+      status: "draft",
+    };
+  }, [fornecedor, projeto, partNumber, partName, modulo, razaoTryout, razaoTryoutOutro, totalPecas, pecasOK, pecasNG, defects, profile]);
+
+  const saveDraft = useCallback(async () => {
+    setDraftLoading(true);
+    try {
+      const payload = buildDraftPayload();
+      if (draftRecordId) {
+        const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", draftRecordId); if (error) throw error;
+      } else {
+        const { data: userData } = await supabase.auth.getUser();
+        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
+        const { data: record, error } = await supabase.from("injection_checklists").insert(insertPayload as any).select("id").single();
+        if (error) throw error;
+        setDraftRecordId(record.id);
+      }
+      setCurrentStatus("draft");
+      setHasChanges(false);
+      toast.success(t("common.draftSaved"));
+    } catch (error: any) { console.error("Draft save error:", error); toast.error(t("common.draftSaveError"), { description: error.message }); }
+    finally { setDraftLoading(false); }
+  }, [buildDraftPayload, draftRecordId, t]);
 
   const handlePartDataChange = (data: { part_name: string; project: string; line_module: string }) => { setPartName(data.part_name); setProjeto(data.project); setModulo(data.line_module); };
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files) return; setPhotos((prev) => [...prev, ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]); };
@@ -111,13 +176,15 @@ const InjectionForm = () => {
         rate: totalPecas > 0 ? parseFloat(((pecasOK / totalPecas) * 100).toFixed(2)) : 0,
         needs_improvement: defects.some(d => d.needs_improvement), improvement_category: null,
         defects: defects.map((d) => ({ description: d.description, needs_improvement: d.needs_improvement, improvement_category: d.needs_improvement ? d.improvement_category : null, failure_mode: d.failure_mode || null })),
+        status: "submitted",
       };
       let recordId: string;
-      if (isEdit) { const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", id!); if (error) throw error; recordId = id!; }
+      if (draftRecordId) { const { error } = await supabase.from("injection_checklists").update(payload as any).eq("id", draftRecordId); if (error) throw error; recordId = draftRecordId; }
       else { const { data: userData } = await supabase.auth.getUser(); const insertPayload = { ...payload, created_by: userData?.user?.id || null }; const { data, error } = await supabase.from("injection_checklists").insert(insertPayload as any).select("id").single(); if (error) throw error; recordId = data.id; }
       if (photos.length > 0) await uploadPhotos(photos.map((p) => p.file), recordId, "injection");
       for (const defect of defects) { if (defect.photos.length > 0) await uploadPhotos(defect.photos.map((p) => p.file), recordId, "injection"); }
       setSubmitted(true);
+      setHasChanges(false);
       toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));
       setTimeout(() => navigate("/tryout/registros"), 2000);
     } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }
@@ -139,15 +206,18 @@ const InjectionForm = () => {
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
-          <button onClick={() => navigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
+          <button onClick={() => handleNavigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /><span className="text-sm">{t("common.back")}</span>
           </button>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? t("tryout.injection.editTitle") : t("tryout.injection.formTitle")}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? t("tryout.injection.editTitle") : t("tryout.injection.formTitle")}</h1>
+            {currentStatus === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-300">{t("common.draft")}</Badge>}
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <div className="form-section">
             <h3 className="form-section-title">{t("injectionForm.identification")}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -292,11 +362,24 @@ const InjectionForm = () => {
             )}
           </div>
 
-          <Button type="submit" size="lg" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button type="button" variant="outline" size="lg" disabled={draftLoading} onClick={saveDraft} className="flex-1 font-heading font-semibold text-base h-14 gap-2">
+              {draftLoading ? (<><Loader2 className="w-5 h-5 animate-spin" />{t("common.savingDraft")}</>) : (<><Save className="w-5 h-5" />{t("common.saveDraft")}</>)}
+            </Button>
+            <Button type="submit" size="lg" disabled={loading} className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
+              {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
+            </Button>
+          </div>
         </form>
       </main>
+
+      <ExitConfirmDialog
+        open={showExitDialog}
+        onSaveAndExit={async () => { await saveDraft(); setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onExitWithoutSave={() => { setShowExitDialog(false); if (pendingNav) navigate(pendingNav); }}
+        onCancel={() => { setShowExitDialog(false); setPendingNav(null); }}
+        saving={draftLoading}
+      />
     </div>
   );
 };

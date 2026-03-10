@@ -12,12 +12,9 @@ import { uploadPhotos } from "@/lib/uploadPhotos";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useTranslation } from "react-i18next";
 
-interface ChecklistItem {
-  id: string;
-  label: string;
-  type: "check" | "text";
-}
+interface ChecklistItem { id: string; label: string; type: "check" | "text"; }
 
 const defaultPaintingItems: ChecklistItem[] = [
   { id: "1", label: "Superfície preparada corretamente", type: "check" },
@@ -39,15 +36,10 @@ const defaultAssemblyItems: ChecklistItem[] = [
   { id: "6", label: "Etiqueta de identificação aplicada", type: "check" },
 ];
 
-interface EditableChecklistProps {
-  title: string;
-  headerLabel: string;
-  defaultItems: ChecklistItem[];
-  checklistType: "painting" | "assembly";
-  tableName: "painting_checklists" | "assembly_checklists";
-}
+interface EditableChecklistProps { title: string; headerLabel: string; defaultItems: ChecklistItem[]; checklistType: "painting" | "assembly"; tableName: "painting_checklists" | "assembly_checklists"; }
 
 const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType, tableName }: EditableChecklistProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -66,104 +58,49 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
 
   const { data: existing } = useQuery({
     queryKey: [`${tableName}-edit`, id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select("*")
-        .eq("id", id!)
-        .single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: async () => { const { data, error } = await supabase.from(tableName).select("*").eq("id", id!).single(); if (error) throw error; return data; },
     enabled: isEdit,
   });
 
   useEffect(() => {
     if (existing) {
-      setData(existing.data);
-      setComments(existing.comentarios || "");
-      if (Array.isArray(existing.items) && existing.items.length > 0) {
-        setItems(existing.items.map((item: any) => ({ id: item.id, label: item.label, type: "check" as const })));
-      }
-      if (Array.isArray(existing.checked_items)) {
-        setCheckedItems(new Set(existing.checked_items as string[]));
-      }
+      setData(existing.data); setComments(existing.comentarios || "");
+      if (Array.isArray(existing.items) && existing.items.length > 0) setItems(existing.items.map((item: any) => ({ id: item.id, label: item.label, type: "check" as const })));
+      if (Array.isArray(existing.checked_items)) setCheckedItems(new Set(existing.checked_items as string[]));
     }
   }, [existing]);
 
-  const addItem = () => {
-    if (!newItemLabel.trim()) return;
-    setItems((prev) => [...prev, { id: Date.now().toString(), label: newItemLabel.trim(), type: "check" }]);
-    setNewItemLabel("");
-  };
-
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    setCheckedItems((prev) => { const n = new Set(prev); n.delete(id); return n; });
-  };
-
-  const toggleCheck = (id: string) => {
-    setCheckedItems((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  };
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    setPhotos((prev) => [...prev, ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]);
-  };
-
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
+  const addItem = () => { if (!newItemLabel.trim()) return; setItems((prev) => [...prev, { id: Date.now().toString(), label: newItemLabel.trim(), type: "check" }]); setNewItemLabel(""); };
+  const removeItem = (id: string) => { setItems((prev) => prev.filter((item) => item.id !== id)); setCheckedItems((prev) => { const n = new Set(prev); n.delete(id); return n; }); };
+  const toggleCheck = (id: string) => { setCheckedItems((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }); };
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => { const files = e.target.files; if (!files) return; setPhotos((prev) => [...prev, ...Array.from(files).map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]); };
+  const removePhoto = (index: number) => { setPhotos((prev) => prev.filter((_, i) => i !== index)); };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nome || !data) { toast.error("Preencha nome e data."); return; }
+    if (!nome || !data) { toast.error(t("editableChecklist.fillNameDate")); return; }
     setLoading(true);
-
     try {
       const itemsData = items.map((item) => ({ id: item.id, label: item.label }));
       const checkedData = Array.from(checkedItems);
       const payload = { nome, data, items: itemsData, checked_items: checkedData, comentarios: comments || null };
-
       let recordId: string;
-
-      if (isEdit) {
-        const { error } = await supabase.from(tableName).update(payload).eq("id", id!);
-        if (error) throw error;
-        recordId = id!;
-      } else {
-        const { data: userData } = await supabase.auth.getUser();
-        const insertPayload = { ...payload, created_by: userData?.user?.id || null };
-        const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single();
-        if (error) throw error;
-        recordId = record.id;
-      }
-
-      if (photos.length > 0) {
-        await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
-      }
-
+      if (isEdit) { const { error } = await supabase.from(tableName).update(payload).eq("id", id!); if (error) throw error; recordId = id!; }
+      else { const { data: userData } = await supabase.auth.getUser(); const insertPayload = { ...payload, created_by: userData?.user?.id || null }; const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single(); if (error) throw error; recordId = record.id; }
+      if (photos.length > 0) await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
       setSubmitted(true);
-      toast.success(isEdit ? "Checklist atualizado!" : "Checklist enviado com sucesso!");
+      toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));
       setTimeout(() => navigate("/tryout/registros"), 2000);
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      toast.error("Erro ao enviar checklist", { description: error.message });
-    } finally {
-      setLoading(false);
-    }
+    } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }
   };
 
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center opacity-0 animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle2 className="w-10 h-10 text-success" />
-          </div>
-          <h2 className="text-2xl font-heading font-bold text-foreground">{isEdit ? "Atualizado!" : "Enviado!"}</h2>
-          <p className="text-muted-foreground mt-2">Redirecionando...</p>
+          <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4"><CheckCircle2 className="w-10 h-10 text-success" /></div>
+          <h2 className="text-2xl font-heading font-bold text-foreground">{isEdit ? t("common.updated") : t("common.sent")}</h2>
+          <p className="text-muted-foreground mt-2">{t("common.redirecting")}</p>
         </div>
       </div>
     );
@@ -173,14 +110,10 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
-          <button
-            onClick={() => navigate("/tryout")}
-            className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm">Voltar</span>
+          <button onClick={() => navigate("/tryout")} className="flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-4">
+            <ArrowLeft className="w-4 h-4" /><span className="text-sm">{t("common.back")}</span>
           </button>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? `Editar ${title}` : title}</h1>
+          <h1 className="text-2xl md:text-3xl font-heading font-bold">{isEdit ? `${t("common.edit")} ${title}` : title}</h1>
           <p className="text-primary-foreground/70 text-sm mt-1">{headerLabel}</p>
         </div>
       </header>
@@ -188,75 +121,54 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="form-section">
-            <h3 className="form-section-title">Identificação</h3>
+            <h3 className="form-section-title">{t("editableChecklist.identification")}</h3>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Nome *</Label>
-                <Input required value={nome} readOnly className="bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <Label>Data *</Label>
-                <Input type="date" required value={data} onChange={(e) => setData(e.target.value)} />
-              </div>
+              <div className="space-y-2"><Label>{t("common.name")} *</Label><Input required value={nome} readOnly className="bg-muted" /></div>
+              <div className="space-y-2"><Label>{t("common.date")} *</Label><Input type="date" required value={data} onChange={(e) => setData(e.target.value)} /></div>
             </div>
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title">Checklist</h3>
+            <h3 className="form-section-title">{t("editableChecklist.checklist")}</h3>
             <div className="space-y-3">
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 group">
                   <Checkbox checked={checkedItems.has(item.id)} onCheckedChange={() => toggleCheck(item.id)} />
-                  <span className={`flex-1 text-sm ${checkedItems.has(item.id) ? "line-through text-muted-foreground" : "text-foreground"}`}>
-                    {item.label}
-                  </span>
-                  {isAdmin && (
-                    <button type="button" onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <span className={`flex-1 text-sm ${checkedItems.has(item.id) ? "line-through text-muted-foreground" : "text-foreground"}`}>{item.label}</span>
+                  {isAdmin && <button type="button" onClick={() => removeItem(item.id)} className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"><Trash2 className="w-4 h-4" /></button>}
                 </div>
               ))}
             </div>
             {isAdmin && (
               <div className="flex gap-2 mt-4">
-                <Input value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} placeholder="Adicionar novo item..." onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())} />
+                <Input value={newItemLabel} onChange={(e) => setNewItemLabel(e.target.value)} placeholder={t("editableChecklist.addNewItem")} onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addItem())} />
                 <Button type="button" variant="outline" onClick={addItem} size="icon"><Plus className="w-4 h-4" /></Button>
               </div>
             )}
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title">Comentários</h3>
-            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} placeholder="Observações adicionais..." rows={4} />
+            <h3 className="form-section-title">{t("common.comments")}</h3>
+            <Textarea value={comments} onChange={(e) => setComments(e.target.value)} placeholder={t("common.additionalObs")} rows={4} />
           </div>
 
           <div className="form-section">
-            <h3 className="form-section-title"><Camera className="w-5 h-5" /> Fotos</h3>
+            <h3 className="form-section-title"><Camera className="w-5 h-5" /> {t("common.photos")}</h3>
             <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
             <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full border-dashed border-2 h-20 text-muted-foreground hover:text-foreground hover:border-accent">
-              <Camera className="w-5 h-5 mr-2" /> Clique para adicionar fotos
+              <Camera className="w-5 h-5 mr-2" /> {t("common.addPhotos")}
             </Button>
             {photos.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
                 {photos.map((photo, i) => (
-                  <div key={i} className="relative group rounded-lg overflow-hidden aspect-square border border-border">
-                    <img src={photo.url} alt={photo.name} className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <div key={i} className="relative group rounded-lg overflow-hidden aspect-square border border-border"><img src={photo.url} alt={photo.name} className="w-full h-full object-cover" /><button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3" /></button></div>
                 ))}
               </div>
             )}
           </div>
 
           <Button type="submit" size="lg" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base h-14">
-            {loading ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? "Salvando..." : "Enviando..."}</>
-            ) : (
-              <><Send className="w-5 h-5 mr-2" />{isEdit ? "Salvar Alterações" : "Enviar Checklist"}</>
-            )}
+            {loading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />{isEdit ? t("common.saving") : t("common.sending")}</>) : (<><Send className="w-5 h-5 mr-2" />{isEdit ? t("injectionForm.saveChanges") : t("injectionForm.sendChecklist")}</>)}
           </Button>
         </form>
       </main>
@@ -264,10 +176,12 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   );
 };
 
-export const PaintingPage = () => (
-  <EditableChecklistPage title="Processo de Pintura" headerLabel="Checklist editável — adicione ou remova itens conforme necessário" defaultItems={defaultPaintingItems} checklistType="painting" tableName="painting_checklists" />
-);
+export const PaintingPage = () => {
+  const { t } = useTranslation();
+  return <EditableChecklistPage title={t("tryout.painting.formTitle")} headerLabel={t("tryout.painting.headerLabel")} defaultItems={defaultPaintingItems} checklistType="painting" tableName="painting_checklists" />;
+};
 
-export const AssemblyPage = () => (
-  <EditableChecklistPage title="Montagem e Finalização" headerLabel="Checklist editável — adicione ou remova itens conforme necessário" defaultItems={defaultAssemblyItems} checklistType="assembly" tableName="assembly_checklists" />
-);
+export const AssemblyPage = () => {
+  const { t } = useTranslation();
+  return <EditableChecklistPage title={t("tryout.assembly.formTitle")} headerLabel={t("tryout.assembly.headerLabel")} defaultItems={defaultAssemblyItems} checklistType="assembly" tableName="assembly_checklists" />;
+};

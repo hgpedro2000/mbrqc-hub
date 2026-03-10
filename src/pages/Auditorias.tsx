@@ -10,8 +10,10 @@ import MasterListFilter, { useListFilters, FilterConfig } from "@/components/Mas
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import { useTranslation } from "react-i18next";
 
 const Auditorias = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
@@ -21,10 +23,7 @@ const Auditorias = () => {
   const { data: auditorias = [], isLoading } = useQuery({
     queryKey: ["auditorias"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("auditorias")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("auditorias").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -38,7 +37,7 @@ const Auditorias = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["auditorias"] });
-      toast.success("Auditoria excluída com sucesso!");
+      toast.success(t("auditorias.deleteSuccess"));
       setDeleteId(null);
     },
     onError: (e: any) => toast.error(e.message),
@@ -49,16 +48,15 @@ const Auditorias = () => {
     const auditores = [...new Set(auditorias.map((a) => a.auditor).filter(Boolean))] as string[];
     const statuses = [...new Set(auditorias.map((a) => a.status).filter(Boolean))] as string[];
     return [
-      { key: "tipo", label: "Tipo", options: tipos },
-      { key: "auditor", label: "Auditor", options: auditores },
-      { key: "status", label: "Status", options: statuses },
+      { key: "tipo", label: t("common.type"), options: tipos },
+      { key: "auditor", label: t("auditorias.auditor"), options: auditores },
+      { key: "status", label: t("common.status"), options: statuses },
     ];
-  }, [auditorias]);
+  }, [auditorias, t]);
 
   const filtered = useMemo(() => {
     return auditorias.filter((a) =>
-      matchesSearch(a, ["numero", "titulo", "auditor", "setor", "fornecedor"]) &&
-      matchesFilters(a)
+      matchesSearch(a, ["numero", "titulo", "auditor", "setor", "fornecedor"]) && matchesFilters(a)
     );
   }, [auditorias, search, filterValues]);
 
@@ -68,11 +66,8 @@ const Auditorias = () => {
     concluida: "bg-emerald-500/10 text-emerald-600",
     cancelada: "bg-red-500/10 text-red-600",
   };
-  const statusLabels: Record<string, string> = {
-    aberta: "Aberta", em_andamento: "Em Andamento", concluida: "Concluída", cancelada: "Cancelada",
-  };
   const tipoLabels: Record<string, string> = {
-    processo: "Processo", produto: "Produto", fornecedor: "Fornecedor",
+    processo: t("auditorias.process"), produto: t("auditorias.product"), fornecedor: t("auditorias.supplierType"),
   };
 
   return (
@@ -82,7 +77,7 @@ const Auditorias = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground">
-                <ArrowLeft className="w-4 h-4 mr-1" /> Hub
+                <ArrowLeft className="w-4 h-4 mr-1" /> {t("common.hub")}
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
@@ -91,8 +86,8 @@ const Auditorias = () => {
           <div className="flex items-center gap-3 mt-4">
             <ShieldCheck className="w-8 h-8" />
             <div>
-              <h1 className="text-2xl font-heading font-bold">Auditorias</h1>
-              <p className="text-primary-foreground/70 text-sm">Gestão de auditorias de processo, produto e fornecedor</p>
+              <h1 className="text-2xl font-heading font-bold">{t("auditorias.title")}</h1>
+              <p className="text-primary-foreground/70 text-sm">{t("auditorias.subtitle")}</p>
             </div>
           </div>
         </div>
@@ -101,30 +96,21 @@ const Auditorias = () => {
       <main className="container mx-auto px-4 py-6 space-y-6">
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => navigate("/auditorias/nova")} className="gap-2">
-            <Plus className="w-4 h-4" /> Nova Auditoria
+            <Plus className="w-4 h-4" /> {t("auditorias.newAudit")}
           </Button>
           <Button variant="outline" onClick={() => navigate("/auditorias/dashboard")} className="gap-2">
-            <BarChart3 className="w-4 h-4" /> Dashboard
+            <BarChart3 className="w-4 h-4" /> {t("common.dashboard")}
           </Button>
         </div>
 
-        <MasterListFilter
-          searchValue={search}
-          onSearchChange={setSearch}
-          filters={filters}
-          filterValues={filterValues}
-          onFilterChange={handleFilterChange}
-          onClearFilters={clearFilters}
-        />
+        <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
 
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
-          </div>
+          <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <ShieldCheck className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{auditorias.length === 0 ? "Nenhuma auditoria registrada." : "Nenhum resultado encontrado."}</p>
+            <p className="text-muted-foreground">{auditorias.length === 0 ? t("auditorias.noAudits") : t("common.noResults")}</p>
           </div>
         ) : (
           <div className="grid gap-4">
@@ -137,15 +123,15 @@ const Auditorias = () => {
                       <h3 className="font-heading font-semibold text-foreground">{a.titulo}</h3>
                     </div>
                     <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                      <span>Auditor: {a.auditor}</span>
+                      <span>{t("auditorias.auditor")}: {a.auditor}</span>
                       <span>•</span>
                       <span>{new Date(a.data).toLocaleDateString("pt-BR")}</span>
-                      {a.setor && <><span>•</span><span>Setor: {a.setor}</span></>}
+                      {a.setor && <><span>•</span><span>{t("common.sector")}: {a.setor}</span></>}
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <div className="flex items-center gap-2">
-                      <span className={`status-badge ${statusColors[a.status]}`}>{statusLabels[a.status]}</span>
+                      <span className={`status-badge ${statusColors[a.status]}`}>{t(`auditorias.status.${a.status}`)}</span>
                       <span className="status-badge bg-card text-foreground border">{tipoLabels[a.tipo]}</span>
                     </div>
                     {isAdmin && (
@@ -163,7 +149,7 @@ const Auditorias = () => {
                 {a.pontuacao_total && Number(a.pontuacao_total) > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="text-muted-foreground">Pontuação:</span>
+                      <span className="text-muted-foreground">{t("auditorias.score")}:</span>
                       <span className="font-semibold">{a.pontuacao_obtida}/{a.pontuacao_total}</span>
                       <span className="text-muted-foreground">({((Number(a.pontuacao_obtida) / Number(a.pontuacao_total)) * 100).toFixed(0)}%)</span>
                     </div>
@@ -178,13 +164,13 @@ const Auditorias = () => {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>Tem certeza que deseja excluir esta auditoria e todas as suas respostas? Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("auditorias.deleteConfirm")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

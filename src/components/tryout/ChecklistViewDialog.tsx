@@ -152,8 +152,8 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
   const fields = checklistType === "injection_checklists" ? injectionFields : simpleFields;
   const isChecklist = checklistType !== "injection_checklists";
   const d = data as any;
-  const checkedItems = d?.checked_items as string[] | undefined;
-  const items = d?.items as string[] | undefined;
+  const checkedItems = d?.checked_items as (string | { id: string })[] | undefined;
+  const items = d?.items as (string | { id: string; label: string })[] | undefined;
   const defects = d?.defects as any[] | undefined;
   const rate = d?.rate ? Number(d.rate) : 0;
 

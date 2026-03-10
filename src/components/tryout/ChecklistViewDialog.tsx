@@ -357,6 +357,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
                           <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${isChecked ? "bg-emerald-500/15 text-emerald-600 border border-emerald-300" : "bg-destructive/10 text-destructive border border-destructive/30"}`}>
                             {isChecked ? "✓" : "✗"}
                           </span>
+                          <span className={isChecked ? "text-foreground" : "text-muted-foreground"}>{itemLabel}</span>
                         </div>
                       );
                     })}

@@ -96,6 +96,24 @@ const ModulePermissionsTab = () => {
     }
   };
 
+  const disableAllModules = async (userId: string) => {
+    setSaving(`none-${userId}`);
+    try {
+      for (const m of ALL_MODULES) {
+        const existing = permissions.find((p: any) => p.user_id === userId && p.module === m.id);
+        if (existing && existing.enabled) {
+          await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      toast.success("Todos os módulos desativados");
+    } catch {
+      toast.error("Erro ao desativar módulos");
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const filteredProfiles = profiles.filter((p: any) =>
     p.full_name.toLowerCase().includes(search.toLowerCase()) ||
     p.employee_number.includes(search)

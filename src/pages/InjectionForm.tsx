@@ -13,7 +13,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import ExitConfirmDialog from "@/components/ExitConfirmDialog";
 
 interface DefectEntry {
   description: string;

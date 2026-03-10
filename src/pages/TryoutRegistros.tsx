@@ -69,8 +69,8 @@ const TryoutRegistros = () => {
   };
 
   const StatusBadge = ({ status }: { status?: string }) => {
-    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">{t("common.draft")}</Badge>;
-    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-50">{t("tryout.finalized") || "Finalizado"}</Badge>;
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("common.draft")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("common.finalized")}</Badge>;
   };
 
   const EditActions = ({ id, table, createdBy, status }: { id: string; table: string; createdBy?: string | null; status?: string }) => {

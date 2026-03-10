@@ -43,7 +43,18 @@
     "sent": "Enviado!",
     "engineering": "Modo Engenharia",
     "addPhotos": "Clique para adicionar fotos",
-    "additionalObs": "Observações adicionais..."
+    "additionalObs": "Observações adicionais...",
+    "draft": "Rascunho",
+    "submitted": "Enviado",
+    "saveDraft": "Salvar Rascunho",
+    "savingDraft": "Salvando rascunho...",
+    "draftSaved": "Rascunho salvo com sucesso!",
+    "draftSaveError": "Erro ao salvar rascunho",
+    "exitWithoutSaving": "Sair sem salvar?",
+    "exitWithoutSavingDesc": "Você tem alterações não salvas. Deseja salvar como rascunho antes de sair?",
+    "saveAndExit": "Salvar e sair",
+    "exitWithoutSave": "Sair sem salvar",
+    "stay": "Ficar"
   },
   "greeting": {
     "morning": "Bom dia",

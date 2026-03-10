@@ -43,7 +43,18 @@
     "sent": "Sent!",
     "engineering": "Engineering Mode",
     "addPhotos": "Click to add photos",
-    "additionalObs": "Additional observations..."
+    "additionalObs": "Additional observations...",
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "saveDraft": "Save Draft",
+    "savingDraft": "Saving draft...",
+    "draftSaved": "Draft saved successfully!",
+    "draftSaveError": "Error saving draft",
+    "exitWithoutSaving": "Exit without saving?",
+    "exitWithoutSavingDesc": "You have unsaved changes. Do you want to save as a draft before leaving?",
+    "saveAndExit": "Save and exit",
+    "exitWithoutSave": "Exit without saving",
+    "stay": "Stay"
   },
   "greeting": {
     "morning": "Good morning",

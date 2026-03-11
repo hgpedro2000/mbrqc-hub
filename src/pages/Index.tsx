@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye, FileDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +34,7 @@ const Index = () => {
   const { data: injectionData = [] } = useQuery({
     queryKey: ["injection-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("injection_checklists").select("id, numero, nome, data, fornecedor, part_number, part_name, projeto, modulo, created_by, created_at, status").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -43,7 +43,7 @@ const Index = () => {
   const { data: paintingData = [] } = useQuery({
     queryKey: ["painting-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -52,7 +52,7 @@ const Index = () => {
   const { data: assemblyData = [] } = useQuery({
     queryKey: ["assembly-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
@@ -100,15 +100,24 @@ const Index = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+  const StatusBadge = ({ status }: { status?: string }) => {
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("common.draft")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("common.finalized")}</Badge>;
+  };
+
+  const EditActions = ({ id, table, createdBy, status }: { id: string; table: string; createdBy?: string | null; status?: string }) => {
     const isOwner = user && createdBy === user.id;
     const canEdit = isAdmin || isOwner;
-    if (!canEdit) return null;
+    const isFinalized = status !== "draft";
     return (
       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
-          <Pencil className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget({ id, type: table as any })}>
+          <Eye className="w-3.5 h-3.5" />
         </Button>
+        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget({ id, type: table as any })} title="Baixar PDF"><FileDown className="w-3.5 h-3.5" /></Button>}
+        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>}
         {isAdmin && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
             <Trash2 className="w-3.5 h-3.5" />
@@ -142,6 +151,7 @@ const Index = () => {
                   {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
                   <span className="font-heading font-semibold text-foreground text-sm">{hasRichData ? item.part_number : item.nome}</span>
                   {hasRichData && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
+                  <StatusBadge status={item.status} />
                 </div>
                 {hasRichData && <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>}
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -150,12 +160,7 @@ const Index = () => {
                   <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <EditActions id={item.id} table={table} createdBy={item.created_by} />
-              </div>
+              <EditActions id={item.id} table={table} createdBy={item.created_by} status={item.status} />
             </div>
           </div>
         ))}

@@ -151,6 +151,7 @@ const Index = () => {
                   {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
                   <span className="font-heading font-semibold text-foreground text-sm">{hasRichData ? item.part_number : item.nome}</span>
                   {hasRichData && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
+                  <StatusBadge status={item.status} />
                 </div>
                 {hasRichData && <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>}
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">

@@ -1,0 +1,23 @@
+{
+  "name": "MBR-QC - Quality Control Hub",
+  "short_name": "MBRQC",
+  "start_url": "https://www.mbrqc.com.br/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#1a2332",
+  "background_color": "#e8ecf1",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

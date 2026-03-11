@@ -64,6 +64,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const [partName, setPartName] = useState("");
   const [projeto, setProjeto] = useState("");
   const [modulo, setModulo] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [pendingNav, setPendingNav] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(id || null);

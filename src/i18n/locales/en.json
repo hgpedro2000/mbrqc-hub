@@ -483,11 +483,17 @@
     "partNumberRequired": "Part Number *",
     "selectPartNumber": "Select the part number",
     "selectSupplierFirst": "Select the supplier first",
+    "selectProjectFirst": "Select the project first",
+    "selectProject": "Select the project",
     "partName": "Part Name",
     "project": "Project",
     "module": "Module",
     "autoFilled": "Auto-filled",
-    "supplierName": "Supplier name"
+    "supplierName": "Supplier name",
+    "searchParts": "Search parts",
+    "searchPlaceholder": "Search by part number or part name...",
+    "typeOrSearch": "Type or use search to find",
+    "clickToSelect": "Click on a part to select it"
   },
   "notFound": {
     "title": "404",

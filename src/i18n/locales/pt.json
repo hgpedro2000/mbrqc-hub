@@ -483,11 +483,17 @@
     "partNumberRequired": "Part Number *",
     "selectPartNumber": "Selecione o part number",
     "selectSupplierFirst": "Selecione o fornecedor primeiro",
+    "selectProjectFirst": "Selecione o projeto primeiro",
+    "selectProject": "Selecione o projeto",
     "partName": "Part Name",
     "project": "Projeto",
     "module": "Módulo",
     "autoFilled": "Preenchido automaticamente",
-    "supplierName": "Nome do fornecedor"
+    "supplierName": "Nome do fornecedor",
+    "searchParts": "Pesquisar peças",
+    "searchPlaceholder": "Buscar por part number ou part name...",
+    "typeOrSearch": "Digite ou use a lupa para pesquisar",
+    "clickToSelect": "Clique na peça para selecioná-la"
   },
   "notFound": {
     "title": "404",

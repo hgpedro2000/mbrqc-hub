@@ -210,8 +210,8 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
                 onPartNumberChange={setPartNumber}
                 onPartDataChange={(d) => {
                   setPartName(d.part_name);
-                  setModulo(d.modulo);
-                  setProjeto(d.projeto);
+                  setModulo(d.line_module);
+                  setProjeto(d.project);
                 }}
               />
             </div>

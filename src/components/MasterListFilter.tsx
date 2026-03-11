@@ -65,7 +65,7 @@ const MasterListFilter = ({
                 <SelectItem value="all">{t("filter.allPrefix")} — {filter.label}</SelectItem>
                 {filter.options.map((opt) => (
                   <SelectItem key={opt} value={opt}>
-                    {opt}
+                    {filter.labelMap?.[opt] || opt}
                   </SelectItem>
                 ))}
               </SelectContent>

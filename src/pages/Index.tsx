@@ -1,16 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye, FileDown } from "lucide-react";
+import { Droplets, Paintbrush, Wrench, ClipboardCheck, ArrowRight, LogOut, BarChart3, ArrowLeft, Pencil, Trash2, Eye, FileDown, LayoutList, LayoutGrid, CheckSquare } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import ChecklistViewDialog from "@/components/tryout/ChecklistViewDialog";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,10 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("injecao");
   const [viewTarget, setViewTarget] = useState<{ id: string; type: "injection_checklists" | "painting_checklists" | "assembly_checklists" } | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
+  const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const modules = [
     { id: "injecao", title: t("tryout.injection.title"), description: t("tryout.injection.description"), icon: Droplets, path: "/tryout/injecao", stats: t("tryout.injection.stats"), color: "from-blue-500/10 to-blue-600/5" },
@@ -100,6 +105,57 @@ const Index = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
+  const getActiveTable = () => {
+    if (activeTab === "injecao") return "injection_checklists";
+    if (activeTab === "pintura") return "painting_checklists";
+    return "assembly_checklists";
+  };
+
+  const getActiveFiltered = () => {
+    if (activeTab === "injecao") return filteredInj;
+    if (activeTab === "pintura") return filteredPaint;
+    return filteredAsm;
+  };
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback((filtered: any[]) => {
+    setSelectedIds((prev) => {
+      const allIds = filtered.map((i) => i.id);
+      const allSelected = allIds.every((id) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    const table = getActiveTable();
+    try {
+      for (const id of selectedIds) {
+        await supabase.from("checklist_photos").delete().eq("checklist_id", id);
+        const { error } = await supabase.from(table as any).delete().eq("id", id);
+        if (error) throw error;
+      }
+      toast.success(t("tryout.bulkDeleteSuccess", { count: selectedIds.size }));
+      queryClient.invalidateQueries({ queryKey: ["injection-checklists"] });
+      queryClient.invalidateQueries({ queryKey: ["painting-checklists"] });
+      queryClient.invalidateQueries({ queryKey: ["assembly-checklists"] });
+      setSelectedIds(new Set());
+    } catch (error: any) {
+      toast.error(t("tryout.deleteError"), { description: error.message });
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
   const StatusBadge = ({ status }: { status?: string }) => {
     if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("common.draft")}</Badge>;
     return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("common.finalized")}</Badge>;
@@ -127,7 +183,7 @@ const Index = () => {
     );
   };
 
-  const renderList = (data: any[], filtered: any[], table: string, Icon: any, hasRichData: boolean) => {
+  const renderDetailedList = (data: any[], filtered: any[], table: string, Icon: any, hasRichData: boolean) => {
     const typeMap: Record<string, "injection_checklists" | "painting_checklists" | "assembly_checklists"> = {
       injection_checklists: "injection_checklists",
       painting_checklists: "painting_checklists",
@@ -146,18 +202,25 @@ const Index = () => {
         {filtered.map((item: any) => (
           <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget({ id: item.id, type: typeMap[table] })}>
             <div className="flex items-start justify-between">
-              <div className="space-y-1 flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
-                  <span className="font-heading font-semibold text-foreground text-sm">{hasRichData ? item.part_number : item.nome}</span>
-                  {hasRichData && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
-                  <StatusBadge status={item.status} />
-                </div>
-                {hasRichData && <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>}
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  {hasRichData && <span>{item.nome}</span>}
-                  {hasRichData && <span>•</span>}
-                  <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {isAdmin && (
+                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                  </div>
+                )}
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                    <span className="font-heading font-semibold text-foreground text-sm">{hasRichData ? item.part_number : item.nome}</span>
+                    {hasRichData && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
+                    <StatusBadge status={item.status} />
+                  </div>
+                  {hasRichData && <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>}
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    {hasRichData && <span>{item.nome}</span>}
+                    {hasRichData && <span>•</span>}
+                    <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+                  </div>
                 </div>
               </div>
               <EditActions id={item.id} table={table} createdBy={item.created_by} status={item.status} />
@@ -167,6 +230,67 @@ const Index = () => {
       </div>
     );
   };
+
+  const renderCompactList = (data: any[], filtered: any[], table: string, Icon: any, hasRichData: boolean) => {
+    const typeMap: Record<string, "injection_checklists" | "painting_checklists" | "assembly_checklists"> = {
+      injection_checklists: "injection_checklists",
+      painting_checklists: "painting_checklists",
+      assembly_checklists: "assembly_checklists",
+    };
+    if (filtered.length === 0) {
+      return (
+        <div className="form-section text-center py-8">
+          <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">{data.length === 0 ? t("tryout.noRecords") : t("common.noResults")}</p>
+        </div>
+      );
+    }
+    return (
+      <div className="form-section p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              {isAdmin && (
+                <th className="w-10 px-3 py-2.5">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((i: any) => selectedIds.has(i.id))}
+                    onCheckedChange={() => toggleSelectAll(filtered)}
+                  />
+                </th>
+              )}
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Nº</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">{hasRichData ? "Part Number" : t("common.name")}</th>
+              {hasRichData && <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden md:table-cell">{t("common.supplier")}</th>}
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">{t("common.date")}</th>
+              <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">{t("common.status")}</th>
+              <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">{t("common.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((item: any) => (
+              <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setViewTarget({ id: item.id, type: typeMap[table] })}>
+                {isAdmin && (
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                  </td>
+                )}
+                <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{item.numero ? `#${item.numero}` : "—"}</td>
+                <td className="px-3 py-2 font-semibold text-foreground">{hasRichData ? item.part_number : item.nome}</td>
+                {hasRichData && <td className="px-3 py-2 text-muted-foreground hidden md:table-cell">{item.fornecedor}</td>}
+                <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{new Date(item.data).toLocaleDateString("pt-BR")}</td>
+                <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
+                <td className="px-3 py-2 text-right">
+                  <EditActions id={item.id} table={table} createdBy={item.created_by} status={item.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderList = viewMode === "detailed" ? renderDetailedList : renderCompactList;
 
   return (
     <div className="min-h-screen bg-background">
@@ -215,11 +339,41 @@ const Index = () => {
         </div>
 
         <div>
-          <h2 className="text-xl font-heading font-bold text-foreground mb-4">{t("tryout.records")}</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-heading font-bold text-foreground">{t("tryout.records")}</h2>
+            <div className="flex items-center gap-2">
+              {isAdmin && selectedIds.size > 0 && (
+                <Button variant="destructive" size="sm" className="gap-2" onClick={() => setBulkDeleteOpen(true)}>
+                  <Trash2 className="w-4 h-4" />
+                  {t("tryout.deleteSelected", { count: selectedIds.size })}
+                </Button>
+              )}
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                <Button
+                  variant={viewMode === "detailed" ? "default" : "ghost"}
+                  size="sm"
+                  className="rounded-none h-8 px-2.5"
+                  onClick={() => setViewMode("detailed")}
+                  title={t("tryout.detailedView")}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "compact" ? "default" : "ghost"}
+                  size="sm"
+                  className="rounded-none h-8 px-2.5"
+                  onClick={() => setViewMode("compact")}
+                  title={t("tryout.compactView")}
+                >
+                  <LayoutList className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
 
           <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={activeTab === "injecao" ? injFilters : genericFilters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
 
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); }} className="mt-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="injecao" className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3">
                 <Droplets className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">{t("tryout.injection.title")}</span> ({injectionData.length})
@@ -245,6 +399,7 @@ const Index = () => {
         </div>
       </main>
 
+      {/* Single delete dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -259,6 +414,23 @@ const Index = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk delete dialog */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("tryout.bulkDeleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("tryout.bulkDeleteConfirm", { count: selectedIds.size })}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>
+              {bulkDeleting ? t("common.loading") : t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ChecklistViewDialog
         open={!!viewTarget}
         onOpenChange={(open) => !open && setViewTarget(null)}

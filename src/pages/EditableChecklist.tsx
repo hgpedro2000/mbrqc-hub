@@ -80,6 +80,11 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     if (existing) {
       setData(existing.data); setComments(existing.comentarios || "");
       setCurrentStatus((existing as any).status || "submitted");
+      if ((existing as any).fornecedor) setFornecedor((existing as any).fornecedor);
+      if ((existing as any).part_number) setPartNumber((existing as any).part_number);
+      if ((existing as any).part_name) setPartName((existing as any).part_name);
+      if ((existing as any).projeto) setProjeto((existing as any).projeto);
+      if ((existing as any).modulo) setModulo((existing as any).modulo);
       if (Array.isArray(existing.items) && existing.items.length > 0) setItems(existing.items.map((item: any) => ({ id: item.id, label: item.label, type: "check" as const })));
       if (Array.isArray(existing.checked_items)) setCheckedItems(new Set(existing.checked_items as string[]));
       setRecordId(existing.id);

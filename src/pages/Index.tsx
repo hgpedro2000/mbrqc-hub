@@ -79,11 +79,14 @@ const Index = () => {
     onError: (error: any) => toast.error(t("tryout.deleteError"), { description: error.message }),
   });
 
+  const statusFilterOptions = ["draft", "submitted"];
+
   const injFilters: FilterConfig[] = useMemo(() => {
     const projetos = [...new Set(injectionData.map((i) => i.projeto).filter(Boolean))] as string[];
     const fornecedores = [...new Set(injectionData.map((i) => i.fornecedor).filter(Boolean))] as string[];
     const usuarios = [...new Set(injectionData.map((i) => i.nome).filter(Boolean))] as string[];
     return [
+      { key: "status", label: t("common.status"), options: statusFilterOptions, labelMap: { draft: t("common.draft"), submitted: t("common.finalized") } },
       { key: "projeto", label: t("supplierSelector.project"), options: projetos },
       { key: "fornecedor", label: t("common.supplier"), options: fornecedores },
       { key: "nome", label: t("common.name"), options: usuarios },
@@ -92,7 +95,10 @@ const Index = () => {
 
   const genericFilters: FilterConfig[] = useMemo(() => {
     const allNames = [...new Set([...paintingData.map((i) => i.nome), ...assemblyData.map((i) => i.nome)].filter(Boolean))] as string[];
-    return [{ key: "nome", label: t("common.name"), options: allNames }];
+    return [
+      { key: "status", label: t("common.status"), options: statusFilterOptions, labelMap: { draft: t("common.draft"), submitted: t("common.finalized") } },
+      { key: "nome", label: t("common.name"), options: allNames },
+    ];
   }, [paintingData, assemblyData, t]);
 
   const filteredInj = useMemo(() => injectionData.filter((i) => matchesSearch(i, ["numero", "nome", "part_number", "part_name", "fornecedor", "projeto"]) && matchesFilters(i)), [injectionData, search, filterValues]);

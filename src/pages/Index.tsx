@@ -43,7 +43,7 @@ const Index = () => {
   const { data: paintingData = [] } = useQuery({
     queryKey: ["painting-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("painting_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },

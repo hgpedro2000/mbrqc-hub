@@ -100,15 +100,24 @@ const Index = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+  const StatusBadge = ({ status }: { status?: string }) => {
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("common.draft")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("common.finalized")}</Badge>;
+  };
+
+  const EditActions = ({ id, table, createdBy, status }: { id: string; table: string; createdBy?: string | null; status?: string }) => {
     const isOwner = user && createdBy === user.id;
     const canEdit = isAdmin || isOwner;
-    if (!canEdit) return null;
+    const isFinalized = status !== "draft";
     return (
       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
-          <Pencil className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget({ id, type: table as any })}>
+          <Eye className="w-3.5 h-3.5" />
         </Button>
+        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget({ id, type: table as any })} title="Baixar PDF"><FileDown className="w-3.5 h-3.5" /></Button>}
+        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}>
+          <Pencil className="w-3.5 h-3.5" />
+        </Button>}
         {isAdmin && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}>
             <Trash2 className="w-3.5 h-3.5" />

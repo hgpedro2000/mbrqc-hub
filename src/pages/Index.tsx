@@ -52,7 +52,7 @@ const Index = () => {
   const { data: assemblyData = [] } = useQuery({
     queryKey: ["assembly-checklists"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("assembly_checklists").select("id, numero, nome, data, created_by, created_at, status").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },

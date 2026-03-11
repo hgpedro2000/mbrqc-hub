@@ -160,12 +160,7 @@ const Index = () => {
                   <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id: item.id, type: typeMap[table] }); }}>
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <EditActions id={item.id} table={table} createdBy={item.created_by} />
-              </div>
+              <EditActions id={item.id} table={table} createdBy={item.created_by} status={item.status} />
             </div>
           </div>
         ))}

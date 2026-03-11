@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Droplets, Paintbrush, Wrench, Plus, BarChart3, Eye, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -68,12 +68,19 @@ const TryoutRegistros = () => {
     return `/tryout/montagem/editar/${id}`;
   };
 
-  const EditActions = ({ id, table, createdBy }: { id: string; table: string; createdBy?: string | null }) => {
+  const StatusBadge = ({ status }: { status?: string }) => {
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("common.draft")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("common.finalized")}</Badge>;
+  };
+
+  const EditActions = ({ id, table, createdBy, status }: { id: string; table: string; createdBy?: string | null; status?: string }) => {
     const isOwner = user && createdBy === user.id;
     const canEdit = isAdmin || isOwner;
+    const isFinalized = status !== "draft";
     return (
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setViewTarget({ id, type: table as any }); }}><Eye className="w-3.5 h-3.5" /></Button>
+        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={(e) => { e.stopPropagation(); setViewTarget({ id, type: table as any }); }} title="Baixar PDF"><FileDown className="w-3.5 h-3.5" /></Button>}
         {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(getEditPath(table, id))}><Pencil className="w-3.5 h-3.5" /></Button>}
         {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id, table })}><Trash2 className="w-3.5 h-3.5" /></Button>}
       </div>
@@ -125,11 +132,11 @@ const TryoutRegistros = () => {
               <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.part_number}</span><Badge variant="secondary">{item.fornecedor}</Badge>{(item as any).status === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("common.draft")}</Badge>}</div>
-                    <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{item.nome}</span><span>•</span><span>{new Date(item.data).toLocaleDateString("pt-BR")}</span></div>
-                  </div>
-                  <EditActions id={item.id} table="injection_checklists" createdBy={item.created_by} />
+                     <div className="flex items-center gap-2 flex-wrap">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.part_number}</span><Badge variant="secondary">{item.fornecedor}</Badge><StatusBadge status={(item as any).status} /></div>
+                     <p className="text-sm text-muted-foreground">{item.part_name} • {item.projeto}</p>
+                     <div className="flex flex-wrap gap-2 text-xs text-muted-foreground"><span>{item.nome}</span><span>•</span><span>{new Date(item.data).toLocaleDateString("pt-BR")}</span></div>
+                   </div>
+                   <EditActions id={item.id} table="injection_checklists" createdBy={item.created_by} status={(item as any).status} />
                 </div>
               </div>
             ))}</div>}
@@ -141,8 +148,8 @@ const TryoutRegistros = () => {
             : <div className="grid gap-4">{filteredPaint.map((item) => (
               <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
-                   <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span>{(item as any).status === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("common.draft")}</Badge>}</div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
-                  <EditActions id={item.id} table="painting_checklists" createdBy={item.created_by} />
+                    <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span><StatusBadge status={(item as any).status} /></div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
+                   <EditActions id={item.id} table="painting_checklists" createdBy={item.created_by} status={(item as any).status} />
                 </div>
               </div>
             ))}</div>}
@@ -154,8 +161,8 @@ const TryoutRegistros = () => {
             : <div className="grid gap-4">{filteredAsm.map((item) => (
               <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex items-start justify-between">
-                  <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span>{(item as any).status === "draft" && <Badge variant="outline" className="border-yellow-500 text-yellow-500">{t("common.draft")}</Badge>}</div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
-                  <EditActions id={item.id} table="assembly_checklists" createdBy={item.created_by} />
+                   <div className="space-y-1 flex-1 min-w-0"><div className="flex items-center gap-2">{item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}<span className="font-heading font-semibold text-foreground">{item.nome}</span><StatusBadge status={(item as any).status} /></div><p className="text-xs text-muted-foreground">{new Date(item.data).toLocaleDateString("pt-BR")}</p></div>
+                   <EditActions id={item.id} table="assembly_checklists" createdBy={item.created_by} status={(item as any).status} />
                 </div>
               </div>
             ))}</div>}

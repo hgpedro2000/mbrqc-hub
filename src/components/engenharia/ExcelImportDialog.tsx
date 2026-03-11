@@ -205,8 +205,7 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
               </div>
             )}
 
-            <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
-              <ScrollArea className="h-full max-h-[50vh]">
+            <div className="flex-1 min-h-0 border rounded-lg overflow-auto" style={{ maxHeight: "50vh" }}>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -256,7 +255,6 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
                     ))}
                   </TableBody>
                 </Table>
-              </ScrollArea>
             </div>
 
             <div className="flex justify-between pt-2">

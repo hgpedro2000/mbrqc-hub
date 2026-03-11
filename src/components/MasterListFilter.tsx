@@ -9,6 +9,7 @@ export interface FilterConfig {
   key: string;
   label: string;
   options: string[];
+  labelMap?: Record<string, string>;
 }
 
 interface MasterListFilterProps {

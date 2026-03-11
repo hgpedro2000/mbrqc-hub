@@ -33,7 +33,7 @@ jobs:
       # 3. Instala as dependencias
       # (Usar 'npm ci' e mais rapido e seguro para CI)
       - name: "Instalar Dependencias"
-        run: npm ci
+        run: npm install
       
       # 4. Roda o script de build (que deve gerar a pasta 'dist')
       - name: "Rodar Build"

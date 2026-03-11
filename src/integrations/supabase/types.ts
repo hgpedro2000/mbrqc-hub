@@ -162,10 +162,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           data: string
+          fornecedor: string | null
           id: string
           items: Json
+          modulo: string | null
           nome: string
           numero: string | null
+          part_name: string | null
+          part_number: string | null
+          projeto: string | null
           status: string
           updated_at: string
         }
@@ -175,10 +180,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data: string
+          fornecedor?: string | null
           id?: string
           items?: Json
+          modulo?: string | null
           nome: string
           numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          projeto?: string | null
           status?: string
           updated_at?: string
         }
@@ -188,10 +198,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data?: string
+          fornecedor?: string | null
           id?: string
           items?: Json
+          modulo?: string | null
           nome?: string
           numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          projeto?: string | null
           status?: string
           updated_at?: string
         }
@@ -615,10 +630,15 @@ export type Database = {
           created_at: string
           created_by: string | null
           data: string
+          fornecedor: string | null
           id: string
           items: Json
+          modulo: string | null
           nome: string
           numero: string | null
+          part_name: string | null
+          part_number: string | null
+          projeto: string | null
           status: string
           updated_at: string
         }
@@ -628,10 +648,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data: string
+          fornecedor?: string | null
           id?: string
           items?: Json
+          modulo?: string | null
           nome: string
           numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          projeto?: string | null
           status?: string
           updated_at?: string
         }
@@ -641,10 +666,15 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data?: string
+          fornecedor?: string | null
           id?: string
           items?: Json
+          modulo?: string | null
           nome?: string
           numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          projeto?: string | null
           status?: string
           updated_at?: string
         }

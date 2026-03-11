@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTranslation } from "react-i18next";
 import ExitConfirmDialog from "@/components/ExitConfirmDialog";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 
 interface ChecklistItem { id: string; label: string; type: "check" | "text"; }
 
@@ -58,6 +59,11 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const [draftLoading, setDraftLoading] = useState(false);
   const [nome] = useState(profile?.full_name || "");
   const [data, setData] = useState("");
+  const [fornecedor, setFornecedor] = useState("");
+  const [partNumber, setPartNumber] = useState("");
+  const [partName, setPartName] = useState("");
+  const [projeto, setProjeto] = useState("");
+  const [modulo, setModulo] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [pendingNav, setPendingNav] = useState<string | null>(null);
@@ -74,6 +80,11 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     if (existing) {
       setData(existing.data); setComments(existing.comentarios || "");
       setCurrentStatus((existing as any).status || "submitted");
+      if ((existing as any).fornecedor) setFornecedor((existing as any).fornecedor);
+      if ((existing as any).part_number) setPartNumber((existing as any).part_number);
+      if ((existing as any).part_name) setPartName((existing as any).part_name);
+      if ((existing as any).projeto) setProjeto((existing as any).projeto);
+      if ((existing as any).modulo) setModulo((existing as any).modulo);
       if (Array.isArray(existing.items) && existing.items.length > 0) setItems(existing.items.map((item: any) => ({ id: item.id, label: item.label, type: "check" as const })));
       if (Array.isArray(existing.checked_items)) setCheckedItems(new Set(existing.checked_items as string[]));
       setRecordId(existing.id);
@@ -100,7 +111,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const buildPayload = () => {
     const itemsData = items.map((item) => ({ id: item.id, label: item.label }));
     const checkedData = Array.from(checkedItems);
-    return { nome, data: data || new Date().toISOString().split("T")[0], items: itemsData, checked_items: checkedData, comentarios: comments || null };
+    return { nome, data: data || new Date().toISOString().split("T")[0], items: itemsData, checked_items: checkedData, comentarios: comments || null, projeto, fornecedor, part_number: partNumber, part_name: partName, modulo };
   };
 
   const saveDraft = useCallback(async () => {
@@ -189,6 +200,20 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2"><Label>{t("common.name")} *</Label><Input required value={nome} readOnly className="bg-muted" /></div>
               <div className="space-y-2"><Label>{t("common.date")} *</Label><Input type="date" required value={data} onChange={(e) => setData(e.target.value)} /></div>
+              <SupplierPartSelector
+                fornecedor={fornecedor}
+                partNumber={partNumber}
+                partName={partName}
+                projeto={projeto}
+                modulo={modulo}
+                onFornecedorChange={setFornecedor}
+                onPartNumberChange={setPartNumber}
+                onPartDataChange={(d) => {
+                  setPartName(d.part_name);
+                  setModulo(d.line_module);
+                  setProjeto(d.project);
+                }}
+              />
             </div>
           </div>
 

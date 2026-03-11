@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const SUPPLIER_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Código", dbField: "code", label: "Código", required: true },
@@ -51,6 +53,18 @@ const SuppliersTab = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("suppliers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eng-suppliers"] });
+      toast.success("Fornecedor excluído!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleActive = async (id: string, active: boolean) => {
     await supabase.from("suppliers").update({ active: !active }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["eng-suppliers"] });
@@ -72,9 +86,9 @@ const SuppliersTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h2 className="text-lg font-heading font-semibold">Fornecedores</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <ExcelExportButton
             data={suppliers}
             columns={[
@@ -94,71 +108,99 @@ const SuppliersTab = () => {
               return rows.map((r) => existing.has(r.code));
             }}
             onImport={async (rows) => {
-              const { error } = await supabase.from("suppliers").insert(rows.map((r) => ({ code: r.code, name: r.name })));
+              const { error } = await supabase.from("suppliers").upsert(
+                rows.map((r) => ({ code: r.code, name: r.name })),
+                { onConflict: "code" }
+              );
               if (error) throw error;
               qc.invalidateQueries({ queryKey: ["eng-suppliers"] });
               toast.success(`${rows.length} fornecedor(es) importado(s)!`);
             }}
           />
-        <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Código *</Label>
-                <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: FORN001" />
+          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Código *</Label>
+                  <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: FORN001" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Nome *</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do fornecedor" />
+                </div>
+                <Button onClick={() => saveMutation.mutate()} disabled={!code || !name || saveMutation.isPending} className="w-full">
+                  {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                  Salvar
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Nome *</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do fornecedor" />
-              </div>
-              <Button onClick={() => saveMutation.mutate()} disabled={!code || !name || saveMutation.isPending} className="w-full">
-                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                Salvar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Código</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Ativo</TableHead>
-              <TableHead className="w-16"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {suppliers.map((s) => (
-              <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
-                <TableCell className="font-mono">{s.code}</TableCell>
-                <TableCell>{s.name}</TableCell>
-                <TableCell>
-                  <Switch checked={s.active} onCheckedChange={() => toggleActive(s.id, s.active)} />
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(s)}>
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                </TableCell>
+        <div className="overflow-x-auto -mx-3 px-3">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Código</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead className="hidden sm:table-cell">Ativo</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
-            ))}
-            {suppliers.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum fornecedor cadastrado</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {suppliers.map((s) => (
+                <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
+                  <TableCell className="font-mono text-xs sm:text-sm">{s.code}</TableCell>
+                  <TableCell className="text-xs sm:text-sm">{s.name}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Switch checked={s.active} onCheckedChange={() => toggleActive(s.id, s.active)} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir "{s.name}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {suppliers.length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum fornecedor cadastrado</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );

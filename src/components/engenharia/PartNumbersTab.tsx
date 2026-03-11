@@ -8,7 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Pencil, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
@@ -71,6 +72,18 @@ const PartNumbersTab = () => {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("part_numbers").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
+      toast.success("Part Number excluído!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const toggleActive = async (id: string, active: boolean) => {
     await supabase.from("part_numbers").update({ active: !active }).eq("id", id);
     qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
@@ -98,9 +111,9 @@ const PartNumbersTab = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h2 className="text-lg font-heading font-semibold">Part Numbers</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <ExcelExportButton
             data={partNumbers.map((p: any) => ({
               supplier_code: p.suppliers?.code || "",
@@ -132,7 +145,6 @@ const PartNumbersTab = () => {
               return rows.map((r) => existing.has(r.part_number));
             }}
             onImport={async (rows) => {
-              // Resolve supplier codes to IDs
               const codes = [...new Set(rows.map((r) => r.supplier_code))];
               const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes);
               const codeToId = new Map((suppData || []).map((s) => [s.code, s.id]));
@@ -150,89 +162,112 @@ const PartNumbersTab = () => {
               const skipped = rows.length - toInsert.length;
               if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado com os códigos informados.");
               
-              const { error } = await supabase.from("part_numbers").insert(toInsert);
+              const { error } = await supabase.from("part_numbers").upsert(toInsert, { onConflict: "part_number" });
               if (error) throw error;
               qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
               toast.success(`${toInsert.length} part number(s) importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s) (fornecedor não encontrado).` : ""}`);
             }}
           />
-        <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editId ? "Editar Part Number" : "Novo Part Number"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Fornecedor *</Label>
-                <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editId ? "Editar Part Number" : "Novo Part Number"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Fornecedor *</Label>
+                  <Select value={supplierId} onValueChange={setSupplierId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Part Number *</Label>
+                  <Input value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="Ex: ABC-12345" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Part Name *</Label>
+                  <Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Projeto</Label>
+                  <Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Módulo de Linha</Label>
+                  <Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" />
+                </div>
+                <Button onClick={() => saveMutation.mutate()} disabled={!supplierId || !partNumber || !partName || saveMutation.isPending} className="w-full">
+                  {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                  Salvar
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label>Part Number *</Label>
-                <Input value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="Ex: ABC-12345" />
-              </div>
-              <div className="space-y-2">
-                <Label>Part Name *</Label>
-                <Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" />
-              </div>
-              <div className="space-y-2">
-                <Label>Projeto</Label>
-                <Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" />
-              </div>
-              <div className="space-y-2">
-                <Label>Módulo de Linha</Label>
-                <Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" />
-              </div>
-              <Button onClick={() => saveMutation.mutate()} disabled={!supplierId || !partNumber || !partName || saveMutation.isPending} className="w-full">
-                {saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                Salvar
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto -mx-3 px-3">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Part Number</TableHead>
-                <TableHead>Part Name</TableHead>
-                <TableHead>Projeto</TableHead>
-                <TableHead>Módulo</TableHead>
-                <TableHead>Ativo</TableHead>
-                <TableHead className="w-16"></TableHead>
+                <TableHead className="hidden md:table-cell">Part Name</TableHead>
+                <TableHead className="hidden lg:table-cell">Projeto</TableHead>
+                <TableHead className="hidden lg:table-cell">Módulo</TableHead>
+                <TableHead className="hidden sm:table-cell">Ativo</TableHead>
+                <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {partNumbers.map((p: any) => (
                 <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
-                  <TableCell>{p.suppliers?.name || "—"}</TableCell>
-                  <TableCell className="font-mono">{p.part_number}</TableCell>
-                  <TableCell>{p.part_name}</TableCell>
-                  <TableCell>{p.project || "—"}</TableCell>
-                  <TableCell>{p.line_module || "—"}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-xs sm:text-sm">{p.suppliers?.name || "—"}</TableCell>
+                  <TableCell className="font-mono text-xs sm:text-sm">{p.part_number}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.part_name}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.project || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.line_module || "—"}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Switch checked={p.active} onCheckedChange={() => toggleActive(p.id, p.active)} />
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir part number?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja excluir "{p.part_number}"? Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMutation.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

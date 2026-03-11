@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useTranslation } from "react-i18next";
 import ExitConfirmDialog from "@/components/ExitConfirmDialog";
+import SupplierPartSelector from "@/components/SupplierPartSelector";
 
 interface ChecklistItem { id: string; label: string; type: "check" | "text"; }
 

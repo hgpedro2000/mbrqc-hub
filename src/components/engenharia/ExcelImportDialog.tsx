@@ -24,7 +24,6 @@ export interface ImportRow {
 interface ExcelImportDialogProps {
   title: string;
   columns: ColumnMapping[];
-  /** Check which rows are duplicates. Returns array of booleans matching rows. */
   checkDuplicates: (rows: Record<string, string>[]) => Promise<boolean[]>;
   onImport: (rows: Record<string, string>[]) => Promise<void>;
   templateFileName?: string;
@@ -62,12 +61,10 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
         return;
       }
 
-      // Map Excel headers to db fields
       const excelHeaders = Object.keys(jsonData[0]);
       const mappedRows: Record<string, string>[] = jsonData.map((row) => {
         const mapped: Record<string, string> = {};
         columns.forEach((col) => {
-          // Try exact match first, then case-insensitive
           const header = excelHeaders.find(
             (h) => h === col.excelHeader || h.toLowerCase().trim() === col.excelHeader.toLowerCase().trim()
           );
@@ -76,7 +73,6 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
         return mapped;
       });
 
-      // Validate required fields
       const requiredCols = columns.filter((c) => c.required);
       const invalidRows = mappedRows.filter((r) =>
         requiredCols.some((c) => !r[c.dbField])
@@ -88,7 +84,6 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
         return;
       }
 
-      // Check duplicates
       const validRows = mappedRows.filter((r) =>
         !requiredCols.some((c) => !r[c.dbField])
       );
@@ -98,7 +93,7 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
         validRows.map((data, i) => ({
           data,
           isDuplicate: duplicates[i],
-          selected: !duplicates[i], // pre-select non-duplicates
+          selected: !duplicates[i],
         }))
       );
       setStep("preview");
@@ -144,12 +139,12 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); setOpen(v); }}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5">
-          <Upload className="w-4 h-4" /> Importar Excel
+          <Upload className="w-4 h-4" /> <span className="hidden sm:inline">Importar Excel</span><span className="sm:hidden">Importar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
             <FileSpreadsheet className="w-5 h-5" />
             Importar {title}
           </DialogTitle>
@@ -157,9 +152,9 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
 
         {step === "upload" && (
           <div className="space-y-4 py-4">
-            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center space-y-3">
-              <Upload className="w-10 h-10 mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
+            <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-4 sm:p-8 text-center space-y-3">
+              <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto text-muted-foreground" />
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Selecione um arquivo Excel (.xlsx ou .xls)
               </p>
               <input
@@ -174,16 +169,16 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
               </Button>
             </div>
             {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-destructive bg-destructive/10 rounded-lg p-3">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 Cabeçalhos esperados: {columns.map((c) => c.excelHeader).join(", ")}
               </p>
-              <Button variant="link" size="sm" onClick={downloadTemplate} className="text-xs">
+              <Button variant="link" size="sm" onClick={downloadTemplate} className="text-xs p-0">
                 Baixar template
               </Button>
             </div>
@@ -191,80 +186,82 @@ const ExcelImportDialog = ({ title, columns, checkDuplicates, onImport, template
         )}
 
         {step === "preview" && (
-          <div className="flex-1 flex flex-col space-y-3 min-h-0">
-            <div className="flex items-center gap-3 text-sm">
-              <Badge variant="secondary">{rows.length} linhas</Badge>
+          <div className="flex-1 flex flex-col space-y-3 min-h-0 overflow-hidden">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <Badge variant="secondary" className="text-xs">{rows.length} linhas</Badge>
               {duplicateCount > 0 && (
-                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-xs">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   {duplicateCount} duplicata{duplicateCount > 1 ? "s" : ""}
                 </Badge>
               )}
-              <Badge variant="default">{selectedCount} selecionada{selectedCount > 1 ? "s" : ""}</Badge>
+              <Badge variant="default" className="text-xs">{selectedCount} selecionada{selectedCount > 1 ? "s" : ""}</Badge>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-destructive bg-destructive/10 rounded-lg p-3">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 {error}
               </div>
             )}
 
-            <ScrollArea className="flex-1 border rounded-lg max-h-[400px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={selectedCount === rows.length}
-                        onCheckedChange={(c) => toggleAll(!!c)}
-                      />
-                    </TableHead>
-                    <TableHead className="w-10">#</TableHead>
-                    {columns.map((col) => (
-                      <TableHead key={col.dbField}>{col.label}</TableHead>
-                    ))}
-                    <TableHead className="w-20">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((row, i) => (
-                    <TableRow
-                      key={i}
-                      className={row.isDuplicate ? "bg-amber-50/50" : ""}
-                    >
-                      <TableCell>
+            <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
+              <ScrollArea className="h-full max-h-[50vh]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10 sticky top-0 bg-background z-10">
                         <Checkbox
-                          checked={row.selected}
-                          onCheckedChange={() => toggleRow(i)}
+                          checked={selectedCount === rows.length}
+                          onCheckedChange={(c) => toggleAll(!!c)}
                         />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                      </TableHead>
+                      <TableHead className="w-10 sticky top-0 bg-background z-10">#</TableHead>
                       {columns.map((col) => (
-                        <TableCell key={col.dbField} className="text-sm">
-                          {row.data[col.dbField] || "—"}
-                        </TableCell>
+                        <TableHead key={col.dbField} className="sticky top-0 bg-background z-10 text-xs sm:text-sm">{col.label}</TableHead>
                       ))}
-                      <TableCell>
-                        {row.isDuplicate ? (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300 text-xs">
-                            Duplicata
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-emerald-600 border-emerald-300 text-xs">
-                            Novo
-                          </Badge>
-                        )}
-                      </TableCell>
+                      <TableHead className="w-20 sticky top-0 bg-background z-10 text-xs sm:text-sm">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row, i) => (
+                      <TableRow
+                        key={i}
+                        className={row.isDuplicate ? "bg-amber-50/50" : ""}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={row.selected}
+                            onCheckedChange={() => toggleRow(i)}
+                          />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
+                        {columns.map((col) => (
+                          <TableCell key={col.dbField} className="text-xs sm:text-sm">
+                            {row.data[col.dbField] || "—"}
+                          </TableCell>
+                        ))}
+                        <TableCell>
+                          {row.isDuplicate ? (
+                            <Badge variant="outline" className="text-amber-600 border-amber-300 text-[10px] sm:text-xs">
+                              Duplicata
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-emerald-600 border-emerald-300 text-[10px] sm:text-xs">
+                              Novo
+                            </Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
 
             <div className="flex justify-between pt-2">
-              <Button variant="outline" onClick={reset}>Voltar</Button>
-              <Button onClick={handleImport} disabled={selectedCount === 0}>
+              <Button variant="outline" size="sm" onClick={reset}>Voltar</Button>
+              <Button size="sm" onClick={handleImport} disabled={selectedCount === 0}>
                 Importar {selectedCount} item{selectedCount > 1 ? "s" : ""}
               </Button>
             </div>

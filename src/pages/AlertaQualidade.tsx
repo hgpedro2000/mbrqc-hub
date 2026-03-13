@@ -50,19 +50,19 @@ const AlertaQualidade = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="w-4 h-4 mr-1" /> {t("common.hub")}</Button>
-              <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.hub")}</span></Button>
+              <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             {isAdmin && <EngineeringMode module="Alerta de Qualidade" />}
           </div>
-          <div className="flex items-center gap-3 mt-3 md:mt-4"><AlertTriangle className="w-6 h-6 md:w-8 md:h-8" /><div><h1 className="text-xl md:text-2xl font-heading font-bold">{t("alertaQualidade.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("alertaQualidade.subtitle")}</p></div></div>
+          <div className="flex items-center gap-2 sm:gap-3 mt-3 md:mt-4"><AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /><div><h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">{t("alertaQualidade.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("alertaQualidade.subtitle")}</p></div></div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <div className="flex flex-wrap gap-3">
           <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2"><Plus className="w-4 h-4" /> {t("alertaQualidade.newAlert")}</Button>
           <Button variant="outline" onClick={() => navigate("/alerta-qualidade/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>

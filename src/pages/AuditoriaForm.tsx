@@ -127,21 +127,21 @@ const AuditoriaForm = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/auditorias")} className="text-primary-foreground/70 hover:text-primary-foreground">
-              <ArrowLeft className="w-4 h-4 mr-1" /> {t("common.back")}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/auditorias")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+              <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.back")}</span>
             </Button>
-            <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
-          <div className="flex items-center gap-3 mt-4">
-            <ShieldCheck className="w-8 h-8" />
-            <h1 className="text-2xl font-heading font-bold">{isEdit ? t("auditorias.editAudit") : t("auditorias.newAudit")}</h1>
+          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
+            <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8" />
+            <h1 className="text-xl sm:text-2xl font-heading font-bold">{isEdit ? t("auditorias.editAudit") : t("auditorias.newAudit")}</h1>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6 max-w-4xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl">
         <div className="form-section">
           <h2 className="form-section-title">{t("auditorias.generalInfo")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -88,7 +88,7 @@ const ContencaoForm = () => {
 
         <div className="form-section">
           <h2 className="form-section-title">{t("contencao.quantities")}</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2"><Label>{t("contencao.qtyContida")}</Label><Input type="number" value={form.quantidade_contida} onChange={(e) => set("quantidade_contida", Number(e.target.value))} /></div>
             <div className="space-y-2"><Label>{t("contencao.qtyAprovada")}</Label><Input type="number" value={form.quantidade_aprovada} onChange={(e) => set("quantidade_aprovada", Number(e.target.value))} /></div>
             <div className="space-y-2"><Label>{t("contencao.qtyRejeitada")}</Label><Input type="number" value={form.quantidade_rejeitada} onChange={(e) => set("quantidade_rejeitada", Number(e.target.value))} /></div>

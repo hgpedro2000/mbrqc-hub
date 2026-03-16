@@ -305,7 +305,7 @@ const ChecklistViewDialog = ({ open, onOpenChange, checklistId, checklistType }:
               {/* Defects for injection */}
               {checklistType === "injection_checklists" && defects && defects.length > 0 && (
                 <div data-pdf-section>
-                  <SectionHeader icon={AlertTriangle} title={`Defeitos (${defects.length})`} />
+                  <SectionHeader icon={AlertTriangle} title={`Registro de Ocorrência (${defects.length})`} />
                   <div className="space-y-3">
                     {defects.map((defect: any, idx: number) => (
                       <div key={idx} className="border border-border rounded-lg p-4 bg-card">

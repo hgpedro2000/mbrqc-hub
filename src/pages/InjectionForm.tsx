@@ -223,8 +223,16 @@ const InjectionForm = () => {
     } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }
   };
 
-  // Whether rate section is shown (disabled for "Razão do Tryout" context)
-  const showRate = !!razaoTryout;
+  const isNovoCarro = razaoTryout === "Novo Carro";
+  // Hide rate for Novo Carro
+  const showRate = !!razaoTryout && !isNovoCarro;
+
+  // Force NG/OK to 0 when Novo Carro
+  useEffect(() => {
+    if (isNovoCarro) {
+      setPecasNG(0);
+    }
+  }, [isNovoCarro]);
 
   if (submitted) {
     return (

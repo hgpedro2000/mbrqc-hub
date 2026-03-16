@@ -411,11 +411,11 @@ const InjectionForm = () => {
           {/* Defects */}
           <div className="form-section">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="form-section-title mb-0 text-sm sm:text-base">{t("injectionForm.defects")}</h3>
-              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5 text-xs sm:text-sm" disabled={pecasNG === 0}><Plus className="w-4 h-4" /> {t("injectionForm.addDefect")}</Button>
+              <h3 className="form-section-title mb-0 text-sm sm:text-base">Registro de Ocorrência</h3>
+              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5 text-xs sm:text-sm" disabled={!isNovoCarro && pecasNG === 0}><Plus className="w-4 h-4" /> {t("injectionForm.addDefect")}</Button>
             </div>
-            {pecasNG === 0 && <div className="text-xs sm:text-sm text-muted-foreground text-center py-4 sm:py-6 border border-border rounded-lg bg-muted/30">{t("injectionForm.defectsBlocked")}</div>}
-            {pecasNG > 0 && defects.length === 0 && <div className="text-xs sm:text-sm text-destructive text-center py-4 sm:py-6 border border-destructive/30 rounded-lg bg-destructive/5">⚠️ {t("injectionForm.defectsRequired")}</div>}
+            {!isNovoCarro && pecasNG === 0 && <div className="text-xs sm:text-sm text-muted-foreground text-center py-4 sm:py-6 border border-border rounded-lg bg-muted/30">{t("injectionForm.defectsBlocked")}</div>}
+            {!isNovoCarro && pecasNG > 0 && defects.length === 0 && <div className="text-xs sm:text-sm text-destructive text-center py-4 sm:py-6 border border-destructive/30 rounded-lg bg-destructive/5">⚠️ {t("injectionForm.defectsRequired")}</div>}
 
             <div className="space-y-4">
               {defects.map((defect, idx) => (

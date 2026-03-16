@@ -268,7 +268,19 @@ const InjectionForm = () => {
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5 sm:space-y-2"><Label htmlFor="nome" className="text-xs sm:text-sm">{t("common.name")} *</Label><Input id="nome" name="nome" required value={profile?.full_name || ""} readOnly className="bg-muted text-sm" /></div>
               <div className="space-y-1.5 sm:space-y-2"><Label htmlFor="data" className="text-xs sm:text-sm">{t("common.date")} *</Label><Input id="data" name="data" type="date" required defaultValue={defaults.data || ""} key={defaults.data || "new"} className="text-sm" /></div>
-              <SupplierPartSelector fornecedor={fornecedor} partNumber={partNumber} partName={partName} projeto={projeto} modulo={modulo} onFornecedorChange={setFornecedor} onPartNumberChange={setPartNumber} onPartDataChange={handlePartDataChange} />
+              <div className="space-y-1.5 sm:space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm">Tipo de Fornecedor *</Label>
+                <Select value={tipoFornecedor} onValueChange={(v) => { setTipoFornecedor(v); setFornecedor(""); setPartNumber(""); setPartName(""); setProjeto(""); setModulo(""); }}>
+                  <SelectTrigger className="text-sm"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mip">MIP</SelectItem>
+                    <SelectItem value="pecas_fornecedor">Peças de Fornecedor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {tipoFornecedor && (
+                <SupplierPartSelector fornecedor={fornecedor} partNumber={partNumber} partName={partName} projeto={projeto} modulo={modulo} onFornecedorChange={setFornecedor} onPartNumberChange={setPartNumber} onPartDataChange={handlePartDataChange} supplierFilter={tipoFornecedor as "mip" | "pecas_fornecedor"} />
+              )}
             </div>
           </div>
 

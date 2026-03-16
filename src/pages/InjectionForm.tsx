@@ -313,11 +313,11 @@ const InjectionForm = () => {
               </div>
               <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="pecasNG" className="text-xs sm:text-sm">{t("injectionForm.partsNG")} *</Label>
-                <Input id="pecasNG" type="number" min={0} max={totalPecas} placeholder="0" value={pecasNG} onChange={(e) => setPecasNG(Math.min(Number(e.target.value) || 0, totalPecas))} className="text-sm" />
+                <Input id="pecasNG" type="number" min={0} max={totalPecas} placeholder="0" value={pecasNG} onChange={(e) => setPecasNG(Math.min(Number(e.target.value) || 0, totalPecas))} className="text-sm" disabled={isNovoCarro} />
               </div>
               <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="pecasOK" className="text-xs sm:text-sm">{t("injectionForm.partsOK")}</Label>
-                <Input id="pecasOK" type="number" value={pecasOK} readOnly className="bg-muted font-semibold text-accent text-sm" />
+                <Input id="pecasOK" type="number" value={isNovoCarro ? 0 : pecasOK} readOnly className="bg-muted font-semibold text-accent text-sm" disabled={isNovoCarro} />
               </div>
 
               {/* Rate fields - shown when razaoTryout is NOT the reason (i.e. always show but read-only) */}

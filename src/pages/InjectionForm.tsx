@@ -190,7 +190,8 @@ const InjectionForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Allow totalPecas = 0
-    if (pecasNG > 0 && defects.length === 0) { toast.error(t("injectionForm.ngRequireDefect")); return; }
+    if (!isNovoCarro && pecasNG > 0 && defects.length === 0) { toast.error(t("injectionForm.ngRequireDefect")); return; }
+    if (!tipoFornecedor) { toast.error("Selecione o tipo de fornecedor."); return; }
     if (!dimensionalStatus) { toast.error("Selecione o status dimensional."); return; }
     if (dimensionalStatus === "nao_feito" && !dimensionalMotivo.trim()) { toast.error("Informe o motivo do dimensional não feito."); return; }
     setLoading(true);

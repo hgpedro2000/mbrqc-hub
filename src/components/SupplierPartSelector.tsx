@@ -37,6 +37,7 @@ const SupplierPartSelector = ({
   onFornecedorChange,
   onPartNumberChange,
   onPartDataChange,
+  supplierFilter,
 }: SupplierPartSelectorProps) => {
   const { t } = useTranslation();
   const [selectedProject, setSelectedProject] = useState<string>(projeto || "");

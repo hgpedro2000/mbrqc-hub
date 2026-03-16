@@ -45,6 +45,7 @@ const InjectionForm = () => {
   const [currentStatus, setCurrentStatus] = useState<string>("submitted");
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [tipoFornecedor, setTipoFornecedor] = useState<string>("");
   const [fornecedor, setFornecedor] = useState("");
   const [partNumber, setPartNumber] = useState("");
   const [partName, setPartName] = useState("");

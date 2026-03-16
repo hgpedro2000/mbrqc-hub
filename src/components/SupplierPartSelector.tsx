@@ -24,6 +24,8 @@ interface SupplierPartSelectorProps {
   onFornecedorChange: (value: string) => void;
   onPartNumberChange: (value: string) => void;
   onPartDataChange: (data: PartData) => void;
+  /** "mip" = only show ANFC - MOBIS BRASIL, "pecas_fornecedor" = exclude ANFC, undefined = show all */
+  supplierFilter?: "mip" | "pecas_fornecedor";
 }
 
 const SupplierPartSelector = ({
@@ -35,6 +37,7 @@ const SupplierPartSelector = ({
   onFornecedorChange,
   onPartNumberChange,
   onPartDataChange,
+  supplierFilter,
 }: SupplierPartSelectorProps) => {
   const { t } = useTranslation();
   const [selectedProject, setSelectedProject] = useState<string>(projeto || "");
@@ -74,8 +77,15 @@ const SupplierPartSelector = ({
           supplierMap.set(s.id, { id: s.id, name: s.name, code: s.code });
         }
       });
-    return [...supplierMap.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [allParts, selectedProject]);
+    let suppliers = [...supplierMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+    // Apply supplier filter
+    if (supplierFilter === "mip") {
+      suppliers = suppliers.filter((s) => s.code === "ANFC");
+    } else if (supplierFilter === "pecas_fornecedor") {
+      suppliers = suppliers.filter((s) => s.code !== "ANFC");
+    }
+    return suppliers;
+  }, [allParts, selectedProject, supplierFilter]);
 
   // Parts filtered by project + supplier (for search popup)
   const filteredParts = useMemo(() => {

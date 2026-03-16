@@ -45,6 +45,7 @@ const InjectionForm = () => {
   const [currentStatus, setCurrentStatus] = useState<string>("submitted");
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [tipoFornecedor, setTipoFornecedor] = useState<string>("");
   const [fornecedor, setFornecedor] = useState("");
   const [partNumber, setPartNumber] = useState("");
   const [partName, setPartName] = useState("");
@@ -189,7 +190,8 @@ const InjectionForm = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Allow totalPecas = 0
-    if (pecasNG > 0 && defects.length === 0) { toast.error(t("injectionForm.ngRequireDefect")); return; }
+    if (!isNovoCarro && pecasNG > 0 && defects.length === 0) { toast.error(t("injectionForm.ngRequireDefect")); return; }
+    if (!tipoFornecedor) { toast.error("Selecione o tipo de fornecedor."); return; }
     if (!dimensionalStatus) { toast.error("Selecione o status dimensional."); return; }
     if (dimensionalStatus === "nao_feito" && !dimensionalMotivo.trim()) { toast.error("Informe o motivo do dimensional não feito."); return; }
     setLoading(true);
@@ -222,8 +224,16 @@ const InjectionForm = () => {
     } catch (error: any) { console.error("Submit error:", error); toast.error(t("tryout.submitError"), { description: error.message }); } finally { setLoading(false); }
   };
 
-  // Whether rate section is shown (disabled for "Razão do Tryout" context)
-  const showRate = !!razaoTryout;
+  const isNovoCarro = razaoTryout === "Novo Carro";
+  // Hide rate for Novo Carro
+  const showRate = !!razaoTryout && !isNovoCarro;
+
+  // Force NG/OK to 0 when Novo Carro
+  useEffect(() => {
+    if (isNovoCarro) {
+      setPecasNG(0);
+    }
+  }, [isNovoCarro]);
 
   if (submitted) {
     return (
@@ -259,7 +269,19 @@ const InjectionForm = () => {
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="space-y-1.5 sm:space-y-2"><Label htmlFor="nome" className="text-xs sm:text-sm">{t("common.name")} *</Label><Input id="nome" name="nome" required value={profile?.full_name || ""} readOnly className="bg-muted text-sm" /></div>
               <div className="space-y-1.5 sm:space-y-2"><Label htmlFor="data" className="text-xs sm:text-sm">{t("common.date")} *</Label><Input id="data" name="data" type="date" required defaultValue={defaults.data || ""} key={defaults.data || "new"} className="text-sm" /></div>
-              <SupplierPartSelector fornecedor={fornecedor} partNumber={partNumber} partName={partName} projeto={projeto} modulo={modulo} onFornecedorChange={setFornecedor} onPartNumberChange={setPartNumber} onPartDataChange={handlePartDataChange} />
+              <div className="space-y-1.5 sm:space-y-2 sm:col-span-2">
+                <Label className="text-xs sm:text-sm">Tipo de Fornecedor *</Label>
+                <Select value={tipoFornecedor} onValueChange={(v) => { setTipoFornecedor(v); setFornecedor(""); setPartNumber(""); setPartName(""); setProjeto(""); setModulo(""); }}>
+                  <SelectTrigger className="text-sm"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mip">MIP</SelectItem>
+                    <SelectItem value="pecas_fornecedor">Peças de Fornecedor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {tipoFornecedor && (
+                <SupplierPartSelector fornecedor={fornecedor} partNumber={partNumber} partName={partName} projeto={projeto} modulo={modulo} onFornecedorChange={setFornecedor} onPartNumberChange={setPartNumber} onPartDataChange={handlePartDataChange} supplierFilter={tipoFornecedor as "mip" | "pecas_fornecedor"} />
+              )}
             </div>
           </div>
 
@@ -292,11 +314,11 @@ const InjectionForm = () => {
               </div>
               <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="pecasNG" className="text-xs sm:text-sm">{t("injectionForm.partsNG")} *</Label>
-                <Input id="pecasNG" type="number" min={0} max={totalPecas} placeholder="0" value={pecasNG} onChange={(e) => setPecasNG(Math.min(Number(e.target.value) || 0, totalPecas))} className="text-sm" />
+                <Input id="pecasNG" type="number" min={0} max={totalPecas} placeholder="0" value={pecasNG} onChange={(e) => setPecasNG(Math.min(Number(e.target.value) || 0, totalPecas))} className="text-sm" disabled={isNovoCarro} />
               </div>
               <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="pecasOK" className="text-xs sm:text-sm">{t("injectionForm.partsOK")}</Label>
-                <Input id="pecasOK" type="number" value={pecasOK} readOnly className="bg-muted font-semibold text-accent text-sm" />
+                <Input id="pecasOK" type="number" value={isNovoCarro ? 0 : pecasOK} readOnly className="bg-muted font-semibold text-accent text-sm" disabled={isNovoCarro} />
               </div>
 
               {/* Rate fields - shown when razaoTryout is NOT the reason (i.e. always show but read-only) */}
@@ -390,11 +412,11 @@ const InjectionForm = () => {
           {/* Defects */}
           <div className="form-section">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="form-section-title mb-0 text-sm sm:text-base">{t("injectionForm.defects")}</h3>
-              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5 text-xs sm:text-sm" disabled={pecasNG === 0}><Plus className="w-4 h-4" /> {t("injectionForm.addDefect")}</Button>
+              <h3 className="form-section-title mb-0 text-sm sm:text-base">Registro de Ocorrência</h3>
+              <Button type="button" variant="outline" size="sm" onClick={addDefect} className="gap-1.5 text-xs sm:text-sm" disabled={!isNovoCarro && pecasNG === 0}><Plus className="w-4 h-4" /> {t("injectionForm.addDefect")}</Button>
             </div>
-            {pecasNG === 0 && <div className="text-xs sm:text-sm text-muted-foreground text-center py-4 sm:py-6 border border-border rounded-lg bg-muted/30">{t("injectionForm.defectsBlocked")}</div>}
-            {pecasNG > 0 && defects.length === 0 && <div className="text-xs sm:text-sm text-destructive text-center py-4 sm:py-6 border border-destructive/30 rounded-lg bg-destructive/5">⚠️ {t("injectionForm.defectsRequired")}</div>}
+            {!isNovoCarro && pecasNG === 0 && <div className="text-xs sm:text-sm text-muted-foreground text-center py-4 sm:py-6 border border-border rounded-lg bg-muted/30">{t("injectionForm.defectsBlocked")}</div>}
+            {!isNovoCarro && pecasNG > 0 && defects.length === 0 && <div className="text-xs sm:text-sm text-destructive text-center py-4 sm:py-6 border border-destructive/30 rounded-lg bg-destructive/5">⚠️ {t("injectionForm.defectsRequired")}</div>}
 
             <div className="space-y-4">
               {defects.map((defect, idx) => (

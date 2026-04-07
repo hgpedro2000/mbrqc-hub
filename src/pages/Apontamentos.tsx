@@ -1,133 +1,363 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, FileBarChart, BarChart3, Pencil, Trash2 } from "lucide-react";
-import { useUserRole } from "@/hooks/useUserRole";
-import EngineeringMode from "@/components/EngineeringMode";
-import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 
+const TYPES = ["incoming", "peca", "processo", "oem"] as const;
+type ApontamentoTipo = typeof TYPES[number];
+
+const typeConfig: Record<ApontamentoTipo, { icon: any; label: string; description: string; color: string; prefix: string }> = {
+  incoming: { icon: BoxSelect, label: "Incoming", description: "Inspeção de peças recebidas de fornecedores com controle de lote e quantidade.", color: "from-blue-500/10 to-blue-600/5", prefix: "INC" },
+  peca: { icon: Package, label: "Peça", description: "Registro de defeitos encontrados em peças durante o processo produtivo.", color: "from-amber-500/10 to-orange-500/5", prefix: "PCA" },
+  processo: { icon: Cog, label: "Processo", description: "Apontamento de falhas e não-conformidades no processo de produção.", color: "from-emerald-500/10 to-green-500/5", prefix: "PRC" },
+  oem: { icon: Car, label: "OEM", description: "Registros de reclamações e defeitos detectados pela montadora (OEM).", color: "from-violet-500/10 to-purple-500/5", prefix: "OEM" },
+};
+
 const Apontamentos = () => {
   const { t } = useTranslation();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
-  const qc = useQueryClient();
-  const [tab, setTab] = useState("defeito_processo");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
+  const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
-    queryFn: async () => { const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false }); if (error) throw error; return data; },
+    queryFn: async () => {
+      const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("apontamentos").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["apontamentos"] }); toast.success(t("apontamentos.deleteSuccess")); setDeleteId(null); },
+    mutationFn: async (id: string) => {
+      await supabase.from("checklist_photos").delete().eq("checklist_id", id);
+      const { error } = await supabase.from("apontamentos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Registro excluído com sucesso");
+      queryClient.invalidateQueries({ queryKey: ["apontamentos"] });
+      setDeleteTarget(null);
+    },
     onError: (e: any) => toast.error(e.message),
   });
 
+  const statusFilterOptions = ["draft", "submitted"];
+
   const filters: FilterConfig[] = useMemo(() => {
-    const partNumbers = [...new Set(items.map((i) => i.part_number).filter(Boolean))] as string[];
-    const responsaveis = [...new Set(items.map((i) => i.responsavel).filter(Boolean))] as string[];
-    const statuses = [...new Set(items.map((i) => i.status).filter(Boolean))] as string[];
+    const typeItems = items.filter((i) => i.tipo === activeTab);
+    const projetos = [...new Set(typeItems.map((i) => i.projeto).filter(Boolean))] as string[];
+    const fornecedores = [...new Set(typeItems.map((i) => i.fornecedor).filter(Boolean))] as string[];
+    const responsaveis = [...new Set(typeItems.map((i) => i.responsavel).filter(Boolean))] as string[];
     return [
-      { key: "part_number", label: "Part Number", options: partNumbers },
-      { key: "responsavel", label: t("common.responsible"), options: responsaveis },
-      { key: "status", label: t("common.status"), options: statuses },
+      { key: "status", label: "Status", options: statusFilterOptions, labelMap: { draft: "Rascunho", submitted: "Finalizado" } },
+      { key: "projeto", label: "Projeto", options: projetos },
+      { key: "fornecedor", label: "Fornecedor", options: fornecedores },
+      { key: "responsavel", label: "Apontado por", options: responsaveis },
     ];
-  }, [items, t]);
+  }, [items, activeTab]);
 
-  const filtered = useMemo(() => items.filter((i) => i.tipo === tab).filter((i) => matchesSearch(i, ["numero", "titulo", "responsavel", "part_number", "part_name", "descricao"]) && matchesFilters(i)), [items, tab, search, filterValues]);
+  const countByType = useMemo(() => {
+    const counts: Record<string, number> = {};
+    TYPES.forEach((t) => { counts[t] = items.filter((i) => i.tipo === t).length; });
+    return counts;
+  }, [items]);
 
-  const statusColors: Record<string, string> = { aberto: "bg-blue-500/10 text-blue-600", em_analise: "bg-amber-500/10 text-amber-600", acao_definida: "bg-violet-500/10 text-violet-600", concluido: "bg-emerald-500/10 text-emerald-600", cancelado: "bg-red-500/10 text-red-600" };
-  const severidadeColors: Record<string, string> = { baixa: "bg-emerald-500/10 text-emerald-600", media: "bg-amber-500/10 text-amber-600", alta: "bg-orange-500/10 text-orange-600", critica: "bg-red-500/10 text-red-600" };
+  const filtered = useMemo(() =>
+    items
+      .filter((i) => i.tipo === activeTab)
+      .filter((i) => matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"]) && matchesFilters(i)),
+    [items, activeTab, search, filterValues]
+  );
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback((filtered: any[]) => {
+    setSelectedIds((prev) => {
+      const allIds = filtered.map((i) => i.id);
+      const allSelected = allIds.every((id) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const id of selectedIds) {
+        await supabase.from("checklist_photos").delete().eq("checklist_id", id);
+        const { error } = await supabase.from("apontamentos").delete().eq("id", id);
+        if (error) throw error;
+      }
+      toast.success(`${selectedIds.size} registros excluídos`);
+      queryClient.invalidateQueries({ queryKey: ["apontamentos"] });
+      setSelectedIds(new Set());
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteOpen(false);
+    }
+  };
+
+  const StatusBadge = ({ status }: { status?: string }) => {
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">Rascunho</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">Finalizado</Badge>;
+  };
+
+  const EditActions = ({ id, createdBy, status }: { id: string; createdBy?: string | null; status?: string }) => {
+    const isOwner = user && createdBy === user.id;
+    const canEdit = isAdmin || isOwner;
+    return (
+      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/ver/${id}`)}><Eye className="w-3.5 h-3.5" /></Button>
+        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5" /></Button>}
+        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+      </div>
+    );
+  };
+
+  const renderDetailedList = () => {
+    if (filtered.length === 0) {
+      const Icon = typeConfig[activeTab].icon;
+      return (
+        <div className="form-section text-center py-8">
+          <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">Nenhum registro encontrado</p>
+        </div>
+      );
+    }
+    return (
+      <div className="grid gap-3">
+        {filtered.map((item) => (
+          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {isAdmin && (
+                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                  </div>
+                )}
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
+                    {item.part_number && <span className="font-heading font-semibold text-foreground text-sm">{item.part_number}</span>}
+                    {item.fornecedor && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
+                    <StatusBadge status={item.status} />
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-1">
+                    {item.part_name && `${item.part_name} • `}{item.projeto || ""}{item.descricao ? ` — ${item.descricao}` : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <span>{item.responsavel}</span>
+                    <span>•</span>
+                    <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+                    {item.turno && <><span>•</span><span>{item.turno}</span></>}
+                  </div>
+                </div>
+              </div>
+              <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderCompactList = () => {
+    if (filtered.length === 0) {
+      const Icon = typeConfig[activeTab].icon;
+      return (
+        <div className="form-section text-center py-8">
+          <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">Nenhum registro encontrado</p>
+        </div>
+      );
+    }
+    return (
+      <div className="form-section p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/30">
+                {isAdmin && (
+                  <th className="w-10 px-3 py-2.5">
+                    <Checkbox checked={filtered.length > 0 && filtered.every((i) => selectedIds.has(i.id))} onCheckedChange={() => toggleSelectAll(filtered)} />
+                  </th>
+                )}
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Nº</th>
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Part Number</th>
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Fornecedor</th>
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Data</th>
+                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Status</th>
+                <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((item) => (
+                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+                  {isAdmin && (
+                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                    </td>
+                  )}
+                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{item.numero ? `#${item.numero}` : "—"}</td>
+                  <td className="px-3 py-2 font-semibold text-foreground">{item.part_number || item.responsavel}</td>
+                  <td className="px-3 py-2 text-muted-foreground hidden md:table-cell">{item.fornecedor || "—"}</td>
+                  <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{new Date(item.data).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
+                  <td className="px-3 py-2 text-right">
+                    <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.hub")}</span></Button>
-              <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+        <div className="container mx-auto px-4 py-6 md:py-12">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
+                <FileBarChart className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
+              </div>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Apontamentos</span>
             </div>
-            {isAdmin && <EngineeringMode module="Apontamentos" />}
+            <div className="flex items-center gap-1 md:gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.hub")}</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Dashboard</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 mt-3 md:mt-4"><FileBarChart className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /><div><h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">{t("apontamentos.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("apontamentos.subtitle")}</p></div></div>
+          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Apontamentos</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Selecione o tipo de apontamento para registrar.</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => navigate("/apontamentos/novo")} className="gap-2"><Plus className="w-4 h-4" /> {t("apontamentos.newApontamento")}</Button>
-          <Button variant="outline" onClick={() => navigate("/apontamentos/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
+      <main className="container mx-auto px-4 -mt-6 pb-12 space-y-8">
+        {/* Module cards */}
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
+          {TYPES.map((tipo, i) => {
+            const cfg = typeConfig[tipo];
+            const Icon = cfg.icon;
+            return (
+              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => navigate(`/apontamentos/novo/${tipo}`)}>
+                <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
+                <div className="relative">
+                  <div className="module-card-icon"><Icon className="w-6 h-6 md:w-7 md:h-7" /></div>
+                  <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{cfg.label}</h2>
+                  <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{cfg.description}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{countByType[tipo]} registros</span>
+                    <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
-
-        <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="defeito_processo">{t("apontamentos.tabDefeitoProcesso")}</TabsTrigger>
-            <TabsTrigger value="defeito_peca">{t("apontamentos.tabDefeitoPeca")}</TabsTrigger>
-            <TabsTrigger value="parada_linha">{t("apontamentos.tabParadaLinha")}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={tab} className="mt-4">
-            {isLoading ? (<div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
-            ) : filtered.length === 0 ? (<div className="form-section text-center py-12"><FileBarChart className="w-12 h-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground">{t("apontamentos.noItems")}</p></div>
-            ) : (
-              <div className="grid gap-3 md:gap-4">
-                {filtered.map((item) => (
-                  <div key={item.id} className="form-section hover:border-accent/30 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
-                          <h3 className="font-heading font-semibold text-foreground text-sm md:text-base">{item.titulo}</h3>
-                        </div>
-                        <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{item.descricao}</p>
-                        <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground mt-1">
-                          <span>{t("common.responsible")}: {item.responsavel}</span><span>•</span><span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
-                          {item.part_number && <><span>•</span><span>PN: {item.part_number}</span></>}
-                          {item.quantidade && item.quantidade > 1 && <><span>•</span><span>{t("common.quantity")}: {item.quantidade}</span></>}
-                        </div>
-                      </div>
-                      <div className="flex sm:flex-col items-center sm:items-end gap-1.5 shrink-0">
-                        <span className={`status-badge ${statusColors[item.status]}`}>{t(`apontamentos.status.${item.status}`)}</span>
-                        <span className={`status-badge ${severidadeColors[item.severidade || "media"]}`}>{t(`apontamentos.severity.${item.severidade || "media"}`)}</span>
-                        {isAdmin && (
-                          <div className="flex gap-1 sm:mt-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {(item.causa_raiz || item.acao_corretiva) && (
-                      <div className="mt-2 md:mt-3 pt-2 md:pt-3 border-t border-border grid md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
-                        {item.causa_raiz && <div><span className="text-muted-foreground font-medium">{t("apontamentos.rootCause")}:</span> {item.causa_raiz}</div>}
-                        {item.acao_corretiva && <div><span className="text-muted-foreground font-medium">{t("apontamentos.correctiveAction")}:</span> {item.acao_corretiva}</div>}
-                      </div>
-                    )}
-                  </div>
-                ))}
+        {/* Records section */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-heading font-bold text-foreground">Registros</h2>
+            <div className="flex items-center gap-2">
+              {isAdmin && selectedIds.size > 0 && (
+                <Button variant="destructive" size="sm" className="gap-2" onClick={() => setBulkDeleteOpen(true)}>
+                  <Trash2 className="w-4 h-4" />
+                  Excluir {selectedIds.size}
+                </Button>
+              )}
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2.5" onClick={() => setViewMode("detailed")}>
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2.5" onClick={() => setViewMode("compact")}>
+                  <LayoutList className="w-4 h-4" />
+                </Button>
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          </div>
+
+          <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
+            <TabsList className="grid w-full grid-cols-4 h-auto">
+              {TYPES.map((tipo) => {
+                const cfg = typeConfig[tipo];
+                const Icon = cfg.icon;
+                return (
+                  <TabsTrigger key={tipo} value={tipo} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+                    <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+                    <span className="hidden sm:inline truncate">{cfg.label}</span>
+                    <span className="text-xs">({countByType[tipo]})</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+
+            {TYPES.map((tipo) => (
+              <TabsContent key={tipo} value={tipo} className="mt-4">
+                {isLoading ? (
+                  <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+                ) : viewMode === "detailed" ? renderDetailedList() : renderCompactList()}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
       </main>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+      {/* Single delete */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle><AlertDialogDescription>{t("apontamentos.deleteConfirm")}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Confirmar exclusão</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>Excluir</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Excluir {selectedIds.size} registros</AlertDialogTitle><AlertDialogDescription>Tem certeza? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel disabled={bulkDeleting}>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>{bulkDeleting ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

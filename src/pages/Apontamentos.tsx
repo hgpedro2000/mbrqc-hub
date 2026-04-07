@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
+import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];

@@ -40,6 +40,9 @@ const Apontamentos = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
+  const [dailyReportOpen, setDailyReportOpen] = useState(false);
+  const [ngReportOpen, setNgReportOpen] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

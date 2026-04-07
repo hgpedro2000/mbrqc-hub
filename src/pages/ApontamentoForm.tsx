@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera } from "lucide-react";
+import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -23,7 +24,6 @@ const typeLabels: Record<ApontamentoTipo, string> = {
   oem: "OEM",
 };
 
-const PROJETOS = ["SU2b", "BR2", "BC4b"];
 const TURNOS = ["1T", "2T", "3T"];
 const FASES = ["Novo Carro", "Carro Corrente"];
 const OEM_LOCAL_DETECCAO = ["Trim", "FS", "Final 1", "Final 2", "Ok Line", "Deck", "Roll", "Road Test", "Shower", "VPC"];
@@ -44,9 +44,11 @@ const ApontamentoForm = () => {
   const tipo = (isEdit ? undefined : paramTipo) as ApontamentoTipo | undefined;
 
   const [saving, setSaving] = useState(false);
-  const [isDraft, setIsDraft] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [validationMessages, setValidationMessages] = useState<string[]>([]);
 
   // Form state
   const [formTipo, setFormTipo] = useState<ApontamentoTipo>(tipo || "incoming");
@@ -199,37 +201,56 @@ const ApontamentoForm = () => {
     setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
   };
 
+  // Helper for error class
+  const errClass = (field: string) => validationErrors.has(field) ? "border-destructive ring-1 ring-destructive" : "";
+  const errLabelClass = (field: string) => validationErrors.has(field) ? "text-destructive font-semibold" : "";
+
   const validate = (): boolean => {
-    if (!data || !turno || !projeto || !fornecedor || !partNumber) {
-      toast.error("Preencha todos os campos obrigatórios de identificação.");
+    const errors = new Set<string>();
+    const msgs: string[] = [];
+
+    if (!data) { errors.add("data"); msgs.push("Data"); }
+    if (!turno) { errors.add("turno"); msgs.push("Turno"); }
+    if (!projeto) { errors.add("projeto"); msgs.push("Projeto"); }
+    if (!fornecedor) { errors.add("fornecedor"); msgs.push("Fornecedor"); }
+    if (!partNumber) { errors.add("partNumber"); msgs.push("Part Number"); }
+
+    if (!isOem && !fase) { errors.add("fase"); msgs.push("Fase"); }
+    if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }
+
+    if (isIncoming) {
+      if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
+      if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
+      if (quantidadeNg > 0 && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+    }
+
+    if (isPeca) {
+      if (quantidadeNg < 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG"); }
+      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+    }
+
+    if (isProcesso) {
+      if (quantidadeNg <= 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG (deve ser > 0)"); }
+      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+    }
+
+    if (isOem) {
+      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (!localDeteccao) { errors.add("localDeteccao"); msgs.push("Local de Detecção"); }
+      if (!analiseInicial) { errors.add("analiseInicial"); msgs.push("Análise Inicial"); }
+      if (!acaoImediata) { errors.add("acaoImediata"); msgs.push("Ação Imediata"); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+    }
+
+    setValidationErrors(errors);
+
+    if (errors.size > 0) {
+      setValidationMessages(msgs);
+      setShowValidationDialog(true);
       return false;
-    }
-
-    if (formTipo === "incoming") {
-      if (quantidadeInspecionada <= 0) { toast.error("Quantidade inspecionada deve ser maior que 0."); return false; }
-      if (!loteInspecionado) { toast.error("Informe o lote inspecionado."); return false; }
-      if (quantidadeNg > 0 && !descricao) { toast.error("Descreva o problema encontrado."); return false; }
-      if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { toast.error("Adicione pelo menos 1 foto do defeito."); return false; }
-    }
-
-    if (formTipo === "peca") {
-      if (quantidadeNg < 0) { toast.error("Quantidade NG inválida."); return false; }
-      if (!descricao) { toast.error("Descreva o problema."); return false; }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { toast.error("Adicione pelo menos 1 foto."); return false; }
-    }
-
-    if (formTipo === "processo") {
-      if (quantidadeNg <= 0) { toast.error("Quantidade NG deve ser maior que 0."); return false; }
-      if (!descricao) { toast.error("Descreva o problema."); return false; }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { toast.error("Adicione pelo menos 1 foto."); return false; }
-    }
-
-    if (formTipo === "oem") {
-      if (!vinNumber) { toast.error("VIN é obrigatório para OEM."); return false; }
-      if (!descricao) { toast.error("Descreva o problema."); return false; }
-      if (!analiseInicial) { toast.error("Análise inicial é obrigatória."); return false; }
-      if (!acaoImediata) { toast.error("Ação imediata é obrigatória."); return false; }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { toast.error("Adicione pelo menos 1 foto."); return false; }
     }
 
     return true;
@@ -237,6 +258,7 @@ const ApontamentoForm = () => {
 
   const handleSave = async (asDraft: boolean) => {
     if (!asDraft && !validate()) return;
+    if (asDraft) setValidationErrors(new Set());
     setSaving(true);
     try {
       const payload: any = {
@@ -282,7 +304,6 @@ const ApontamentoForm = () => {
         recordId = inserted.id;
       }
 
-      // Upload photos
       if (photoFiles.length > 0 && recordId) {
         await uploadPhotos(photoFiles, recordId, "apontamento");
       }
@@ -308,14 +329,14 @@ const ApontamentoForm = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
-            <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
-            <FileBarChart className="w-6 h-6 sm:w-8 sm:h-8" />
-            <h1 className="text-xl sm:text-2xl font-heading font-bold">
+          <div className="flex items-center gap-2 mt-2 sm:mt-4">
+            <FileBarChart className="w-5 h-5 sm:w-8 sm:h-8" />
+            <h1 className="text-lg sm:text-2xl font-heading font-bold">
               {isEdit ? "Editar" : "Novo"} Apontamento — {typeLabels[formTipo]}
             </h1>
           </div>
@@ -326,57 +347,50 @@ const ApontamentoForm = () => {
         {/* IDENTIFICAÇÃO */}
         <div className="form-section">
           <h2 className="form-section-title">Identificação</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Data *</Label>
-              <Input type="date" value={data} max={today} onChange={(e) => setData(e.target.value)} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="space-y-1.5">
+              <Label className={errLabelClass("data")}>Data *</Label>
+              <Input type="date" value={data} max={today} onChange={(e) => { setData(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("data"); return n; }); }} className={errClass("data")} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Apontado por</Label>
               <Input value={profile?.full_name || ""} readOnly className="bg-muted" />
             </div>
-            <div className="space-y-2">
-              <Label>Turno *</Label>
-              <Select value={turno} onValueChange={setTurno}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <div className="space-y-1.5">
+              <Label className={errLabelClass("turno")}>Turno *</Label>
+              <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
+                <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {!isOem && (
-              <div className="space-y-2">
-                <Label>Fase *</Label>
-                <Select value={fase} onValueChange={setFase}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("fase")}>Fase *</Label>
+                <Select value={fase} onValueChange={(v) => { setFase(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fase"); return n; }); }}>
+                  <SelectTrigger className={errClass("fase")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{FASES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}
             {isOem && (
-              <div className="space-y-2">
-                <Label>VIN *</Label>
-                <Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder="XXX 123456" />
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("vinNumber")}>VIN *</Label>
+                <Input value={vinNumber} onChange={(e) => { setVinNumber(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("vinNumber"); return n; }); }} placeholder="XXX 123456" className={errClass("vinNumber")} />
               </div>
             )}
-            <div className="space-y-2">
-              <Label>Projeto *</Label>
-              <Select value={projeto} onValueChange={setProjeto}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{PROJETOS.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
           </div>
 
-          {/* Fornecedor + Part Number */}
-          <div className="mt-4">
+          {/* Fornecedor + Part Number via SupplierPartSelector (includes Projeto) */}
+          <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <SupplierPartSelector
               fornecedor={fornecedor}
               partNumber={partNumber}
               partName={partName}
               projeto={projeto}
               modulo={modulo}
-              onFornecedorChange={setFornecedor}
-              onPartNumberChange={setPartNumber}
-              onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); }}
+              onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
+              onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
+              onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); setProjeto(d.project); setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; }); }}
             />
           </div>
         </div>
@@ -385,23 +399,23 @@ const ApontamentoForm = () => {
         {isIncoming && (
           <div className="form-section">
             <h2 className="form-section-title">Quantidades</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label>Quantidade Inspecionada *</Label>
-                <Input type="number" min={1} value={quantidadeInspecionada} onChange={(e) => setQuantidadeInspecionada(Number(e.target.value))} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("quantidadeInspecionada")}>Quantidade Inspecionada *</Label>
+                <Input type="number" min={1} value={quantidadeInspecionada} onChange={(e) => setQuantidadeInspecionada(Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Quantidade NG *</Label>
                 <Input type="number" min={0} value={quantidadeNg} onChange={(e) => setQuantidadeNg(Number(e.target.value))} />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Quantidade OK</Label>
                 <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
               </div>
             </div>
-            <div className="mt-4 space-y-2">
-              <Label>Lote Inspecionado *</Label>
-              <Input value={loteInspecionado} onChange={(e) => setLoteInspecionado(e.target.value)} placeholder="Ex: A1234" />
+            <div className="mt-3 sm:mt-4 space-y-1.5">
+              <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
+              <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
             </div>
           </div>
         )}
@@ -410,9 +424,9 @@ const ApontamentoForm = () => {
         {(isPeca || isProcesso) && (
           <div className="form-section">
             <h2 className="form-section-title">Quantidade</h2>
-            <div className="space-y-2">
-              <Label>Quantidade de peça NG *</Label>
-              <Input type="number" min={isProcesso ? 1 : 0} value={quantidadeNg} onChange={(e) => setQuantidadeNg(Number(e.target.value))} />
+            <div className="space-y-1.5">
+              <Label className={errLabelClass("quantidadeNg")}>Quantidade de peça NG *</Label>
+              <Input type="number" min={isProcesso ? 1 : 0} value={quantidadeNg} onChange={(e) => setQuantidadeNg(Number(e.target.value))} className={errClass("quantidadeNg")} />
             </div>
           </div>
         )}
@@ -421,7 +435,7 @@ const ApontamentoForm = () => {
         {isOem && (
           <div className="form-section">
             <h2 className="form-section-title">Quantidade</h2>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Quantidade Detectado *</Label>
               <Input type="number" min={0} value={quantidadeDetectado} onChange={(e) => setQuantidadeDetectado(Number(e.target.value))} />
             </div>
@@ -431,10 +445,10 @@ const ApontamentoForm = () => {
         {/* DETALHES DO DEFEITO */}
         <div className="form-section">
           <h2 className="form-section-title">Detalhes do Defeito</h2>
-          <div className="space-y-4">
-            {/* Modo de Falha - Incoming, Peça, Processo */}
+          <div className="space-y-3 sm:space-y-4">
+            {/* Modo de Falha */}
             {(isIncoming || isPeca || isProcesso) && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Modo de Falha {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
                   <SelectTrigger><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
@@ -443,10 +457,10 @@ const ApontamentoForm = () => {
               </div>
             )}
 
-            {/* Parada de Linha - Incoming, Peça */}
+            {/* Parada de Linha */}
             {(isIncoming || isPeca) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
                   <Label>Parada de Linha</Label>
                   <Select value={paradaLinha} onValueChange={setParadaLinha} disabled={ngIsZero}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -456,39 +470,36 @@ const ApontamentoForm = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                {paradaLinha === "sim" ? (
-                  <div className="space-y-2">
-                    <Label>Tempo de Parada</Label>
+                <div className="space-y-1.5">
+                  <Label>Tempo de Parada</Label>
+                  {paradaLinha === "sim" ? (
                     <Input type="time" value={paradaLinhaTempo} onChange={(e) => setParadaLinhaTempo(e.target.value)} />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Label>Tempo de Parada</Label>
+                  ) : (
                     <Input value="N/A" readOnly className="bg-muted" />
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
 
             {/* Local de detecção - Peça, Processo */}
             {(isPeca || isProcesso) && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Local de Detecção</Label>
                 <Input value={localDeteccao} onChange={(e) => setLocalDeteccao(e.target.value)} placeholder="Estação de Detecção" />
               </div>
             )}
 
             {/* VIN Number - Peça, Processo */}
-            {(isPeca || isProcesso) && !isOem && (
-              <div className="space-y-2">
+            {(isPeca || isProcesso) && (
+              <div className="space-y-1.5">
                 <Label>VIN Number</Label>
                 <Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder="Opcional" />
               </div>
             )}
 
-            {/* Responsabilidade do Defeito - Peça, Processo */}
+            {/* Responsabilidade do Defeito */}
             {(isPeca || isProcesso) && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Responsabilidade do Defeito</Label>
                 <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -499,15 +510,15 @@ const ApontamentoForm = () => {
 
             {/* Local de Detecção + Lançamento - OEM */}
             {isOem && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Local de Detecção *</Label>
-                  <Select value={localDeteccao} onValueChange={setLocalDeteccao}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("localDeteccao")}>Local de Detecção *</Label>
+                  <Select value={localDeteccao} onValueChange={(v) => { setLocalDeteccao(v); setValidationErrors((p) => { const n = new Set(p); n.delete("localDeteccao"); return n; }); }}>
+                    <SelectTrigger className={errClass("localDeteccao")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{OEM_LOCAL_DETECCAO.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label>Lançamento *</Label>
                   <Select value={lancamento} onValueChange={setLancamento}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -518,23 +529,23 @@ const ApontamentoForm = () => {
             )}
 
             {/* Descrição */}
-            <div className="space-y-2">
-              <Label>Descrição do Problema {!ngIsZero && "*"}</Label>
-              <Textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Detalhar o problema/defeito encontrado" rows={3} disabled={ngIsZero} />
+            <div className="space-y-1.5">
+              <Label className={errLabelClass("descricao")}>Descrição do Problema {!ngIsZero && "*"}</Label>
+              <Textarea value={descricao} onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }} placeholder="Detalhar o problema/defeito encontrado" rows={3} disabled={ngIsZero} className={errClass("descricao")} />
             </div>
 
             {/* OEM specific fields */}
             {isOem && (
               <>
-                <div className="space-y-2">
-                  <Label>Análise Inicial *</Label>
-                  <Textarea value={analiseInicial} onChange={(e) => setAnaliseInicial(e.target.value)} placeholder="Descrição obrigatória" rows={3} />
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("analiseInicial")}>Análise Inicial *</Label>
+                  <Textarea value={analiseInicial} onChange={(e) => { setAnaliseInicial(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("analiseInicial"); return n; }); }} placeholder="Descrição obrigatória" rows={3} className={errClass("analiseInicial")} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Ação Imediata *</Label>
-                  <Textarea value={acaoImediata} onChange={(e) => setAcaoImediata(e.target.value)} placeholder="Descrição obrigatória" rows={3} />
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("acaoImediata")}>Ação Imediata *</Label>
+                  <Textarea value={acaoImediata} onChange={(e) => { setAcaoImediata(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("acaoImediata"); return n; }); }} placeholder="Descrição obrigatória" rows={3} className={errClass("acaoImediata")} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label>Comentário Adicional</Label>
                   <Textarea value={comentarioAdicional} onChange={(e) => setComentarioAdicional(e.target.value)} placeholder="Opcional" rows={2} />
                 </div>
@@ -547,9 +558,9 @@ const ApontamentoForm = () => {
         {(isPeca || isProcesso) && (
           <div className="form-section">
             <h2 className="form-section-title">2° Defeito</h2>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <Select value={temSegundoDefeito} onValueChange={(v) => { setTemSegundoDefeito(v); if (v === "nao") setSegundoDefeitos([]); }}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-32 sm:w-40"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nao">Não</SelectItem>
                   <SelectItem value="sim">Sim</SelectItem>
@@ -559,12 +570,12 @@ const ApontamentoForm = () => {
               {temSegundoDefeito === "sim" && (
                 <>
                   {segundoDefeitos.map((sd, idx) => (
-                    <div key={idx} className="border rounded-lg p-3 space-y-3">
+                    <div key={idx} className="border rounded-lg p-2 sm:p-3 space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Defeito #{idx + 1}</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSegundoDefeito(idx)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                         <div className="space-y-1">
                           <Label className="text-xs">Part Number</Label>
                           <Input value={sd.part_number} onChange={(e) => updateSegundoDefeito(idx, "part_number", e.target.value)} placeholder="Digitar PN" />
@@ -591,9 +602,12 @@ const ApontamentoForm = () => {
 
         {/* FOTOS */}
         <div className="form-section">
-          <h2 className="form-section-title">Foto do Defeito {!ngIsZero && "*"}</h2>
-          <p className="text-xs text-muted-foreground mb-3">Mínimo 1, máximo 4 fotos</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <h2 className="form-section-title">
+            Foto do Defeito {!ngIsZero && "*"}
+            {validationErrors.has("fotos") && <span className="text-destructive text-sm ml-2">(obrigatório)</span>}
+          </h2>
+          <p className="text-xs text-muted-foreground mb-2 sm:mb-3">Mínimo 1, máximo 4 fotos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {existingPhotos.map((photo) => (
               <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border">
                 <img
@@ -612,8 +626,8 @@ const ApontamentoForm = () => {
               </div>
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
-              <label className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors">
-                <Camera className="w-8 h-8 text-muted-foreground mb-1" />
+              <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                 <span className="text-xs text-muted-foreground">Adicionar</span>
                 <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
               </label>
@@ -622,16 +636,37 @@ const ApontamentoForm = () => {
         </div>
 
         {/* ACTIONS */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">
             <Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}
           </Button>
-          <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none">
+          <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">
             Salvar Rascunho
           </Button>
-          <Button variant="ghost" onClick={() => navigate("/apontamentos")} className="flex-1 sm:flex-none">Cancelar</Button>
+          <Button variant="ghost" onClick={() => navigate("/apontamentos")} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
         </div>
       </main>
+
+      {/* Validation Error Dialog */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Campos Obrigatórios
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Preencha os seguintes campos para finalizar:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              {validationMessages.map((msg, i) => (
+                <li key={i} className="text-sm font-medium text-destructive">{msg}</li>
+              ))}
+            </ul>
+          </div>
+          <Button onClick={() => setShowValidationDialog(false)} className="w-full mt-2">Entendi</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

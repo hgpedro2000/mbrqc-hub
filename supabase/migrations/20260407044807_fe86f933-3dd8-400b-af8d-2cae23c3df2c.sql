@@ -1,0 +1,2 @@
+ALTER TABLE public.checklist_photos DROP CONSTRAINT checklist_photos_checklist_type_check;
+ALTER TABLE public.checklist_photos ADD CONSTRAINT checklist_photos_checklist_type_check CHECK (checklist_type = ANY (ARRAY['injection', 'painting', 'assembly', 'apontamento']));

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export async function uploadPhotos(
   files: File[],
   checklistId: string,
-  checklistType: "injection" | "painting" | "assembly"
+  checklistType: "injection" | "painting" | "assembly" | "apontamento"
 ) {
   const results: { file_path: string; file_name: string }[] = [];
 

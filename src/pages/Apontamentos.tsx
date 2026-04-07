@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
+import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
@@ -38,6 +40,9 @@ const Apontamentos = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
+  const [dailyReportOpen, setDailyReportOpen] = useState(false);
+  const [ngReportOpen, setNgReportOpen] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -134,9 +139,11 @@ const Apontamentos = () => {
   const EditActions = ({ id, createdBy, status }: { id: string; createdBy?: string | null; status?: string }) => {
     const isOwner = user && createdBy === user.id;
     const canEdit = isAdmin || isOwner;
+    const isFinalized = status !== "draft";
     return (
       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/ver/${id}`)}><Eye className="w-3.5 h-3.5" /></Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5" /></Button>
+        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget(id)} title="Visualizar / Exportar"><FileDown className="w-3.5 h-3.5" /></Button>}
         {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5" /></Button>}
         {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
       </div>
@@ -156,7 +163,7 @@ const Apontamentos = () => {
     return (
       <div className="grid gap-3">
         {filtered.map((item) => (
-          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {isAdmin && (
@@ -221,7 +228,7 @@ const Apontamentos = () => {
             </thead>
             <tbody>
               {filtered.map((item) => (
-                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
                   {isAdmin && (
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
@@ -261,6 +268,12 @@ const Apontamentos = () => {
               </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Dashboard</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <Calendar className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Relatório do Dia</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <AlertTriangle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Peças NG</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
@@ -360,6 +373,15 @@ const Apontamentos = () => {
           <AlertDialogFooter><AlertDialogCancel disabled={bulkDeleting}>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>{bulkDeleting ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View dialog */}
+      <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(open) => !open && setViewTarget(null)} apontamentoId={viewTarget} />
+
+      {/* Daily report */}
+      <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={items} mode="daily" />
+
+      {/* NG report */}
+      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" />
     </div>
   );
 };

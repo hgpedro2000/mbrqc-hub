@@ -269,6 +269,12 @@ const Apontamentos = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Dashboard</span>
               </Button>
+              <Button variant="ghost" size="sm" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <Calendar className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Relatório do Dia</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+                <AlertTriangle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Peças NG</span>
+              </Button>
               <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
               </Button>

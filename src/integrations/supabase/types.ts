@@ -86,72 +86,135 @@ export type Database = {
       apontamentos: {
         Row: {
           acao_corretiva: string | null
+          acao_imediata: string | null
+          analise_inicial: string | null
           causa_raiz: string | null
+          comentario_adicional: string | null
           created_at: string
+          created_by: string | null
           data: string
           descricao: string
+          fase: string | null
+          fornecedor: string | null
           id: string
+          lancamento: string | null
           linha: string | null
+          local_deteccao: string | null
+          lote_inspecionado: string | null
+          modo_falha: string | null
           numero: string | null
           observacoes: string | null
+          parada_linha: string | null
+          parada_linha_tempo: string | null
           part_name: string | null
           part_number: string | null
           prazo: string | null
+          projeto: string | null
           quantidade: number | null
+          quantidade_detectado: number | null
+          quantidade_inspecionada: number | null
+          quantidade_ng: number | null
+          quantidade_ok: number | null
+          responsabilidade_defeito: string | null
           responsavel: string
           responsavel_acao: string | null
+          segundo_defeitos: Json | null
           setor: string | null
           severidade: string | null
           status: string
           tipo: string
           titulo: string
+          turno: string | null
           updated_at: string
+          vin_number: string | null
         }
         Insert: {
           acao_corretiva?: string | null
+          acao_imediata?: string | null
+          analise_inicial?: string | null
           causa_raiz?: string | null
+          comentario_adicional?: string | null
           created_at?: string
+          created_by?: string | null
           data: string
           descricao: string
+          fase?: string | null
+          fornecedor?: string | null
           id?: string
+          lancamento?: string | null
           linha?: string | null
+          local_deteccao?: string | null
+          lote_inspecionado?: string | null
+          modo_falha?: string | null
           numero?: string | null
           observacoes?: string | null
+          parada_linha?: string | null
+          parada_linha_tempo?: string | null
           part_name?: string | null
           part_number?: string | null
           prazo?: string | null
+          projeto?: string | null
           quantidade?: number | null
+          quantidade_detectado?: number | null
+          quantidade_inspecionada?: number | null
+          quantidade_ng?: number | null
+          quantidade_ok?: number | null
+          responsabilidade_defeito?: string | null
           responsavel: string
           responsavel_acao?: string | null
+          segundo_defeitos?: Json | null
           setor?: string | null
           severidade?: string | null
           status?: string
           tipo: string
           titulo: string
+          turno?: string | null
           updated_at?: string
+          vin_number?: string | null
         }
         Update: {
           acao_corretiva?: string | null
+          acao_imediata?: string | null
+          analise_inicial?: string | null
           causa_raiz?: string | null
+          comentario_adicional?: string | null
           created_at?: string
+          created_by?: string | null
           data?: string
           descricao?: string
+          fase?: string | null
+          fornecedor?: string | null
           id?: string
+          lancamento?: string | null
           linha?: string | null
+          local_deteccao?: string | null
+          lote_inspecionado?: string | null
+          modo_falha?: string | null
           numero?: string | null
           observacoes?: string | null
+          parada_linha?: string | null
+          parada_linha_tempo?: string | null
           part_name?: string | null
           part_number?: string | null
           prazo?: string | null
+          projeto?: string | null
           quantidade?: number | null
+          quantidade_detectado?: number | null
+          quantidade_inspecionada?: number | null
+          quantidade_ng?: number | null
+          quantidade_ok?: number | null
+          responsabilidade_defeito?: string | null
           responsavel?: string
           responsavel_acao?: string | null
+          segundo_defeitos?: Json | null
           setor?: string | null
           severidade?: string | null
           status?: string
           tipo?: string
           titulo?: string
+          turno?: string | null
           updated_at?: string
+          vin_number?: string | null
         }
         Relationships: []
       }

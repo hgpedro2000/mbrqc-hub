@@ -373,6 +373,15 @@ const Apontamentos = () => {
           <AlertDialogFooter><AlertDialogCancel disabled={bulkDeleting}>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>{bulkDeleting ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* View dialog */}
+      <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(open) => !open && setViewTarget(null)} apontamentoId={viewTarget} />
+
+      {/* Daily report */}
+      <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={items} mode="daily" />
+
+      {/* NG report */}
+      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" />
     </div>
   );
 };

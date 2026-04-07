@@ -53,6 +53,27 @@ const Apontamentos = () => {
     },
   });
 
+  // Fetch first photo per apontamento for list preview
+  const { data: allPhotos = [] } = useQuery({
+    queryKey: ["apontamento-list-photos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("checklist_photos").select("checklist_id, file_path, file_name").eq("checklist_type", "apontamento");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const firstPhotoByItem = useMemo(() => {
+    const map: Record<string, string> = {};
+    allPhotos.forEach((p) => {
+      if (!map[p.checklist_id]) {
+        const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+        map[p.checklist_id] = urlData.publicUrl;
+      }
+    });
+    return map;
+  }, [allPhotos]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("checklist_photos").delete().eq("checklist_id", id);

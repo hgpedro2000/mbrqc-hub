@@ -163,7 +163,7 @@ const Apontamentos = () => {
     return (
       <div className="grid gap-3">
         {filtered.map((item) => (
-          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {isAdmin && (

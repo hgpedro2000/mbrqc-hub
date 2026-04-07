@@ -339,6 +339,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
             </div>
+
+            {/* Footer */}
+            <div data-pdf-section className="border-t border-border px-6 py-3 bg-muted/30 text-center">
+              <p className="text-[10px] text-muted-foreground">
+                Hyundai Mobis — Apontamento Control • Gerado em {new Date().toLocaleDateString("pt-BR")}
+              </p>
+            </div>
           </div>
         ) : null}
       </DialogContent>

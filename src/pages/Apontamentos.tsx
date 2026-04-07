@@ -53,6 +53,27 @@ const Apontamentos = () => {
     },
   });
 
+  // Fetch first photo per apontamento for list preview
+  const { data: allPhotos = [] } = useQuery({
+    queryKey: ["apontamento-list-photos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("checklist_photos").select("checklist_id, file_path, file_name").eq("checklist_type", "apontamento");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const firstPhotoByItem = useMemo(() => {
+    const map: Record<string, string> = {};
+    allPhotos.forEach((p) => {
+      if (!map[p.checklist_id]) {
+        const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+        map[p.checklist_id] = urlData.publicUrl;
+      }
+    });
+    return map;
+  }, [allPhotos]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await supabase.from("checklist_photos").delete().eq("checklist_id", id);
@@ -164,7 +185,7 @@ const Apontamentos = () => {
       <div className="grid gap-3">
         {filtered.map((item) => (
           <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {isAdmin && (
                   <div className="pt-1" onClick={(e) => e.stopPropagation()}>
@@ -181,6 +202,12 @@ const Apontamentos = () => {
                   <p className="text-sm text-muted-foreground line-clamp-1">
                     {item.part_name && `${item.part_name} • `}{item.projeto || ""}{item.descricao ? ` — ${item.descricao}` : ""}
                   </p>
+                  {/* Description highlight */}
+                  {item.descricao && (
+                    <p className="text-xs text-foreground/80 bg-muted/40 rounded px-2 py-1 line-clamp-2 border-l-2 border-primary/40">
+                      {item.descricao}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
                     <span>{item.responsavel}</span>
                     <span>•</span>
@@ -189,6 +216,12 @@ const Apontamentos = () => {
                   </div>
                 </div>
               </div>
+              {/* Main photo thumbnail */}
+              {firstPhotoByItem[item.id] && (
+                <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border border-border">
+                  <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
+                </div>
+              )}
               <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
             </div>
           </div>

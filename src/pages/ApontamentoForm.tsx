@@ -402,11 +402,11 @@ const ApontamentoForm = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div className="space-y-1.5">
                 <Label className={errLabelClass("quantidadeInspecionada")}>Quantidade Inspecionada *</Label>
-                <Input type="number" min={1} value={quantidadeInspecionada} onChange={(e) => setQuantidadeInspecionada(Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
               </div>
               <div className="space-y-1.5">
                 <Label>Quantidade NG *</Label>
-                <Input type="number" min={0} value={quantidadeNg} onChange={(e) => setQuantidadeNg(Number(e.target.value))} />
+                <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
               </div>
               <div className="space-y-1.5">
                 <Label>Quantidade OK</Label>
@@ -426,7 +426,7 @@ const ApontamentoForm = () => {
             <h2 className="form-section-title">Quantidade</h2>
             <div className="space-y-1.5">
               <Label className={errLabelClass("quantidadeNg")}>Quantidade de peça NG *</Label>
-              <Input type="number" min={isProcesso ? 1 : 0} value={quantidadeNg} onChange={(e) => setQuantidadeNg(Number(e.target.value))} className={errClass("quantidadeNg")} />
+              <Input type="number" min={isProcesso ? 1 : 0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeNg")} />
             </div>
           </div>
         )}
@@ -437,7 +437,7 @@ const ApontamentoForm = () => {
             <h2 className="form-section-title">Quantidade</h2>
             <div className="space-y-1.5">
               <Label>Quantidade Detectado *</Label>
-              <Input type="number" min={0} value={quantidadeDetectado} onChange={(e) => setQuantidadeDetectado(Number(e.target.value))} />
+              <Input type="number" min={0} value={quantidadeDetectado || ""} onChange={(e) => setQuantidadeDetectado(e.target.value === "" ? 0 : Number(e.target.value))} />
             </div>
           </div>
         )}
@@ -457,8 +457,8 @@ const ApontamentoForm = () => {
               </div>
             )}
 
-            {/* Parada de Linha */}
-            {(isIncoming || isPeca) && (
+            {/* Parada de Linha - only Peça (removed from Incoming) */}
+            {isPeca && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <Label>Parada de Linha</Label>

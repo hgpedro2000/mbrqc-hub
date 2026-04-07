@@ -228,7 +228,7 @@ const Apontamentos = () => {
             </thead>
             <tbody>
               {filtered.map((item) => (
-                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => navigate(`/apontamentos/ver/${item.id}`)}>
+                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
                   {isAdmin && (
                     <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />

@@ -89,6 +89,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.segundo_defeitos]);
 
+  const coInspetores = useMemo(() => {
+    if (!d?.co_inspetores) return [];
+    try {
+      return Array.isArray(d.co_inspetores) ? d.co_inspetores : JSON.parse(d.co_inspetores);
+    } catch { return []; }
+  }, [d?.co_inspetores]);
+
   const identificationFields = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },

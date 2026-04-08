@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { employee_number, full_name, password, role } = await req.json();
+    const { employee_number, full_name, password, role, turno, email } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -36,13 +36,15 @@ Deno.serve(async (req) => {
 
     const userId = authUser.user.id;
 
-    // Create profile
+    // Create profile with turno and email
     await admin.from("profiles").insert({
       id: userId,
       employee_number,
       full_name,
       status: "active",
       must_change_password: true,
+      turno: turno || null,
+      email: email || null,
     });
 
     // Assign role

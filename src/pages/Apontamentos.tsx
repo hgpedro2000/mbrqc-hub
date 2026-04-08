@@ -43,6 +43,7 @@ const Apontamentos = () => {
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [dailyReportOpen, setDailyReportOpen] = useState(false);
   const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

@@ -547,11 +547,26 @@ const ApontamentoForm = () => {
         {isIncoming && (
           <div className="form-section">
             <h2 className="form-section-title">Tempo de Inspeção</h2>
-            <div className="space-y-1.5">
-              <Label className={errLabelClass("tempoInspecao")}>Tempo (HH:MM) *</Label>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <Input type="time" value={tempoInspecao} onChange={(e) => { setTempoInspecao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("tempoInspecao"); return n; }); }} className={`w-32 ${errClass("tempoInspecao")}`} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Duração</Label>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
+                  {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                </div>
               </div>
             </div>
           </div>

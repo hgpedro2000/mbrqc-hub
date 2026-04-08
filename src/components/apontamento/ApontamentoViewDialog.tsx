@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
 import { FileText, AlertTriangle, Camera, Package, ClipboardCheck, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
+import { stripCode } from "@/lib/stripCode";
 
 interface Props {
   open: boolean;
@@ -153,7 +154,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 <div key={idx} className="border border-border rounded-lg p-3 bg-muted/20 space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">{idx + 1}</span>
-                    <span className="text-sm font-semibold">{def.modo_falha || "—"}</span>
+                    <span className="text-sm font-semibold">{stripCode(def.modo_falha) || "—"}</span>
                     <Badge variant="outline" className="text-xs ml-auto">Qty: {def.qty || 0}</Badge>
                   </div>
                   {def.descricao && <p className="text-xs text-muted-foreground pl-8">{def.descricao}</p>}
@@ -163,7 +164,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           ) : (
             /* Normal single defect info - NO Severidade/Responsabilidade */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-              {d?.modo_falha && <DataField label="Modo de Falha" value={fmt("", d.modo_falha)} />}
+              {d?.modo_falha && <DataField label="Modo de Falha" value={stripCode(d.modo_falha)} />}
               <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth={!d?.modo_falha} />
               {d?.comentario_adicional && <DataField label="Comentário Adicional" value={d.comentario_adicional} fullWidth />}
             </div>
@@ -190,8 +191,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
-          {!hasMultipleFailureModes && (
-            <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
+          {!hasMultipleFailureModes && d?.modo_falha && (
+            <DataField label="Modo de Falha" value={stripCode(d.modo_falha)} />
           )}
         </div>
       </div>
@@ -214,7 +215,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. Inspecionada" value={fmt("", d?.quantidade_inspecionada)} />
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
-          <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
+          <DataField label="Modo de Falha" value={stripCode(d?.modo_falha)} />
           <DataField label="Parada de Linha" value={d?.parada_linha === "sim" ? "Sim" : "Não"} />
           {d?.parada_linha === "sim" && <DataField label="Tempo de Parada" value={fmt("", d?.parada_linha_tempo)} />}
         </div>

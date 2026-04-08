@@ -89,6 +89,7 @@ export type Database = {
           acao_imediata: string | null
           analise_inicial: string | null
           causa_raiz: string | null
+          co_inspetores: Json | null
           comentario_adicional: string | null
           created_at: string
           created_by: string | null
@@ -122,6 +123,7 @@ export type Database = {
           setor: string | null
           severidade: string | null
           status: string
+          tempo_inspecao: string | null
           tipo: string
           titulo: string
           turno: string | null
@@ -133,6 +135,7 @@ export type Database = {
           acao_imediata?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
+          co_inspetores?: Json | null
           comentario_adicional?: string | null
           created_at?: string
           created_by?: string | null
@@ -166,6 +169,7 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tempo_inspecao?: string | null
           tipo: string
           titulo: string
           turno?: string | null
@@ -177,6 +181,7 @@ export type Database = {
           acao_imediata?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
+          co_inspetores?: Json | null
           comentario_adicional?: string | null
           created_at?: string
           created_by?: string | null
@@ -210,6 +215,7 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tempo_inspecao?: string | null
           tipo?: string
           titulo?: string
           turno?: string | null
@@ -797,6 +803,7 @@ export type Database = {
           last_login_at: string | null
           must_change_password: boolean
           status: string
+          turno: string | null
           updated_at: string
         }
         Insert: {
@@ -808,6 +815,7 @@ export type Database = {
           last_login_at?: string | null
           must_change_password?: boolean
           status?: string
+          turno?: string | null
           updated_at?: string
         }
         Update: {
@@ -819,6 +827,7 @@ export type Database = {
           last_login_at?: string | null
           must_change_password?: boolean
           status?: string
+          turno?: string | null
           updated_at?: string
         }
         Relationships: []

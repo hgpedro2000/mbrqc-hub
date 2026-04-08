@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -33,6 +34,14 @@ interface SegundoDefeito {
   part_number: string;
   part_name: string;
   qty: number;
+}
+
+interface DefeitoDetalhe {
+  modo_falha: string;
+  descricao: string;
+  qty_ng: number;
+  photoFiles: File[];
+  photoPreviews: string[];
 }
 
 const ApontamentoForm = () => {
@@ -79,6 +88,17 @@ const ApontamentoForm = () => {
   const [segundoDefeitos, setSegundoDefeitos] = useState<SegundoDefeito[]>([]);
   const [temSegundoDefeito, setTemSegundoDefeito] = useState("nao");
 
+  // New fields
+  const [temCoInspecao, setTemCoInspecao] = useState("nao");
+  const [coInspetores, setCoInspetores] = useState<string[]>([]);
+  const [coInspetorSearch, setCoInspetorSearch] = useState("");
+  const [tempoInspecao, setTempoInspecao] = useState("00:00");
+
+  // Multiple NG failure modes
+  const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
+  const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
+  const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
+
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["apontamento-edit", id],
@@ -110,6 +130,16 @@ const ApontamentoForm = () => {
     },
   });
 
+  // Load users for co-inspection
+  const { data: allProfiles = [] } = useQuery({
+    queryKey: ["profiles-for-coinspecao"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("full_name, turno").eq("status", "active").order("full_name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Load existing photos
   const { data: existingPhotos = [] } = useQuery({
     queryKey: ["apontamento-photos", id],
@@ -120,6 +150,13 @@ const ApontamentoForm = () => {
     },
     enabled: isEdit,
   });
+
+  // Auto-fill turno from profile
+  useEffect(() => {
+    if (profile && !isEdit && (profile as any).turno) {
+      setTurno((profile as any).turno);
+    }
+  }, [profile, isEdit]);
 
   useEffect(() => {
     if (existing) {
@@ -150,6 +187,10 @@ const ApontamentoForm = () => {
       const sd = (existing.segundo_defeitos as any[]) || [];
       setSegundoDefeitos(sd);
       setTemSegundoDefeito(sd.length > 0 ? "sim" : "nao");
+      const ci = (existing as any).co_inspetores as string[] || [];
+      setCoInspetores(ci);
+      setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
+      setTempoInspecao((existing as any).tempo_inspecao || "00:00");
     }
   }, [existing]);
 
@@ -167,14 +208,22 @@ const ApontamentoForm = () => {
     }
   }, [quantidadeNg, formTipo]);
 
+  // Trigger NG decision dialog for Incoming when NG > 1
+  useEffect(() => {
+    if (isIncoming && quantidadeNg > 1 && ngMultiploDecisao === null) {
+      setShowNgDecisionDialog(true);
+    }
+    if (isIncoming && quantidadeNg <= 1) {
+      setNgMultiploDecisao(null);
+      setDefeitosDetalhes([]);
+    }
+  }, [quantidadeNg]);
+
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const totalPhotos = photoFiles.length + existingPhotos.length;
     const maxNew = 4 - totalPhotos;
-    if (files.length > maxNew) {
-      toast.error(`Máximo 4 fotos. Você pode adicionar mais ${maxNew}.`);
-      return;
-    }
+    if (files.length > maxNew) { toast.error(`Máximo 4 fotos. Você pode adicionar mais ${maxNew}.`); return; }
     setPhotoFiles((prev) => [...prev, ...files]);
     files.forEach((file) => {
       const reader = new FileReader();
@@ -189,21 +238,68 @@ const ApontamentoForm = () => {
   };
 
   const addSegundoDefeito = () => {
-    if (segundoDefeitos.length >= 8) { toast.error("Máximo 8 linhas de 2° defeito"); return; }
+    if (segundoDefeitos.length >= 8) { toast.error("Máximo 8 linhas"); return; }
     setSegundoDefeitos((prev) => [...prev, { part_number: "", part_name: "", qty: 0 }]);
   };
 
-  const removeSegundoDefeito = (index: number) => {
-    setSegundoDefeitos((prev) => prev.filter((_, i) => i !== index));
+  const removeSegundoDefeito = (index: number) => setSegundoDefeitos((prev) => prev.filter((_, i) => i !== index));
+  const updateSegundoDefeito = (index: number, field: keyof SegundoDefeito, value: any) => setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+
+  const addCoInspetor = (name: string) => {
+    if (coInspetores.length >= 5) { toast.error("Máximo 5 co-inspetores"); return; }
+    if (coInspetores.includes(name)) return;
+    setCoInspetores((prev) => [...prev, name]);
+    setCoInspetorSearch("");
   };
 
-  const updateSegundoDefeito = (index: number, field: keyof SegundoDefeito, value: any) => {
-    setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+  const removeCoInspetor = (name: string) => setCoInspetores((prev) => prev.filter((n) => n !== name));
+
+  const filteredProfiles = useMemo(() => {
+    if (!coInspetorSearch.trim()) return [];
+    const term = coInspetorSearch.toLowerCase();
+    return allProfiles.filter((p: any) => p.full_name?.toLowerCase().includes(term) && p.full_name !== profile?.full_name && !coInspetores.includes(p.full_name)).slice(0, 5);
+  }, [coInspetorSearch, allProfiles, coInspetores, profile]);
+
+  // Handle NG decision
+  const handleNgDecision = (decision: "mesmo" | "diferente") => {
+    setNgMultiploDecisao(decision);
+    setShowNgDecisionDialog(false);
+    if (decision === "diferente") {
+      // Create initial detail + 1 complementary
+      setDefeitosDetalhes([
+        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
+        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
+      ]);
+    } else {
+      setDefeitosDetalhes([]);
+    }
   };
 
-  // Helper for error class
+  const addDefeitoDetalhe = () => {
+    if (defeitosDetalhes.length >= quantidadeNg) { toast.error(`Máximo ${quantidadeNg} detalhes de defeito`); return; }
+    setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] }]);
+  };
+
+  const removeDefeitoDetalhe = (index: number) => {
+    if (defeitosDetalhes.length <= 2) return;
+    setDefeitosDetalhes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateDefeitoDetalhe = (index: number, field: string, value: any) => {
+    setDefeitosDetalhes((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
+  };
+
+  const totalDefeitosQty = defeitosDetalhes.reduce((s, d) => s + d.qty_ng, 0);
+
   const errClass = (field: string) => validationErrors.has(field) ? "border-destructive ring-1 ring-destructive" : "";
   const errLabelClass = (field: string) => validationErrors.has(field) ? "text-destructive font-semibold" : "";
+
+  const isIncoming = formTipo === "incoming";
+  const isPeca = formTipo === "peca";
+  const isProcesso = formTipo === "processo";
+  const isOem = formTipo === "oem";
+  const ngIsZero = isIncoming && quantidadeNg === 0;
+  const today = new Date().toISOString().split("T")[0];
 
   const validate = (): boolean => {
     const errors = new Set<string>();
@@ -221,8 +317,12 @@ const ApontamentoForm = () => {
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
+      if (!tempoInspecao || tempoInspecao === "00:00") { errors.add("tempoInspecao"); msgs.push("Tempo de Inspeção"); }
       if (quantidadeNg > 0 && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+      if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
+        errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
+      }
     }
 
     if (isPeca) {
@@ -246,13 +346,7 @@ const ApontamentoForm = () => {
     }
 
     setValidationErrors(errors);
-
-    if (errors.size > 0) {
-      setValidationMessages(msgs);
-      setShowValidationDialog(true);
-      return false;
-    }
-
+    if (errors.size > 0) { setValidationMessages(msgs); setShowValidationDialog(true); return false; }
     return true;
   };
 
@@ -288,9 +382,12 @@ const ApontamentoForm = () => {
         analise_inicial: analiseInicial || null,
         acao_imediata: acaoImediata || null,
         comentario_adicional: comentarioAdicional || null,
-        segundo_defeitos: temSegundoDefeito === "sim" ? segundoDefeitos : [],
+        segundo_defeitos: temSegundoDefeito === "sim" ? segundoDefeitos :
+          ngMultiploDecisao === "diferente" ? defeitosDetalhes.map((d) => ({ modo_falha: d.modo_falha, descricao: d.descricao, qty: d.qty_ng })) : [],
         status: asDraft ? "draft" : "submitted",
         created_by: user?.id || null,
+        co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
+        tempo_inspecao: tempoInspecao || null,
       };
 
       let recordId = id;
@@ -319,13 +416,6 @@ const ApontamentoForm = () => {
 
   if (isEdit && loadingExisting) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
 
-  const isIncoming = formTipo === "incoming";
-  const isPeca = formTipo === "peca";
-  const isProcesso = formTipo === "processo";
-  const isOem = formTipo === "oem";
-  const ngIsZero = isIncoming && quantidadeNg === 0;
-  const today = new Date().toISOString().split("T")[0];
-
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
@@ -336,9 +426,7 @@ const ApontamentoForm = () => {
           </div>
           <div className="flex items-center gap-2 mt-2 sm:mt-4">
             <FileBarChart className="w-5 h-5 sm:w-8 sm:h-8" />
-            <h1 className="text-lg sm:text-2xl font-heading font-bold">
-              {isEdit ? "Editar" : "Novo"} Apontamento — {typeLabels[formTipo]}
-            </h1>
+            <h1 className="text-lg sm:text-2xl font-heading font-bold">{isEdit ? "Editar" : "Novo"} Apontamento — {typeLabels[formTipo]}</h1>
           </div>
         </div>
       </header>
@@ -380,7 +468,7 @@ const ApontamentoForm = () => {
             )}
           </div>
 
-          {/* Fornecedor + Part Number via SupplierPartSelector (includes Projeto) */}
+          {/* Fornecedor + Part Number */}
           <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <SupplierPartSelector
               fornecedor={fornecedor}
@@ -394,6 +482,62 @@ const ApontamentoForm = () => {
             />
           </div>
         </div>
+
+        {/* CO-INSPEÇÃO - Incoming only */}
+        {isIncoming && (
+          <div className="form-section">
+            <h2 className="form-section-title">Co-Inspeção</h2>
+            <div className="space-y-3">
+              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") setCoInspetores([]); }}>
+                <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nao">Não</SelectItem>
+                  <SelectItem value="sim">Sim</SelectItem>
+                </SelectContent>
+              </Select>
+              {temCoInspecao === "sim" && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input value={coInspetorSearch} onChange={(e) => setCoInspetorSearch(e.target.value)} placeholder="Buscar usuário..." className="pl-9" />
+                    {filteredProfiles.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                        {filteredProfiles.map((p: any) => (
+                          <button key={p.full_name} onClick={() => addCoInspetor(p.full_name)} className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors">
+                            {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {coInspetores.map((name) => (
+                      <Badge key={name} variant="secondary" className="gap-1">
+                        {name}
+                        <button onClick={() => removeCoInspetor(name)}><X className="w-3 h-3" /></button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Até 5 co-inspetores ({coInspetores.length}/5)</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TEMPO DE INSPEÇÃO - Incoming only */}
+        {isIncoming && (
+          <div className="form-section">
+            <h2 className="form-section-title">Tempo de Inspeção</h2>
+            <div className="space-y-1.5">
+              <Label className={errLabelClass("tempoInspecao")}>Tempo (HH:MM) *</Label>
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <Input type="time" value={tempoInspecao} onChange={(e) => { setTempoInspecao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("tempoInspecao"); return n; }); }} className={`w-32 ${errClass("tempoInspecao")}`} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* QUANTIDADES - Incoming */}
         {isIncoming && (
@@ -444,10 +588,10 @@ const ApontamentoForm = () => {
 
         {/* DETALHES DO DEFEITO */}
         <div className="form-section">
-          <h2 className="form-section-title">Detalhes do Defeito</h2>
+          <h2 className="form-section-title">{isIncoming ? "Registro de Ocorrência" : "Detalhes do Defeito"}</h2>
           <div className="space-y-3 sm:space-y-4">
-            {/* Modo de Falha */}
-            {(isIncoming || isPeca || isProcesso) && (
+            {/* Modo de Falha - single mode or when NG <= 1 or same mode */}
+            {(isIncoming || isPeca || isProcesso) && (ngMultiploDecisao !== "diferente") && (
               <div className="space-y-1.5">
                 <Label>Modo de Falha {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
@@ -457,47 +601,70 @@ const ApontamentoForm = () => {
               </div>
             )}
 
-            {/* Parada de Linha - only Peça (removed from Incoming) */}
+            {/* Multiple NG failure modes */}
+            {isIncoming && ngMultiploDecisao === "diferente" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="font-semibold">Detalhes de Defeito por Modo de Falha</Label>
+                  <Badge variant={totalDefeitosQty === quantidadeNg ? "default" : "destructive"} className="text-xs">
+                    {totalDefeitosQty}/{quantidadeNg} NG
+                  </Badge>
+                </div>
+                {defeitosDetalhes.map((detalhe, idx) => (
+                  <div key={idx} className="border rounded-lg p-3 space-y-3 bg-muted/10">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Defeito {idx === 0 ? "Principal" : `#${idx + 1}`}</span>
+                      {idx >= 2 && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeDefeitoDetalhe(idx)}><Trash2 className="w-4 h-4" /></Button>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Modo de Falha *</Label>
+                      <Select value={detalhe.modo_falha} onValueChange={(v) => updateDefeitoDetalhe(idx, "modo_falha", v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.code} - {d.description}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Descrição *</Label>
+                      <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Qty NG *</Label>
+                      <Input type="number" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} />
+                    </div>
+                  </div>
+                ))}
+                {defeitosDetalhes.length < quantidadeNg && (
+                  <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
+                )}
+                {totalDefeitosQty !== quantidadeNg && (
+                  <p className="text-xs text-destructive font-medium">⚠ A soma dos NG ({totalDefeitosQty}) deve ser igual ao total NG ({quantidadeNg})</p>
+                )}
+              </div>
+            )}
+
+            {/* Parada de Linha - only Peça */}
             {isPeca && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <Label>Parada de Linha</Label>
                   <Select value={paradaLinha} onValueChange={setParadaLinha} disabled={ngIsZero}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="nao">Não</SelectItem>
-                      <SelectItem value="sim">Sim</SelectItem>
-                    </SelectContent>
+                    <SelectContent><SelectItem value="nao">Não</SelectItem><SelectItem value="sim">Sim</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Tempo de Parada</Label>
-                  {paradaLinha === "sim" ? (
-                    <Input type="time" value={paradaLinhaTempo} onChange={(e) => setParadaLinhaTempo(e.target.value)} />
-                  ) : (
-                    <Input value="N/A" readOnly className="bg-muted" />
-                  )}
+                  {paradaLinha === "sim" ? <Input type="time" value={paradaLinhaTempo} onChange={(e) => setParadaLinhaTempo(e.target.value)} /> : <Input value="N/A" readOnly className="bg-muted" />}
                 </div>
               </div>
             )}
 
-            {/* Local de detecção - Peça, Processo */}
             {(isPeca || isProcesso) && (
-              <div className="space-y-1.5">
-                <Label>Local de Detecção</Label>
-                <Input value={localDeteccao} onChange={(e) => setLocalDeteccao(e.target.value)} placeholder="Estação de Detecção" />
-              </div>
+              <div className="space-y-1.5"><Label>Local de Detecção</Label><Input value={localDeteccao} onChange={(e) => setLocalDeteccao(e.target.value)} placeholder="Estação de Detecção" /></div>
             )}
-
-            {/* VIN Number - Peça, Processo */}
             {(isPeca || isProcesso) && (
-              <div className="space-y-1.5">
-                <Label>VIN Number</Label>
-                <Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder="Opcional" />
-              </div>
+              <div className="space-y-1.5"><Label>VIN Number</Label><Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder="Opcional" /></div>
             )}
-
-            {/* Responsabilidade do Defeito */}
             {(isPeca || isProcesso) && (
               <div className="space-y-1.5">
                 <Label>Responsabilidade do Defeito</Label>
@@ -508,7 +675,6 @@ const ApontamentoForm = () => {
               </div>
             )}
 
-            {/* Local de Detecção + Lançamento - OEM */}
             {isOem && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
@@ -528,13 +694,14 @@ const ApontamentoForm = () => {
               </div>
             )}
 
-            {/* Descrição */}
-            <div className="space-y-1.5">
-              <Label className={errLabelClass("descricao")}>Descrição do Problema {!ngIsZero && "*"}</Label>
-              <Textarea value={descricao} onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }} placeholder="Detalhar o problema/defeito encontrado" rows={3} disabled={ngIsZero} className={errClass("descricao")} />
-            </div>
+            {/* Descrição - only when not multiple mode */}
+            {ngMultiploDecisao !== "diferente" && (
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("descricao")}>Descrição do Problema {!ngIsZero && "*"}</Label>
+                <Textarea value={descricao} onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }} placeholder="Detalhar o problema/defeito encontrado" rows={3} disabled={ngIsZero} className={errClass("descricao")} />
+              </div>
+            )}
 
-            {/* OEM specific fields */}
             {isOem && (
               <>
                 <div className="space-y-1.5">
@@ -561,12 +728,8 @@ const ApontamentoForm = () => {
             <div className="space-y-3 sm:space-y-4">
               <Select value={temSegundoDefeito} onValueChange={(v) => { setTemSegundoDefeito(v); if (v === "nao") setSegundoDefeitos([]); }}>
                 <SelectTrigger className="w-32 sm:w-40"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nao">Não</SelectItem>
-                  <SelectItem value="sim">Sim</SelectItem>
-                </SelectContent>
+                <SelectContent><SelectItem value="nao">Não</SelectItem><SelectItem value="sim">Sim</SelectItem></SelectContent>
               </Select>
-
               {temSegundoDefeito === "sim" && (
                 <>
                   {segundoDefeitos.map((sd, idx) => (
@@ -576,24 +739,13 @@ const ApontamentoForm = () => {
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSegundoDefeito(idx)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div className="space-y-1">
-                          <Label className="text-xs">Part Number</Label>
-                          <Input value={sd.part_number} onChange={(e) => updateSegundoDefeito(idx, "part_number", e.target.value)} placeholder="Digitar PN" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Part Name</Label>
-                          <Input value={sd.part_name} onChange={(e) => updateSegundoDefeito(idx, "part_name", e.target.value)} placeholder="Nome da peça" />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Qty</Label>
-                          <Input type="number" min={0} value={sd.qty} onChange={(e) => updateSegundoDefeito(idx, "qty", Number(e.target.value))} />
-                        </div>
+                        <div className="space-y-1"><Label className="text-xs">Part Number</Label><Input value={sd.part_number} onChange={(e) => updateSegundoDefeito(idx, "part_number", e.target.value)} placeholder="Digitar PN" /></div>
+                        <div className="space-y-1"><Label className="text-xs">Part Name</Label><Input value={sd.part_name} onChange={(e) => updateSegundoDefeito(idx, "part_name", e.target.value)} placeholder="Nome da peça" /></div>
+                        <div className="space-y-1"><Label className="text-xs">Qty</Label><Input type="number" min={0} value={sd.qty} onChange={(e) => updateSegundoDefeito(idx, "qty", Number(e.target.value))} /></div>
                       </div>
                     </div>
                   ))}
-                  {segundoDefeitos.length < 8 && (
-                    <Button variant="outline" size="sm" onClick={addSegundoDefeito} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
-                  )}
+                  {segundoDefeitos.length < 8 && <Button variant="outline" size="sm" onClick={addSegundoDefeito} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>}
                 </>
               )}
             </div>
@@ -610,19 +762,13 @@ const ApontamentoForm = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {existingPhotos.map((photo) => (
               <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border">
-                <img
-                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/checklist-photos/${photo.file_path}`}
-                  alt={photo.file_name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/checklist-photos/${photo.file_path}`} alt={photo.file_name} className="w-full h-full object-cover" />
               </div>
             ))}
             {photoPreviews.map((preview, idx) => (
               <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border">
                 <img src={preview} alt={`Nova foto ${idx + 1}`} className="w-full h-full object-cover" />
-                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeNewPhoto(idx)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => removeNewPhoto(idx)}><Trash2 className="w-3 h-3" /></Button>
               </div>
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
@@ -637,12 +783,8 @@ const ApontamentoForm = () => {
 
         {/* ACTIONS */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
-          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">
-            <Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}
-          </Button>
-          <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">
-            Salvar Rascunho
-          </Button>
+          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
+          <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>
           <Button variant="ghost" onClick={() => navigate("/apontamentos")} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
         </div>
       </main>
@@ -651,20 +793,35 @@ const ApontamentoForm = () => {
       <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" />
-              Campos Obrigatórios
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="w-5 h-5" />Campos Obrigatórios</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Preencha os seguintes campos para finalizar:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              {validationMessages.map((msg, i) => (
-                <li key={i} className="text-sm font-medium text-destructive">{msg}</li>
-              ))}
-            </ul>
+            <p className="text-sm text-muted-foreground">Preencha os seguintes campos:</p>
+            <ul className="list-disc pl-5 space-y-1">{validationMessages.map((msg, i) => <li key={i} className="text-sm font-medium text-destructive">{msg}</li>)}</ul>
           </div>
           <Button onClick={() => setShowValidationDialog(false)} className="w-full mt-2">Entendi</Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* NG Decision Dialog */}
+      <Dialog open={showNgDecisionDialog} onOpenChange={setShowNgDecisionDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-500" />Múltiplas peças NG</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Foram apontadas {quantidadeNg} peças NG. Todas possuem o mesmo modo de falha?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={() => handleNgDecision("mesmo")} variant="outline" className="h-auto py-3 flex flex-col gap-1">
+                <span className="font-semibold">Sim</span>
+                <span className="text-xs text-muted-foreground">Mesmo defeito</span>
+              </Button>
+              <Button onClick={() => handleNgDecision("diferente")} variant="outline" className="h-auto py-3 flex flex-col gap-1">
+                <span className="font-semibold">Não</span>
+                <span className="text-xs text-muted-foreground">Defeitos diferentes</span>
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

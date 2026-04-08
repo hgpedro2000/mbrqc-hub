@@ -98,7 +98,6 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.co_inspetores]);
 
-  // Parse tempo_inspecao which can be "HH:MM" (old) or "HH:MM - HH:MM (XXmin)" (new)
   const tempoDisplay = useMemo(() => {
     if (!d?.tempo_inspecao) return null;
     return d.tempo_inspecao;
@@ -137,26 +136,18 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     );
   };
 
-  const renderDetailsSection = () => {
-    // Check if segundo_defeitos has modo_falha (multiple failure modes from incoming)
-    const hasMultipleFailureModes = segundoDefeitos.length > 0 && segundoDefeitos[0]?.modo_falha;
+  // Check if has multiple failure mode details
+  const hasMultipleFailureModes = segundoDefeitos.length > 0 && segundoDefeitos[0]?.modo_falha;
+  const hasNg = (d?.quantidade_ng || 0) > 0;
 
+  const renderDetailsSection = () => {
     return (
       <div data-pdf-section>
         <SectionHeader icon={ClipboardCheck} title="Detalhes" />
         <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-          {/* Main defect info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-            {d?.modo_falha && <DataField label="Modo de Falha" value={fmt("", d.modo_falha)} />}
-            <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth={!d?.modo_falha} />
-            <DataField label="Severidade" value={fmt("", d?.severidade)} />
-            <DataField label="Responsabilidade" value={fmt("", d?.responsabilidade_defeito)} />
-            {d?.comentario_adicional && <DataField label="Comentário Adicional" value={d.comentario_adicional} fullWidth />}
-          </div>
-
-          {/* Multiple failure modes detail (from incoming "diferente" decision) */}
-          {hasMultipleFailureModes && (
-            <div className="border-t border-border pt-3 space-y-3">
+          {/* If NG > 0 and has multiple failure modes, show ONLY the individual detail */}
+          {hasNg && hasMultipleFailureModes ? (
+            <div className="space-y-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detalhamento por Modo de Falha</p>
               {segundoDefeitos.map((def: any, idx: number) => (
                 <div key={idx} className="border border-border rounded-lg p-3 bg-muted/20 space-y-1">
@@ -168,6 +159,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                   {def.descricao && <p className="text-xs text-muted-foreground pl-8">{def.descricao}</p>}
                 </div>
               ))}
+            </div>
+          ) : (
+            /* Normal single defect info - NO Severidade/Responsabilidade */
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              {d?.modo_falha && <DataField label="Modo de Falha" value={fmt("", d.modo_falha)} />}
+              <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth={!d?.modo_falha} />
+              {d?.comentario_adicional && <DataField label="Comentário Adicional" value={d.comentario_adicional} fullWidth />}
             </div>
           )}
         </div>
@@ -192,7 +190,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
-          {!segundoDefeitos.some((s: any) => s.modo_falha) && (
+          {!hasMultipleFailureModes && (
             <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
           )}
         </div>
@@ -293,7 +291,6 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
   };
 
   // Only render segundo defeitos section for non-incoming multiple failure modes
-  // (incoming multiple failure modes are rendered inside renderDetailsSection)
   const hasNonFailureModeSegundoDefeitos = segundoDefeitos.length > 0 && !segundoDefeitos[0]?.modo_falha;
 
   return (

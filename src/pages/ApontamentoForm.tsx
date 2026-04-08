@@ -92,6 +92,7 @@ const ApontamentoForm = () => {
   const [temCoInspecao, setTemCoInspecao] = useState("nao");
   const [coInspetores, setCoInspetores] = useState<string[]>([]);
   const [coInspetorSearch, setCoInspetorSearch] = useState("");
+  const [showCoInspetorDropdown, setShowCoInspetorDropdown] = useState(false);
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFim, setHoraFim] = useState("");
 
@@ -211,6 +212,11 @@ const ApontamentoForm = () => {
   useEffect(() => {
     if (formTipo === "incoming" && quantidadeNg === 0) {
       setDescricao("Sem defeito encontrado durante essa inspeção");
+    } else if (formTipo === "incoming" && quantidadeNg > 0) {
+      // Clear default text when NG > 0
+      if (descricao === "Sem defeito encontrado durante essa inspeção") {
+        setDescricao("");
+      }
     }
   }, [quantidadeNg, formTipo]);
 
@@ -256,14 +262,18 @@ const ApontamentoForm = () => {
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");
+    setShowCoInspetorDropdown(false);
   };
 
   const removeCoInspetor = (name: string) => setCoInspetores((prev) => prev.filter((n) => n !== name));
 
+  // Show all users when no search, filter when typing
   const filteredProfiles = useMemo(() => {
-    if (!coInspetorSearch.trim()) return [];
-    const term = coInspetorSearch.toLowerCase();
-    return allProfiles.filter((p: any) => p.full_name?.toLowerCase().includes(term) && p.full_name !== profile?.full_name && !coInspetores.includes(p.full_name)).slice(0, 5);
+    const term = coInspetorSearch.toLowerCase().trim();
+    return allProfiles
+      .filter((p: any) => p.full_name !== profile?.full_name && !coInspetores.includes(p.full_name))
+      .filter((p: any) => !term || p.full_name?.toLowerCase().includes(term))
+      .slice(0, 10);
   }, [coInspetorSearch, allProfiles, coInspetores, profile]);
 
   // Handle NG decision
@@ -271,7 +281,6 @@ const ApontamentoForm = () => {
     setNgMultiploDecisao(decision);
     setShowNgDecisionDialog(false);
     if (decision === "diferente") {
-      // Create initial detail + 1 complementary
       setDefeitosDetalhes([
         { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
         { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
@@ -503,7 +512,7 @@ const ApontamentoForm = () => {
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
-              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") setCoInspetores([]); }}>
+              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); setShowCoInspetorDropdown(false); } }}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nao">Não</SelectItem>
@@ -514,11 +523,17 @@ const ApontamentoForm = () => {
                 <div className="space-y-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input value={coInspetorSearch} onChange={(e) => setCoInspetorSearch(e.target.value)} placeholder="Buscar usuário..." className="pl-9" />
-                    {filteredProfiles.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                    <Input
+                      value={coInspetorSearch}
+                      onChange={(e) => { setCoInspetorSearch(e.target.value); setShowCoInspetorDropdown(true); }}
+                      onFocus={() => setShowCoInspetorDropdown(true)}
+                      placeholder="Buscar usuário..."
+                      className="pl-9"
+                    />
+                    {showCoInspetorDropdown && filteredProfiles.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {filteredProfiles.map((p: any) => (
-                          <button key={p.full_name} onClick={() => addCoInspetor(p.full_name)} className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors">
+                          <button key={p.full_name} onClick={() => addCoInspetor(p.full_name)} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
                             {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
                           </button>
                         ))}
@@ -728,7 +743,14 @@ const ApontamentoForm = () => {
             {ngMultiploDecisao !== "diferente" && (
               <div className="space-y-1.5">
                 <Label className={errLabelClass("descricao")}>Descrição do Problema {!ngIsZero && "*"}</Label>
-                <Textarea value={descricao} onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }} placeholder="Detalhar o problema/defeito encontrado" rows={3} disabled={ngIsZero} className={errClass("descricao")} />
+                <Textarea
+                  value={descricao}
+                  onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }}
+                  placeholder={ngIsZero ? "" : "Detalhar o problema/defeito encontrado"}
+                  rows={3}
+                  disabled={ngIsZero}
+                  className={errClass("descricao")}
+                />
               </div>
             )}
 

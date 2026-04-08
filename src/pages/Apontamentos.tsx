@@ -55,7 +55,6 @@ const Apontamentos = () => {
     },
   });
 
-  // Fetch first photo per apontamento for list preview
   const { data: allPhotos = [] } = useQuery({
     queryKey: ["apontamento-list-photos"],
     queryFn: async () => {
@@ -164,13 +163,22 @@ const Apontamentos = () => {
     const canEdit = isAdmin || isOwner;
     const isFinalized = status !== "draft";
     return (
-      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+      <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5" /></Button>
         {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget(id)} title="Visualizar / Exportar"><FileDown className="w-3.5 h-3.5" /></Button>}
         {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5" /></Button>}
         {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
       </div>
     );
+  };
+
+  // Parse segundo_defeitos for display
+  const getDefectSummary = (item: any) => {
+    const sd = item.segundo_defeitos as any[] | undefined;
+    if (!sd || sd.length === 0) return null;
+    // Check if it's failure mode type (from incoming diferente)
+    if (sd[0]?.modo_falha) return sd;
+    return null;
   };
 
   const renderDetailedList = () => {
@@ -185,53 +193,93 @@ const Apontamentos = () => {
     }
     return (
       <div className="grid gap-3">
-        {filtered.map((item) => (
-          <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 flex-1 min-w-0">
-                {isAdmin && (
-                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+        {filtered.map((item) => {
+          const defectDetails = getDefectSummary(item);
+          const hasNg = (item.quantidade_ng || 0) > 0;
+
+          return (
+            <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
+                  {isAdmin && (
+                    <div className="pt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                    </div>
+                  )}
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    {/* Header row */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-1.5 py-0.5 rounded shrink-0">#{item.numero}</span>}
+                      {item.part_number && <span className="font-heading font-semibold text-foreground text-sm truncate">{item.part_number}</span>}
+                      {item.fornecedor && <Badge variant="secondary" className="text-[10px] shrink-0">{item.fornecedor}</Badge>}
+                      <StatusBadge status={item.status} />
+                    </div>
+
+                    {/* Part name */}
+                    {item.part_name && (
+                      <p className="text-sm text-foreground font-medium truncate">{item.part_name}</p>
+                    )}
+
+                    {/* Quantities row */}
+                    {(item.quantidade_inspecionada > 0 || hasNg) && (
+                      <div className="flex gap-3 text-xs">
+                        {item.quantidade_inspecionada > 0 && (
+                          <span className="text-muted-foreground">Insp: <span className="font-semibold text-foreground">{item.quantidade_inspecionada}</span></span>
+                        )}
+                        <span className="text-emerald-600">OK: <span className="font-semibold">{item.quantidade_ok || 0}</span></span>
+                        <span className={hasNg ? "text-destructive font-semibold" : "text-muted-foreground"}>NG: <span className="font-semibold">{item.quantidade_ng || 0}</span></span>
+                      </div>
+                    )}
+
+                    {/* Defect details - show modo_falha or description in columns */}
+                    {hasNg && defectDetails && defectDetails.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {defectDetails.map((def: any, idx: number) => (
+                          <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs">
+                            <span className="font-semibold text-destructive">{def.modo_falha}</span>
+                            {def.descricao && <span className="text-muted-foreground ml-1">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
+                            <span className="text-muted-foreground ml-1">(×{def.qty})</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : hasNg && item.modo_falha ? (
+                      <div className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs inline-block">
+                        <span className="font-semibold text-destructive">{item.modo_falha}</span>
+                        {item.descricao && item.descricao !== "Sem defeito encontrado durante essa inspeção" && (
+                          <span className="text-muted-foreground ml-1">— {item.descricao.substring(0, 50)}{item.descricao.length > 50 ? "..." : ""}</span>
+                        )}
+                      </div>
+                    ) : item.descricao && item.descricao !== "Sem defeito encontrado durante essa inspeção" ? (
+                      <p className="text-xs text-foreground/80 bg-muted/40 rounded px-2 py-1 line-clamp-1 border-l-2 border-primary/40">
+                        {item.descricao}
+                      </p>
+                    ) : null}
+
+                    {/* Meta row */}
+                    <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
+                      <span>{item.responsavel}</span>
+                      <span>•</span>
+                      <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+                      {item.turno && <><span>•</span><span>{item.turno}</span></>}
+                      {item.tempo_inspecao && <><span>•</span><span>⏱ {item.tempo_inspecao}</span></>}
+                      {item.co_inspetores && Array.isArray(item.co_inspetores) && (item.co_inspetores as string[]).length > 0 && (
+                        <><span>•</span><span>👥 +{(item.co_inspetores as string[]).length}</span></>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main photo thumbnail */}
+                {firstPhotoByItem[item.id] && (
+                  <div className="shrink-0 w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
+                    <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                   </div>
                 )}
-                <div className="space-y-1 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
-                    {item.part_number && <span className="font-heading font-semibold text-foreground text-sm">{item.part_number}</span>}
-                    {item.fornecedor && <Badge variant="secondary" className="text-xs">{item.fornecedor}</Badge>}
-                    <StatusBadge status={item.status} />
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {item.part_name && `${item.part_name} • `}{item.projeto || ""}{item.descricao ? ` — ${item.descricao}` : ""}
-                  </p>
-                  {/* Description highlight */}
-                  {item.descricao && (
-                    <p className="text-xs text-foreground/80 bg-muted/40 rounded px-2 py-1 line-clamp-2 border-l-2 border-primary/40">
-                      {item.descricao}
-                    </p>
-                  )}
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span>{item.responsavel}</span>
-                    <span>•</span>
-                    <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
-                    {item.turno && <><span>•</span><span>{item.turno}</span></>}
-                    {item.tempo_inspecao && <><span>•</span><span>⏱ {item.tempo_inspecao}</span></>}
-                    {item.co_inspetores && Array.isArray(item.co_inspetores) && (item.co_inspetores as string[]).length > 0 && (
-                      <><span>•</span><span>👥 +{(item.co_inspetores as string[]).length}</span></>
-                    )}
-                  </div>
-                </div>
+                <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
               </div>
-              {/* Main photo thumbnail */}
-              {firstPhotoByItem[item.id] && (
-                <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
-                  <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
@@ -260,6 +308,7 @@ const Apontamentos = () => {
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Nº</th>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Part Number</th>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Fornecedor</th>
+                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">NG</th>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Data</th>
                 <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Status</th>
                 <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Ações</th>
@@ -276,6 +325,13 @@ const Apontamentos = () => {
                   <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{item.numero ? `#${item.numero}` : "—"}</td>
                   <td className="px-3 py-2 font-semibold text-foreground">{item.part_number || item.responsavel}</td>
                   <td className="px-3 py-2 text-muted-foreground hidden md:table-cell">{item.fornecedor || "—"}</td>
+                  <td className="px-3 py-2 text-center hidden sm:table-cell">
+                    {(item.quantidade_ng || 0) > 0 ? (
+                      <span className="text-destructive font-semibold">{item.quantidade_ng}</span>
+                    ) : (
+                      <span className="text-muted-foreground">0</span>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{new Date(item.data).toLocaleDateString("pt-BR")}</td>
                   <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
                   <td className="px-3 py-2 text-right">

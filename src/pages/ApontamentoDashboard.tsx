@@ -82,7 +82,7 @@ const ApontamentoDashboard = () => {
         const code = d.modo_falha.split(" - ")[0]?.trim();
         if (code) {
           const cat = defectCats.find((c) => c.code === code);
-          const label = cat ? `${cat.code} - ${cat.description}` : code;
+          const label = cat ? cat.description : code;
           catMap.set(label, (catMap.get(label) || 0) + 1);
         }
       }
@@ -94,7 +94,7 @@ const ApontamentoDashboard = () => {
             const code = def.modo_falha.split(" - ")[0]?.trim();
             if (code) {
               const cat = defectCats.find((c) => c.code === code);
-              const label = cat ? `${cat.code} - ${cat.description}` : code;
+              const label = cat ? cat.description : code;
               catMap.set(label, (catMap.get(label) || 0) + 1);
             }
           }
@@ -128,7 +128,7 @@ const ApontamentoDashboard = () => {
       }
     });
     return Array.from(map.entries())
-      .map(([name, value]) => ({ name: name.length > 20 ? name.substring(0, 20) + "..." : name, fullName: name, value }))
+      .map(([name, value]) => { const stripped = name.replace(/^\d+\s*-\s*/, "").trim(); return { name: stripped.length > 20 ? stripped.substring(0, 20) + "..." : stripped, fullName: stripped, value }; })
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
   }, [filtered]);
@@ -140,7 +140,7 @@ const ApontamentoDashboard = () => {
       if (d.modo_falha) {
         const code = d.modo_falha.split(" - ")[0]?.trim();
         const cat = defectCats.find((c) => c.code === code);
-        const label = cat ? `${cat.code} - ${cat.description}` : d.modo_falha;
+        const label = cat ? cat.description : d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
         map.set(label, (map.get(label) || 0) + 1);
       }
     });
@@ -158,7 +158,7 @@ const ApontamentoDashboard = () => {
         supplier: resolveName(d.fornecedor || "—"),
         pn: d.part_number || "—",
         description: d.part_name || d.descricao || "—",
-        category: d.modo_falha || "—",
+        category: (d.modo_falha || "—").replace(/^\d+\s*-\s*/, "").trim(),
       }));
   }, [filtered]);
 

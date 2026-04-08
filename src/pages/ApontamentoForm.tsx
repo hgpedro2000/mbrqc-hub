@@ -527,16 +527,20 @@ const ApontamentoForm = () => {
                       value={coInspetorSearch}
                       onChange={(e) => { setCoInspetorSearch(e.target.value); setShowCoInspetorDropdown(true); }}
                       onFocus={() => setShowCoInspetorDropdown(true)}
+                      onBlur={() => { setTimeout(() => setShowCoInspetorDropdown(false), 200); }}
                       placeholder="Buscar usuário..."
                       className="pl-9"
+                      autoComplete="off"
                     />
-                    {showCoInspetorDropdown && filteredProfiles.length > 0 && (
+                    {showCoInspetorDropdown && (
                       <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {filteredProfiles.map((p: any) => (
-                          <button key={p.full_name} onClick={() => addCoInspetor(p.full_name)} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
+                        {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
+                          <button key={p.full_name} onMouseDown={(e) => { e.preventDefault(); addCoInspetor(p.full_name); }} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
                             {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
                           </button>
-                        ))}
+                        )) : (
+                          <div className="px-3 py-2.5 text-sm text-muted-foreground">Nenhum usuário encontrado</div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -641,7 +645,7 @@ const ApontamentoForm = () => {
                 <Label>Modo de Falha {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
                   <SelectTrigger><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
-                  <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.code} - {d.description}</SelectItem>)}</SelectContent>
+                  <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}
@@ -665,7 +669,7 @@ const ApontamentoForm = () => {
                       <Label className="text-xs">Modo de Falha *</Label>
                       <Select value={detalhe.modo_falha} onValueChange={(v) => updateDefeitoDetalhe(idx, "modo_falha", v)}>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.code} - {d.description}</SelectItem>)}</SelectContent>
+                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
@@ -715,7 +719,7 @@ const ApontamentoForm = () => {
                 <Label>Responsabilidade do Defeito</Label>
                 <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{responsibilities.map((r) => <SelectItem key={r.id} value={`${r.code} - ${r.description}`}>{r.code} - {r.description}</SelectItem>)}</SelectContent>
+                  <SelectContent>{responsibilities.map((r) => <SelectItem key={r.id} value={`${r.code} - ${r.description}`}>{r.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}

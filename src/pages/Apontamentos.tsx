@@ -17,6 +17,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
+import { stripCode } from "@/lib/stripCode";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
@@ -236,7 +237,7 @@ const Apontamentos = () => {
                       <div className="flex flex-wrap gap-1.5">
                         {defectDetails.map((def: any, idx: number) => (
                           <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs">
-                            <span className="font-semibold text-destructive">{def.modo_falha}</span>
+                            <span className="font-semibold text-destructive">{stripCode(def.modo_falha)}</span>
                             {def.descricao && <span className="text-muted-foreground ml-1">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
                             <span className="text-muted-foreground ml-1">(×{def.qty})</span>
                           </div>
@@ -244,14 +245,14 @@ const Apontamentos = () => {
                       </div>
                     ) : hasNg && item.modo_falha ? (
                       <div className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs inline-block">
-                        <span className="font-semibold text-destructive">{item.modo_falha}</span>
+                        <span className="font-semibold text-destructive">{stripCode(item.modo_falha)}</span>
                         {item.descricao && item.descricao !== "Sem defeito encontrado durante essa inspeção" && (
                           <span className="text-muted-foreground ml-1">— {item.descricao.substring(0, 50)}{item.descricao.length > 50 ? "..." : ""}</span>
                         )}
                       </div>
-                    ) : item.descricao && item.descricao !== "Sem defeito encontrado durante essa inspeção" ? (
-                      <p className="text-xs text-foreground/80 bg-muted/40 rounded px-2 py-1 line-clamp-1 border-l-2 border-primary/40">
-                        {item.descricao}
+                    ) : !hasNg ? (
+                      <p className="text-xs text-blue-600 bg-blue-50 rounded px-2 py-1 line-clamp-1 border-l-2 border-blue-400 font-medium">
+                        Sem defeito encontrado durante essa inspeção
                       </p>
                     ) : null}
 

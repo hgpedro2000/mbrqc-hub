@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
-import { FileText, AlertTriangle, Camera, Package, Settings, ClipboardCheck, Users, Clock } from "lucide-react";
+import { FileText, AlertTriangle, Camera, Package, ClipboardCheck, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 
 interface Props {
@@ -43,15 +43,16 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
   </div>
 );
 
-const DataField = ({ label, value }: { label: string; value: string }) => (
-  <div className="space-y-0.5">
+const DataField = ({ label, value, fullWidth }: { label: string; value: string; fullWidth?: boolean }) => (
+  <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : ""}`}>
     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</p>
-    <p className="text-sm font-medium text-foreground">{value}</p>
+    <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{value}</p>
   </div>
 );
 
 const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ["apontamento-view", apontamentoId],
@@ -82,6 +83,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
 
   const d = item as any;
   const tipo = d?.tipo || "incoming";
+
   const segundoDefeitos = useMemo(() => {
     if (!d?.segundo_defeitos) return [];
     try {
@@ -96,6 +98,12 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.co_inspetores]);
 
+  // Parse tempo_inspecao which can be "HH:MM" (old) or "HH:MM - HH:MM (XXmin)" (new)
+  const tempoDisplay = useMemo(() => {
+    if (!d?.tempo_inspecao) return null;
+    return d.tempo_inspecao;
+  }, [d?.tempo_inspecao]);
+
   const identificationFields = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
@@ -107,6 +115,66 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     { key: "part_name", label: "Part Name" },
   ];
 
+  const renderInspectionSection = () => {
+    if (!tempoDisplay && coInspetores.length === 0) return null;
+    return (
+      <div data-pdf-section>
+        <SectionHeader icon={Clock} title="Inspeção" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
+          {tempoDisplay && <DataField label="Tempo de Inspeção" value={tempoDisplay} />}
+          {coInspetores.length > 0 && (
+            <div className="space-y-0.5 col-span-full">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Co-Inspetores</p>
+              <div className="flex flex-wrap gap-1.5">
+                {coInspetores.map((name: string, idx: number) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">{name}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDetailsSection = () => {
+    // Check if segundo_defeitos has modo_falha (multiple failure modes from incoming)
+    const hasMultipleFailureModes = segundoDefeitos.length > 0 && segundoDefeitos[0]?.modo_falha;
+
+    return (
+      <div data-pdf-section>
+        <SectionHeader icon={ClipboardCheck} title="Detalhes" />
+        <div className="bg-card rounded-lg border border-border p-4 space-y-4">
+          {/* Main defect info */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+            {d?.modo_falha && <DataField label="Modo de Falha" value={fmt("", d.modo_falha)} />}
+            <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth={!d?.modo_falha} />
+            <DataField label="Severidade" value={fmt("", d?.severidade)} />
+            <DataField label="Responsabilidade" value={fmt("", d?.responsabilidade_defeito)} />
+            {d?.comentario_adicional && <DataField label="Comentário Adicional" value={d.comentario_adicional} fullWidth />}
+          </div>
+
+          {/* Multiple failure modes detail (from incoming "diferente" decision) */}
+          {hasMultipleFailureModes && (
+            <div className="border-t border-border pt-3 space-y-3">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detalhamento por Modo de Falha</p>
+              {segundoDefeitos.map((def: any, idx: number) => (
+                <div key={idx} className="border border-border rounded-lg p-3 bg-muted/20 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">{idx + 1}</span>
+                    <span className="text-sm font-semibold">{def.modo_falha || "—"}</span>
+                    <Badge variant="outline" className="text-xs ml-auto">Qty: {def.qty || 0}</Badge>
+                  </div>
+                  {def.descricao && <p className="text-xs text-muted-foreground pl-8">{def.descricao}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderIncoming = () => (
     <>
       <div data-pdf-section>
@@ -115,25 +183,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
         </div>
       </div>
-      {/* Tempo de Inspeção and Co-Inspetores */}
-      {(d?.tempo_inspecao || coInspetores.length > 0) && (
-        <div data-pdf-section>
-          <SectionHeader icon={Clock} title="Inspeção" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-            {d?.tempo_inspecao && <DataField label="Tempo de Inspeção" value={d.tempo_inspecao} />}
-            {coInspetores.length > 0 && (
-              <div className="space-y-0.5 col-span-1 sm:col-span-2">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Co-Inspetores</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {coInspetores.map((name: string, idx: number) => (
-                    <Badge key={idx} variant="secondary" className="text-xs">{name}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {renderInspectionSection()}
       <div data-pdf-section>
         <SectionHeader icon={Package} title="Dados da Inspeção" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
@@ -142,18 +192,12 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
-          <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
+          {!segundoDefeitos.some((s: any) => s.modo_falha) && (
+            <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
+          )}
         </div>
       </div>
-      <div data-pdf-section>
-        <SectionHeader icon={ClipboardCheck} title="Detalhes" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          <DataField label="Descrição" value={fmt("", d?.descricao)} />
-          <DataField label="Severidade" value={fmt("", d?.severidade)} />
-          <DataField label="Responsabilidade" value={fmt("", d?.responsabilidade_defeito)} />
-          <DataField label="Comentário Adicional" value={fmt("", d?.comentario_adicional)} />
-        </div>
-      </div>
+      {renderDetailsSection()}
     </>
   );
 
@@ -177,15 +221,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {d?.parada_linha === "sim" && <DataField label="Tempo de Parada" value={fmt("", d?.parada_linha_tempo)} />}
         </div>
       </div>
-      <div data-pdf-section>
-        <SectionHeader icon={ClipboardCheck} title="Detalhes" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          <DataField label="Descrição" value={fmt("", d?.descricao)} />
-          <DataField label="Severidade" value={fmt("", d?.severidade)} />
-          <DataField label="Responsabilidade" value={fmt("", d?.responsabilidade_defeito)} />
-          <DataField label="Comentário Adicional" value={fmt("", d?.comentario_adicional)} />
-        </div>
-      </div>
+      {renderDetailsSection()}
     </>
   );
 
@@ -211,15 +247,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {d?.parada_linha === "sim" && <DataField label="Tempo de Parada" value={fmt("", d?.parada_linha_tempo)} />}
         </div>
       </div>
-      <div data-pdf-section>
-        <SectionHeader icon={ClipboardCheck} title="Detalhes" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          <DataField label="Descrição" value={fmt("", d?.descricao)} />
-          <DataField label="Severidade" value={fmt("", d?.severidade)} />
-          <DataField label="Responsabilidade" value={fmt("", d?.responsabilidade_defeito)} />
-          <DataField label="Comentário Adicional" value={fmt("", d?.comentario_adicional)} />
-        </div>
-      </div>
+      {renderDetailsSection()}
     </>
   );
 
@@ -242,11 +270,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       </div>
       <div data-pdf-section>
         <SectionHeader icon={ClipboardCheck} title="Análise e Ação" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          <DataField label="Descrição" value={fmt("", d?.descricao)} />
-          <DataField label="Análise Inicial" value={fmt("", d?.analise_inicial)} />
-          <DataField label="Ação Imediata" value={fmt("", d?.acao_imediata)} />
-          <DataField label="Comentário Adicional" value={fmt("", d?.comentario_adicional)} />
+        <div className="bg-card rounded-lg border border-border p-4 space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+            <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth />
+            <DataField label="Análise Inicial" value={fmt("", d?.analise_inicial)} fullWidth />
+            <DataField label="Ação Imediata" value={fmt("", d?.acao_imediata)} fullWidth />
+            {d?.comentario_adicional && <DataField label="Comentário Adicional" value={d.comentario_adicional} fullWidth />}
+          </div>
         </div>
       </div>
     </>
@@ -261,6 +291,10 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       default: return renderIncoming();
     }
   };
+
+  // Only render segundo defeitos section for non-incoming multiple failure modes
+  // (incoming multiple failure modes are rendered inside renderDetailsSection)
+  const hasNonFailureModeSegundoDefeitos = segundoDefeitos.length > 0 && !segundoDefeitos[0]?.modo_falha;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -329,8 +363,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
 
               {renderByType()}
 
-              {/* Second defects */}
-              {segundoDefeitos.length > 0 && (
+              {/* Second defects (only non-failure-mode type, i.e. from Peça/Processo) */}
+              {hasNonFailureModeSegundoDefeitos && (
                 <div data-pdf-section>
                   <SectionHeader icon={AlertTriangle} title={`Segundo Defeito (${segundoDefeitos.length})`} />
                   <div className="space-y-2">
@@ -356,7 +390,11 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                     {photos.map((photo) => {
                       const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(photo.file_path);
                       return (
-                        <div key={photo.id} className="rounded-lg border border-border overflow-hidden bg-muted aspect-video">
+                        <div
+                          key={photo.id}
+                          className="rounded-lg border border-border overflow-hidden bg-muted aspect-video cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                          onClick={() => setLightboxUrl(urlData.publicUrl)}
+                        >
                           <img src={urlData.publicUrl} alt={photo.file_name} className="w-full h-full object-cover" />
                         </div>
                       );
@@ -375,6 +413,21 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           </div>
         ) : null}
       </DialogContent>
+
+      {/* Lightbox for photos */}
+      <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button:last-child]:hidden">
+          <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-white/20 backdrop-blur-sm w-10 h-10 flex items-center justify-center hover:bg-white/40 transition-colors">
+            <X className="h-5 w-5 text-white" />
+            <span className="sr-only">Fechar</span>
+          </DialogClose>
+          {lightboxUrl && (
+            <div className="flex items-center justify-center w-full h-[90vh] p-4">
+              <img src={lightboxUrl} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

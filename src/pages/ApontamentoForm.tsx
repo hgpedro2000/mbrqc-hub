@@ -92,7 +92,8 @@ const ApontamentoForm = () => {
   const [temCoInspecao, setTemCoInspecao] = useState("nao");
   const [coInspetores, setCoInspetores] = useState<string[]>([]);
   const [coInspetorSearch, setCoInspetorSearch] = useState("");
-  const [tempoInspecao, setTempoInspecao] = useState("00:00");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFim, setHoraFim] = useState("");
 
   // Multiple NG failure modes
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
@@ -190,7 +191,12 @@ const ApontamentoForm = () => {
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
-      setTempoInspecao((existing as any).tempo_inspecao || "00:00");
+      const ti = (existing as any).tempo_inspecao || "";
+      if (ti.includes(" - ")) {
+        const parts = ti.split(" - ");
+        setHoraInicio(parts[0]?.trim() || "");
+        setHoraFim(parts[1]?.split(" ")[0]?.trim() || "");
+      }
     }
   }, [existing]);
 
@@ -301,6 +307,17 @@ const ApontamentoForm = () => {
   const ngIsZero = isIncoming && quantidadeNg === 0;
   const today = new Date().toISOString().split("T")[0];
 
+  const calcDuration = (start: string, end: string): string => {
+    if (!start || !end) return "0min";
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff < 0) diff += 24 * 60;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, "0") + "min" : ""}` : `${m}min`;
+  };
+
   const validate = (): boolean => {
     const errors = new Set<string>();
     const msgs: string[] = [];
@@ -317,7 +334,8 @@ const ApontamentoForm = () => {
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
-      if (!tempoInspecao || tempoInspecao === "00:00") { errors.add("tempoInspecao"); msgs.push("Tempo de Inspeção"); }
+      if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
+      if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
       if (quantidadeNg > 0 && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
@@ -387,7 +405,7 @@ const ApontamentoForm = () => {
         status: asDraft ? "draft" : "submitted",
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
-        tempo_inspecao: tempoInspecao || null,
+        tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
       };
 
       let recordId = id;
@@ -446,10 +464,7 @@ const ApontamentoForm = () => {
             </div>
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>
-              <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
-                <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+              <Input value={turno || "—"} readOnly className="bg-muted" />
             </div>
             {!isOem && (
               <div className="space-y-1.5">
@@ -529,11 +544,26 @@ const ApontamentoForm = () => {
         {isIncoming && (
           <div className="form-section">
             <h2 className="form-section-title">Tempo de Inspeção</h2>
-            <div className="space-y-1.5">
-              <Label className={errLabelClass("tempoInspecao")}>Tempo (HH:MM) *</Label>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-muted-foreground" />
-                <Input type="time" value={tempoInspecao} onChange={(e) => { setTempoInspecao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("tempoInspecao"); return n; }); }} className={`w-32 ${errClass("tempoInspecao")}`} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Duração</Label>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
+                  {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                </div>
               </div>
             </div>
           </div>

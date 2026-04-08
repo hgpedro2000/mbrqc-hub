@@ -1,12 +1,13 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -43,6 +44,7 @@ const Apontamentos = () => {
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [dailyReportOpen, setDailyReportOpen] = useState(false);
   const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -222,7 +224,7 @@ const Apontamentos = () => {
               </div>
               {/* Main photo thumbnail */}
               {firstPhotoByItem[item.id] && (
-                <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border border-border">
+                <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
                   <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                 </div>
               )}
@@ -419,6 +421,20 @@ const Apontamentos = () => {
 
       {/* NG report */}
       <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} />
+
+      {/* Photo lightbox */}
+      {photoLightbox && (
+        <Dialog open={!!photoLightbox} onOpenChange={() => setPhotoLightbox(null)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button:last-child]:hidden">
+            <button onClick={() => setPhotoLightbox(null)} className="absolute right-3 top-3 z-50 rounded-full bg-white/20 backdrop-blur-sm w-10 h-10 flex items-center justify-center hover:bg-white/40 transition-colors">
+              <X className="h-5 w-5 text-white" />
+            </button>
+            <div className="flex items-center justify-center w-full h-[90vh] p-4">
+              <img src={photoLightbox} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

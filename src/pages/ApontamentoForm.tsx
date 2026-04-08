@@ -719,7 +719,7 @@ const ApontamentoForm = () => {
                 <Label>Responsabilidade do Defeito</Label>
                 <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>{responsibilities.map((r) => <SelectItem key={r.id} value={`${r.code} - ${r.description}`}>{r.code} - {r.description}</SelectItem>)}</SelectContent>
+                  <SelectContent>{responsibilities.map((r) => <SelectItem key={r.id} value={`${r.code} - ${r.description}`}>{r.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}

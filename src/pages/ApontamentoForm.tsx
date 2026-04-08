@@ -345,7 +345,7 @@ const ApontamentoForm = () => {
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
-      if (quantidadeNg > 0 && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);

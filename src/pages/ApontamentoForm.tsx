@@ -464,10 +464,7 @@ const ApontamentoForm = () => {
             </div>
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>
-              <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
-                <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-              </Select>
+              <Input value={turno || "—"} readOnly className="bg-muted" />
             </div>
             {!isOem && (
               <div className="space-y-1.5">

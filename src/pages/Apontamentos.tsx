@@ -222,7 +222,7 @@ const Apontamentos = () => {
               </div>
               {/* Main photo thumbnail */}
               {firstPhotoByItem[item.id] && (
-                <div className="shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border border-border">
+                <div className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
                   <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                 </div>
               )}

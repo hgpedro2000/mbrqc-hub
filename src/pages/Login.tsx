@@ -4,11 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn } from "lucide-react";
+import { LogIn, AlertTriangle } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslation } from "react-i18next";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ const Login = () => {
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +49,9 @@ const Login = () => {
       toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || t("login.authError"));
+      const msg = error.message || t("login.authError");
+      setErrorMessage(msg);
+      setErrorDialogOpen(true);
     } finally {
       setLoading(false);
     }
@@ -73,7 +78,7 @@ const Login = () => {
               required
               value={employeeNumber}
               onChange={(e) => setEmployeeNumber(e.target.value)}
-              placeholder="Ex: 3501165"
+              placeholder={t("login.employeeNumber")}
               inputMode="numeric"
             />
           </div>
@@ -109,6 +114,20 @@ const Login = () => {
           </Link>
         </form>
       </div>
+
+      {/* Error Dialog */}
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Erro no Login
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{errorMessage}</p>
+          <Button onClick={() => setErrorDialogOpen(false)} className="w-full mt-2">Entendi</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

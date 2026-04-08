@@ -420,6 +420,20 @@ const Apontamentos = () => {
 
       {/* NG report */}
       <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} />
+
+      {/* Photo lightbox */}
+      {photoLightbox && (
+        <Dialog open={!!photoLightbox} onOpenChange={() => setPhotoLightbox(null)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button:last-child]:hidden">
+            <button onClick={() => setPhotoLightbox(null)} className="absolute right-3 top-3 z-50 rounded-full bg-white/20 backdrop-blur-sm w-10 h-10 flex items-center justify-center hover:bg-white/40 transition-colors">
+              <X className="h-5 w-5 text-white" />
+            </button>
+            <div className="flex items-center justify-center w-full h-[90vh] p-4">
+              <img src={photoLightbox} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

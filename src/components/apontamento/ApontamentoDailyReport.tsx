@@ -7,6 +7,9 @@ import { X, Download, FileText, AlertTriangle } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { stripCode } from "@/lib/stripCode";
 
 interface Props {
   open: boolean;
@@ -23,6 +26,34 @@ const typeLabels: Record<string, string> = {
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  // Fetch photos for NG report
+  const ngItemIds = useMemo(() => {
+    if (mode !== "ng") return [];
+    return items.filter(i => (i.quantidade_ng || 0) > 0).map(i => i.id);
+  }, [items, mode]);
+
+  const { data: ngPhotos = [] } = useQuery({
+    queryKey: ["ng-report-photos", ngItemIds],
+    queryFn: async () => {
+      if (ngItemIds.length === 0) return [];
+      const { data, error } = await supabase.from("checklist_photos").select("checklist_id, file_path").eq("checklist_type", "apontamento");
+      if (error) throw error;
+      return data;
+    },
+    enabled: mode === "ng" && ngItemIds.length > 0,
+  });
+
+  const firstPhotoByItem = useMemo(() => {
+    const map: Record<string, string> = {};
+    ngPhotos.forEach((p) => {
+      if (!map[p.checklist_id]) {
+        const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+        map[p.checklist_id] = urlData.publicUrl;
+      }
+    });
+    return map;
+  }, [ngPhotos]);
 
   const filtered = useMemo(() => {
     let list = items;
@@ -132,6 +163,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">NG</th>
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">OK</th>
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
+                        {mode === "ng" && <th className="text-center px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Foto</th>}
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Apontado por</th>
                       </tr>
                     </thead>
@@ -156,7 +188,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           <td className="px-3 py-1.5 text-right">{r.quantidade_inspecionada || 0}</td>
                           <td className={`px-3 py-1.5 text-right font-semibold ${(r.quantidade_ng || 0) > 0 ? "text-destructive" : ""}`}>{r.quantidade_ng || 0}</td>
                           <td className="px-3 py-1.5 text-right">{r.quantidade_ok || 0}</td>
-                          <td className="px-3 py-1.5 max-w-[200px] truncate">{r.descricao || "—"}</td>
+                          <td className="px-3 py-1.5 max-w-[200px] truncate">{stripCode(r.modo_falha) || r.descricao || "—"}</td>
+                          {mode === "ng" && (
+                            <td className="px-3 py-1.5 text-center">
+                              {firstPhotoByItem[r.id] ? (
+                                <img src={firstPhotoByItem[r.id]} alt="Foto NG" className="w-12 h-12 object-cover rounded border border-border inline-block" />
+                              ) : (
+                                <span className="text-muted-foreground text-[10px]">—</span>
+                              )}
+                            </td>
+                          )}
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.responsavel}</td>
                         </tr>
                       ))}

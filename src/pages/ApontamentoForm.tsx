@@ -527,16 +527,20 @@ const ApontamentoForm = () => {
                       value={coInspetorSearch}
                       onChange={(e) => { setCoInspetorSearch(e.target.value); setShowCoInspetorDropdown(true); }}
                       onFocus={() => setShowCoInspetorDropdown(true)}
+                      onBlur={() => { setTimeout(() => setShowCoInspetorDropdown(false), 200); }}
                       placeholder="Buscar usuário..."
                       className="pl-9"
+                      autoComplete="off"
                     />
-                    {showCoInspetorDropdown && filteredProfiles.length > 0 && (
+                    {showCoInspetorDropdown && (
                       <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {filteredProfiles.map((p: any) => (
-                          <button key={p.full_name} onClick={() => addCoInspetor(p.full_name)} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
+                        {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
+                          <button key={p.full_name} onMouseDown={(e) => { e.preventDefault(); addCoInspetor(p.full_name); }} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
                             {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
                           </button>
-                        ))}
+                        )) : (
+                          <div className="px-3 py-2.5 text-sm text-muted-foreground">Nenhum usuário encontrado</div>
+                        )}
                       </div>
                     )}
                   </div>

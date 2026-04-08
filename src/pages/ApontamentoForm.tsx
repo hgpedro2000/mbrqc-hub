@@ -92,7 +92,8 @@ const ApontamentoForm = () => {
   const [temCoInspecao, setTemCoInspecao] = useState("nao");
   const [coInspetores, setCoInspetores] = useState<string[]>([]);
   const [coInspetorSearch, setCoInspetorSearch] = useState("");
-  const [tempoInspecao, setTempoInspecao] = useState("00:00");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFim, setHoraFim] = useState("");
 
   // Multiple NG failure modes
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
@@ -190,7 +191,12 @@ const ApontamentoForm = () => {
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
-      setTempoInspecao((existing as any).tempo_inspecao || "00:00");
+      const ti = (existing as any).tempo_inspecao || "";
+      if (ti.includes(" - ")) {
+        const parts = ti.split(" - ");
+        setHoraInicio(parts[0]?.trim() || "");
+        setHoraFim(parts[1]?.split(" ")[0]?.trim() || "");
+      }
     }
   }, [existing]);
 
@@ -317,7 +323,8 @@ const ApontamentoForm = () => {
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
-      if (!tempoInspecao || tempoInspecao === "00:00") { errors.add("tempoInspecao"); msgs.push("Tempo de Inspeção"); }
+      if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
+      if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
       if (quantidadeNg > 0 && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
@@ -387,7 +394,7 @@ const ApontamentoForm = () => {
         status: asDraft ? "draft" : "submitted",
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
-        tempo_inspecao: tempoInspecao || null,
+        tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
       };
 
       let recordId = id;

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
-import { FileText, AlertTriangle, Camera, Package, Settings, ClipboardCheck } from "lucide-react";
+import { FileText, AlertTriangle, Camera, Package, Settings, ClipboardCheck, Users, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 
 interface Props {

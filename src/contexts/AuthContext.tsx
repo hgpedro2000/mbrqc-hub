@@ -7,6 +7,7 @@ interface Profile {
   employee_number: string;
   must_change_password: boolean;
   status: string;
+  turno: string | null;
 }
 
 interface AuthContextType {
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, employee_number, must_change_password, status")
+      .select("full_name, employee_number, must_change_password, status, turno")
       .eq("id", userId)
       .maybeSingle();
     setProfile(data as Profile | null);

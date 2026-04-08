@@ -3,20 +3,25 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileBarChart } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line } from "recharts";
-import logo from "@/assets/hyundai-mobis-logo.png";
+import { ArrowLeft, Download } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LabelList,
+} from "recharts";
+import {
+  ChartContainer, ChartTooltip, ChartTooltipContent,
+} from "@/components/ui/chart";
+import pptxgen from "pptxgenjs";
 
-const COLORS = ["#3b82f6", "#f59e0b", "#22c55e", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM" };
+const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
 
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
-  const [activeType, setActiveType] = useState("all");
+  const [activeType, setActiveType] = useState("incoming");
 
-  const { data: items = [] } = useQuery({
+  const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
     queryFn: async () => {
       const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });
@@ -25,133 +30,458 @@ const ApontamentoDashboard = () => {
     },
   });
 
-  const filtered = useMemo(() => activeType === "all" ? items : items.filter((i) => i.tipo === activeType), [items, activeType]);
+  const { data: suppliersRaw = [] } = useQuery({
+    queryKey: ["suppliers-dash"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("suppliers").select("code, name");
+      if (error) throw error;
+      return data;
+    },
+  });
 
+  const { data: defectCats = [] } = useQuery({
+    queryKey: ["defect-cats-dash"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("defect_categories").select("code, description").eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const suppliersMap = useMemo(() => {
+    const m = new Map<string, string>();
+    suppliersRaw.forEach((s) => { m.set(s.code.toUpperCase(), s.name); m.set(s.name.toUpperCase(), s.name); });
+    return m;
+  }, [suppliersRaw]);
+
+  const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
+
+  const filtered = useMemo(() => items.filter((i) => i.tipo === activeType), [items, activeType]);
   const total = filtered.length;
-  const totalNg = filtered.reduce((sum, i) => sum + (i.quantidade_ng || 0), 0);
-  const totalInspecionado = filtered.reduce((sum, i) => sum + (i.quantidade_inspecionada || 0), 0);
-  const drafts = filtered.filter((i) => i.status === "draft").length;
-  const submitted = filtered.filter((i) => i.status !== "draft").length;
 
-  const byType = TYPES.map((t) => ({ name: TYPE_LABELS[t], value: items.filter((i) => i.tipo === t).length })).filter((d) => d.value > 0);
-
-  const byProjeto = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filtered.forEach((i) => { if (i.projeto) counts[i.projeto] = (counts[i.projeto] || 0) + 1; });
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
-  }, [filtered]);
-
-  const byFornecedor = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filtered.forEach((i) => { if (i.fornecedor) counts[i.fornecedor] = (counts[i.fornecedor] || 0) + 1; });
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 10);
-  }, [filtered]);
-
-  const byMonth = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filtered.forEach((i) => {
-      const month = i.data?.substring(0, 7);
-      if (month) counts[month] = (counts[month] || 0) + 1;
+  // Supplier table data: Fornecedor | Qty PN | OK | NG
+  const supplierData = useMemo(() => {
+    const map = new Map<string, { ok: number; ng: number; pns: Set<string> }>();
+    filtered.forEach((d) => {
+      const name = resolveName(d.fornecedor || "Desconhecido");
+      const e = map.get(name) || { ok: 0, ng: 0, pns: new Set<string>() };
+      if ((d.quantidade_ng || 0) > 0) e.ng++; else e.ok++;
+      if (d.part_number) e.pns.add(d.part_number);
+      map.set(name, e);
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => a.name.localeCompare(b.name)).slice(-12);
+    return Array.from(map.entries())
+      .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
+      .sort((a, b) => b.total - a.total);
   }, [filtered]);
 
-  const byModoFalha = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filtered.forEach((i) => { if (i.modo_falha) counts[i.modo_falha] = (counts[i.modo_falha] || 0) + 1; });
-    return Object.entries(counts).map(([name, value]) => ({ name: name.length > 20 ? name.substring(0, 20) + "..." : name, value })).sort((a, b) => b.value - a.value).slice(0, 8);
+  // Defect category donuts (from modo_falha field, grouped by category prefix)
+  const catData = useMemo(() => {
+    const catMap = new Map<string, number>();
+    filtered.forEach((d) => {
+      if (d.modo_falha) {
+        const code = d.modo_falha.split(" - ")[0]?.trim();
+        if (code) {
+          const cat = defectCats.find((c) => c.code === code);
+          const label = cat ? `${cat.code} - ${cat.description}` : code;
+          catMap.set(label, (catMap.get(label) || 0) + 1);
+        }
+      }
+      // Also check segundo_defeitos
+      const sd = d.segundo_defeitos as any[] | null;
+      if (sd && Array.isArray(sd)) {
+        sd.forEach((def: any) => {
+          if (def.modo_falha) {
+            const code = def.modo_falha.split(" - ")[0]?.trim();
+            if (code) {
+              const cat = defectCats.find((c) => c.code === code);
+              const label = cat ? `${cat.code} - ${cat.description}` : code;
+              catMap.set(label, (catMap.get(label) || 0) + 1);
+            }
+          }
+        });
+      }
+    });
+    return Array.from(catMap.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3);
+  }, [filtered, defectCats]);
+
+  const donutDataSets = catData.map((c) => ({
+    label: c.label,
+    data: [
+      { name: "OK", value: total - c.count },
+      { name: "NG", value: c.count },
+    ],
+  }));
+
+  // Main Failure Mode bar
+  const failureModeData = useMemo(() => {
+    const map = new Map<string, number>();
+    filtered.forEach((d) => {
+      if (d.modo_falha) map.set(d.modo_falha, (map.get(d.modo_falha) || 0) + 1);
+      const sd = d.segundo_defeitos as any[] | null;
+      if (sd && Array.isArray(sd)) {
+        sd.forEach((def: any) => {
+          if (def.modo_falha) map.set(def.modo_falha, (map.get(def.modo_falha) || 0) + 1);
+        });
+      }
+    });
+    return Array.from(map.entries())
+      .map(([name, value]) => ({ name: name.length > 20 ? name.substring(0, 20) + "..." : name, fullName: name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
   }, [filtered]);
 
-  const ChartEmpty = () => <p className="text-center text-muted-foreground py-12">Sem dados</p>;
+  // Problem type table
+  const problemTypes = useMemo(() => {
+    const map = new Map<string, number>();
+    filtered.forEach((d) => {
+      if (d.modo_falha) {
+        const code = d.modo_falha.split(" - ")[0]?.trim();
+        const cat = defectCats.find((c) => c.code === code);
+        const label = cat ? `${cat.code} - ${cat.description}` : d.modo_falha;
+        map.set(label, (map.get(label) || 0) + 1);
+      }
+    });
+    const arr = Array.from(map.entries()).map(([type, qty]) => ({ type, qty })).sort((a, b) => b.qty - a.qty);
+    const totalP = arr.reduce((a, b) => a + b.qty, 0);
+    return { items: arr, total: totalP };
+  }, [filtered, defectCats]);
+
+  // Main issues (NG items)
+  const mainIssues = useMemo(() => {
+    return filtered
+      .filter((d) => (d.quantidade_ng || 0) > 0)
+      .slice(0, 8)
+      .map((d) => ({
+        supplier: resolveName(d.fornecedor || "—"),
+        pn: d.part_number || "—",
+        description: d.part_name || d.descricao || "—",
+        category: d.modo_falha || "—",
+      }));
+  }, [filtered]);
+
+  const chartConfig = {
+    ok: { label: "OK", color: "hsl(140, 55%, 45%)" },
+    ng: { label: "NG", color: "hsl(0, 55%, 50%)" },
+    value: { label: "Quantidade", color: "hsl(210, 70%, 60%)" },
+  };
+
+  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => (
+    <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "11px", fontWeight: 500 }}>
+      {payload?.value ?? ""}
+    </text>
+  );
+
+  const SectionHeader = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-[hsl(220,10%,30%)] px-3 py-1.5 border border-[hsl(220,10%,40%)]">
+      <h3 className="text-sm font-bold text-[hsl(0,0%,90%)] text-center tracking-wide">{children}</h3>
+    </div>
+  );
+
+  const DonutChart = ({ data, title }: { data: { name: string; value: number }[]; title: string }) => {
+    const totalD = data.reduce((a, b) => a + b.value, 0);
+    const okPct = totalD > 0 ? ((data[0].value / totalD) * 100).toFixed(1) : "0";
+    const ngPct = totalD > 0 ? ((data[1].value / totalD) * 100).toFixed(1) : "0";
+    return (
+      <div className="flex flex-col items-center">
+        <p className="text-xs font-bold text-[hsl(0,0%,85%)] mb-1 text-center px-1 line-clamp-2">{title}</p>
+        <div className="relative w-24 h-24">
+          <ChartContainer config={chartConfig} className="h-24 w-24">
+            <PieChart>
+              <Pie data={data} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" strokeWidth={0}>
+                {data.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i]} />)}
+              </Pie>
+            </PieChart>
+          </ChartContainer>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[10px] font-bold text-[hsl(0,0%,80%)]">{totalD}ea</span>
+          </div>
+        </div>
+        <div className="flex gap-3 mt-1">
+          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}%</span>
+          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}%</span>
+        </div>
+        <div className="flex gap-3">
+          <span className="text-[9px] text-[hsl(0,0%,60%)]">■OK</span>
+          <span className="text-[9px] text-[hsl(0,0%,60%)]">■NG</span>
+        </div>
+      </div>
+    );
+  };
+
+  const exportToPptx = async () => {
+    const pptx = new pptxgen();
+    pptx.layout = "LAYOUT_WIDE";
+    const BG = "1a2035";
+    const HEADER_BG = "2a3040";
+    const TXT = "E0E0E0";
+    const TXT_DIM = "999999";
+    const BORDER_CLR = "3a4050";
+    const OK_CLR = "3B8F3B";
+    const NG_CLR = "B33B3B";
+    const ACCENT = "5B9BD5";
+
+    const s1 = pptx.addSlide();
+    s1.background = { color: BG };
+    s1.addText(`${TYPE_LABELS[activeType]} — Apontamentos Dashboard`, { x: 0.3, y: 0.15, w: 8, h: 0.45, fontSize: 18, color: "FFFFFF", bold: true });
+    s1.addText(`Total: ${total}`, { x: 10, y: 0.15, w: 3, h: 0.45, fontSize: 11, color: TXT_DIM, align: "right" });
+
+    // Supplier table
+    s1.addText("General Quality Incoming Status", { x: 0.3, y: 0.7, w: 3.8, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    const supRows: pptxgen.TableRow[] = [[
+      { text: "Fornecedor", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8 } },
+      { text: "Qty PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+      { text: "OK", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+      { text: "NG", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, align: "center" } },
+    ]];
+    supplierData.forEach((s, i) => {
+      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
+      supRows.push([
+        { text: s.name, options: { color: ACCENT, fontSize: 8, fill: { color: rowBg } } },
+        { text: String(s.qtyPN), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+        { text: String(s.ok), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+        { text: String(s.ng), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
+      ]);
+    });
+    supRows.push([
+      { text: "TTL", options: { bold: true, color: TXT, fontSize: 8, fill: { color: HEADER_BG } } },
+      { text: String(total), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(supplierData.reduce((a, b) => a + b.ok, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(supplierData.reduce((a, b) => a + b.ng, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+    ]);
+    s1.addTable(supRows, { x: 0.3, y: 1.05, w: 3.8, colW: [1.6, 0.7, 0.7, 0.7], fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+
+    // Supplier bar
+    s1.addText("Supplier Status", { x: 4.3, y: 0.7, w: 4.2, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    if (supplierData.length > 0) {
+      s1.addChart(pptx.ChartType.bar, [
+        { name: "OK", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ok) },
+        { name: "NG", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ng) },
+      ], { x: 4.3, y: 1.3, w: 4.2, h: 3.5, barDir: "bar", barGrouping: "stacked", chartColors: [OK_CLR, NG_CLR], showValue: false, catAxisLabelColor: "FFFFFF", catAxisLabelFontSize: 8, valAxisHidden: true, showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 7, plotArea: { fill: { color: BG } } });
+    }
+
+    // Failure mode
+    s1.addText("Main Failure Mode", { x: 8.7, y: 3.1, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    if (failureModeData.length > 0) {
+      s1.addChart(pptx.ChartType.bar, [
+        { name: "Qty", labels: failureModeData.map(f => f.fullName), values: failureModeData.map(f => f.value) },
+      ], { x: 8.7, y: 3.45, w: 4.3, h: 2.0, barDir: "col", chartColors: [ACCENT], showValue: true, dataLabelColor: TXT, dataLabelFontSize: 8, dataLabelPosition: "outEnd", catAxisLabelColor: TXT_DIM, catAxisLabelFontSize: 7, valAxisHidden: true, showLegend: false, plotArea: { fill: { color: BG } } });
+    }
+
+    // Main issues
+    s1.addText("Main Issues", { x: 4.3, y: 5.1, w: 8.7, h: 0.25, fontSize: 9, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
+    const issueRows: pptxgen.TableRow[] = [[
+      { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+      { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+      { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+      { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
+    ]];
+    mainIssues.forEach((issue, i) => {
+      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
+      issueRows.push([
+        { text: issue.supplier, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.pn, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.description, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+        { text: issue.category, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
+      ]);
+    });
+    s1.addTable(issueRows, { x: 4.3, y: 5.4, w: 8.7, colW: [2, 1.5, 3.5, 1.7], fontSize: 7, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
+
+    await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_Apontamentos.pptx` });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[hsl(220,20%,10%)] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-400 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="gradient-header">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")} className="text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="w-4 h-4 mr-1" /> Voltar</Button>
-            <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
-          </div>
-          <div className="flex items-center gap-3 mt-4"><FileBarChart className="w-6 h-6 sm:w-8 sm:h-8" /><h1 className="text-xl sm:text-2xl font-heading font-bold">Dashboard — Apontamentos</h1></div>
+    <div className="min-h-screen bg-[hsl(220,20%,10%)]">
+      {/* Header - same style as TryOut dashboard */}
+      <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-3 md:px-4 py-2 md:py-3 flex items-center gap-2 md:gap-4 flex-wrap">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)] px-2">
+          <ArrowLeft className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Voltar</span>
+        </Button>
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-sm md:text-xl font-bold text-[hsl(0,0%,90%)] font-heading tracking-wide truncate">
+            Apontamentos — {TYPE_LABELS[activeType]} Status
+          </h1>
         </div>
-      </header>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {total}</span>
+          <Button variant="outline" size="sm" onClick={exportToPptx} className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
+            <Download className="w-3.5 h-3.5 mr-1" />PPTX
+          </Button>
+        </div>
+      </div>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-6">
-        {/* Type filter tabs */}
+      {/* Type tabs */}
+      <div className="px-3 md:px-4 pt-3">
         <Tabs value={activeType} onValueChange={setActiveType}>
-          <TabsList className="grid w-full grid-cols-5 h-auto">
-            <TabsTrigger value="all" className="text-xs sm:text-sm py-2">Todos</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4 h-auto bg-[hsl(220,15%,16%)] border border-[hsl(220,10%,25%)]">
             {TYPES.map((t) => (
-              <TabsTrigger key={t} value={t} className="text-xs sm:text-sm py-2">{TYPE_LABELS[t]}</TabsTrigger>
+              <TabsTrigger key={t} value={t} className="text-xs sm:text-sm py-2 text-[hsl(0,0%,60%)] data-[state=active]:bg-[hsl(220,10%,25%)] data-[state=active]:text-[hsl(0,0%,95%)]">
+                {TYPE_LABELS[t]}
+              </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
+      </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Total Registros", value: total },
-            { label: "Finalizados", value: submitted },
-            { label: "Rascunhos", value: drafts },
-            { label: "Total NG", value: totalNg },
-          ].map((kpi) => (
-            <div key={kpi.label} className="form-section text-center">
-              <p className="text-2xl font-heading font-bold text-foreground">{kpi.value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{kpi.label}</p>
-            </div>
-          ))}
+      {/* Main grid - same layout as TryOut dashboard */}
+      <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
+        {/* LEFT: General Quality Status table */}
+        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
+          <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium">Fornecedor</th>
+                <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium">Qty PN</th>
+                <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium" colSpan={2}>
+                  <div>Status</div>
+                  <div className="flex text-[10px] text-[hsl(0,0%,55%)]">
+                    <span className="flex-1">OK</span>
+                    <span className="flex-1">NG</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {supplierData.map((s, i) => (
+                <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-2 py-1 text-[hsl(210,70%,60%)]">{s.name}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
+                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
+                </tr>
+              ))}
+              <tr className="bg-[hsl(220,10%,20%)] font-bold">
+                <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{total}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ok, 0)}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ng, 0)}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* Charts */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {activeType === "all" && (
-            <div className="form-section">
-              <h3 className="form-section-title mb-4">Por Tipo</h3>
-              {byType.length > 0 ? (
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart><Pie data={byType} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{byType.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}</Pie><Tooltip /></PieChart>
-                </ResponsiveContainer>
-              ) : <ChartEmpty />}
-            </div>
+        {/* CENTER: Supplier Status (horizontal bars) */}
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden rounded-lg">
+          <SectionHeader>Supplier Status</SectionHeader>
+          <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier OK vs NG</p>
+          {supplierData.length > 0 ? (
+            <ChartContainer config={chartConfig} className="h-[250px] md:h-[280px] w-full px-1">
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="name" width={80} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16}>
+                  <LabelList dataKey="ok" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />
+                </Bar>
+                <Bar dataKey="ng" stackId="a" fill="hsl(0, 55%, 50%)" barSize={16}>
+                  <LabelList dataKey="ng" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <p className="text-[hsl(0,0%,50%)] text-xs text-center py-12">Sem dados.</p>
           )}
+        </div>
 
-          <div className="form-section">
-            <h3 className="form-section-title mb-4">Por Projeto</h3>
-            {byProjeto.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={byProjeto}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="name" tick={{ fontSize: 12 }} /><YAxis tick={{ fontSize: 12 }} /><Tooltip /><Bar dataKey="value" name="Registros">{byProjeto.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}</Bar></BarChart>
-              </ResponsiveContainer>
-            ) : <ChartEmpty />}
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title mb-4">Por Fornecedor (Top 10)</h3>
-            {byFornecedor.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={byFornecedor} layout="vertical"><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} /><Tooltip /><Bar dataKey="value" name="Registros" fill="#3b82f6" /></BarChart>
-              </ResponsiveContainer>
-            ) : <ChartEmpty />}
-          </div>
-
-          <div className="form-section">
-            <h3 className="form-section-title mb-4">Evolução Mensal</h3>
-            {byMonth.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={byMonth}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="name" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 12 }} /><Tooltip /><Line type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} /></LineChart>
-              </ResponsiveContainer>
-            ) : <ChartEmpty />}
-          </div>
-
-          {(activeType !== "oem") && (
-            <div className="form-section md:col-span-2">
-              <h3 className="form-section-title mb-4">Por Modo de Falha (Top 8)</h3>
-              {byModoFalha.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={byModoFalha}><CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={60} /><YAxis tick={{ fontSize: 12 }} /><Tooltip /><Bar dataKey="value" name="Ocorrências">{byModoFalha.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}</Bar></BarChart>
-                </ResponsiveContainer>
-              ) : <ChartEmpty />}
+        {/* RIGHT: Donuts + Failure Mode */}
+        <div className="lg:col-span-5 flex flex-col gap-3">
+          {/* Donut charts row */}
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
+            <SectionHeader>Attendance Status</SectionHeader>
+            <div className="flex justify-around mt-3 flex-wrap gap-2">
+              {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
+                <DonutChart key={i} data={ds.data} title={ds.label} />
+              )) : (
+                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de categoria.</p>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Main Failure Mode */}
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1 rounded-lg">
+            <SectionHeader>Main Failure Mode</SectionHeader>
+            {failureModeData.length > 0 ? (
+              <ChartContainer config={chartConfig} className="h-[200px] md:h-[180px] w-full [&_.recharts-cartesian-axis-tick_text]:!fill-white">
+                <BarChart data={failureModeData} margin={{ left: 10, right: 10, top: 15, bottom: 30 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,10%,25%)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
+                  <YAxis hide />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>
+                    {failureModeData.map((_, i) => (
+                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <p className="text-[hsl(0,0%,50%)] text-xs text-center py-8">Sem dados.</p>
+            )}
+          </div>
+        </div>
+
+        {/* BOTTOM LEFT: Data - Problem */}
+        <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-x-auto">
+          <SectionHeader>{TYPE_LABELS[activeType]} Data – Problem</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Type</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Qty</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {problemTypes.items.map((p, i) => (
+                <tr key={p.type} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{p.type}</td>
+                  <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{p.qty}</td>
+                  <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{problemTypes.total > 0 ? ((p.qty / problemTypes.total) * 100).toFixed(0) : 0}%</td>
+                </tr>
+              ))}
+              {problemTypes.items.length === 0 && (
+                <tr><td colSpan={3} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem dados.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* BOTTOM RIGHT: Main Issues table */}
+        <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
+          <SectionHeader>Main Issues</SectionHeader>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[hsl(220,10%,25%)]">
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Supplier</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">PN</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Description</th>
+                <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mainIssues.length > 0 ? mainIssues.map((issue, i) => (
+                <tr key={i} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.supplier}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.pn}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={4} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>

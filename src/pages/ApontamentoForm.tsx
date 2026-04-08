@@ -645,7 +645,7 @@ const ApontamentoForm = () => {
                 <Label>Modo de Falha {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
                   <SelectTrigger><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
-                  <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.code} - {d.description}</SelectItem>)}</SelectContent>
+                  <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             )}
@@ -669,7 +669,7 @@ const ApontamentoForm = () => {
                       <Label className="text-xs">Modo de Falha *</Label>
                       <Select value={detalhe.modo_falha} onValueChange={(v) => updateDefeitoDetalhe(idx, "modo_falha", v)}>
                         <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.code} - {d.description}</SelectItem>)}</SelectContent>
+                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">

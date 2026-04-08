@@ -29,8 +29,20 @@ const Login = () => {
         body: { employee_number: employeeNumber.trim(), password },
       });
 
-      if (error || data?.error) {
-        throw new Error(data?.error || error?.message || t("login.authError"));
+      if (error) {
+        // Try to extract the real error message from the response body
+        let realMsg = t("login.authError");
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const body = await error.context.json();
+            if (body?.error) realMsg = body.error;
+          }
+        } catch { /* ignore parse errors */ }
+        throw new Error(realMsg);
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       if (data.session) {

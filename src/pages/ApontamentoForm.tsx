@@ -307,6 +307,17 @@ const ApontamentoForm = () => {
   const ngIsZero = isIncoming && quantidadeNg === 0;
   const today = new Date().toISOString().split("T")[0];
 
+  const calcDuration = (start: string, end: string): string => {
+    if (!start || !end) return "0min";
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff < 0) diff += 24 * 60;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, "0") + "min" : ""}` : `${m}min`;
+  };
+
   const validate = (): boolean => {
     const errors = new Set<string>();
     const msgs: string[] = [];

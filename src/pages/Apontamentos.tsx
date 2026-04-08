@@ -213,6 +213,10 @@ const Apontamentos = () => {
                     <span>•</span>
                     <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
                     {item.turno && <><span>•</span><span>{item.turno}</span></>}
+                    {item.tempo_inspecao && <><span>•</span><span>⏱ {item.tempo_inspecao}</span></>}
+                    {item.co_inspetores && Array.isArray(item.co_inspetores) && (item.co_inspetores as string[]).length > 0 && (
+                      <><span>•</span><span>👥 +{(item.co_inspetores as string[]).length}</span></>
+                    )}
                   </div>
                 </div>
               </div>

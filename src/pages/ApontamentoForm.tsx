@@ -153,8 +153,8 @@ const ApontamentoForm = () => {
 
   // Auto-fill turno from profile
   useEffect(() => {
-    if (profile && !isEdit && (profile as any).turno) {
-      setTurno((profile as any).turno);
+    if (profile && !isEdit && profile.turno) {
+      setTurno(profile.turno);
     }
   }, [profile, isEdit]);
 

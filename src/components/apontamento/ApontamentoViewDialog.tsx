@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
-import { FileText, AlertTriangle, Camera, Package, Settings, ClipboardCheck } from "lucide-react";
+import { FileText, AlertTriangle, Camera, Package, Settings, ClipboardCheck, Users, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 
 interface Props {
@@ -89,6 +89,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.segundo_defeitos]);
 
+  const coInspetores = useMemo(() => {
+    if (!d?.co_inspetores) return [];
+    try {
+      return Array.isArray(d.co_inspetores) ? d.co_inspetores : JSON.parse(d.co_inspetores);
+    } catch { return []; }
+  }, [d?.co_inspetores]);
+
   const identificationFields = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
@@ -108,6 +115,25 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
         </div>
       </div>
+      {/* Tempo de Inspeção and Co-Inspetores */}
+      {(d?.tempo_inspecao || coInspetores.length > 0) && (
+        <div data-pdf-section>
+          <SectionHeader icon={Clock} title="Inspeção" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
+            {d?.tempo_inspecao && <DataField label="Tempo de Inspeção" value={d.tempo_inspecao} />}
+            {coInspetores.length > 0 && (
+              <div className="space-y-0.5 col-span-1 sm:col-span-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Co-Inspetores</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {coInspetores.map((name: string, idx: number) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">{name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div data-pdf-section>
         <SectionHeader icon={Package} title="Dados da Inspeção" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">

@@ -241,7 +241,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. Inspecionada" value={fmt("", d?.quantidade_inspecionada)} />
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
-          <DataField label="Modo de Falha" value={fmt("", d?.modo_falha)} />
+          <DataField label="Modo de Falha" value={stripCode(d?.modo_falha)} />
           <DataField label="Parada de Linha" value={d?.parada_linha === "sim" ? "Sim" : "Não"} />
           {d?.parada_linha === "sim" && <DataField label="Tempo de Parada" value={fmt("", d?.parada_linha_tempo)} />}
         </div>

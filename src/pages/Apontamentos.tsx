@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,7 @@ const Apontamentos = () => {
   const [dailyReportOpen, setDailyReportOpen] = useState(false);
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -65,6 +66,44 @@ const Apontamentos = () => {
       return data;
     },
   });
+
+  // Fetch part_numbers for origem info
+  const { data: partNumbersList = [] } = useQuery({
+    queryKey: ["part-numbers-origem"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("part_numbers").select("part_number, origem").eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const origemByPartNumber = useMemo(() => {
+    const map: Record<string, string> = {};
+    partNumbersList.forEach((p: any) => { if (p.part_number) map[p.part_number] = p.origem || "LP"; });
+    return map;
+  }, [partNumbersList]);
+
+  // Fetch profiles for empresa info
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-empresa"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, empresa, empresa_terceira");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const empresaByUserId = useMemo(() => {
+    const map: Record<string, string> = {};
+    (profilesList as any[]).forEach((p: any) => {
+      if (p.empresa === "empresa_terceira") {
+        map[p.id] = p.empresa_terceira || "Terceira";
+      } else {
+        map[p.id] = "Mobis Brasil";
+      }
+    });
+    return map;
+  }, [profilesList]);
 
   const firstPhotoByItem = useMemo(() => {
     const map: Record<string, string> = {};
@@ -215,6 +254,19 @@ const Apontamentos = () => {
                       {item.part_number && <span className="font-heading font-semibold text-foreground text-sm truncate">{item.part_number}</span>}
                       {item.fornecedor && <Badge variant="secondary" className="text-[10px] shrink-0">{item.fornecedor}</Badge>}
                       <StatusBadge status={item.status} />
+                      {/* Origem badge */}
+                      {item.part_number && origemByPartNumber[item.part_number] && (() => {
+                        const o = origemByPartNumber[item.part_number];
+                        if (o === "CKD") return <Badge className="bg-purple-500/10 text-purple-700 border-purple-200 text-[9px] px-1.5">CKD</Badge>;
+                        if (o === "CONSIGNADA") return <Badge className="bg-orange-500/10 text-orange-700 border-orange-200 text-[9px] px-1.5">CONSIG.</Badge>;
+                        return <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[9px] px-1.5">LP</Badge>;
+                      })()}
+                      {/* Empresa badge */}
+                      {item.created_by && empresaByUserId[item.created_by] && (
+                        <Badge variant="outline" className={`text-[9px] px-1.5 ${empresaByUserId[item.created_by] === "Mobis Brasil" ? "border-sky-300 text-sky-700 bg-sky-50" : "border-amber-300 text-amber-700 bg-amber-50"}`}>
+                          {empresaByUserId[item.created_by]}
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Part name */}
@@ -233,7 +285,7 @@ const Apontamentos = () => {
                       </div>
                     )}
 
-                    {/* Defect details - show modo_falha or description in columns */}
+                    {/* Defect details */}
                     {hasNg && defectDetails && defectDetails.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {defectDetails.map((def: any, idx: number) => (
@@ -428,7 +480,25 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant={filtersExpanded ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              {filtersExpanded ? "Ocultar Filtros" : "Filtros"}
+            </Button>
+            {Object.keys(filterValues).length > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                Limpar
+              </Button>
+            )}
+          </div>
+          {filtersExpanded && (
+            <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+          )}
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-4 h-auto">

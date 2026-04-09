@@ -97,6 +97,24 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
+  // Fetch part_number origem
+  const { data: partOrigemData } = useQuery({
+    queryKey: ["apontamento-part-origem", item?.part_number],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("origem")
+        .eq("part_number", item!.part_number!)
+        .eq("active", true)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!item?.part_number && open,
+  });
+
+  const origemLabel = partOrigemData?.origem || "LP";
+
   const d = item as any;
   const tipo = d?.tipo || "incoming";
 
@@ -133,6 +151,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     { key: "responsavel", label: "Apontado por" },
     { key: "turno", label: "Turno" },
     ...(empresaLabel ? [{ key: "_empresa", label: "Empresa" }] : []),
+    { key: "_origem", label: "Origem" },
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },
@@ -163,6 +182,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
 
   const getFieldValue = (f: { key: string; label: string }) => {
     if (f.key === "_empresa") return empresaLabel || "—";
+    if (f.key === "_origem") return origemLabel || "LP";
     return fmt(f.key, d?.[f.key]);
   };
 

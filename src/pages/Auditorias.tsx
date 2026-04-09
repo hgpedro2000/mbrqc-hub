@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldCheck, BarChart3, Pencil, Trash2 } from "lucide-react";
+import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
@@ -81,7 +82,10 @@ const Auditorias = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            {isAdmin && <EngineeringMode module="Auditorias" />}
+            <div className="flex items-center gap-1">
+              <ReportErrorButton moduleName="Auditorias" />
+              {isAdmin && <EngineeringMode module="Auditorias" />}
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mt-3 md:mt-4">
             <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" />

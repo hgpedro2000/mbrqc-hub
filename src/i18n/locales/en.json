@@ -89,6 +89,14 @@
     "alertaQualidade": {
       "title": "Quality Alert",
       "description": "Issuance and control of quality alerts with notifications and traceability."
+    },
+    "consumiveis": {
+      "title": "Consumables",
+      "description": "Request consumable items from the quality department."
+    },
+    "consultaPecas": {
+      "title": "Part Lookup",
+      "description": "Quick part search by part number, name or supplier."
     }
   },
   "login": {

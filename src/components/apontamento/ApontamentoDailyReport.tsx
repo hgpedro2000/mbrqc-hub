@@ -26,6 +26,7 @@ const typeLabels: Record<string, string> = {
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Fetch photos for NG report
   const ngItemIds = useMemo(() => {
@@ -192,7 +193,12 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
                               {firstPhotoByItem[r.id] ? (
-                                <img src={firstPhotoByItem[r.id]} alt="Foto NG" className="w-12 h-12 object-cover rounded border border-border inline-block" />
+                                <img
+                                  src={firstPhotoByItem[r.id]}
+                                  alt="Foto NG"
+                                  className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                  onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
+                                />
                               ) : (
                                 <span className="text-muted-foreground text-[10px]">—</span>
                               )}
@@ -223,6 +229,20 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
           </div>
         </div>
       </DialogContent>
+
+      {/* Photo lightbox */}
+      {lightboxUrl && (
+        <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button:last-child]:hidden">
+            <button onClick={() => setLightboxUrl(null)} className="absolute right-3 top-3 z-50 rounded-full bg-white/20 backdrop-blur-sm w-10 h-10 flex items-center justify-center hover:bg-white/40 transition-colors">
+              <X className="h-5 w-5 text-white" />
+            </button>
+            <div className="flex items-center justify-center w-full h-[90vh] p-4">
+              <img src={lightboxUrl} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 };

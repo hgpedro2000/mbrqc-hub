@@ -4,16 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, AlertTriangle } from "lucide-react";
+import { LogIn, AlertTriangle, RefreshCw } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Login = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { versionKicked } = useAuth();
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,6 +77,12 @@ const Login = () => {
         <LanguageToggle variant="login" />
       </div>
       <div className="w-full max-w-md">
+        {versionKicked && (
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-destructive shrink-0" />
+            <p className="text-sm text-destructive font-medium">Sua sessão foi encerrada. Faça login novamente para carregar a versão mais recente.</p>
+          </div>
+        )}
         <div className="text-center mb-8">
           <img src={logo} alt="Hyundai Mobis" className="h-40 mx-auto mb-0 mt-10 object-contain" />
           <h1 className="text-2xl font-heading font-bold text-foreground -mt-1">{t("login.title")}</h1>

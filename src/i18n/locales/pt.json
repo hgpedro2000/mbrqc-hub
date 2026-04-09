@@ -89,6 +89,14 @@
     "alertaQualidade": {
       "title": "Alerta de Qualidade",
       "description": "Emissão e controle de alertas de qualidade com notificações e rastreabilidade."
+    },
+    "consumiveis": {
+      "title": "Consumíveis",
+      "description": "Requisição de itens de consumo do setor da qualidade."
+    },
+    "consultaPecas": {
+      "title": "Consulta de Peças",
+      "description": "Pesquisa rápida de peças por part number, nome ou fornecedor."
     }
   },
   "login": {

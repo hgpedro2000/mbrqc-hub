@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2 } from "lucide-react";
+import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
@@ -57,7 +58,10 @@ const Contencao = () => {
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.hub")}</span></Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            {isAdmin && <EngineeringMode module="Contenção" />}
+            <div className="flex items-center gap-1">
+              <ReportErrorButton moduleName="Contenção" />
+              {isAdmin && <EngineeringMode module="Contenção" />}
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mt-3 md:mt-4"><ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /><div><h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">{t("contencao.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("contencao.subtitle")}</p></div></div>
         </div>

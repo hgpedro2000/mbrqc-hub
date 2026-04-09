@@ -407,7 +407,7 @@ const ApontamentoDashboard = () => {
           <SectionHeader>Supplier Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier OK vs NG</p>
           {supplierData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="h-[250px] md:h-[280px] w-full px-1">
+            <ChartContainer config={chartConfig} className="w-full px-1" style={{ height: Math.max(250, supplierData.length * 30) }}>
               <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
                 <YAxis type="category" dataKey="name" width={120} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />

@@ -70,7 +70,6 @@ const PartNumbersTab = () => {
       const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule, origem } as any;
       if (editId) { const { error } = await supabase.from("part_numbers").update(payload).eq("id", editId); if (error) throw error; }
       else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
-      else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(editId ? "Atualizado!" : "Criado!"); resetForm(); },
     onError: (e: any) => toast.error(e.message),

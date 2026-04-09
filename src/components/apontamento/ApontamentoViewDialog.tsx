@@ -69,6 +69,21 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
+  // Fetch creator's profile for empresa info
+  const { data: creatorProfile } = useQuery({
+    queryKey: ["apontamento-creator-profile", item?.created_by],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("empresa, empresa_terceira")
+        .eq("id", item!.created_by!)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!item?.created_by && open,
+  });
+
   const { data: photos = [] } = useQuery({
     queryKey: ["apontamento-photos", apontamentoId],
     queryFn: async () => {

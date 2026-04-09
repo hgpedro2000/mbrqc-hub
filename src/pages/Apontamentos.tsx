@@ -263,8 +263,8 @@ const Apontamentos = () => {
                       {item.fornecedor && <Badge variant="secondary" className="text-[10px] shrink-0">{item.fornecedor}</Badge>}
                       <StatusBadge status={item.status} />
                       {/* Origem badge */}
-                      {item.part_number && origemByPartNumber[item.part_number] && (() => {
-                        const o = origemByPartNumber[item.part_number];
+                      {item.fornecedor && origemByFornecedor[item.fornecedor] && (() => {
+                        const o = origemByFornecedor[item.fornecedor];
                         if (o === "CKD") return <Badge className="bg-purple-500/10 text-purple-700 border-purple-200 text-[9px] px-1.5">CKD</Badge>;
                         if (o === "CONSIGNADA") return <Badge className="bg-orange-500/10 text-orange-700 border-orange-200 text-[9px] px-1.5">CONSIG.</Badge>;
                         return <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[9px] px-1.5">LP</Badge>;

@@ -512,7 +512,7 @@ const ApontamentoForm = () => {
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
-              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); setShowCoInspetorDropdown(false); } }}>
+              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nao">Não</SelectItem>

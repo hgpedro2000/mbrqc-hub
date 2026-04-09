@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ArrowLeft, Download } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -12,14 +13,18 @@ import {
   ChartContainer, ChartTooltip, ChartTooltipContent,
 } from "@/components/ui/chart";
 import pptxgen from "pptxgenjs";
+import { stripCode } from "@/lib/stripCode";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM" };
-const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)", "hsl(0, 60%, 35%)"];
+const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const [activeType, setActiveType] = useState("incoming");
+  const today = new Date().toISOString().split("T")[0];
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -39,15 +44,6 @@ const ApontamentoDashboard = () => {
     },
   });
 
-  const { data: defectCats = [] } = useQuery({
-    queryKey: ["defect-cats-dash"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("defect_categories").select("code, description").eq("active", true);
-      if (error) throw error;
-      return data;
-    },
-  });
-
   const suppliersMap = useMemo(() => {
     const m = new Map<string, string>();
     suppliersRaw.forEach((s) => { m.set(s.code.toUpperCase(), s.name); m.set(s.name.toUpperCase(), s.name); });
@@ -56,16 +52,24 @@ const ApontamentoDashboard = () => {
 
   const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
 
-  const filtered = useMemo(() => items.filter((i) => i.tipo === activeType), [items, activeType]);
+  // Filter by type and date range
+  const filtered = useMemo(() => {
+    let list = items.filter((i) => i.tipo === activeType);
+    if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
+    if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    return list;
+  }, [items, activeType, dateFrom, dateTo]);
+
   const total = filtered.length;
 
-  // Supplier table data: Fornecedor | Qty PN | OK | NG
+  // Supplier table: Fornecedor | Qty PN inspecionados | sum OK | sum NG
   const supplierData = useMemo(() => {
     const map = new Map<string, { ok: number; ng: number; pns: Set<string> }>();
     filtered.forEach((d) => {
       const name = resolveName(d.fornecedor || "Desconhecido");
       const e = map.get(name) || { ok: 0, ng: 0, pns: new Set<string>() };
-      if ((d.quantidade_ng || 0) > 0) e.ng++; else e.ok++;
+      e.ok += (d.quantidade_ok || 0);
+      e.ng += (d.quantidade_ng || 0);
       if (d.part_number) e.pns.add(d.part_number);
       map.set(name, e);
     });
@@ -74,92 +78,100 @@ const ApontamentoDashboard = () => {
       .sort((a, b) => b.total - a.total);
   }, [filtered]);
 
-  // Defect category donuts (from modo_falha field, grouped by category prefix)
-  const catData = useMemo(() => {
-    const catMap = new Map<string, number>();
+  // Project Status donuts (rate OK vs NG by project)
+  const projectData = useMemo(() => {
+    const map = new Map<string, { ok: number; ng: number }>();
     filtered.forEach((d) => {
+      const proj = d.projeto || "—";
+      const e = map.get(proj) || { ok: 0, ng: 0 };
+      e.ok += (d.quantidade_ok || 0);
+      e.ng += (d.quantidade_ng || 0);
+      map.set(proj, e);
+    });
+    return Array.from(map.entries())
+      .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4);
+  }, [filtered]);
+
+  // Main Failure Mode bar (only from NG items)
+  const failureModeData = useMemo(() => {
+    const map = new Map<string, number>();
+    filtered.filter(d => (d.quantidade_ng || 0) > 0).forEach((d) => {
       if (d.modo_falha) {
-        const code = d.modo_falha.split(" - ")[0]?.trim();
-        if (code) {
-          const cat = defectCats.find((c) => c.code === code);
-          const label = cat ? cat.description : code;
-          catMap.set(label, (catMap.get(label) || 0) + 1);
-        }
+        const stripped = d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
+        map.set(stripped, (map.get(stripped) || 0) + 1);
       }
-      // Also check segundo_defeitos
       const sd = d.segundo_defeitos as any[] | null;
       if (sd && Array.isArray(sd)) {
         sd.forEach((def: any) => {
           if (def.modo_falha) {
-            const code = def.modo_falha.split(" - ")[0]?.trim();
-            if (code) {
-              const cat = defectCats.find((c) => c.code === code);
-              const label = cat ? cat.description : code;
-              catMap.set(label, (catMap.get(label) || 0) + 1);
-            }
+            const stripped = def.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
+            map.set(stripped, (map.get(stripped) || 0) + 1);
           }
         });
       }
     });
-    return Array.from(catMap.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
-  }, [filtered, defectCats]);
-
-  const donutDataSets = catData.map((c) => ({
-    label: c.label,
-    data: [
-      { name: "OK", value: total - c.count },
-      { name: "NG", value: c.count },
-    ],
-  }));
-
-  // Main Failure Mode bar
-  const failureModeData = useMemo(() => {
-    const map = new Map<string, number>();
-    filtered.forEach((d) => {
-      if (d.modo_falha) map.set(d.modo_falha, (map.get(d.modo_falha) || 0) + 1);
-      const sd = d.segundo_defeitos as any[] | null;
-      if (sd && Array.isArray(sd)) {
-        sd.forEach((def: any) => {
-          if (def.modo_falha) map.set(def.modo_falha, (map.get(def.modo_falha) || 0) + 1);
-        });
-      }
-    });
     return Array.from(map.entries())
-      .map(([name, value]) => { const stripped = name.replace(/^\d+\s*-\s*/, "").trim(); return { name: stripped.length > 20 ? stripped.substring(0, 20) + "..." : stripped, fullName: stripped, value }; })
+      .map(([name, value]) => ({ name: name.length > 20 ? name.substring(0, 20) + "..." : name, fullName: name, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
   }, [filtered]);
 
-  // Problem type table
+  // Problem type table (only from NG items)
   const problemTypes = useMemo(() => {
     const map = new Map<string, number>();
-    filtered.forEach((d) => {
+    filtered.filter(d => (d.quantidade_ng || 0) > 0).forEach((d) => {
       if (d.modo_falha) {
-        const code = d.modo_falha.split(" - ")[0]?.trim();
-        const cat = defectCats.find((c) => c.code === code);
-        const label = cat ? cat.description : d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
+        const label = d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
         map.set(label, (map.get(label) || 0) + 1);
+      }
+      const sd = d.segundo_defeitos as any[] | null;
+      if (sd && Array.isArray(sd)) {
+        sd.forEach((def: any) => {
+          if (def.modo_falha) {
+            const label = def.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
+            map.set(label, (map.get(label) || 0) + 1);
+          }
+        });
       }
     });
     const arr = Array.from(map.entries()).map(([type, qty]) => ({ type, qty })).sort((a, b) => b.qty - a.qty);
     const totalP = arr.reduce((a, b) => a + b.qty, 0);
     return { items: arr, total: totalP };
-  }, [filtered, defectCats]);
+  }, [filtered]);
 
-  // Main issues (NG items)
+  // Main issues (only NG items)
   const mainIssues = useMemo(() => {
     return filtered
       .filter((d) => (d.quantidade_ng || 0) > 0)
-      .slice(0, 8)
-      .map((d) => ({
-        supplier: resolveName(d.fornecedor || "—"),
-        pn: d.part_number || "—",
-        description: d.part_name || d.descricao || "—",
-        category: (d.modo_falha || "—").replace(/^\d+\s*-\s*/, "").trim(),
-      }));
+      .map((d) => {
+        const issues: any[] = [];
+        if (d.modo_falha) {
+          issues.push({
+            supplier: resolveName(d.fornecedor || "—"),
+            pn: d.part_number || "—",
+            description: d.part_name || d.descricao || "—",
+            category: stripCode(d.modo_falha),
+            ng: d.quantidade_ng || 0,
+          });
+        }
+        const sd = d.segundo_defeitos as any[] | null;
+        if (sd && Array.isArray(sd)) {
+          sd.forEach((def: any) => {
+            issues.push({
+              supplier: resolveName(d.fornecedor || "—"),
+              pn: d.part_number || "—",
+              description: d.part_name || "—",
+              category: stripCode(def.modo_falha || "—"),
+              ng: def.qty || 0,
+            });
+          });
+        }
+        return issues;
+      })
+      .flat()
+      .slice(0, 15);
   }, [filtered]);
 
   const chartConfig = {
@@ -245,11 +257,13 @@ const ApontamentoDashboard = () => {
         { text: String(s.ng), options: { color: TXT, fontSize: 8, align: "center", fill: { color: rowBg } } },
       ]);
     });
+    const ttlOk = supplierData.reduce((a, b) => a + b.ok, 0);
+    const ttlNg = supplierData.reduce((a, b) => a + b.ng, 0);
     supRows.push([
       { text: "TTL", options: { bold: true, color: TXT, fontSize: 8, fill: { color: HEADER_BG } } },
-      { text: String(total), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
-      { text: String(supplierData.reduce((a, b) => a + b.ok, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
-      { text: String(supplierData.reduce((a, b) => a + b.ng, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(supplierData.reduce((a, b) => a + b.qtyPN, 0)), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(ttlOk), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
+      { text: String(ttlNg), options: { bold: true, color: TXT, fontSize: 8, align: "center", fill: { color: HEADER_BG } } },
     ]);
     s1.addTable(supRows, { x: 0.3, y: 1.05, w: 3.8, colW: [1.6, 0.7, 0.7, 0.7], fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
 
@@ -262,33 +276,6 @@ const ApontamentoDashboard = () => {
       ], { x: 4.3, y: 1.3, w: 4.2, h: 3.5, barDir: "bar", barGrouping: "stacked", chartColors: [OK_CLR, NG_CLR], showValue: false, catAxisLabelColor: "FFFFFF", catAxisLabelFontSize: 8, valAxisHidden: true, showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 7, plotArea: { fill: { color: BG } } });
     }
 
-    // Failure mode
-    s1.addText("Main Failure Mode", { x: 8.7, y: 3.1, w: 4.3, h: 0.3, fontSize: 10, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
-    if (failureModeData.length > 0) {
-      s1.addChart(pptx.ChartType.bar, [
-        { name: "Qty", labels: failureModeData.map(f => f.fullName), values: failureModeData.map(f => f.value) },
-      ], { x: 8.7, y: 3.45, w: 4.3, h: 2.0, barDir: "col", chartColors: [ACCENT], showValue: true, dataLabelColor: TXT, dataLabelFontSize: 8, dataLabelPosition: "outEnd", catAxisLabelColor: TXT_DIM, catAxisLabelFontSize: 7, valAxisHidden: true, showLegend: false, plotArea: { fill: { color: BG } } });
-    }
-
-    // Main issues
-    s1.addText("Main Issues", { x: 4.3, y: 5.1, w: 8.7, h: 0.25, fontSize: 9, color: "FFFFFF", bold: true, fill: { color: HEADER_BG }, align: "center" });
-    const issueRows: pptxgen.TableRow[] = [[
-      { text: "Supplier", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
-      { text: "PN", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
-      { text: "Description", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
-      { text: "Category", options: { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7 } },
-    ]];
-    mainIssues.forEach((issue, i) => {
-      const rowBg = i % 2 === 0 ? "1e2538" : "232a3e";
-      issueRows.push([
-        { text: issue.supplier, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
-        { text: issue.pn, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
-        { text: issue.description, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
-        { text: issue.category, options: { color: TXT, fontSize: 7, fill: { color: rowBg } } },
-      ]);
-    });
-    s1.addTable(issueRows, { x: 4.3, y: 5.4, w: 8.7, colW: [2, 1.5, 3.5, 1.7], fontSize: 7, border: { type: "solid", pt: 0.5, color: BORDER_CLR } });
-
     await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_Apontamentos.pptx` });
   };
 
@@ -300,9 +287,12 @@ const ApontamentoDashboard = () => {
     );
   }
 
+  const ttlOk = supplierData.reduce((a, b) => a + b.ok, 0);
+  const ttlNg = supplierData.reduce((a, b) => a + b.ng, 0);
+
   return (
     <div className="min-h-screen bg-[hsl(220,20%,10%)]">
-      {/* Header - same style as TryOut dashboard */}
+      {/* Header */}
       <div className="border-b border-[hsl(220,10%,25%)] bg-[hsl(220,20%,12%)] px-3 md:px-4 py-2 md:py-3 flex items-center gap-2 md:gap-4 flex-wrap">
         <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] hover:bg-[hsl(220,10%,20%)] px-2">
           <ArrowLeft className="w-4 h-4 md:mr-2" /><span className="hidden md:inline">Voltar</span>
@@ -312,7 +302,15 @@ const ApontamentoDashboard = () => {
             Apontamentos — {TYPE_LABELS[activeType]} Status
           </h1>
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1">
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-[120px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)]" placeholder="De" />
+            <span className="text-[10px] text-[hsl(0,0%,50%)]">a</span>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-[120px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)]" placeholder="Até" />
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Limpar</Button>
+            )}
+          </div>
           <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {total}</span>
           <Button variant="outline" size="sm" onClick={exportToPptx} className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
             <Download className="w-3.5 h-3.5 mr-1" />PPTX
@@ -333,7 +331,7 @@ const ApontamentoDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Main grid - same layout as TryOut dashboard */}
+      {/* Main grid */}
       <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
         {/* LEFT: General Quality Status table */}
         <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
@@ -363,15 +361,15 @@ const ApontamentoDashboard = () => {
               ))}
               <tr className="bg-[hsl(220,10%,20%)] font-bold">
                 <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
-                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{total}</td>
-                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ok, 0)}</td>
-                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.ng, 0)}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.qtyPN, 0)}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
+                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        {/* CENTER: Supplier Status (horizontal bars) */}
+        {/* CENTER: Supplier Status (horizontal bars) - qty OK vs qty NG */}
         <div className="lg:col-span-4 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-hidden rounded-lg">
           <SectionHeader>Supplier Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier OK vs NG</p>
@@ -394,16 +392,19 @@ const ApontamentoDashboard = () => {
           )}
         </div>
 
-        {/* RIGHT: Donuts + Failure Mode */}
+        {/* RIGHT: Project Status donuts + Failure Mode */}
         <div className="lg:col-span-5 flex flex-col gap-3">
-          {/* Donut charts row */}
+          {/* Project Status donuts */}
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
-            <SectionHeader>Attendance Status</SectionHeader>
+            <SectionHeader>Project Status</SectionHeader>
             <div className="flex justify-around mt-3 flex-wrap gap-2">
-              {donutDataSets.length > 0 ? donutDataSets.map((ds, i) => (
-                <DonutChart key={i} data={ds.data} title={ds.label} />
+              {projectData.length > 0 ? projectData.map((proj, i) => (
+                <DonutChart key={i} data={[
+                  { name: "OK", value: proj.ok },
+                  { name: "NG", value: proj.ng },
+                ]} title={proj.name} />
               )) : (
-                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de categoria.</p>
+                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
               )}
             </div>
           </div>
@@ -457,7 +458,7 @@ const ApontamentoDashboard = () => {
           </table>
         </div>
 
-        {/* BOTTOM RIGHT: Main Issues table */}
+        {/* BOTTOM RIGHT: Main Issues table (NG only) */}
         <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
           <table className="w-full text-xs">

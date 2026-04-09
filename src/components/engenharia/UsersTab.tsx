@@ -251,46 +251,50 @@ const UsersTab = () => {
     setEmpresaTerceira("");
   };
 
-  const renderEmpresaFormFields = (emp: string, setEmp: (v: string) => void, empTerc: string, setEmpTerc: (v: string) => void) => (
-    <>
-      <div className="space-y-2">
-        <Label>Empresa *</Label>
-        <Select value={emp} onValueChange={(v) => { setEmp(v); setEmpTerc(""); }}>
-          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="mobis_brasil">Mobis Brasil</SelectItem>
-            <SelectItem value="empresa_terceira">Empresa Terceira</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      {emp === "empresa_terceira" && (
+  const renderEmpresaFormFields = (emp: string, setEmp: (v: string) => void, empTerc: string, setEmpTerc: (v: string) => void) => {
+    const isResidente = empTerc === "Residente" || empTerc.startsWith("Residente - ");
+    const residenteSupplier = empTerc.startsWith("Residente - ") ? empTerc.replace("Residente - ", "") : "";
+    return (
+      <>
         <div className="space-y-2">
-          <Label>Tipo de Terceira *</Label>
-          <Select value={empTerc} onValueChange={setEmpTerc}>
+          <Label>Empresa *</Label>
+          <Select value={emp} onValueChange={(v) => { setEmp(v); setEmpTerc(""); }}>
             <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
             <SelectContent>
-              {EMPRESA_TERCEIRA_OPTIONS.map((o) => (
-                <SelectItem key={o} value={o}>{o}</SelectItem>
-              ))}
+              <SelectItem value="mobis_brasil">Mobis Brasil</SelectItem>
+              <SelectItem value="empresa_terceira">Empresa Terceira</SelectItem>
             </SelectContent>
           </Select>
         </div>
-      )}
-      {emp === "empresa_terceira" && empTerc === "Residente" && (
-        <div className="space-y-2">
-          <Label>Fornecedor *</Label>
-          <Select value={empTerc} onValueChange={(v) => setEmpTerc(`Residente - ${v}`)}>
-            <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
-            <SelectContent>
-              {suppliers.map((s: any) => (
-                <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-    </>
-  );
+        {emp === "empresa_terceira" && (
+          <div className="space-y-2">
+            <Label>Tipo de Terceira *</Label>
+            <Select value={isResidente ? "Residente" : empTerc} onValueChange={(v) => { setEmpTerc(v); }}>
+              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                {EMPRESA_TERCEIRA_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        {emp === "empresa_terceira" && isResidente && (
+          <div className="space-y-2">
+            <Label>Fornecedor *</Label>
+            <Select value={residenteSupplier} onValueChange={(v) => setEmpTerc(`Residente - ${v}`)}>
+              <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
+              <SelectContent>
+                {suppliers.map((s: any) => (
+                  <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <div className="space-y-4">

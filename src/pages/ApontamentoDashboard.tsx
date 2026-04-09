@@ -317,9 +317,29 @@ const ApontamentoDashboard = () => {
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1">
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-[120px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)]" placeholder="De" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-[130px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)] justify-start", !dateFrom && "text-[hsl(0,0%,50%)]")}>
+                  <CalendarIcon className="w-3 h-3 mr-1" />
+                  {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined} onSelect={(d) => setDateFrom(d ? format(d, "yyyy-MM-dd") : "")} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
             <span className="text-[10px] text-[hsl(0,0%,50%)]">a</span>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-[120px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)]" placeholder="Até" />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-[130px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)] justify-start", !dateTo && "text-[hsl(0,0%,50%)]")}>
+                  <CalendarIcon className="w-3 h-3 mr-1" />
+                  {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => setDateTo(d ? format(d, "yyyy-MM-dd") : "")} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+              </PopoverContent>
+            </Popover>
             {(dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Limpar</Button>
             )}
@@ -390,7 +410,7 @@ const ApontamentoDashboard = () => {
             <ChartContainer config={chartConfig} className="h-[250px] md:h-[280px] w-full px-1">
               <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={80} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={120} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16}>
                   <LabelList dataKey="ok" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />

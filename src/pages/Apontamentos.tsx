@@ -67,6 +67,44 @@ const Apontamentos = () => {
     },
   });
 
+  // Fetch part_numbers for origem info
+  const { data: partNumbersList = [] } = useQuery({
+    queryKey: ["part-numbers-origem"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("part_numbers").select("part_number, origem").eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const origemByPartNumber = useMemo(() => {
+    const map: Record<string, string> = {};
+    partNumbersList.forEach((p: any) => { if (p.part_number) map[p.part_number] = p.origem || "LP"; });
+    return map;
+  }, [partNumbersList]);
+
+  // Fetch profiles for empresa info
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-empresa"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, empresa, empresa_terceira");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const empresaByUserId = useMemo(() => {
+    const map: Record<string, string> = {};
+    (profilesList as any[]).forEach((p: any) => {
+      if (p.empresa === "empresa_terceira") {
+        map[p.id] = p.empresa_terceira || "Terceira";
+      } else {
+        map[p.id] = "Mobis Brasil";
+      }
+    });
+    return map;
+  }, [profilesList]);
+
   const firstPhotoByItem = useMemo(() => {
     const map: Record<string, string> = {};
     allPhotos.forEach((p) => {

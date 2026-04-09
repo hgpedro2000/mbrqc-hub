@@ -199,7 +199,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                             ) : "—"}
                           </td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.turno || "—"}</td>
-                          <td className="px-3 py-1.5 whitespace-nowrap">{new Date(r.data).toLocaleDateString("pt-BR")}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</td>
                           <td className="px-3 py-1.5 font-semibold">{r.part_number || "—"}</td>
                           <td className="px-3 py-1.5">{r.part_name || "—"}</td>
                           <td className="px-3 py-1.5">{r.fornecedor || "—"}</td>

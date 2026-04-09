@@ -823,7 +823,7 @@ const ApontamentoForm = () => {
               <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
                 <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                 <span className="text-xs text-muted-foreground">Adicionar</span>
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
               </label>
             )}
           </div>

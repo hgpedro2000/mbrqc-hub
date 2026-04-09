@@ -29,6 +29,7 @@ const ApontamentoDashboard = () => {
   const today = new Date().toISOString().split("T")[0];
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -61,8 +62,9 @@ const ApontamentoDashboard = () => {
     let list = items.filter((i) => i.tipo === activeType);
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     return list;
-  }, [items, activeType, dateFrom, dateTo]);
+  }, [items, activeType, dateFrom, dateTo, supplierFilter]);
 
   const total = filtered.length;
 
@@ -190,11 +192,15 @@ const ApontamentoDashboard = () => {
     value: { label: "Quantidade", color: "hsl(210, 70%, 60%)" },
   };
 
-  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => (
-    <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "10px", fontWeight: 500 }}>
-      {payload?.value ?? ""}
-    </text>
-  );
+  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => {
+    const name = payload?.value ?? "";
+    const displayName = name.length > 18 ? name.substring(0, 18) + "…" : name;
+    return (
+      <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "10px", fontWeight: 500 }}>
+        {displayName}
+      </text>
+    );
+  };
 
   const SectionHeader = ({ children }: { children: React.ReactNode }) => (
     <div className="bg-[hsl(220,10%,30%)] px-3 py-1.5 border border-[hsl(220,10%,40%)]">
@@ -369,6 +375,13 @@ const ApontamentoDashboard = () => {
         {/* LEFT: General Quality Status table */}
         <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
+          {supplierFilter && (
+            <div className="px-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setSupplierFilter(null)} className="text-[10px] h-6 bg-[hsl(210,70%,60%)]/20 border-[hsl(210,70%,60%)]/40 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/30 gap-1">
+                ✕ Filtro: {supplierFilter}
+              </Button>
+            </div>
+          )}
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -386,7 +399,7 @@ const ApontamentoDashboard = () => {
             <tbody>
               {supplierData.map((s, i) => (
                 <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
-                  <td className="px-2 py-1 text-[hsl(210,70%,60%)]">{s.name}</td>
+                  <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
@@ -407,10 +420,10 @@ const ApontamentoDashboard = () => {
           <SectionHeader>Supplier Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier OK vs NG</p>
           {supplierData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="w-full px-1" style={{ height: Math.max(250, supplierData.length * 30) }}>
-              <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
+            <ChartContainer config={chartConfig} className="w-full px-1" style={{ height: Math.max(300, supplierData.length * 35) }}>
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={120} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={140} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} interval={0} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16}>
                   <LabelList dataKey="ok" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />

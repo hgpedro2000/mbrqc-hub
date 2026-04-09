@@ -8,14 +8,28 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2, Eye, CheckCircle, Clock, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pendente: { label: "Pendente", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
   em_andamento: { label: "Em Andamento", color: "border-blue-500 text-blue-600 bg-blue-500/10" },
   resolvido: { label: "Resolvido", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
+};
+
+const moduleColors: Record<string, string> = {
+  "Hub": "bg-indigo-500/15 text-indigo-700 border-indigo-300",
+  "Try-Out": "bg-cyan-500/15 text-cyan-700 border-cyan-300",
+  "Auditorias": "bg-purple-500/15 text-purple-700 border-purple-300",
+  "Contenção": "bg-rose-500/15 text-rose-700 border-rose-300",
+  "Apontamentos": "bg-amber-500/15 text-amber-700 border-amber-300",
+  "Alerta de Qualidade": "bg-red-500/15 text-red-700 border-red-300",
+  "Consumíveis": "bg-teal-500/15 text-teal-700 border-teal-300",
+  "Consulta de Peças": "bg-sky-500/15 text-sky-700 border-sky-300",
 };
 
 const moduleOptions = [
@@ -32,12 +46,16 @@ const moduleOptions = [
 
 const ErrorReportsTab = () => {
   const qc = useQueryClient();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [moduleFilter, setModuleFilter] = useState("");
   const [viewItem, setViewItem] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [newStatus, setNewStatus] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("aberto");
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["error-reports"],
@@ -53,6 +71,12 @@ const ErrorReportsTab = () => {
 
   const filtered = useMemo(() => {
     let list = reports;
+    // Tab filter
+    if (activeTab === "aberto") {
+      list = list.filter((r: any) => r.status === "pendente" || r.status === "em_andamento");
+    } else {
+      list = list.filter((r: any) => r.status === "resolvido");
+    }
     if (moduleFilter) {
       list = list.filter((r: any) => r.module === moduleFilter);
     }
@@ -61,11 +85,13 @@ const ErrorReportsTab = () => {
     return list.filter((r: any) =>
       r.user_name?.toLowerCase().includes(term) ||
       r.module?.toLowerCase().includes(term) ||
-      r.description?.toLowerCase().includes(term)
+      r.description?.toLowerCase().includes(term) ||
+      r.numero?.toLowerCase().includes(term)
     );
-  }, [reports, searchTerm, moduleFilter]);
+  }, [reports, searchTerm, moduleFilter, activeTab]);
 
-  const pendingCount = reports.filter((r: any) => r.status === "pendente").length;
+  const pendingCount = reports.filter((r: any) => r.status === "pendente" || r.status === "em_andamento").length;
+  const resolvedCount = reports.filter((r: any) => r.status === "resolvido").length;
 
   const openView = (item: any) => {
     setViewItem(item);
@@ -84,6 +110,7 @@ const ErrorReportsTab = () => {
       if (error) throw error;
       toast.success("Atualizado!");
       qc.invalidateQueries({ queryKey: ["error-reports"] });
+      qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
       setViewItem(null);
     } catch (e: any) {
       toast.error(e.message);
@@ -92,21 +119,66 @@ const ErrorReportsTab = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      for (const id of selectedIds) {
+        const { error } = await supabase.from("error_reports").delete().eq("id", id);
+        if (error) throw error;
+      }
+      toast.success(`${selectedIds.size} chamado(s) excluído(s)`);
+      qc.invalidateQueries({ queryKey: ["error-reports"] });
+      qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const getModuleColor = (mod: string) => moduleColors[mod] || "bg-muted text-muted-foreground";
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-heading font-semibold">Relatórios de Erro</h2>
+          <h2 className="text-lg font-heading font-semibold">Help Desk</h2>
           {pendingCount > 0 && (
-            <Badge className="bg-destructive text-destructive-foreground">{pendingCount} pendente{pendingCount > 1 ? "s" : ""}</Badge>
+            <Badge className="bg-destructive text-destructive-foreground">{pendingCount} em aberto</Badge>
           )}
         </div>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2">
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="gap-1">
+              <Trash2 className="w-3.5 h-3.5" /> Excluir ({selectedIds.size})
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Tabs: Em Aberto / Resolvido */}
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedIds(new Set()); }}>
+        <TabsList className="grid w-full grid-cols-2 h-auto">
+          <TabsTrigger value="aberto" className="text-xs sm:text-sm py-2">
+            Em Aberto {pendingCount > 0 && <Badge className="ml-1.5 bg-destructive text-destructive-foreground text-[10px] px-1.5">{pendingCount}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="resolvido" className="text-xs sm:text-sm py-2">
+            Resolvido {resolvedCount > 0 && <Badge className="ml-1.5 bg-emerald-500 text-white text-[10px] px-1.5">{resolvedCount}</Badge>}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por usuário, descrição..." className="pl-9" />
+          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nº, usuário, descrição..." className="pl-9" />
         </div>
         <Select value={moduleFilter} onValueChange={setModuleFilter}>
           <SelectTrigger className="w-full sm:w-48">
@@ -127,11 +199,16 @@ const ErrorReportsTab = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Usuário</TableHead>
-                <TableHead>Módulo</TableHead>
-                <TableHead className="hidden md:table-cell">Descrição</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((r: any) => selectedIds.has(r.id))} onCheckedChange={() => {
+                  if (filtered.every((r: any) => selectedIds.has(r.id))) setSelectedIds(new Set());
+                  else setSelectedIds(new Set(filtered.map((r: any) => r.id)));
+                }} /></TableHead>
+                <TableHead className="text-xs">Nº</TableHead>
+                <TableHead className="text-xs">Data</TableHead>
+                <TableHead className="text-xs">Usuário</TableHead>
+                <TableHead className="text-xs">Módulo</TableHead>
+                <TableHead className="hidden md:table-cell text-xs">Descrição</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -139,36 +216,43 @@ const ErrorReportsTab = () => {
               {filtered.map((r: any) => {
                 const cfg = statusConfig[r.status] || statusConfig.pendente;
                 return (
-                  <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openView(r)}>
-                    <TableCell className="text-xs">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{r.user_name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">{r.module}</Badge>
+                  <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px] truncate">{r.description}</TableCell>
-                    <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" className="h-7 w-7"><Eye className="w-4 h-4" /></Button></TableCell>
+                    <TableCell className="text-xs font-mono text-muted-foreground" onClick={() => openView(r)}>{r.numero || "—"}</TableCell>
+                    <TableCell className="text-xs" onClick={() => openView(r)}>{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-xs sm:text-sm" onClick={() => openView(r)}>{r.user_name}</TableCell>
+                    <TableCell onClick={() => openView(r)}>
+                      <Badge variant="outline" className={`text-xs ${getModuleColor(r.module)}`}>{r.module}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px] truncate" onClick={() => openView(r)}>{r.description}</TableCell>
+                    <TableCell onClick={() => openView(r)}><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                    <TableCell><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openView(r)}><Eye className="w-4 h-4" /></Button></TableCell>
                   </TableRow>
                 );
               })}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum relatório encontrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum chamado encontrado</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </div>
       )}
 
+      {/* Detail dialog */}
       <Dialog open={!!viewItem} onOpenChange={(v) => !v && setViewItem(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Detalhes do Erro</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Chamado {viewItem?.numero || ""}
+            </DialogTitle>
           </DialogHeader>
           {viewItem && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{viewItem.user_name}</p></div>
-                <div><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium"><Badge variant="outline">{viewItem.module}</Badge></p></div>
+                <div><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium"><Badge variant="outline" className={getModuleColor(viewItem.module)}>{viewItem.module}</Badge></p></div>
                 <div className="col-span-2"><span className="text-muted-foreground text-xs">Data</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleString("pt-BR")}</p></div>
               </div>
               <div>
@@ -180,7 +264,13 @@ const ErrorReportsTab = () => {
                   <span className="text-muted-foreground text-xs">Capturas de Tela</span>
                   <div className="grid grid-cols-2 gap-2 mt-1">
                     {(viewItem.photos as string[]).map((url: string, i: number) => (
-                      <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="rounded-md border w-full object-cover max-h-40" />
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`Screenshot ${i + 1}`}
+                        className="rounded-md border w-full object-cover max-h-40 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                        onClick={() => setLightboxUrl(url)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -211,6 +301,20 @@ const ErrorReportsTab = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Lightbox for images */}
+      {lightboxUrl && (
+        <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>
+          <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none [&>button:last-child]:hidden">
+            <button onClick={() => setLightboxUrl(null)} className="absolute right-3 top-3 z-50 rounded-full bg-white/20 backdrop-blur-sm w-10 h-10 flex items-center justify-center hover:bg-white/40 transition-colors">
+              <X className="h-5 w-5 text-white" />
+            </button>
+            <div className="flex items-center justify-center w-full h-[90vh] p-4">
+              <img src={lightboxUrl} alt="Imagem ampliada" className="max-w-full max-h-full object-contain rounded" />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

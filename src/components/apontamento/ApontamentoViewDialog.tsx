@@ -97,6 +97,24 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
+  // Fetch part_number origem
+  const { data: partOrigemData } = useQuery({
+    queryKey: ["apontamento-part-origem", item?.part_number],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("origem")
+        .eq("part_number", item!.part_number!)
+        .eq("active", true)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!item?.part_number && open,
+  });
+
+  const origemLabel = partOrigemData?.origem || "LP";
+
   const d = item as any;
   const tipo = d?.tipo || "incoming";
 

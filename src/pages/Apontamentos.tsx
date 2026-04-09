@@ -337,7 +337,7 @@ const Apontamentos = () => {
                     <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                   </div>
                 )}
-                <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
+                {selectedIds.has(item.id) && <EditActions id={item.id} createdBy={item.created_by} status={item.status} />}
               </div>
             </div>
           );

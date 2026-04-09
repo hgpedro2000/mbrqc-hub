@@ -132,14 +132,23 @@ const ApontamentoForm = () => {
     },
   });
 
-  // Load users for co-inspection
+  // Load users for co-inspection - only Mobis Brasil users
   const { data: allProfiles = [] } = useQuery({
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("full_name, turno").eq("status", "active").order("full_name");
-      if (error) throw error;
-      return data;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, turno, empresa")
+        .eq("status", "active")
+        .order("full_name");
+      if (error) {
+        console.error("Error loading profiles for co-inspection:", error);
+        return [];
+      }
+      // Filter to only Mobis Brasil users for co-inspection
+      return (data || []).filter((p: any) => p.empresa !== "empresa_terceira");
     },
+    enabled: profile?.empresa !== "empresa_terceira",
   });
 
   // Load existing photos
@@ -507,8 +516,8 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* CO-INSPEÇÃO - Incoming only */}
-        {isIncoming && (
+        {/* CO-INSPEÇÃO - Incoming only, Mobis Brasil only */}
+        {isIncoming && profile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">

@@ -97,23 +97,23 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
-  // Fetch part_number origem
-  const { data: partOrigemData } = useQuery({
-    queryKey: ["apontamento-part-origem", item?.part_number],
+  // Fetch supplier origem
+  const { data: supplierOrigemData } = useQuery({
+    queryKey: ["apontamento-supplier-origem", item?.fornecedor],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("part_numbers")
+        .from("suppliers")
         .select("origem")
-        .eq("part_number", item!.part_number!)
+        .eq("name", item!.fornecedor!)
         .eq("active", true)
         .maybeSingle();
       if (error) return null;
       return data;
     },
-    enabled: !!item?.part_number && open,
+    enabled: !!item?.fornecedor && open,
   });
 
-  const origemLabel = partOrigemData?.origem || "LP";
+  const origemLabel = (supplierOrigemData as any)?.origem || "LP";
 
   const d = item as any;
   const tipo = d?.tipo || "incoming";

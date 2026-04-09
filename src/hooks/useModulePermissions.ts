@@ -8,6 +8,8 @@ export const ALL_MODULES = [
   { id: "contencao", label: "Contenção" },
   { id: "apontamentos", label: "Apontamentos" },
   { id: "alerta-qualidade", label: "Alerta de Qualidade" },
+  { id: "consumiveis", label: "Consumíveis" },
+  { id: "consulta-pecas", label: "Consulta de Peças" },
 ] as const;
 
 export type ModuleId = typeof ALL_MODULES[number]["id"];

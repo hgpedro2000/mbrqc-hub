@@ -168,8 +168,21 @@ const Apontamentos = () => {
   const filtered = useMemo(() =>
     items
       .filter((i) => i.tipo === activeTab)
-      .filter((i) => matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"]) && matchesFilters(i)),
-    [items, activeTab, search, filterValues]
+      .filter((i) => {
+        if (!matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"])) return false;
+        // Custom empresa filter
+        const empresaFilter = filterValues["empresa"];
+        if (empresaFilter && empresaFilter !== "all") {
+          const userEmpresa = i.created_by ? empresaByUserId[i.created_by] : undefined;
+          if (userEmpresa !== empresaFilter) return false;
+        }
+        // Standard filters (except empresa)
+        return Object.entries(filterValues).every(([key, value]) => {
+          if (!value || value === "all" || key === "empresa") return true;
+          return String((i as any)[key]) === value;
+        });
+      }),
+    [items, activeTab, search, filterValues, empresaByUserId]
   );
 
   const toggleSelect = useCallback((id: string) => {

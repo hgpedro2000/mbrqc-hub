@@ -90,8 +90,9 @@ const Login = () => {
               required
               value={employeeNumber}
               onChange={(e) => setEmployeeNumber(e.target.value)}
-              placeholder={t("login.employeeNumber")}
-              inputMode="numeric"
+              placeholder=""
+              inputMode="text"
+              onFocus={(e) => e.target.placeholder = ""}
             />
           </div>
           <div className="space-y-2">
@@ -103,7 +104,8 @@ const Login = () => {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("login.password")}
+              placeholder=""
+              onFocus={(e) => e.target.placeholder = ""}
             />
           </div>
           <Button

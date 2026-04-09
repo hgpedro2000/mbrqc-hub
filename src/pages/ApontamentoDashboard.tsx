@@ -191,7 +191,7 @@ const ApontamentoDashboard = () => {
   };
 
   const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => (
-    <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "11px", fontWeight: 500 }}>
+    <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "10px", fontWeight: 500 }}>
       {payload?.value ?? ""}
     </text>
   );

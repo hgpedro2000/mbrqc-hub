@@ -92,7 +92,7 @@ const ApontamentoForm = () => {
   const [temCoInspecao, setTemCoInspecao] = useState("nao");
   const [coInspetores, setCoInspetores] = useState<string[]>([]);
   const [coInspetorSearch, setCoInspetorSearch] = useState("");
-  const [showCoInspetorDropdown, setShowCoInspetorDropdown] = useState(false);
+  const [showCoInspetorDialog, setShowCoInspetorDialog] = useState(false);
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFim, setHoraFim] = useState("");
 
@@ -262,7 +262,7 @@ const ApontamentoForm = () => {
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");
-    setShowCoInspetorDropdown(false);
+    // no-op, dialog stays open for multiple selections
   };
 
   const removeCoInspetor = (name: string) => setCoInspetores((prev) => prev.filter((n) => n !== name));
@@ -273,7 +273,7 @@ const ApontamentoForm = () => {
     return allProfiles
       .filter((p: any) => p.full_name !== profile?.full_name && !coInspetores.includes(p.full_name))
       .filter((p: any) => !term || p.full_name?.toLowerCase().includes(term))
-      .slice(0, 10);
+      .slice(0, 20);
   }, [coInspetorSearch, allProfiles, coInspetores, profile]);
 
   // Handle NG decision
@@ -512,7 +512,7 @@ const ApontamentoForm = () => {
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
-              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); setShowCoInspetorDropdown(false); } }}>
+              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
                 <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nao">Não</SelectItem>
@@ -521,29 +521,9 @@ const ApontamentoForm = () => {
               </Select>
               {temCoInspecao === "sim" && (
                 <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      value={coInspetorSearch}
-                      onChange={(e) => { setCoInspetorSearch(e.target.value); setShowCoInspetorDropdown(true); }}
-                      onFocus={() => setShowCoInspetorDropdown(true)}
-                      onBlur={() => { setTimeout(() => setShowCoInspetorDropdown(false), 200); }}
-                      placeholder="Buscar usuário..."
-                      className="pl-9"
-                      autoComplete="off"
-                    />
-                    {showCoInspetorDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
-                          <button key={p.full_name} onMouseDown={(e) => { e.preventDefault(); addCoInspetor(p.full_name); }} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
-                            {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
-                          </button>
-                        )) : (
-                          <div className="px-3 py-2.5 text-sm text-muted-foreground">Nenhum usuário encontrado</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <Button variant="outline" type="button" onClick={() => setShowCoInspetorDialog(true)} className="w-full gap-2">
+                    <Search className="w-4 h-4" /> Selecionar Co-Inspetores
+                  </Button>
                   <div className="flex flex-wrap gap-2">
                     {coInspetores.map((name) => (
                       <Badge key={name} variant="secondary" className="gap-1">
@@ -877,6 +857,51 @@ const ApontamentoForm = () => {
                 <span className="text-xs text-muted-foreground">Defeitos diferentes</span>
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Co-Inspeção Dialog */}
+      <Dialog open={showCoInspetorDialog} onOpenChange={setShowCoInspetorDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Selecionar Co-Inspetores</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={coInspetorSearch}
+                onChange={(e) => setCoInspetorSearch(e.target.value)}
+                placeholder="Buscar usuário..."
+                className="pl-9"
+                autoComplete="off"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 min-h-[32px]">
+              {coInspetores.map((name) => (
+                <Badge key={name} variant="secondary" className="gap-1">
+                  {name}
+                  <button onClick={() => removeCoInspetor(name)}><X className="w-3 h-3" /></button>
+                </Badge>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">{coInspetores.length}/5 selecionados</p>
+            <div className="border rounded-lg max-h-60 overflow-y-auto">
+              {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
+                <button
+                  key={p.full_name}
+                  onClick={() => addCoInspetor(p.full_name)}
+                  className="w-full text-left px-3 py-3 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0 flex items-center justify-between"
+                >
+                  <span>{p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}</span>
+                  {coInspetores.includes(p.full_name) && <Badge variant="outline" className="text-[10px]">Selecionado</Badge>}
+                </button>
+              )) : (
+                <div className="px-3 py-3 text-sm text-muted-foreground text-center">Nenhum usuário encontrado</div>
+              )}
+            </div>
+            <Button onClick={() => setShowCoInspetorDialog(false)} className="w-full">Confirmar</Button>
           </div>
         </DialogContent>
       </Dialog>

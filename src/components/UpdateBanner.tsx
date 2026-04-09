@@ -14,8 +14,8 @@ const UpdateBanner = () => {
       <Button
         size="sm"
         variant={criticalUpdate ? "secondary" : "outline"}
-        className="h-7 text-xs"
-        onClick={() => window.location.reload()}
+        className="h-7 text-xs text-foreground"
+        onClick={() => { window.location.href = '/'; }}
       >
         Atualizar agora
       </Button>

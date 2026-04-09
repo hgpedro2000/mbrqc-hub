@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Loader2, Trash2, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
@@ -19,12 +21,15 @@ const SUPPLIER_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Nome", dbField: "name", label: "Nome", required: true },
 ];
 
+const ORIGEM_OPTIONS = ["LP", "CKD", "CONSIGNADA"];
+
 const SuppliersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
+  const [origem, setOrigem] = useState("LP");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -47,10 +52,10 @@ const SuppliersTab = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (editId) {
-        const { error } = await supabase.from("suppliers").update({ code, name }).eq("id", editId);
+        const { error } = await supabase.from("suppliers").update({ code, name, origem } as any).eq("id", editId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("suppliers").insert({ code, name });
+        const { error } = await supabase.from("suppliers").insert({ code, name, origem } as any);
         if (error) throw error;
       }
     },
@@ -80,9 +85,9 @@ const SuppliersTab = () => {
     qc.invalidateQueries({ queryKey: ["eng-suppliers"] });
   };
 
-  const resetForm = () => { setOpen(false); setEditId(null); setCode(""); setName(""); };
+  const resetForm = () => { setOpen(false); setEditId(null); setCode(""); setName(""); setOrigem("LP"); };
 
-  const openEdit = (s: any) => { setEditId(s.id); setCode(s.code); setName(s.name); setOpen(true); };
+  const openEdit = (s: any) => { setEditId(s.id); setCode(s.code); setName(s.name); setOrigem((s as any).origem || "LP"); setOpen(true); };
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
@@ -98,7 +103,7 @@ const SuppliersTab = () => {
               <Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}
             </Button>
           )}
-          <ExcelExportButton data={suppliers} columns={[{ header: "Código", key: "code" }, { header: "Nome", key: "name" }, { header: "Ativo", key: "active" }]} fileName="fornecedores" />
+          <ExcelExportButton data={suppliers.map((s: any) => ({ ...s, origem: s.origem || "LP" }))} columns={[{ header: "Código", key: "code" }, { header: "Nome", key: "name" }, { header: "Origem", key: "origem" }, { header: "Ativo", key: "active" }]} fileName="fornecedores" />
           <ExcelImportDialog title="Fornecedores" columns={SUPPLIER_COLUMNS}
             checkDuplicates={async (rows) => { const codes = rows.map((r) => r.code); const { data } = await supabase.from("suppliers").select("code").in("code", codes); const existing = new Set((data || []).map((d) => d.code)); return rows.map((r) => existing.has(r.code)); }}
             onImport={async (rows) => { const { error } = await supabase.from("suppliers").upsert(rows.map((r) => ({ code: r.code, name: r.name })), { onConflict: "code" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-suppliers"] }); toast.success(`${rows.length} fornecedor(es) importado(s)!`); }}
@@ -110,6 +115,13 @@ const SuppliersTab = () => {
               <div className="space-y-4">
                 <div className="space-y-2"><Label>Código *</Label><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ex: FORN001" /></div>
                 <div className="space-y-2"><Label>Nome *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome do fornecedor" /></div>
+                <div className="space-y-2">
+                  <Label>Origem *</Label>
+                  <Select value={origem} onValueChange={setOrigem}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
                 <Button onClick={() => saveMutation.mutate()} disabled={!code || !name || saveMutation.isPending} className="w-full">{saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Salvar</Button>
               </div>
             </DialogContent>
@@ -144,16 +156,24 @@ const SuppliersTab = () => {
                 </TableHead>
                 <TableHead>Código</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead className="hidden sm:table-cell">Origem</TableHead>
                 <TableHead className="hidden sm:table-cell">Ativo</TableHead>
                 <TableHead className="w-20"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((s) => (
+              {filtered.map((s: any) => (
                 <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
                   <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} /></TableCell>
                   <TableCell className="font-mono text-xs sm:text-sm">{s.code}</TableCell>
                   <TableCell className="text-xs sm:text-sm">{s.name}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    <Badge variant="outline" className={
+                      s.origem === "CKD" ? "border-purple-400 text-purple-600 bg-purple-500/10" :
+                      s.origem === "CONSIGNADA" ? "border-orange-400 text-orange-600 bg-orange-500/10" :
+                      "border-blue-400 text-blue-600 bg-blue-500/10"
+                    }>{s.origem || "LP"}</Badge>
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell"><Switch checked={s.active} onCheckedChange={() => toggleActive(s.id, s.active)} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -169,7 +189,7 @@ const SuppliersTab = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum fornecedor encontrado</TableCell></TableRow>)}
+              {filtered.length === 0 && (<TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum fornecedor encontrado</TableCell></TableRow>)}
             </TableBody>
           </Table>
         </div>

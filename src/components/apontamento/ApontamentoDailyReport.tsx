@@ -193,10 +193,10 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
                               {firstPhotoByItem[r.id] ? (
-                                <img
+                              <img
                                   src={firstPhotoByItem[r.id]}
                                   alt="Foto NG"
-                                  className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all aspect-square"
                                   onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
                                 />
                               ) : (

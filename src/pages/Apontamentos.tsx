@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -67,21 +68,21 @@ const Apontamentos = () => {
     },
   });
 
-  // Fetch part_numbers for origem info
-  const { data: partNumbersList = [] } = useQuery({
-    queryKey: ["part-numbers-origem"],
+  // Fetch suppliers for origem info
+  const { data: suppliersList = [] } = useQuery({
+    queryKey: ["suppliers-origem"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("part_numbers").select("part_number, origem").eq("active", true);
+      const { data, error } = await supabase.from("suppliers").select("name, origem").eq("active", true);
       if (error) throw error;
       return data;
     },
   });
 
-  const origemByPartNumber = useMemo(() => {
+  const origemByFornecedor = useMemo(() => {
     const map: Record<string, string> = {};
-    partNumbersList.forEach((p: any) => { if (p.part_number) map[p.part_number] = p.origem || "LP"; });
+    (suppliersList as any[]).forEach((s: any) => { if (s.name) map[s.name] = s.origem || "LP"; });
     return map;
-  }, [partNumbersList]);
+  }, [suppliersList]);
 
   // Fetch profiles for empresa info
   const { data: profilesList = [] } = useQuery({
@@ -204,11 +205,18 @@ const Apontamentos = () => {
     const canEdit = isAdmin || isOwner;
     const isFinalized = status !== "draft";
     return (
-      <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5" /></Button>
-        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget(id)} title="Visualizar / Exportar"><FileDown className="w-3.5 h-3.5" /></Button>}
-        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5" /></Button>}
-        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />Visualizar</DropdownMenuItem>
+            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />Exportar</DropdownMenuItem>}
+            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />Editar</DropdownMenuItem>}
+            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />Excluir</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   };
@@ -255,8 +263,8 @@ const Apontamentos = () => {
                       {item.fornecedor && <Badge variant="secondary" className="text-[10px] shrink-0">{item.fornecedor}</Badge>}
                       <StatusBadge status={item.status} />
                       {/* Origem badge */}
-                      {item.part_number && origemByPartNumber[item.part_number] && (() => {
-                        const o = origemByPartNumber[item.part_number];
+                      {item.fornecedor && origemByFornecedor[item.fornecedor] && (() => {
+                        const o = origemByFornecedor[item.fornecedor];
                         if (o === "CKD") return <Badge className="bg-purple-500/10 text-purple-700 border-purple-200 text-[9px] px-1.5">CKD</Badge>;
                         if (o === "CONSIGNADA") return <Badge className="bg-orange-500/10 text-orange-700 border-orange-200 text-[9px] px-1.5">CONSIG.</Badge>;
                         return <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[9px] px-1.5">LP</Badge>;

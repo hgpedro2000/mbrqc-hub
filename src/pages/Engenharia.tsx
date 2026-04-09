@@ -7,11 +7,28 @@ import UsersTab from "@/components/engenharia/UsersTab";
 import SuppliersTab from "@/components/engenharia/SuppliersTab";
 import PartNumbersTab from "@/components/engenharia/PartNumbersTab";
 import CatalogTab from "@/components/engenharia/CatalogTab";
+import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import ReportErrorButton from "@/components/ReportErrorButton";
 
 const Engenharia = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const { data: pendingErrors = 0 } = useQuery({
+    queryKey: ["pending-error-reports-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("error_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pendente");
+      if (error) return 0;
+      return count || 0;
+    },
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,13 +51,17 @@ const Engenharia = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4 pb-1">
-            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-6 h-auto gap-1">
+            <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-7 h-auto gap-1">
               <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
               <TabsTrigger value="defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.defects")}</TabsTrigger>
               <TabsTrigger value="cat_defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.defectCategories")}</TabsTrigger>
               <TabsTrigger value="responsabilidades" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.responsibilities")}</TabsTrigger>
+              <TabsTrigger value="erros" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap relative">
+                Help Desk
+                {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -81,6 +102,10 @@ const Engenharia = () => {
               codeLabel={t("engenharia.code")}
               codePlaceholder={t("engenharia.respPlaceholder")}
             />
+          </TabsContent>
+
+          <TabsContent value="erros" className="form-section">
+            <ErrorReportsTab />
           </TabsContent>
         </Tabs>
       </main>

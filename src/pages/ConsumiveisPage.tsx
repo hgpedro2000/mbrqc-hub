@@ -471,8 +471,14 @@ const ConsumiveisPage = () => {
   const { enabledModules } = useEnabledModules(impersonating?.id);
   
   // Check sub-module permissions
-  const showRequisitar = isAdmin || enabledModules.includes("consumiveis" as any) || enabledModules.includes("consumiveis_requisitar" as any);
-  const showInventario = isAdmin || enabledModules.includes("consumiveis_inventario" as any);
+  // "consumiveis" alone = only requisitar; need explicit "consumiveis_requisitar" or "consumiveis_inventario" for sub-access
+  const hasParent = enabledModules.includes("consumiveis" as any);
+  const hasRequisitar = enabledModules.includes("consumiveis_requisitar" as any);
+  const hasInventario = enabledModules.includes("consumiveis_inventario" as any);
+  
+  // If user has parent but no sub-modules explicitly enabled, show only requisitar (default behavior)
+  const showRequisitar = isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario);
+  const showInventario = isAdmin || hasInventario;
   
   const defaultTab = showRequisitar ? "requisitar" : showInventario ? "inventario" : "requisitar";
 

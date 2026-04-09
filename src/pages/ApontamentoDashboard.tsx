@@ -190,11 +190,15 @@ const ApontamentoDashboard = () => {
     value: { label: "Quantidade", color: "hsl(210, 70%, 60%)" },
   };
 
-  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => (
-    <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "10px", fontWeight: 500 }}>
-      {payload?.value ?? ""}
-    </text>
-  );
+  const renderSupplierAxisTick = ({ x = 0, y = 0, payload }: { x?: number; y?: number; payload?: { value?: string } }) => {
+    const name = payload?.value ?? "";
+    const displayName = name.length > 18 ? name.substring(0, 18) + "…" : name;
+    return (
+      <text x={x} y={y} dx={-4} dy={4} textAnchor="end" fill="hsl(0 0% 100%)" style={{ fill: "hsl(0 0% 100%)", fontSize: "10px", fontWeight: 500 }}>
+        {displayName}
+      </text>
+    );
+  };
 
   const SectionHeader = ({ children }: { children: React.ReactNode }) => (
     <div className="bg-[hsl(220,10%,30%)] px-3 py-1.5 border border-[hsl(220,10%,40%)]">
@@ -407,10 +411,10 @@ const ApontamentoDashboard = () => {
           <SectionHeader>Supplier Status</SectionHeader>
           <p className="text-[10px] text-[hsl(0,0%,60%)] px-3 pt-2">❖ Status of Supplier OK vs NG</p>
           {supplierData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="w-full px-1" style={{ height: Math.max(250, supplierData.length * 30) }}>
-              <BarChart data={supplierData} layout="vertical" margin={{ left: 5, right: 20, top: 5, bottom: 5 }}>
+            <ChartContainer config={chartConfig} className="w-full px-1" style={{ height: Math.max(300, supplierData.length * 35) }}>
+              <BarChart data={supplierData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                 <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={120} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="name" width={140} tick={renderSupplierAxisTick} axisLine={false} tickLine={false} interval={0} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="ok" stackId="a" fill="hsl(140, 55%, 45%)" barSize={16}>
                   <LabelList dataKey="ok" position="center" fontSize={9} fill="white" formatter={(v: number) => v > 0 ? v : ''} />

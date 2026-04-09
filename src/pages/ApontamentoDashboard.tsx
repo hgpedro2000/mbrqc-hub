@@ -193,31 +193,34 @@ const ApontamentoDashboard = () => {
   );
 
   const DonutChart = ({ data, title }: { data: { name: string; value: number }[]; title: string }) => {
-    const totalD = data.reduce((a, b) => a + b.value, 0);
-    const okPct = totalD > 0 ? ((data[0].value / totalD) * 100).toFixed(1) : "0";
-    const ngPct = totalD > 0 ? ((data[1].value / totalD) * 100).toFixed(1) : "0";
+    const okVal = data[0]?.value || 0;
+    const ngVal = data[1]?.value || 0;
+    const totalD = okVal + ngVal;
+    const okPct = totalD > 0 ? ((okVal / totalD) * 100).toFixed(1) : "0";
+    const ngPct = totalD > 0 ? ((ngVal / totalD) * 100).toFixed(1) : "0";
     return (
       <div className="flex flex-col items-center">
-        <p className="text-xs font-bold text-[hsl(0,0%,85%)] mb-1 text-center px-1 line-clamp-2">{title}</p>
-        <div className="relative w-24 h-24">
-          <ChartContainer config={chartConfig} className="h-24 w-24">
+        <div className="relative w-28 h-28">
+          <ChartContainer config={chartConfig} className="h-28 w-28">
             <PieChart>
-              <Pie data={data} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" strokeWidth={0}>
+              <Pie data={data} cx="50%" cy="50%" innerRadius={30} outerRadius={48} dataKey="value" strokeWidth={0}>
                 {data.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i]} />)}
               </Pie>
             </PieChart>
           </ChartContainer>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-[hsl(0,0%,80%)]">{totalD}ea</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title}</span>
           </div>
         </div>
-        <div className="flex gap-3 mt-1">
-          <span className="text-[10px] text-[hsl(45,80%,55%)]">{okPct}%</span>
-          <span className="text-[10px] text-[hsl(15,70%,45%)]">{ngPct}%</span>
-        </div>
-        <div className="flex gap-3">
-          <span className="text-[9px] text-[hsl(0,0%,60%)]">■OK</span>
-          <span className="text-[9px] text-[hsl(0,0%,60%)]">■NG</span>
+        <div className="flex flex-col items-center gap-0 mt-1">
+          <div className="flex gap-3">
+            <span className="text-[10px] text-[hsl(45,80%,55%)] font-semibold">{okPct}% OK</span>
+            <span className="text-[10px] text-[hsl(15,70%,45%)] font-semibold">{ngPct}% NG</span>
+          </div>
+          <div className="flex gap-3 text-[9px] text-[hsl(0,0%,60%)]">
+            <span>OK: {okVal}</span>
+            <span>NG: {ngVal}</span>
+          </div>
         </div>
       </div>
     );

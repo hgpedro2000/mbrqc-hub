@@ -29,6 +29,7 @@ const ApontamentoDashboard = () => {
   const today = new Date().toISOString().split("T")[0];
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -61,8 +62,9 @@ const ApontamentoDashboard = () => {
     let list = items.filter((i) => i.tipo === activeType);
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     return list;
-  }, [items, activeType, dateFrom, dateTo]);
+  }, [items, activeType, dateFrom, dateTo, supplierFilter]);
 
   const total = filtered.length;
 
@@ -373,6 +375,13 @@ const ApontamentoDashboard = () => {
         {/* LEFT: General Quality Status table */}
         <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
+          {supplierFilter && (
+            <div className="px-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setSupplierFilter(null)} className="text-[10px] h-6 bg-[hsl(210,70%,60%)]/20 border-[hsl(210,70%,60%)]/40 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/30 gap-1">
+                ✕ Filtro: {supplierFilter}
+              </Button>
+            </div>
+          )}
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -390,7 +399,7 @@ const ApontamentoDashboard = () => {
             <tbody>
               {supplierData.map((s, i) => (
                 <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
-                  <td className="px-2 py-1 text-[hsl(210,70%,60%)]">{s.name}</td>
+                  <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
                   <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>

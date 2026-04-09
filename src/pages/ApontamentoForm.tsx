@@ -151,7 +151,7 @@ const ApontamentoForm = () => {
       // Filter to only Mobis Brasil users for co-inspection
       return (data || []).filter((p: any) => p.empresa !== "empresa_terceira");
     },
-    enabled: profile?.empresa !== "empresa_terceira",
+    enabled: activeProfile?.empresa !== "empresa_terceira",
   });
 
   // Load existing photos
@@ -520,7 +520,7 @@ const ApontamentoForm = () => {
         </div>
 
         {/* CO-INSPEÇÃO - Incoming only, Mobis Brasil only */}
-        {isIncoming && profile?.empresa !== "empresa_terceira" && (
+        {isIncoming && activeProfile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">

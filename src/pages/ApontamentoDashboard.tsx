@@ -100,14 +100,17 @@ const ApontamentoDashboard = () => {
     filtered.filter(d => (d.quantidade_ng || 0) > 0).forEach((d) => {
       if (d.modo_falha) {
         const stripped = d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
-        map.set(stripped, (map.get(stripped) || 0) + 1);
+        const qty = d.quantidade_ng || 0;
+        const sdCount = (d.segundo_defeitos as any[] | null)?.length || 0;
+        const mainQty = sdCount > 0 ? Math.ceil(qty / (sdCount + 1)) : qty;
+        map.set(stripped, (map.get(stripped) || 0) + mainQty);
       }
       const sd = d.segundo_defeitos as any[] | null;
       if (sd && Array.isArray(sd)) {
         sd.forEach((def: any) => {
           if (def.modo_falha) {
             const stripped = def.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
-            map.set(stripped, (map.get(stripped) || 0) + 1);
+            map.set(stripped, (map.get(stripped) || 0) + (def.qty || 1));
           }
         });
       }
@@ -124,14 +127,17 @@ const ApontamentoDashboard = () => {
     filtered.filter(d => (d.quantidade_ng || 0) > 0).forEach((d) => {
       if (d.modo_falha) {
         const label = d.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
-        map.set(label, (map.get(label) || 0) + 1);
+        const qty = d.quantidade_ng || 0;
+        const sdCount = (d.segundo_defeitos as any[] | null)?.length || 0;
+        const mainQty = sdCount > 0 ? Math.ceil(qty / (sdCount + 1)) : qty;
+        map.set(label, (map.get(label) || 0) + mainQty);
       }
       const sd = d.segundo_defeitos as any[] | null;
       if (sd && Array.isArray(sd)) {
         sd.forEach((def: any) => {
           if (def.modo_falha) {
             const label = def.modo_falha.replace(/^\d+\s*-\s*/, "").trim();
-            map.set(label, (map.get(label) || 0) + 1);
+            map.set(label, (map.get(label) || 0) + (def.qty || 1));
           }
         });
       }

@@ -24,7 +24,9 @@ const typeLabels: Record<string, string> = {
 };
 
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const today = new Date().toISOString().split("T")[0];
+  const [dateFrom, setDateFrom] = useState(today);
+  const [dateTo, setDateTo] = useState(today);
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
@@ -58,10 +60,17 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
 
   const filtered = useMemo(() => {
     let list = items;
-    if (mode === "daily") list = list.filter((i) => i.data === selectedDate);
-    if (mode === "ng") list = list.filter((i) => (i.quantidade_ng || 0) > 0);
+    if (mode === "daily") {
+      list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);
+    }
+    if (mode === "ng") {
+      list = list.filter((i) => (i.quantidade_ng || 0) > 0);
+      if (dateFrom && dateTo) {
+        list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);
+      }
+    }
     return list;
-  }, [items, selectedDate, mode]);
+  }, [items, dateFrom, dateTo, mode]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -86,7 +95,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
       const pdfH = contentH + margin * 2;
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [pdfW, pdfH] });
       pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
-      const fileName = mode === "daily" ? `relatorio-diario-${selectedDate}.pdf` : `relatorio-ng-${new Date().toISOString().split("T")[0]}.pdf`;
+      const fileName = mode === "daily" ? `relatorio-diario-${dateFrom}.pdf` : `relatorio-ng-${today}.pdf`;
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = fileName;
@@ -103,6 +112,10 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
       setTimeout(() => onViewRecord(id), 200);
     }
   };
+
+  const dateLabel = dateFrom === dateTo
+    ? new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")
+    : `${new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")} a ${new Date(dateTo + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,14 +137,17 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                     {mode === "daily" ? "Relatório Diário de Apontamentos" : "Relatório de Peças com Defeito (NG)"}
                   </h2>
                   <p className="text-[10px] md:text-xs text-muted-foreground">
-                    {mode === "daily" ? `Data: ${new Date(selectedDate + "T12:00:00").toLocaleDateString("pt-BR")}` : "Todos os registros com NG > 0"}
-                    {` • ${filtered.length} registros`}
+                    Data: {dateLabel} {` • ${filtered.length} registros`}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {mode === "daily" && <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="w-40 text-sm" data-export-btn />}
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportPdf} data-export-btn><Download className="w-4 h-4" /> PDF</Button>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2" data-export-btn>
+                <div className="flex items-center gap-1">
+                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-[130px] text-xs h-8" />
+                  <span className="text-xs text-muted-foreground">a</span>
+                  <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-[130px] text-xs h-8" />
+                </div>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportPdf}><Download className="w-4 h-4" /> PDF</Button>
               </div>
             </div>
           </div>
@@ -156,6 +172,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                     <thead>
                       <tr className="bg-muted/50 border-b">
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Nº</th>
+                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Turno</th>
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Data</th>
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Part Number</th>
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Part Name</th>
@@ -165,7 +182,6 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">OK</th>
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
                         {mode === "ng" && <th className="text-center px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Foto</th>}
-                        <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Apontado por</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -182,6 +198,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                               </button>
                             ) : "—"}
                           </td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{r.turno || "—"}</td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{new Date(r.data).toLocaleDateString("pt-BR")}</td>
                           <td className="px-3 py-1.5 font-semibold">{r.part_number || "—"}</td>
                           <td className="px-3 py-1.5">{r.part_name || "—"}</td>
@@ -204,7 +221,6 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                               )}
                             </td>
                           )}
-                          <td className="px-3 py-1.5 whitespace-nowrap">{r.responsavel}</td>
                         </tr>
                       ))}
                     </tbody>

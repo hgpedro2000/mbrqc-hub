@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -49,6 +50,8 @@ const ApontamentoForm = () => {
   const { id, tipo: paramTipo } = useParams();
   const isEdit = !!id;
   const { profile, user } = useAuth();
+  const { impersonating } = useImpersonation();
+  const activeProfile = impersonating || profile;
 
   const tipo = (isEdit ? undefined : paramTipo) as ApontamentoTipo | undefined;
 

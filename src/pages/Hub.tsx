@@ -65,9 +65,23 @@ const Hub = () => {
               </Button>
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
-            {getGreeting()}, {profile?.full_name?.split(" ")[0] || t("hub.user")}.
-          </h1>
+          {impersonating ? (
+            <div className="flex items-center gap-2 mt-3">
+              <h1 className="text-2xl md:text-4xl font-heading font-bold">
+                {getGreeting()}, {impersonating.full_name.split(" ")[0]}.
+              </h1>
+              <Badge className="bg-amber-500/20 text-amber-200 border-amber-400/30 text-xs">
+                Modo Teste
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={stopImpersonating} className="text-primary-foreground/70 hover:text-primary-foreground text-xs">
+                Sair
+              </Button>
+            </div>
+          ) : (
+            <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
+              {getGreeting()}, {profile?.full_name?.split(" ")[0] || t("hub.user")}.
+            </h1>
+          )}
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">
             {t("hub.selectModule")}
           </p>

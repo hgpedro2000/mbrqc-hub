@@ -33,27 +33,28 @@ export const useModulePermissions = (userId?: string) => {
   });
 };
 
-export const useEnabledModules = () => {
+export const useEnabledModules = (overrideUserId?: string) => {
   const { user } = useAuth();
-  const { data: permissions, isLoading } = useModulePermissions();
+  const targetUserId = overrideUserId || user?.id;
+  const { data: permissions, isLoading } = useModulePermissions(targetUserId);
   const { data: roles } = useQuery({
-    queryKey: ["my-roles"],
+    queryKey: ["my-roles", targetUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!targetUserId) return [];
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id);
+        .eq("user_id", targetUserId);
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   const isAdmin = roles?.some((r) => r.role === "admin") ?? false;
 
-  // Admins see all modules
-  if (isAdmin) {
+  // Admins see all modules (only when not overriding)
+  if (isAdmin && !overrideUserId) {
     return { enabledModules: ALL_MODULES.map((m) => m.id), isLoading: false };
   }
 

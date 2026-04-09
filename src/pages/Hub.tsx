@@ -3,6 +3,7 @@ import {
   LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 
 const modules = [
   { id: "tryout", titleKey: "modules.tryout.title", descriptionKey: "modules.tryout.description", icon: Beaker, path: "/tryout", color: "from-blue-500/15 to-cyan-500/5", iconBg: "bg-blue-500/10 text-blue-600" },
@@ -23,8 +25,9 @@ const modules = [
 
 const Hub = () => {
   const { signOut, profile } = useAuth();
+  const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin, loading: roleLoading } = useUserRole();
-  const { enabledModules } = useEnabledModules();
+  const { enabledModules } = useEnabledModules(impersonating?.id);
   const navigate = useNavigate();
   const { t } = useTranslation();
 

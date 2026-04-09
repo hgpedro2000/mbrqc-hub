@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import UpdateBanner from "@/components/UpdateBanner";
 import Hub from "./pages/Hub";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
@@ -27,6 +28,8 @@ import ApontamentoDashboard from "./pages/ApontamentoDashboard";
 import AlertaQualidade from "./pages/AlertaQualidade";
 import AlertaQualidadeForm from "./pages/AlertaQualidadeForm";
 import AlertaQualidadeDashboard from "./pages/AlertaQualidadeDashboard";
+import ConsumiveisPage from "./pages/ConsumiveisPage";
+import ConsultaPecas from "./pages/ConsultaPecas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,7 +47,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  // Redirect to change password if must_change_password is true
   if (profile?.must_change_password && window.location.pathname !== "/alterar-senha") {
     return <Navigate to="/alterar-senha" replace />;
   }
@@ -59,6 +61,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <UpdateBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
@@ -102,6 +105,12 @@ const App = () => (
             <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/dashboard" element={<ProtectedRoute><AlertaQualidadeDashboard /></ProtectedRoute>} />
+            
+            {/* Consumíveis */}
+            <Route path="/consumiveis" element={<ProtectedRoute><ConsumiveisPage /></ProtectedRoute>} />
+            
+            {/* Consulta de Peças */}
+            <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

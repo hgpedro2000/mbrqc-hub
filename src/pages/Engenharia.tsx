@@ -181,6 +181,10 @@ const Engenharia = () => {
             />
           </TabsContent>
 
+          <TabsContent value="capsula" className="form-section">
+            <CapsuleTab />
+          </TabsContent>
+
           <TabsContent value="erros" className="form-section">
             <ErrorReportsTab />
           </TabsContent>

@@ -173,15 +173,22 @@ const ModulePermissionsTab = () => {
                         )}
                       </div>
                     </TableCell>
-                    {ALL_MODULES.map((m) => (
-                      <TableCell key={m.id} className="text-center">
-                        <Switch
-                          checked={isModuleEnabled(p.id, m.id)}
-                          onCheckedChange={() => toggleModule(p.id, m.id)}
-                          disabled={userIsAdmin || saving === `${p.id}-${m.id}`}
-                        />
-                      </TableCell>
-                    ))}
+                    {ALL_MODULES.map((m) => {
+                      // Hide sub-module if parent is not enabled
+                      const parentMod = (m as any).parent;
+                      if (parentMod && !isModuleEnabled(p.id, parentMod)) {
+                        return <TableCell key={m.id} className="text-center"><span className="text-muted-foreground/30">—</span></TableCell>;
+                      }
+                      return (
+                        <TableCell key={m.id} className="text-center">
+                          <Switch
+                            checked={isModuleEnabled(p.id, m.id)}
+                            onCheckedChange={() => toggleModule(p.id, m.id)}
+                            disabled={userIsAdmin || saving === `${p.id}-${m.id}`}
+                          />
+                        </TableCell>
+                      );
+                    })}
                     <TableCell className="text-center">
                       <div className="flex flex-col gap-1">
                         <Button

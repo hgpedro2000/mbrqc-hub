@@ -92,7 +92,7 @@ const ApontamentoForm = () => {
   const [temCoInspecao, setTemCoInspecao] = useState("nao");
   const [coInspetores, setCoInspetores] = useState<string[]>([]);
   const [coInspetorSearch, setCoInspetorSearch] = useState("");
-  const [showCoInspetorDropdown, setShowCoInspetorDropdown] = useState(false);
+  const [showCoInspetorDialog, setShowCoInspetorDialog] = useState(false);
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFim, setHoraFim] = useState("");
 

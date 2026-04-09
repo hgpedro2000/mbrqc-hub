@@ -182,6 +182,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
 
   const getFieldValue = (f: { key: string; label: string }) => {
     if (f.key === "_empresa") return empresaLabel || "—";
+    if (f.key === "_origem") return origemLabel || "LP";
     return fmt(f.key, d?.[f.key]);
   };
 

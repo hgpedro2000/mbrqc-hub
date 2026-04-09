@@ -18,9 +18,22 @@ const statusConfig: Record<string, { label: string; color: string }> = {
   resolvido: { label: "Resolvido", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
 };
 
+const moduleOptions = [
+  { value: "", label: "Todos" },
+  { value: "Hub", label: "Hub" },
+  { value: "Try-Out", label: "Try-Out" },
+  { value: "Auditorias", label: "Auditorias" },
+  { value: "Contenção", label: "Contenção" },
+  { value: "Apontamentos", label: "Apontamentos" },
+  { value: "Alerta de Qualidade", label: "Alerta de Qualidade" },
+  { value: "Consumíveis", label: "Consumíveis" },
+  { value: "Consulta de Peças", label: "Consulta de Peças" },
+];
+
 const ErrorReportsTab = () => {
   const qc = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
+  const [moduleFilter, setModuleFilter] = useState("");
   const [viewItem, setViewItem] = useState<any>(null);
   const [adminNotes, setAdminNotes] = useState("");
   const [newStatus, setNewStatus] = useState("");
@@ -39,14 +52,18 @@ const ErrorReportsTab = () => {
   });
 
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return reports;
+    let list = reports;
+    if (moduleFilter) {
+      list = list.filter((r: any) => r.module === moduleFilter);
+    }
+    if (!searchTerm.trim()) return list;
     const term = searchTerm.toLowerCase();
-    return reports.filter((r: any) =>
+    return list.filter((r: any) =>
       r.user_name?.toLowerCase().includes(term) ||
       r.module?.toLowerCase().includes(term) ||
       r.description?.toLowerCase().includes(term)
     );
-  }, [reports, searchTerm]);
+  }, [reports, searchTerm, moduleFilter]);
 
   const pendingCount = reports.filter((r: any) => r.status === "pendente").length;
 
@@ -86,9 +103,21 @@ const ErrorReportsTab = () => {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por usuário, módulo..." className="pl-9" />
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por usuário, descrição..." className="pl-9" />
+        </div>
+        <Select value={moduleFilter} onValueChange={setModuleFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filtrar por módulo" />
+          </SelectTrigger>
+          <SelectContent>
+            {moduleOptions.map((opt) => (
+              <SelectItem key={opt.value || "all"} value={opt.value || "all"}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -113,7 +142,9 @@ const ErrorReportsTab = () => {
                   <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openView(r)}>
                     <TableCell className="text-xs">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell className="text-xs sm:text-sm">{r.user_name}</TableCell>
-                    <TableCell className="text-xs sm:text-sm">{r.module}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{r.module}</Badge>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px] truncate">{r.description}</TableCell>
                     <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
                     <TableCell><Button variant="ghost" size="icon" className="h-7 w-7"><Eye className="w-4 h-4" /></Button></TableCell>
@@ -137,7 +168,7 @@ const ErrorReportsTab = () => {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{viewItem.user_name}</p></div>
-                <div><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium">{viewItem.module}</p></div>
+                <div><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium"><Badge variant="outline">{viewItem.module}</Badge></p></div>
                 <div className="col-span-2"><span className="text-muted-foreground text-xs">Data</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleString("pt-BR")}</p></div>
               </div>
               <div>

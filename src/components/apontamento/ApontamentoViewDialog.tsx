@@ -119,11 +119,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     return d.tempo_inspecao;
   }, [d?.tempo_inspecao]);
 
+  const empresaLabel = useMemo(() => {
+    if (!creatorProfile) return null;
+    if (creatorProfile.empresa === "empresa_terceira") {
+      return creatorProfile.empresa_terceira || "Empresa Terceira";
+    }
+    return "Mobis Brasil";
+  }, [creatorProfile]);
+
   const identificationFields = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
     { key: "responsavel", label: "Apontado por" },
     { key: "turno", label: "Turno" },
+    ...(empresaLabel ? [{ key: "_empresa", label: "Empresa" }] : []),
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },

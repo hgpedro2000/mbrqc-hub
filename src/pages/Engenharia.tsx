@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +25,7 @@ const Engenharia = () => {
   const { profile } = useAuth();
   const isSpecialAdmin = profile?.employee_number === "3501165";
   const [impersonateOpen, setImpersonateOpen] = useState(false);
-  const [impersonating, setImpersonating] = useState<any>(null);
+  const { impersonating, setImpersonating, stopImpersonating } = useImpersonation();
 
   const { data: pendingErrors = 0 } = useQuery({
     queryKey: ["pending-error-reports-count"],
@@ -54,8 +55,8 @@ const Engenharia = () => {
     toast.success(`Modo Usuário Padrão: ${user.full_name} (${user.employee_number})`);
   };
 
-  const stopImpersonating = () => {
-    setImpersonating(null);
+  const handleStopImpersonating = () => {
+    stopImpersonating();
     toast.info("Voltando ao modo Admin");
   };
 
@@ -82,7 +83,7 @@ const Engenharia = () => {
                     <Badge className="bg-amber-500/20 text-amber-200 border-amber-400/30 text-[10px]">
                       <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
                     </Badge>
-                    <Button variant="ghost" size="sm" onClick={stopImpersonating} className="text-primary-foreground/70 hover:text-primary-foreground h-6 text-[10px] px-2">
+                    <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="text-primary-foreground/70 hover:text-primary-foreground h-6 text-[10px] px-2">
                       Sair
                     </Button>
                   </div>

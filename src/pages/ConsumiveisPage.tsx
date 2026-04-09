@@ -296,48 +296,58 @@ const InventarioRequisicoes = () => {
         </div>
       )}
 
-      {/* Inventory table */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
+      {/* Stock list button */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
+            <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
+          </Button>
           <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
             <Plus className="w-4 h-4" /> Registrar Consumível
           </Button>
         </div>
-        {loadingItems ? (
-          <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead className="text-center">Unidade</TableHead>
-                  <TableHead className="text-center">Estoque</TableHead>
-                  <TableHead className="text-center">Mín.</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((i: any) => (
-                  <TableRow key={i.id} className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5" : ""}>
-                    <TableCell className="font-medium text-sm">{i.name}</TableCell>
-                    <TableCell className="text-center text-sm">{i.unit}</TableCell>
-                    <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
-                    <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-4 h-4" /></Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {items.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        )}
       </div>
+
+      {/* Stock list dialog */}
+      <Dialog open={stockListOpen} onOpenChange={setStockListOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Estoque de Consumíveis</DialogTitle></DialogHeader>
+          {loadingItems ? (
+            <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-center">Unidade</TableHead>
+                    <TableHead className="text-center">Estoque</TableHead>
+                    <TableHead className="text-center">Mín.</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((i: any) => (
+                    <TableRow key={i.id} className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5" : ""}>
+                      <TableCell className="font-medium text-sm">{i.name}</TableCell>
+                      <TableCell className="text-center text-sm">{i.unit}</TableCell>
+                      <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
+                      <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-4 h-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {items.length === 0 && (
+                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Requests table */}
       <div>

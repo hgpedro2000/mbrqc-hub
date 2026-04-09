@@ -254,6 +254,19 @@ const Apontamentos = () => {
                       {item.part_number && <span className="font-heading font-semibold text-foreground text-sm truncate">{item.part_number}</span>}
                       {item.fornecedor && <Badge variant="secondary" className="text-[10px] shrink-0">{item.fornecedor}</Badge>}
                       <StatusBadge status={item.status} />
+                      {/* Origem badge */}
+                      {item.part_number && origemByPartNumber[item.part_number] && (() => {
+                        const o = origemByPartNumber[item.part_number];
+                        if (o === "CKD") return <Badge className="bg-purple-500/10 text-purple-700 border-purple-200 text-[9px] px-1.5">CKD</Badge>;
+                        if (o === "CONSIGNADA") return <Badge className="bg-orange-500/10 text-orange-700 border-orange-200 text-[9px] px-1.5">CONSIG.</Badge>;
+                        return <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[9px] px-1.5">LP</Badge>;
+                      })()}
+                      {/* Empresa badge */}
+                      {item.created_by && empresaByUserId[item.created_by] && (
+                        <Badge variant="outline" className={`text-[9px] px-1.5 ${empresaByUserId[item.created_by] === "Mobis Brasil" ? "border-sky-300 text-sky-700 bg-sky-50" : "border-amber-300 text-amber-700 bg-amber-50"}`}>
+                          {empresaByUserId[item.created_by]}
+                        </Badge>
+                      )}
                     </div>
 
                     {/* Part name */}
@@ -272,7 +285,7 @@ const Apontamentos = () => {
                       </div>
                     )}
 
-                    {/* Defect details - show modo_falha or description in columns */}
+                    {/* Defect details */}
                     {hasNg && defectDetails && defectDetails.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {defectDetails.map((def: any, idx: number) => (

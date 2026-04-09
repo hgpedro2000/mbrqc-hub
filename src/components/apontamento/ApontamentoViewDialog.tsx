@@ -208,7 +208,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       {renderInspectionSection()}
@@ -234,7 +234,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       <div data-pdf-section>
@@ -258,7 +258,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
           <DataField label="Linha" value={fmt("", d?.linha)} />
           <DataField label="Setor" value={fmt("", d?.setor)} />
         </div>
@@ -284,7 +284,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       <div data-pdf-section>

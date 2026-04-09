@@ -9,6 +9,8 @@ export const ALL_MODULES = [
   { id: "apontamentos", label: "Apontamentos" },
   { id: "alerta-qualidade", label: "Alerta de Qualidade" },
   { id: "consumiveis", label: "Consumíveis" },
+  { id: "consumiveis_requisitar", label: "  ↳ Requisitar Item", parent: "consumiveis" },
+  { id: "consumiveis_inventario", label: "  ↳ Inventário e Requisições", parent: "consumiveis" },
   { id: "consulta-pecas", label: "Consulta de Peças" },
 ] as const;
 

@@ -1,13 +1,480 @@
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useEnabledModules } from "@/hooks/useModulePermissions";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import ReportErrorButton from "@/components/ReportErrorButton";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
+const statusConfig: Record<string, { label: string; color: string }> = {
+  aguardando: { label: "Aguardando", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
+  entregue: { label: "Entregue", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
+  rejeitado: { label: "Rejeitado", color: "border-red-500 text-red-600 bg-red-500/10" },
+};
+
+/* ─── Requisitar Item sub-module ─── */
+const RequisitarItem = () => {
+  const { user, profile } = useAuth();
+  const { impersonating } = useImpersonation();
+  const activeProfile = impersonating || profile;
+  const qc = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState("");
+  const [qty, setQty] = useState(1);
+  const [sending, setSending] = useState(false);
+
+  const { data: items = [] } = useQuery({
+    queryKey: ["consumable-items-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("consumable_items").select("*").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: myRequests = [], isLoading } = useQuery({
+    queryKey: ["my-consumable-requests", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase.from("consumable_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const handleSubmit = async () => {
+    if (!selectedItem) { toast.error("Selecione um item"); return; }
+    if (qty < 1) { toast.error("Quantidade mínima é 1"); return; }
+    setSending(true);
+    try {
+      const itemObj = items.find((i: any) => i.id === selectedItem);
+      const { error } = await supabase.from("consumable_requests").insert({
+        user_id: user?.id,
+        user_name: activeProfile?.full_name || "",
+        turno: activeProfile?.turno || null,
+        item_id: selectedItem,
+        item_name: itemObj?.name || "",
+        quantity: qty,
+      } as any);
+      if (error) throw error;
+      toast.success("Pedido realizado com sucesso!");
+      setAddOpen(false);
+      setSelectedItem("");
+      setQty(1);
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-heading font-semibold">Requisitar Item</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
+          <Plus className="w-4 h-4" /> Adicionar Item
+        </Button>
+      </div>
+
+      <div className="form-section">
+        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+          <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{activeProfile?.full_name}</p></div>
+          <div><span className="text-muted-foreground text-xs">Turno</span><p className="font-medium">{activeProfile?.turno || "—"}</p></div>
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
+      {isLoading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Nº</TableHead>
+                <TableHead className="text-xs">Item</TableHead>
+                <TableHead className="text-xs text-center">Qtd</TableHead>
+                <TableHead className="text-xs">Data</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {myRequests.map((r: any) => {
+                const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
+                    <TableCell className="text-sm">{r.item_name}</TableCell>
+                    <TableCell className="text-center text-sm">{r.quantity}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                  </TableRow>
+                );
+              })}
+              {myRequests.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum pedido realizado</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Add item dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Requisitar Consumível</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Item *</Label>
+              <Select value={selectedItem} onValueChange={setSelectedItem}>
+                <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+                <SelectContent>
+                  {items.map((i: any) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name} ({i.unit})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Quantidade *</Label>
+              <Input type="number" min={1} value={qty} onChange={(e) => setQty(Number(e.target.value))} />
+            </div>
+            <Button onClick={handleSubmit} disabled={sending} className="w-full">
+              {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+              Enviar Pedido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+/* ─── Inventário e Requisições sub-module (admin) ─── */
+const InventarioRequisicoes = () => {
+  const { isAdmin } = useUserRole();
+  const qc = useQueryClient();
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newUnit, setNewUnit] = useState("un");
+  const [newStock, setNewStock] = useState(0);
+  const [newMinQty, setNewMinQty] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [turnoFilter, setTurnoFilter] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const { data: items = [], isLoading: loadingItems } = useQuery({
+    queryKey: ["consumable-items"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("consumable_items").select("*").order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allRequests = [], isLoading: loadingReqs } = useQuery({
+    queryKey: ["all-consumable-requests"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("consumable_requests").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const lowStockItems = useMemo(() => items.filter((i: any) => i.active && i.stock_qty <= i.min_qty && i.min_qty > 0), [items]);
+
+  const filteredRequests = useMemo(() => {
+    if (!turnoFilter) return allRequests;
+    return allRequests.filter((r: any) => r.turno === turnoFilter);
+  }, [allRequests, turnoFilter]);
+
+  const handleAddItem = async () => {
+    if (!newName.trim()) { toast.error("Nome obrigatório"); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("consumable_items").insert({
+        name: newName.trim(),
+        unit: newUnit,
+        stock_qty: newStock,
+        min_qty: newMinQty,
+      } as any);
+      if (error) throw error;
+      toast.success("Item registrado");
+      setAddItemOpen(false);
+      setNewName("");
+      setNewUnit("un");
+      setNewStock(0);
+      setNewMinQty(0);
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateRequestStatus = async (id: string, status: string) => {
+    try {
+      const { error } = await supabase.from("consumable_requests").update({ status } as any).eq("id", id);
+      if (error) throw error;
+      toast.success("Status atualizado");
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteTarget) return;
+    try {
+      const { error } = await supabase.from("consumable_items").delete().eq("id", deleteTarget);
+      if (error) throw error;
+      toast.success("Item excluído");
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  // Dashboard stats
+  const totalRequests = allRequests.length;
+  const pendingRequests = allRequests.filter((r: any) => r.status === "aguardando").length;
+  const deliveredRequests = allRequests.filter((r: any) => r.status === "entregue").length;
+
+  return (
+    <div className="space-y-6">
+      {/* Dashboard cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-foreground">{items.filter((i: any) => i.active).length}</p>
+          <p className="text-xs text-muted-foreground">Itens Cadastrados</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-foreground">{totalRequests}</p>
+          <p className="text-xs text-muted-foreground">Total Requisições</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-yellow-600">{pendingRequests}</p>
+          <p className="text-xs text-muted-foreground">Aguardando</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-emerald-600">{deliveredRequests}</p>
+          <p className="text-xs text-muted-foreground">Entregues</p>
+        </div>
+      </div>
+
+      {/* Low stock alert */}
+      {lowStockItems.length > 0 && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+          <p className="text-sm font-semibold text-destructive mb-1">⚠ Estoque Baixo</p>
+          <div className="flex flex-wrap gap-2">
+            {lowStockItems.map((i: any) => (
+              <Badge key={i.id} variant="outline" className="border-destructive/50 text-destructive">
+                {i.name}: {i.stock_qty} {i.unit} (mín: {i.min_qty})
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Inventory table */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
+          <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
+            <Plus className="w-4 h-4" /> Registrar Consumível
+          </Button>
+        </div>
+        {loadingItems ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item</TableHead>
+                  <TableHead className="text-center">Unidade</TableHead>
+                  <TableHead className="text-center">Estoque</TableHead>
+                  <TableHead className="text-center">Mín.</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((i: any) => (
+                  <TableRow key={i.id} className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5" : ""}>
+                    <TableCell className="font-medium text-sm">{i.name}</TableCell>
+                    <TableCell className="text-center text-sm">{i.unit}</TableCell>
+                    <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-4 h-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {items.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      {/* Requests table */}
+      <div>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <h3 className="text-base font-heading font-semibold">Requisições</h3>
+          <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os turnos</SelectItem>
+              <SelectItem value="1º Turno">1º Turno</SelectItem>
+              <SelectItem value="2º Turno">2º Turno</SelectItem>
+              <SelectItem value="3º Turno">3º Turno</SelectItem>
+              <SelectItem value="ADM">ADM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {loadingReqs ? (
+          <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Nº</TableHead>
+                  <TableHead className="text-xs">Usuário</TableHead>
+                  <TableHead className="text-xs hidden sm:table-cell">Turno</TableHead>
+                  <TableHead className="text-xs">Item</TableHead>
+                  <TableHead className="text-xs text-center">Qtd</TableHead>
+                  <TableHead className="text-xs">Data</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRequests.map((r: any) => {
+                  const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
+                      <TableCell className="text-xs">{r.user_name}</TableCell>
+                      <TableCell className="text-xs hidden sm:table-cell">{r.turno || "—"}</TableCell>
+                      <TableCell className="text-sm">{r.item_name}</TableCell>
+                      <TableCell className="text-center">{r.quantity}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                      <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          {r.status === "aguardando" && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600" onClick={() => updateRequestStatus(r.id, "entregue")} title="Entregar">
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => updateRequestStatus(r.id, "rejeitado")} title="Rejeitar">
+                                <XIcon className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filteredRequests.length === 0 && (
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhuma requisição</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+
+      {/* Add item dialog */}
+      <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Registrar Consumível</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do Item *</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: Luvas de nitrilo" />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select value={newUnit} onValueChange={setNewUnit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="un">un</SelectItem>
+                    <SelectItem value="par">par</SelectItem>
+                    <SelectItem value="cx">cx</SelectItem>
+                    <SelectItem value="pct">pct</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="m">m</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estoque</Label>
+                <Input type="number" min={0} value={newStock} onChange={(e) => setNewStock(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Qtd Mín.</Label>
+                <Input type="number" min={0} value={newMinQty} onChange={(e) => setNewMinQty(Number(e.target.value))} />
+              </div>
+            </div>
+            <Button onClick={handleAddItem} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
+              Registrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete item confirm */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Excluir item</AlertDialogTitle><AlertDialogDescription>Tem certeza? Isso também excluirá todas as requisições associadas.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDeleteItem}>Excluir</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+/* ─── Main Consumíveis Page ─── */
 const ConsumiveisPage = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { isAdmin } = useUserRole();
+  const { impersonating } = useImpersonation();
+  const { enabledModules } = useEnabledModules(impersonating?.id);
+  
+  // Check sub-module permissions
+  const showRequisitar = isAdmin || enabledModules.includes("consumiveis" as any) || enabledModules.includes("consumiveis_requisitar" as any);
+  const showInventario = isAdmin || enabledModules.includes("consumiveis_inventario" as any);
+  
+  const defaultTab = showRequisitar ? "requisitar" : showInventario ? "inventario" : "requisitar";
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,18 +495,36 @@ const ConsumiveisPage = () => {
             </div>
           </div>
           <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Requisição de itens de consumo do setor da qualidade.</p>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 -mt-6 pb-12">
-        <div className="form-section text-center py-16">
-          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-heading font-semibold mb-2">Em breve</h2>
-          <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            Módulo de requisição de consumíveis como luvas, panos, tubo de mark check, tinta e pontas está em desenvolvimento.
-          </p>
-        </div>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl -mt-4">
+        <Tabs defaultValue={defaultTab} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 h-auto">
+            {showRequisitar && (
+              <TabsTrigger value="requisitar" className="gap-1.5 text-xs sm:text-sm py-2">
+                <ShoppingCart className="w-4 h-4" /> Requisitar Item
+              </TabsTrigger>
+            )}
+            {showInventario && (
+              <TabsTrigger value="inventario" className="gap-1.5 text-xs sm:text-sm py-2">
+                <BarChart3 className="w-4 h-4" /> Inventário e Requisições
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {showRequisitar && (
+            <TabsContent value="requisitar" className="form-section">
+              <RequisitarItem />
+            </TabsContent>
+          )}
+          {showInventario && (
+            <TabsContent value="inventario" className="form-section">
+              <InventarioRequisicoes />
+            </TabsContent>
+          )}
+        </Tabs>
       </main>
     </div>
   );

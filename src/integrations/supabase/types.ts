@@ -425,6 +425,36 @@ export type Database = {
         }
         Relationships: []
       }
+      capsule_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          uploaded_by: string
+          uploaded_by_name: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          uploaded_by: string
+          uploaded_by_name?: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          uploaded_by?: string
+          uploaded_by_name?: string
+        }
+        Relationships: []
+      }
       checklist_photos: {
         Row: {
           checklist_id: string
@@ -451,6 +481,92 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      consumable_items: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          min_qty: number
+          name: string
+          stock_qty: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          min_qty?: number
+          name: string
+          stock_qty?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          min_qty?: number
+          name?: string
+          stock_qty?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      consumable_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          item_id: string
+          item_name: string
+          numero: string | null
+          quantity: number
+          status: string
+          turno: string | null
+          updated_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          item_id: string
+          item_name?: string
+          numero?: string | null
+          quantity?: number
+          status?: string
+          turno?: string | null
+          updated_at?: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_name?: string
+          numero?: string | null
+          quantity?: number
+          status?: string
+          turno?: string | null
+          updated_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumable_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "consumable_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contencao: {
         Row: {

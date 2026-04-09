@@ -273,7 +273,7 @@ const ApontamentoForm = () => {
     return allProfiles
       .filter((p: any) => p.full_name !== profile?.full_name && !coInspetores.includes(p.full_name))
       .filter((p: any) => !term || p.full_name?.toLowerCase().includes(term))
-      .slice(0, 10);
+      .slice(0, 20);
   }, [coInspetorSearch, allProfiles, coInspetores, profile]);
 
   // Handle NG decision

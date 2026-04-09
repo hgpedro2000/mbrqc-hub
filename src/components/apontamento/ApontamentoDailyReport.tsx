@@ -26,6 +26,7 @@ const typeLabels: Record<string, string> = {
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Fetch photos for NG report
   const ngItemIds = useMemo(() => {
@@ -192,7 +193,12 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
                               {firstPhotoByItem[r.id] ? (
-                                <img src={firstPhotoByItem[r.id]} alt="Foto NG" className="w-12 h-12 object-cover rounded border border-border inline-block" />
+                                <img
+                                  src={firstPhotoByItem[r.id]}
+                                  alt="Foto NG"
+                                  className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                  onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
+                                />
                               ) : (
                                 <span className="text-muted-foreground text-[10px]">—</span>
                               )}

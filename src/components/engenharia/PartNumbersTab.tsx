@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Loader2, Trash2, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
@@ -23,6 +24,8 @@ const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Módulo de Linha", dbField: "line_module", label: "Módulo" },
 ];
 
+const ORIGEM_OPTIONS = ["LP", "CKD", "CONSIGNADA"];
+
 const PartNumbersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -32,6 +35,7 @@ const PartNumbersTab = () => {
   const [partName, setPartName] = useState("");
   const [project, setProject] = useState("");
   const [lineModule, setLineModule] = useState("");
+  const [origem, setOrigem] = useState("LP");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -64,7 +68,7 @@ const PartNumbersTab = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule };
+      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule, origem } as any;
       if (editId) { const { error } = await supabase.from("part_numbers").update(payload).eq("id", editId); if (error) throw error; }
       else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
     },
@@ -91,8 +95,8 @@ const PartNumbersTab = () => {
     qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
   };
 
-  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); };
-  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setOpen(true); };
+  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); setOrigem("LP"); };
+  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setOrigem((p as any).origem || "LP"); setOpen(true); };
   const toggleSelect = (id: string) => { setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
 
   return (
@@ -116,6 +120,7 @@ const PartNumbersTab = () => {
                 <div className="space-y-2"><Label>Part Name *</Label><Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" /></div>
                 <div className="space-y-2"><Label>Projeto</Label><Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" /></div>
                 <div className="space-y-2"><Label>Módulo de Linha</Label><Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" /></div>
+                <div className="space-y-2"><Label>Origem *</Label><Select value={origem} onValueChange={setOrigem}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{ORIGEM_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select></div>
                 <Button onClick={() => saveMutation.mutate()} disabled={!supplierId || !partNumber || !partName || saveMutation.isPending} className="w-full">{saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Salvar</Button>
               </div>
             </DialogContent>
@@ -140,6 +145,7 @@ const PartNumbersTab = () => {
                 <TableHead>Fornecedor</TableHead>
                 <TableHead>Part Number</TableHead>
                 <TableHead className="hidden md:table-cell">Part Name</TableHead>
+                <TableHead className="hidden md:table-cell">Origem</TableHead>
                 <TableHead className="hidden lg:table-cell">Projeto</TableHead>
                 <TableHead className="hidden lg:table-cell">Módulo</TableHead>
                 <TableHead className="hidden sm:table-cell">Ativo</TableHead>
@@ -153,6 +159,13 @@ const PartNumbersTab = () => {
                   <TableCell className="text-xs sm:text-sm">{p.suppliers?.name || "—"}</TableCell>
                   <TableCell className="font-mono text-xs sm:text-sm">{p.part_number}</TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.part_name}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="outline" className={
+                      p.origem === "CKD" ? "border-purple-400 text-purple-600 bg-purple-500/10" :
+                      p.origem === "CONSIGNADA" ? "border-orange-400 text-orange-600 bg-orange-500/10" :
+                      "border-blue-400 text-blue-600 bg-blue-500/10"
+                    }>{p.origem || "LP"}</Badge>
+                  </TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.project || "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.line_module || "—"}</TableCell>
                   <TableCell className="hidden sm:table-cell"><Switch checked={p.active} onCheckedChange={() => toggleActive(p.id, p.active)} /></TableCell>
@@ -167,7 +180,7 @@ const PartNumbersTab = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
+              {filtered.length === 0 && (<TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
             </TableBody>
           </Table>
         </div>

@@ -93,8 +93,8 @@
   },
   "login": {
     "title": "Quality Control-Hub",
-    "subtitle": "Enter your user number",
-    "employeeNumber": "User Number",
+    "subtitle": "Enter your user ID",
+    "employeeNumber": "User",
     "password": "Password",
     "enter": "Login",
     "wait": "Please wait...",

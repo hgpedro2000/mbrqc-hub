@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { employee_number, full_name, password, role, turno, email } = await req.json();
+    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
 
     const userId = authUser.user.id;
 
-    // Create profile with turno and email
+    // Create profile with turno, email, empresa fields
     await admin.from("profiles").insert({
       id: userId,
       employee_number,
@@ -45,6 +45,8 @@ Deno.serve(async (req) => {
       must_change_password: true,
       turno: turno || null,
       email: email || null,
+      empresa: empresa || "mobis_brasil",
+      empresa_terceira: empresa_terceira || null,
     });
 
     // Assign role

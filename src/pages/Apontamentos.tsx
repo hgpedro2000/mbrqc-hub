@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
 import { stripCode } from "@/lib/stripCode";
+import ReportErrorButton from "@/components/ReportErrorButton";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
@@ -371,6 +372,7 @@ const Apontamentos = () => {
               <Button variant="ghost" size="sm" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <AlertTriangle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Peças NG</span>
               </Button>
+              <ReportErrorButton moduleName="Apontamentos" />
               <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
               </Button>

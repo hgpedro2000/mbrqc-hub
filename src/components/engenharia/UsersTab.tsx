@@ -11,10 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
 
 const TURNOS = ["1T", "2T", "3T"];
+const EMPRESA_TERCEIRA_OPTIONS = ["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"];
 
 const UsersTab = () => {
   const qc = useQueryClient();
@@ -27,6 +29,8 @@ const UsersTab = () => {
   const [password, setPassword] = useState("");
   const [turno, setTurno] = useState("");
   const [email, setEmail] = useState("");
+  const [empresa, setEmpresa] = useState("mobis_brasil");
+  const [empresaTerceira, setEmpresaTerceira] = useState("");
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -41,6 +45,8 @@ const UsersTab = () => {
   const [editRole, setEditRole] = useState("user");
   const [editTurno, setEditTurno] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
+  const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["eng-profiles"],
@@ -60,9 +66,25 @@ const UsersTab = () => {
     },
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers-for-residente"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("suppliers").select("name").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const getRoleForUser = (userId: string) => {
     const r = roles.find((r: any) => r.user_id === userId);
     return r?.role || "user";
+  };
+
+  const getEmpresaLabel = (p: any) => {
+    if (p.empresa === "empresa_terceira") {
+      return p.empresa_terceira || "Terceira";
+    }
+    return "Mobis Brasil";
   };
 
   const filtered = useMemo(() => {
@@ -71,7 +93,8 @@ const UsersTab = () => {
     return profiles.filter((p: any) =>
       p.full_name?.toLowerCase().includes(term) ||
       p.employee_number?.toLowerCase().includes(term) ||
-      p.email?.toLowerCase().includes(term)
+      p.email?.toLowerCase().includes(term) ||
+      getEmpresaLabel(p).toLowerCase().includes(term)
     );
   }, [profiles, searchTerm]);
 
@@ -83,7 +106,16 @@ const UsersTab = () => {
     setSaving(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-user-admin", {
-        body: { employee_number: employeeNumber, full_name: fullName, password, role, turno, email: email || null },
+        body: {
+          employee_number: employeeNumber,
+          full_name: fullName,
+          password,
+          role,
+          turno,
+          email: email || null,
+          empresa,
+          empresa_terceira: empresa === "empresa_terceira" ? empresaTerceira : null,
+        },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
       toast.success("Usuário criado com sucesso!");
@@ -104,6 +136,8 @@ const UsersTab = () => {
     setEditRole(getRoleForUser(profile.id));
     setEditTurno((profile as any).turno || "");
     setEditEmail(profile.email || "");
+    setEditEmpresa((profile as any).empresa || "mobis_brasil");
+    setEditEmpresaTerceira((profile as any).empresa_terceira || "");
     setEditOpen(true);
   };
 
@@ -116,7 +150,14 @@ const UsersTab = () => {
     try {
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({ full_name: editFullName, employee_number: editEmployeeNumber, turno: editTurno || null, email: editEmail || null } as any)
+        .update({
+          full_name: editFullName,
+          employee_number: editEmployeeNumber,
+          turno: editTurno || null,
+          email: editEmail || null,
+          empresa: editEmpresa,
+          empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
+        } as any)
         .eq("id", editId);
       if (profileError) throw profileError;
 
@@ -206,7 +247,50 @@ const UsersTab = () => {
     setPassword("");
     setTurno("");
     setEmail("");
+    setEmpresa("mobis_brasil");
+    setEmpresaTerceira("");
   };
+
+  const renderEmpresaFormFields = (emp: string, setEmp: (v: string) => void, empTerc: string, setEmpTerc: (v: string) => void) => (
+    <>
+      <div className="space-y-2">
+        <Label>Empresa *</Label>
+        <Select value={emp} onValueChange={(v) => { setEmp(v); setEmpTerc(""); }}>
+          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="mobis_brasil">Mobis Brasil</SelectItem>
+            <SelectItem value="empresa_terceira">Empresa Terceira</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {emp === "empresa_terceira" && (
+        <div className="space-y-2">
+          <Label>Tipo de Terceira *</Label>
+          <Select value={empTerc} onValueChange={setEmpTerc}>
+            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+            <SelectContent>
+              {EMPRESA_TERCEIRA_OPTIONS.map((o) => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {emp === "empresa_terceira" && empTerc === "Residente" && (
+        <div className="space-y-2">
+          <Label>Fornecedor *</Label>
+          <Select value={empTerc} onValueChange={(v) => setEmpTerc(`Residente - ${v}`)}>
+            <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
+            <SelectContent>
+              {suppliers.map((s: any) => (
+                <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <div className="space-y-4">
@@ -234,9 +318,10 @@ const UsersTab = () => {
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>Criar Novo Usuário</DialogTitle></DialogHeader>
               <div className="space-y-4">
+                {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
                 <div className="space-y-2">
-                  <Label>Número do Usuário *</Label>
-                  <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder="Ex: 3501165" inputMode="numeric" />
+                  <Label>{empresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
+                  <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL001"} />
                 </div>
                 <div className="space-y-2">
                   <Label>Nome Completo *</Label>
@@ -282,7 +367,7 @@ const UsersTab = () => {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome, número ou e-mail..." className="pl-9" />
+        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome, número, empresa..." className="pl-9" />
       </div>
 
       {/* Edit Profile Dialog */}
@@ -290,9 +375,10 @@ const UsersTab = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            {renderEmpresaFormFields(editEmpresa, setEditEmpresa, editEmpresaTerceira, setEditEmpresaTerceira)}
             <div className="space-y-2">
-              <Label>Número do Usuário *</Label>
-              <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder="Ex: 3501165" inputMode="numeric" />
+              <Label>{editEmpresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
+              <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder={editEmpresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL001"} />
             </div>
             <div className="space-y-2">
               <Label>Nome Completo *</Label>
@@ -361,6 +447,7 @@ const UsersTab = () => {
                 </TableHead>
                 <TableHead>Número</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead className="hidden md:table-cell">Empresa</TableHead>
                 <TableHead className="hidden md:table-cell">Turno</TableHead>
                 <TableHead className="hidden lg:table-cell">E-mail</TableHead>
                 <TableHead>Perfil</TableHead>
@@ -377,6 +464,11 @@ const UsersTab = () => {
                   </TableCell>
                   <TableCell className="font-mono text-xs sm:text-sm">{p.employee_number}</TableCell>
                   <TableCell className="text-xs sm:text-sm">{p.full_name}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">
+                    <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
+                      {getEmpresaLabel(p)}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.turno || "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.email || "—"}</TableCell>
                   <TableCell className="capitalize text-xs sm:text-sm">{getRoleForUser(p.id)}</TableCell>
@@ -416,7 +508,7 @@ const UsersTab = () => {
                 </TableRow>
               ))}
               {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

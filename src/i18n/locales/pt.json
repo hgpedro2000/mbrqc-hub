@@ -93,8 +93,8 @@
   },
   "login": {
     "title": "Quality Control-Hub",
-    "subtitle": "Entre com seu número de usuário",
-    "employeeNumber": "Número do Usuário",
+    "subtitle": "Entre com seu usuário",
+    "employeeNumber": "Usuário",
     "password": "Senha",
     "enter": "Entrar",
     "wait": "Aguarde...",

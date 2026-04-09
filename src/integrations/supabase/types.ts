@@ -590,6 +590,45 @@ export type Database = {
         }
         Relationships: []
       }
+      error_reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          id: string
+          module: string
+          photos: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          module?: string
+          photos?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          user_name?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          module?: string
+          photos?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       injection_checklists: {
         Row: {
           comentarios: string | null
@@ -755,6 +794,7 @@ export type Database = {
           created_at: string
           id: string
           line_module: string
+          origem: string | null
           part_name: string
           part_number: string
           project: string
@@ -766,6 +806,7 @@ export type Database = {
           created_at?: string
           id?: string
           line_module?: string
+          origem?: string | null
           part_name: string
           part_number: string
           project?: string
@@ -777,6 +818,7 @@ export type Database = {
           created_at?: string
           id?: string
           line_module?: string
+          origem?: string | null
           part_name?: string
           part_number?: string
           project?: string
@@ -798,6 +840,8 @@ export type Database = {
           created_at: string
           email: string | null
           employee_number: string
+          empresa: string | null
+          empresa_terceira: string | null
           full_name: string
           id: string
           last_login_at: string | null
@@ -810,6 +854,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           employee_number: string
+          empresa?: string | null
+          empresa_terceira?: string | null
           full_name: string
           id: string
           last_login_at?: string | null
@@ -822,6 +868,8 @@ export type Database = {
           created_at?: string
           email?: string | null
           employee_number?: string
+          empresa?: string | null
+          empresa_terceira?: string | null
           full_name?: string
           id?: string
           last_login_at?: string | null

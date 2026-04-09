@@ -69,6 +69,21 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
+  // Fetch creator's profile for empresa info
+  const { data: creatorProfile } = useQuery({
+    queryKey: ["apontamento-creator-profile", item?.created_by],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("empresa, empresa_terceira")
+        .eq("id", item!.created_by!)
+        .maybeSingle();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!item?.created_by && open,
+  });
+
   const { data: photos = [] } = useQuery({
     queryKey: ["apontamento-photos", apontamentoId],
     queryFn: async () => {
@@ -104,11 +119,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     return d.tempo_inspecao;
   }, [d?.tempo_inspecao]);
 
+  const empresaLabel = useMemo(() => {
+    if (!creatorProfile) return null;
+    if (creatorProfile.empresa === "empresa_terceira") {
+      return creatorProfile.empresa_terceira || "Empresa Terceira";
+    }
+    return "Mobis Brasil";
+  }, [creatorProfile]);
+
   const identificationFields = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
     { key: "responsavel", label: "Apontado por" },
     { key: "turno", label: "Turno" },
+    ...(empresaLabel ? [{ key: "_empresa", label: "Empresa" }] : []),
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },
@@ -135,6 +159,11 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
         </div>
       </div>
     );
+  };
+
+  const getFieldValue = (f: { key: string; label: string }) => {
+    if (f.key === "_empresa") return empresaLabel || "—";
+    return fmt(f.key, d?.[f.key]);
   };
 
   // Check if has multiple failure mode details
@@ -179,7 +208,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       {renderInspectionSection()}
@@ -205,7 +234,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       <div data-pdf-section>
@@ -229,7 +258,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
           <DataField label="Linha" value={fmt("", d?.linha)} />
           <DataField label="Setor" value={fmt("", d?.setor)} />
         </div>
@@ -255,7 +284,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={fmt(f.key, d?.[f.key])} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
         </div>
       </div>
       <div data-pdf-section>

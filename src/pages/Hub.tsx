@@ -8,6 +8,7 @@ import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
+import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 
 const modules = [
@@ -46,6 +47,7 @@ const Hub = () => {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
+              <ReportErrorButton moduleName="Hub" />
               {showEngineering && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <Settings2 className="w-4 h-4 md:mr-2" />

@@ -480,7 +480,25 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant={filtersExpanded ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              {filtersExpanded ? "Ocultar Filtros" : "Filtros"}
+            </Button>
+            {Object.keys(filterValues).length > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                Limpar
+              </Button>
+            )}
+          </div>
+          {filtersExpanded && (
+            <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+          )}
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-4 h-auto">

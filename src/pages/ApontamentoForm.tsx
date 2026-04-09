@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -49,6 +50,8 @@ const ApontamentoForm = () => {
   const { id, tipo: paramTipo } = useParams();
   const isEdit = !!id;
   const { profile, user } = useAuth();
+  const { impersonating } = useImpersonation();
+  const activeProfile = impersonating || profile;
 
   const tipo = (isEdit ? undefined : paramTipo) as ApontamentoTipo | undefined;
 
@@ -148,7 +151,7 @@ const ApontamentoForm = () => {
       // Filter to only Mobis Brasil users for co-inspection
       return (data || []).filter((p: any) => p.empresa !== "empresa_terceira");
     },
-    enabled: profile?.empresa !== "empresa_terceira",
+    enabled: activeProfile?.empresa !== "empresa_terceira",
   });
 
   // Load existing photos
@@ -164,10 +167,10 @@ const ApontamentoForm = () => {
 
   // Auto-fill turno from profile
   useEffect(() => {
-    if (profile && !isEdit && profile.turno) {
-      setTurno(profile.turno);
+    if (activeProfile && !isEdit && activeProfile.turno) {
+      setTurno(activeProfile.turno);
     }
-  }, [profile, isEdit]);
+  }, [activeProfile, isEdit]);
 
   useEffect(() => {
     if (existing) {
@@ -394,7 +397,7 @@ const ApontamentoForm = () => {
       const payload: any = {
         tipo: formTipo,
         titulo: `${typeLabels[formTipo]} - ${partNumber || "Sem PN"}`,
-        responsavel: profile?.full_name || "Desconhecido",
+        responsavel: activeProfile?.full_name || "Desconhecido",
         data,
         turno: turno || null,
         fase: fase || null,
@@ -517,7 +520,7 @@ const ApontamentoForm = () => {
         </div>
 
         {/* CO-INSPEÇÃO - Incoming only, Mobis Brasil only */}
-        {isIncoming && profile?.empresa !== "empresa_terceira" && (
+        {isIncoming && activeProfile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">

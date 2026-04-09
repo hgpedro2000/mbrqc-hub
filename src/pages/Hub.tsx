@@ -3,6 +3,7 @@ import {
   LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 
 const modules = [
   { id: "tryout", titleKey: "modules.tryout.title", descriptionKey: "modules.tryout.description", icon: Beaker, path: "/tryout", color: "from-blue-500/15 to-cyan-500/5", iconBg: "bg-blue-500/10 text-blue-600" },
@@ -23,8 +25,9 @@ const modules = [
 
 const Hub = () => {
   const { signOut, profile } = useAuth();
+  const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin, loading: roleLoading } = useUserRole();
-  const { enabledModules } = useEnabledModules();
+  const { enabledModules } = useEnabledModules(impersonating?.id);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -62,9 +65,23 @@ const Hub = () => {
               </Button>
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
-            {getGreeting()}, {profile?.full_name?.split(" ")[0] || t("hub.user")}.
-          </h1>
+          {impersonating ? (
+            <div className="flex items-center gap-2 mt-3">
+              <h1 className="text-2xl md:text-4xl font-heading font-bold">
+                {getGreeting()}, {impersonating.full_name.split(" ")[0]}.
+              </h1>
+              <Badge className="bg-amber-500/20 text-amber-200 border-amber-400/30 text-xs">
+                Modo Teste
+              </Badge>
+              <Button variant="ghost" size="sm" onClick={stopImpersonating} className="text-primary-foreground/70 hover:text-primary-foreground text-xs">
+                Sair
+              </Button>
+            </div>
+          ) : (
+            <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">
+              {getGreeting()}, {profile?.full_name?.split(" ")[0] || t("hub.user")}.
+            </h1>
+          )}
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">
             {t("hub.selectModule")}
           </p>

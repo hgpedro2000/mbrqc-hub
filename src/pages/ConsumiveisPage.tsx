@@ -172,6 +172,7 @@ const InventarioRequisicoes = () => {
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [addItemOpen, setAddItemOpen] = useState(false);
+  const [stockListOpen, setStockListOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUnit, setNewUnit] = useState("un");
   const [newStock, setNewStock] = useState(0);

@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2,
+  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -17,6 +17,8 @@ const modules = [
   { id: "contencao", titleKey: "modules.contencao.title", descriptionKey: "modules.contencao.description", icon: ShieldAlert, path: "/contencao", color: "from-orange-500/15 to-amber-500/5", iconBg: "bg-orange-500/10 text-orange-600" },
   { id: "apontamentos", titleKey: "modules.apontamentos.title", descriptionKey: "modules.apontamentos.description", icon: FileBarChart, path: "/apontamentos", color: "from-violet-500/15 to-purple-500/5", iconBg: "bg-violet-500/10 text-violet-600" },
   { id: "alerta-qualidade", titleKey: "modules.alertaQualidade.title", descriptionKey: "modules.alertaQualidade.description", icon: AlertTriangle, path: "/alerta-qualidade", color: "from-red-500/15 to-rose-500/5", iconBg: "bg-red-500/10 text-red-600" },
+  { id: "consumiveis", titleKey: "modules.consumiveis.title", descriptionKey: "modules.consumiveis.description", icon: Package, path: "/consumiveis", color: "from-teal-500/15 to-cyan-500/5", iconBg: "bg-teal-500/10 text-teal-600" },
+  { id: "consulta-pecas", titleKey: "modules.consultaPecas.title", descriptionKey: "modules.consultaPecas.description", icon: Search, path: "/consulta-pecas", color: "from-indigo-500/15 to-blue-500/5", iconBg: "bg-indigo-500/10 text-indigo-600" },
 ];
 
 const Hub = () => {

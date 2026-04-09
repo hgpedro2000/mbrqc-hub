@@ -67,8 +67,9 @@ const PartNumbersTab = () => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule };
+      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule, origem } as any;
       if (editId) { const { error } = await supabase.from("part_numbers").update(payload).eq("id", editId); if (error) throw error; }
+      else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
       else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(editId ? "Atualizado!" : "Criado!"); resetForm(); },
@@ -94,8 +95,8 @@ const PartNumbersTab = () => {
     qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
   };
 
-  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); };
-  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setOpen(true); };
+  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); setOrigem("LP"); };
+  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setOrigem((p as any).origem || "LP"); setOpen(true); };
   const toggleSelect = (id: string) => { setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
 
   return (

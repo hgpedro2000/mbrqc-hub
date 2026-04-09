@@ -481,7 +481,7 @@ const ApontamentoForm = () => {
             </div>
             <div className="space-y-1.5">
               <Label>Apontado por</Label>
-              <Input value={profile?.full_name || ""} readOnly className="bg-muted" />
+              <Input value={activeProfile?.full_name || ""} readOnly className="bg-muted" />
             </div>
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>

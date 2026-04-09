@@ -138,13 +138,26 @@ const Apontamentos = () => {
     const projetos = [...new Set(typeItems.map((i) => i.projeto).filter(Boolean))] as string[];
     const fornecedores = [...new Set(typeItems.map((i) => i.fornecedor).filter(Boolean))] as string[];
     const responsaveis = [...new Set(typeItems.map((i) => i.responsavel).filter(Boolean))] as string[];
-    return [
+    // Build empresa options from created_by mapping
+    const empresaSet = new Set<string>();
+    typeItems.forEach((i) => {
+      if (i.created_by && empresaByUserId[i.created_by]) {
+        empresaSet.add(empresaByUserId[i.created_by]);
+      }
+    });
+    const empresas = [...empresaSet].sort();
+    
+    const baseFilters: FilterConfig[] = [
       { key: "status", label: "Status", options: statusFilterOptions, labelMap: { draft: "Rascunho", submitted: "Finalizado" } },
       { key: "projeto", label: "Projeto", options: projetos },
       { key: "fornecedor", label: "Fornecedor", options: fornecedores },
       { key: "responsavel", label: "Apontado por", options: responsaveis },
     ];
-  }, [items, activeTab]);
+    if (activeTab === "incoming") {
+      baseFilters.push({ key: "empresa", label: "Empresa", options: empresas });
+    }
+    return baseFilters;
+  }, [items, activeTab, empresaByUserId]);
 
   const countByType = useMemo(() => {
     const counts: Record<string, number> = {};

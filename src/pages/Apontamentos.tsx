@@ -68,21 +68,21 @@ const Apontamentos = () => {
     },
   });
 
-  // Fetch part_numbers for origem info
-  const { data: partNumbersList = [] } = useQuery({
-    queryKey: ["part-numbers-origem"],
+  // Fetch suppliers for origem info
+  const { data: suppliersList = [] } = useQuery({
+    queryKey: ["suppliers-origem"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("part_numbers").select("part_number, origem").eq("active", true);
+      const { data, error } = await supabase.from("suppliers").select("name, origem").eq("active", true);
       if (error) throw error;
       return data;
     },
   });
 
-  const origemByPartNumber = useMemo(() => {
+  const origemByFornecedor = useMemo(() => {
     const map: Record<string, string> = {};
-    partNumbersList.forEach((p: any) => { if (p.part_number) map[p.part_number] = p.origem || "LP"; });
+    (suppliersList as any[]).forEach((s: any) => { if (s.name) map[s.name] = s.origem || "LP"; });
     return map;
-  }, [partNumbersList]);
+  }, [suppliersList]);
 
   // Fetch profiles for empresa info
   const { data: profilesList = [] } = useQuery({

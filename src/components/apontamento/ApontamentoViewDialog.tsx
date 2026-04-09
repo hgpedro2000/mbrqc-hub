@@ -161,6 +161,11 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     );
   };
 
+  const getFieldValue = (f: { key: string; label: string }) => {
+    if (f.key === "_empresa") return empresaLabel || "—";
+    return fmt(f.key, d?.[f.key]);
+  };
+
   // Check if has multiple failure mode details
   const hasMultipleFailureModes = segundoDefeitos.length > 0 && segundoDefeitos[0]?.modo_falha;
   const hasNg = (d?.quantidade_ng || 0) > 0;

@@ -521,29 +521,9 @@ const ApontamentoForm = () => {
               </Select>
               {temCoInspecao === "sim" && (
                 <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      value={coInspetorSearch}
-                      onChange={(e) => { setCoInspetorSearch(e.target.value); setShowCoInspetorDropdown(true); }}
-                      onFocus={() => setShowCoInspetorDropdown(true)}
-                      onBlur={() => { setTimeout(() => setShowCoInspetorDropdown(false), 200); }}
-                      placeholder="Buscar usuário..."
-                      className="pl-9"
-                      autoComplete="off"
-                    />
-                    {showCoInspetorDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-popover border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
-                          <button key={p.full_name} onMouseDown={(e) => { e.preventDefault(); addCoInspetor(p.full_name); }} className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0">
-                            {p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}
-                          </button>
-                        )) : (
-                          <div className="px-3 py-2.5 text-sm text-muted-foreground">Nenhum usuário encontrado</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <Button variant="outline" type="button" onClick={() => setShowCoInspetorDialog(true)} className="w-full gap-2">
+                    <Search className="w-4 h-4" /> Selecionar Co-Inspetores
+                  </Button>
                   <div className="flex flex-wrap gap-2">
                     {coInspetores.map((name) => (
                       <Badge key={name} variant="secondary" className="gap-1">

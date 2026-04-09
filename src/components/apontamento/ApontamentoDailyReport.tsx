@@ -1,9 +1,13 @@
 import { useState, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { X, Download, FileText, AlertTriangle } from "lucide-react";
+import { X, Download, FileText, AlertTriangle, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
@@ -143,9 +147,29 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2" data-export-btn>
                 <div className="flex items-center gap-1">
-                  <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-[130px] text-xs h-8" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={cn("w-[130px] text-xs h-8 justify-start", !dateFrom && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined} onSelect={(d) => setDateFrom(d ? format(d, "yyyy-MM-dd") : today)} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+                    </PopoverContent>
+                  </Popover>
                   <span className="text-xs text-muted-foreground">a</span>
-                  <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-[130px] text-xs h-8" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className={cn("w-[130px] text-xs h-8 justify-start", !dateTo && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1" />
+                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => setDateTo(d ? format(d, "yyyy-MM-dd") : today)} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportPdf}><Download className="w-4 h-4" /> PDF</Button>
               </div>

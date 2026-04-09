@@ -23,6 +23,8 @@ const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Módulo de Linha", dbField: "line_module", label: "Módulo" },
 ];
 
+const ORIGEM_OPTIONS = ["LP", "CKD", "CONSIGNADA"];
+
 const PartNumbersTab = () => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -32,6 +34,7 @@ const PartNumbersTab = () => {
   const [partName, setPartName] = useState("");
   const [project, setProject] = useState("");
   const [lineModule, setLineModule] = useState("");
+  const [origem, setOrigem] = useState("LP");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);

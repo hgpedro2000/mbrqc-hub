@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Settings2 } from "lucide-react";
+import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import UsersTab from "@/components/engenharia/UsersTab";
 import SuppliersTab from "@/components/engenharia/SuppliersTab";
@@ -13,10 +15,16 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import ReportErrorButton from "@/components/ReportErrorButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Engenharia = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { profile } = useAuth();
+  const isSpecialAdmin = profile?.employee_number === "3501165";
+  const [impersonateOpen, setImpersonateOpen] = useState(false);
+  const [impersonating, setImpersonating] = useState<any>(null);
 
   const { data: pendingErrors = 0 } = useQuery({
     queryKey: ["pending-error-reports-count"],

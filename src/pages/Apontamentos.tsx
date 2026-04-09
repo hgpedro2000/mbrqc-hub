@@ -205,11 +205,18 @@ const Apontamentos = () => {
     const canEdit = isAdmin || isOwner;
     const isFinalized = status !== "draft";
     return (
-      <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5" /></Button>
-        {isFinalized && <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary" onClick={() => setViewTarget(id)} title="Visualizar / Exportar"><FileDown className="w-3.5 h-3.5" /></Button>}
-        {canEdit && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5" /></Button>}
-        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />Visualizar</DropdownMenuItem>
+            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />Exportar</DropdownMenuItem>}
+            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />Editar</DropdownMenuItem>}
+            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />Excluir</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   };

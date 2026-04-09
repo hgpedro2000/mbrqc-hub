@@ -262,7 +262,7 @@ const ApontamentoForm = () => {
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");
-    setShowCoInspetorDropdown(false);
+    // no-op, dialog stays open for multiple selections
   };
 
   const removeCoInspetor = (name: string) => setCoInspetores((prev) => prev.filter((n) => n !== name));

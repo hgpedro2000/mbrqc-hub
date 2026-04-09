@@ -167,10 +167,10 @@ const ApontamentoForm = () => {
 
   // Auto-fill turno from profile
   useEffect(() => {
-    if (profile && !isEdit && profile.turno) {
-      setTurno(profile.turno);
+    if (activeProfile && !isEdit && activeProfile.turno) {
+      setTurno(activeProfile.turno);
     }
-  }, [profile, isEdit]);
+  }, [activeProfile, isEdit]);
 
   useEffect(() => {
     if (existing) {
@@ -397,7 +397,7 @@ const ApontamentoForm = () => {
       const payload: any = {
         tipo: formTipo,
         titulo: `${typeLabels[formTipo]} - ${partNumber || "Sem PN"}`,
-        responsavel: profile?.full_name || "Desconhecido",
+        responsavel: activeProfile?.full_name || "Desconhecido",
         data,
         turno: turno || null,
         fase: fase || null,

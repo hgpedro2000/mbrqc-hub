@@ -151,6 +151,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     { key: "responsavel", label: "Apontado por" },
     { key: "turno", label: "Turno" },
     ...(empresaLabel ? [{ key: "_empresa", label: "Empresa" }] : []),
+    { key: "_origem", label: "Origem" },
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },

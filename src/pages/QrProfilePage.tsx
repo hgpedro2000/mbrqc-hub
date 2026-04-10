@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,16 +7,19 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer, QrCode, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, QrCode, Loader2 } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 
 const QrProfilePage = () => {
   const navigate = useNavigate();
-  const { profile, user } = useAuth();
+  const { profile } = useAuth();
   const { impersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  // If impersonating, fetch the impersonated user's profile
   const { data: impersonatedProfile, isLoading } = useQuery({
     queryKey: ["impersonated-profile", impersonating?.id],
     queryFn: async () => {
@@ -32,36 +36,25 @@ const QrProfilePage = () => {
 
   const activeProfile = impersonating ? impersonatedProfile : profile;
 
-  const handlePrint = () => {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>QR Code - ${activeProfile?.full_name}</title>
-      <style>
-        body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; margin: 0; }
-        .container { text-align: center; width: 6cm; }
-        .qr { margin: 0 auto; }
-        .name { font-size: 14px; font-weight: bold; margin-top: 8px; }
-        .code { font-size: 12px; color: #666; margin-top: 4px; }
-        .cargo { font-size: 11px; color: #888; margin-top: 2px; }
-        @media print { body { margin: 0; } }
-      </style></head><body>
-      <div class="container">
-        <div class="qr" id="qr-print"></div>
-        <div class="name">${activeProfile?.full_name || ""}</div>
-        <div class="cargo">${activeProfile?.cargo || ""}</div>
-        <div class="code">${activeProfile?.qr_code_id || ""}</div>
-      </div>
-      <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-      <script>
-        QRCode.toCanvas(document.createElement('canvas'), '${activeProfile?.qr_code_id || ""}', { width: 200 }, function(err, canvas) {
-          if (!err) document.getElementById('qr-print').appendChild(canvas);
-          setTimeout(() => window.print(), 500);
-        });
-      </script>
-      </body></html>
-    `);
-    printWindow.document.close();
+  const exportAs = async (format: "jpg" | "pdf") => {
+    if (!cardRef.current) return;
+    try {
+      const canvas = await html2canvas(cardRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      if (format === "jpg") {
+        const link = document.createElement("a");
+        link.download = `QR-${activeProfile?.qr_code_id || "code"}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
+        link.click();
+      } else {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [80, 100] });
+        pdf.addImage(imgData, "PNG", 5, 5, 70, 70 * (canvas.height / canvas.width));
+        pdf.save(`QR-${activeProfile?.qr_code_id || "code"}.pdf`);
+      }
+      toast.success(`QR Code exportado como ${format.toUpperCase()}`);
+    } catch {
+      toast.error("Erro ao exportar");
+    }
   };
 
   if (impersonating && isLoading) {
@@ -75,7 +68,7 @@ const QrProfilePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-4 sm:py-6">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
@@ -91,19 +84,24 @@ const QrProfilePage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-md">
+      <main className="container mx-auto px-3 sm:px-4 py-6 max-w-md">
         <div className="form-section text-center space-y-4">
-          <div className="inline-block p-4 bg-white rounded-xl shadow-sm">
+          <div ref={cardRef} className="inline-block p-6 bg-white rounded-xl shadow-sm">
             <QRCodeSVG value={activeProfile?.qr_code_id || ""} size={200} level="H" />
+            <div className="mt-3">
+              <h2 className="text-lg font-heading font-bold text-foreground">{activeProfile?.full_name}</h2>
+              {activeProfile?.cargo && <p className="text-sm text-muted-foreground">{activeProfile.cargo}</p>}
+              <p className="text-xs font-mono text-muted-foreground mt-1 bg-muted/30 inline-block px-2 py-0.5 rounded">{activeProfile?.qr_code_id}</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-heading font-bold text-foreground">{activeProfile?.full_name}</h2>
-            {activeProfile?.cargo && <p className="text-sm text-muted-foreground">{activeProfile.cargo}</p>}
-            <p className="text-xs font-mono text-muted-foreground mt-1 bg-muted/30 inline-block px-2 py-0.5 rounded">{activeProfile?.qr_code_id}</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <Button onClick={() => exportAs("jpg")} variant="outline" className="gap-2">
+              <Download className="w-4 h-4" /> Exportar JPG
+            </Button>
+            <Button onClick={() => exportAs("pdf")} variant="outline" className="gap-2">
+              <Download className="w-4 h-4" /> Exportar PDF
+            </Button>
           </div>
-          <Button onClick={handlePrint} className="gap-2">
-            <Printer className="w-4 h-4" /> Imprimir QR Code
-          </Button>
         </div>
       </main>
     </div>

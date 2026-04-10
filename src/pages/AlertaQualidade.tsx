@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, AlertTriangle, Eye, Camera } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Eye, Camera, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
@@ -18,8 +19,8 @@ const AlertaQualidade = () => {
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Check if user is lider
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", user?.id],
     queryFn: async () => {
@@ -34,7 +35,6 @@ const AlertaQualidade = () => {
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
   const isInspetor = roles.some((r: any) => r.role === "inspetor");
 
-  // Redirect inspetor to feed
   useEffect(() => {
     if (!isLider && isInspetor) {
       navigate("/alerta-qualidade/feed", { replace: true });
@@ -59,7 +59,6 @@ const AlertaQualidade = () => {
     },
   });
 
-  // Realtime subscription for ciencias
   useEffect(() => {
     const channel = supabase
       .channel("ciencias-realtime")
@@ -77,48 +76,34 @@ const AlertaQualidade = () => {
     return { count, total: totalDestinatarios, pct };
   };
 
+  const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
+
+  const filtered = useMemo(() => {
+    if (!searchTerm.trim()) return alertas;
+    const term = searchTerm.toLowerCase();
+    return alertas.filter((a: any) =>
+      formatSeq(a.sequencial).toLowerCase().includes(term) ||
+      a.descricao?.toLowerCase().includes(term) ||
+      a.modo_falha?.toLowerCase().includes(term) ||
+      a.modelo?.toLowerCase().includes(term)
+    );
+  }, [alertas, searchTerm]);
+
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;
     try {
-      // Find inspetor by qr_code_id
       const { data: inspetor, error: findErr } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .eq("qr_code_id", qrValue)
-        .maybeSingle();
-
-      if (findErr || !inspetor) {
-        toast.error("QR Code não reconhecido. Inspetor não encontrado.");
-        return;
-      }
-
-      // Check if already registered
-      const { data: existing } = await supabase
-        .from("ciencias")
-        .select("id")
-        .eq("alerta_id", scanAlertaId)
-        .eq("inspetor_id", inspetor.id)
-        .maybeSingle();
-
-      if (existing) {
-        toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`);
-        return;
-      }
-
-      // Insert ciencia
+        .from("profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
+      if (findErr || !inspetor) { toast.error("QR Code não reconhecido."); return; }
+      const { data: existing } = await supabase.from("ciencias").select("id").eq("alerta_id", scanAlertaId).eq("inspetor_id", inspetor.id).maybeSingle();
+      if (existing) { toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`); return; }
       const { error: insertErr } = await supabase.from("ciencias").insert({
-        alerta_id: scanAlertaId,
-        inspetor_id: inspetor.id,
-        metodo: "qr_lider",
-        registrado_por_id: user?.id,
+        alerta_id: scanAlertaId, inspetor_id: inspetor.id, metodo: "qr_lider", registrado_por_id: user?.id,
       } as any);
-
       if (insertErr) throw insertErr;
       toast.success(`✓ Ciência registrada: ${inspetor.full_name}`);
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   return (
@@ -144,27 +129,32 @@ const AlertaQualidade = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-5xl">
-        {isLider && (
-          <div className="flex justify-end">
-            <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226]">
+        <div className="flex flex-col sm:flex-row justify-between gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por número, descrição, modelo..." className="pl-9 h-9" />
+          </div>
+          {isLider && (
+            <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
               <Plus className="w-4 h-4" /> Novo Alerta
             </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
-        ) : alertas.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Nenhum alerta cadastrado</p>
+            <p className="text-muted-foreground">Nenhum alerta encontrado</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Seq.</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Projeto</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Ocorrência</th>
                   <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Validade</th>
@@ -174,14 +164,16 @@ const AlertaQualidade = () => {
                 </tr>
               </thead>
               <tbody>
-                {alertas.map((a: any) => {
+                {filtered.map((a: any) => {
                   const prog = getCienciaProgress(a.id, a.total_destinatarios);
                   return (
                     <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30">
-                      <td className="py-2.5 px-2 font-mono text-xs font-bold">{a.sequencial}</td>
+                      <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
+                      <td className="py-2.5 px-2 hidden sm:table-cell">
+                        {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
+                      </td>
                       <td className="py-2.5 px-2">
                         <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
-                        {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
                       </td>
                       <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
                         {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
@@ -203,12 +195,12 @@ const AlertaQualidade = () => {
                       <td className="py-2.5 px-2">
                         <div className="flex items-center justify-center gap-1">
                           {isLider && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
-                              <Camera className="w-3.5 h-3.5" />
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
+                              <Camera className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Visualizar" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
-                            <Eye className="w-3.5 h-3.5" />
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Visualizar" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
+                            <Eye className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -221,12 +213,7 @@ const AlertaQualidade = () => {
         )}
       </main>
 
-      <QrScannerModal
-        open={!!scanAlertaId}
-        onClose={() => setScanAlertaId(null)}
-        onScan={handleQrScan}
-        title="Registrar Ciência via QR"
-      />
+      <QrScannerModal open={!!scanAlertaId} onClose={() => setScanAlertaId(null)} onScan={handleQrScan} title="Registrar Ciência via QR" />
     </div>
   );
 };

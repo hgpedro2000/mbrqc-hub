@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, Camera, Loader2, X, Send, Ticket, Bell, CheckCircle, Clock, ImagePlus } from "lucide-react";
+import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { compressImage } from "@/lib/compressImage";
+import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 
 interface Props {
   moduleName: string;
@@ -30,9 +32,10 @@ const ReportErrorButton = ({ moduleName }: Props) => {
   const [photos, setPhotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user's own tickets
   const { data: myTickets = [], refetch: refetchTickets } = useQuery({
     queryKey: ["my-error-reports", user?.id],
     queryFn: async () => {
@@ -51,16 +54,45 @@ const ReportErrorButton = ({ moduleName }: Props) => {
   const resolvedCount = myTickets.filter((t: any) => t.status === "resolvido").length;
   const hasNewResolved = resolvedCount > 0;
 
-  const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = 4 - photos.length;
     const toAdd = files.slice(0, remaining);
-    setPhotos((prev) => [...prev, ...toAdd]);
-    toAdd.forEach((f) => {
+    if (toAdd.length === 0) return;
+    // Compress first, then open annotation for first one
+    const compressed = await Promise.all(toAdd.map(compressImage));
+    setPendingFiles(compressed.slice(1));
+    setAnnotatingFile(compressed[0]);
+  };
+
+  const handleAnnotationConfirm = (annotatedFile: File) => {
+    setPhotos((prev) => [...prev, annotatedFile]);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
+    reader.readAsDataURL(annotatedFile);
+    setAnnotatingFile(null);
+    // Process next pending file
+    if (pendingFiles.length > 0) {
+      const [next, ...rest] = pendingFiles;
+      setPendingFiles(rest);
+      setAnnotatingFile(next);
+    }
+  };
+
+  const handleAnnotationCancel = () => {
+    // Skip annotation, add original
+    if (annotatingFile) {
+      setPhotos((prev) => [...prev, annotatingFile]);
       const reader = new FileReader();
       reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
-      reader.readAsDataURL(f);
-    });
+      reader.readAsDataURL(annotatingFile);
+    }
+    setAnnotatingFile(null);
+    if (pendingFiles.length > 0) {
+      const [next, ...rest] = pendingFiles;
+      setPendingFiles(rest);
+      setAnnotatingFile(next);
+    }
   };
 
   const removePhoto = (idx: number) => {
@@ -125,19 +157,11 @@ const ReportErrorButton = ({ moduleName }: Props) => {
             <DialogTitle className="text-center">Help Desk</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
-            <Button
-              variant="outline"
-              className="h-16 flex flex-col items-center gap-1"
-              onClick={() => { setMenuOpen(false); setReportOpen(true); }}
-            >
+            <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setReportOpen(true); }}>
               <AlertTriangle className="w-5 h-5 text-destructive" />
               <span className="text-sm font-medium">Reportar Erro</span>
             </Button>
-            <Button
-              variant="outline"
-              className="h-16 flex flex-col items-center gap-1 relative"
-              onClick={() => { setMenuOpen(false); setStatusOpen(true); refetchTickets(); }}
-            >
+            <Button variant="outline" className="h-16 flex flex-col items-center gap-1 relative" onClick={() => { setMenuOpen(false); setStatusOpen(true); refetchTickets(); }}>
               <Ticket className="w-5 h-5 text-primary" />
               <span className="text-sm font-medium">Status de Chamados</span>
               {hasNewResolved && (
@@ -160,16 +184,10 @@ const ReportErrorButton = ({ moduleName }: Props) => {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Descrição do Erro *</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descreva o erro que encontrou..."
-                rows={4}
-              />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva o erro que encontrou..." rows={4} />
             </div>
             <div className="space-y-2">
               <Label>Capturas de Tela (máx. 4)</Label>
-              {/* accept image/* WITHOUT capture to allow gallery on iOS */}
               <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
               <div className="flex flex-wrap gap-2">
                 {previews.map((src, i) => (
@@ -236,6 +254,14 @@ const ReportErrorButton = ({ moduleName }: Props) => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Image annotation editor */}
+      <ImageAnnotationEditor
+        open={!!annotatingFile}
+        imageFile={annotatingFile}
+        onConfirm={handleAnnotationConfirm}
+        onCancel={handleAnnotationCancel}
+      />
     </>
   );
 };

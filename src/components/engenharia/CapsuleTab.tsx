@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { compressImage } from "@/lib/compressImage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,7 +38,8 @@ const CapsuleTab = () => {
     if (fileList.length === 0) return;
     setUploading(true);
     try {
-      for (const file of fileList) {
+      for (const rawFile of fileList) {
+        const file = rawFile.type.startsWith("image/") ? await compressImage(rawFile) : rawFile;
         const filePath = `${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabase.storage
           .from("capsule-files")

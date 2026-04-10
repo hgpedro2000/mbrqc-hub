@@ -12,6 +12,7 @@ interface Profile {
   empresa_terceira: string | null;
   cargo: string | null;
   qr_code_id: string | null;
+  email: string | null;
 }
 
 interface AuthContextType {
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id")
+      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email")
       .eq("id", userId)
       .maybeSingle();
     setProfile(data as Profile | null);

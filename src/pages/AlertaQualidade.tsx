@@ -117,10 +117,14 @@ const AlertaQualidade = () => {
     return null;
   };
 
-  const getQualifiedCount = (linhaPeca: string | null): number => {
+  const getQualifiedInspectors = (linhaPeca: string | null): string[] => {
     const areaKey = resolveArea(linhaPeca);
-    if (!areaKey) return 0;
-    return new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id)).size;
+    if (!areaKey) return [];
+    return [...new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id))];
+  };
+
+  const getQualifiedCount = (linhaPeca: string | null): number => {
+    return getQualifiedInspectors(linhaPeca).length;
   };
 
   const getCienciaProgress = (alertaId: string, linhaPeca: string | null) => {
@@ -142,16 +146,27 @@ const AlertaQualidade = () => {
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
+  // Filter: inspectors/auxiliars only see alerts where they are in the ciência list
+  const filteredByVisibility = useMemo(() => {
+    if (isAdmin || isLider) return alertas;
+    // For inspectors: only show alerts where they are a qualified inspector for that area
+    if (!user?.id) return [];
+    return alertas.filter((a: any) => {
+      const qualifiedInspectors = getQualifiedInspectors(a.linha_peca);
+      return qualifiedInspectors.includes(user.id);
+    });
+  }, [alertas, isAdmin, isLider, user?.id, qualifications, partNumbers]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return alertas;
+    if (!searchTerm.trim()) return filteredByVisibility;
     const term = searchTerm.toLowerCase();
-    return alertas.filter((a: any) =>
+    return filteredByVisibility.filter((a: any) =>
       formatSeq(a.sequencial).toLowerCase().includes(term) ||
       a.descricao?.toLowerCase().includes(term) ||
       a.modo_falha?.toLowerCase().includes(term) ||
       a.modelo?.toLowerCase().includes(term)
     );
-  }, [alertas, searchTerm]);
+  }, [filteredByVisibility, searchTerm]);
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;
@@ -184,7 +199,6 @@ const AlertaQualidade = () => {
     if (!deleteAlertaId) return;
     setDeleting(true);
     try {
-      // Delete ciencias first
       await supabase.from("ciencias").delete().eq("alerta_id", deleteAlertaId);
       const { error } = await supabase.from("alertas").delete().eq("id", deleteAlertaId);
       if (error) throw error;
@@ -248,7 +262,7 @@ const AlertaQualidade = () => {
         <div className="flex flex-col sm:flex-row justify-between gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por número, descrição, modelo..." className="pl-9 h-9" />
+            <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-9" />
           </div>
           {isLider && (
             <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
@@ -265,95 +279,143 @@ const AlertaQualidade = () => {
             <p className="text-muted-foreground">Nenhum alerta encontrado</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Projeto</th>
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Ocorrência</th>
-                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Validade</th>
-                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
-                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
-                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((a: any) => {
-                  const prog = getCienciaProgress(a.id, a.linha_peca);
-                  const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
-                  return (
-                    <tr
-                      key={a.id}
-                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer"
-                      onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
-                    >
-                      <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
-                      <td className="py-2.5 px-2 hidden sm:table-cell">
-                        {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
-                      </td>
-                      <td className="py-2.5 px-2">
-                        <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
-                      </td>
-                      <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
-                        {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
-                      </td>
-                      <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
-                        {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
-                      </td>
-                      <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                        {isAdmin ? (
-                          <button
-                            onClick={() => { setStatusEditAlert(a); setNewStatus(a.status || status.label); }}
-                            title="Clique para alterar status"
-                          >
-                            <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>
-                              {a.status && a.status !== "ativo" ? a.status : status.label}
-                            </Badge>
-                          </button>
-                        ) : (
-                          <Badge variant="outline" className={status.color}>
-                            {a.status && a.status !== "ativo" ? a.status : status.label}
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex flex-col items-center gap-1 min-w-[100px]">
-                          <Progress value={prog.pct} className="h-2 w-full" />
-                          <span className="text-[10px] text-muted-foreground">
-                            {prog.pending} pend. / {prog.count} ciente{prog.count !== 1 ? "s" : ""}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1 flex-wrap">
-                          {canEdit(a) && (
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
-                              <Pencil className="w-3.5 h-3.5" />
-                            </Button>
+          /* Mobile: card layout, Desktop: table */
+          <>
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-3">
+              {filtered.map((a: any) => {
+                const prog = getCienciaProgress(a.id, a.linha_peca);
+                const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
+                const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
+                return (
+                  <div
+                    key={a.id}
+                    className="form-section p-3 space-y-2 cursor-pointer"
+                    onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                      {isAdmin ? (
+                        <button onClick={(e) => { e.stopPropagation(); setStatusEditAlert(a); setNewStatus(displayStatus); }}>
+                          <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer`}>{displayStatus}</Badge>
+                        </button>
+                      ) : (
+                        <Badge variant="outline" className={`${status.color} text-[10px]`}>{displayStatus}</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-foreground line-clamp-2">{a.descricao || a.modo_falha || "—"}</p>
+                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      {a.modelo && <Badge variant="outline" className="text-[9px] border-emerald-400 text-emerald-700 bg-emerald-50 py-0">{a.modelo}</Badge>}
+                      <span>{a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : ""}</span>
+                    </div>
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Progress value={prog.pct} className="h-1.5 flex-1" />
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{prog.pending}p / {prog.count}c</span>
+                    </div>
+                    <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
+                      {canEdit(a) && (
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                      )}
+                      {isLider && (
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setScanAlertaId(a.id)}>
+                          <Camera className="w-3 h-3" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
+                        <Download className="w-3 h-3" />
+                      </Button>
+                      {isAdmin && (
+                        <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive border-destructive/30" onClick={() => setDeleteAlertaId(a.id)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Projeto</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Ocorrência</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Validade</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((a: any) => {
+                    const prog = getCienciaProgress(a.id, a.linha_peca);
+                    const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
+                    const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
+                    return (
+                      <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
+                        <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
+                        <td className="py-2.5 px-2">
+                          {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
+                        </td>
+                        <td className="py-2.5 px-2">
+                          <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
+                        </td>
+                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                          {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
+                        </td>
+                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                          {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
+                        </td>
+                        <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                          {isAdmin ? (
+                            <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
+                              <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
+                            </button>
+                          ) : (
+                            <Badge variant="outline" className={status.color}>{displayStatus}</Badge>
                           )}
-                          {isLider && (
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
-                              <Camera className="w-3.5 h-3.5" />
+                        </td>
+                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex flex-col items-center gap-1 min-w-[90px]">
+                            <Progress value={prog.pct} className="h-2 w-full" />
+                            <span className="text-[10px] text-muted-foreground">{prog.pending}p / {prog.count}c</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            {canEdit(a) && (
+                              <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
+                                <Pencil className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            {isLider && (
+                              <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
+                                <Camera className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
+                              <Download className="w-3.5 h-3.5" />
                             </Button>
-                          )}
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
-                            <Download className="w-3.5 h-3.5" />
-                          </Button>
-                          {isAdmin && (
-                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {isAdmin && (
+                              <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </main>
 

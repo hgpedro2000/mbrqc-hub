@@ -121,7 +121,31 @@ const RequisitarItem = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-2">
+          {filteredRequests.map((r: any) => {
+            const cfg = statusConfig[r.status] || statusConfig.aguardando;
+            return (
+              <div key={r.id} className="border rounded-lg p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
+                  <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
+                </div>
+                <p className="text-sm font-medium">{r.item_name}</p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Qtd: <strong>{r.quantity}</strong></span>
+                  <span>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                </div>
+              </div>
+            );
+          })}
+          {filteredRequests.length === 0 && (
+            <p className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido encontrado</p>
+          )}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -151,6 +175,7 @@ const RequisitarItem = () => {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
 
       {/* Add item dialog */}
@@ -435,13 +460,51 @@ const InventarioRequisicoes = () => {
         {loadingReqs ? (
           <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {filteredRequests.map((r: any) => {
+              const cfg = statusConfig[r.status] || statusConfig.aguardando;
+              return (
+                <div key={r.id} className="border rounded-lg p-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
+                    <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
+                  </div>
+                  <p className="text-sm font-medium">{r.item_name}</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{r.user_name}</span>
+                    <span>Qtd: <strong>{r.quantity}</strong></span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{r.turno || ""}</span>
+                    <span>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                  </div>
+                  {r.status === "aguardando" && (
+                    <div className="flex items-center gap-1 justify-end pt-1">
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-emerald-600 text-xs" onClick={() => updateRequestStatus(r.id, "entregue")}>
+                        <Check className="w-3.5 h-3.5 mr-1" /> Entregar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-destructive text-xs" onClick={() => updateRequestStatus(r.id, "rejeitado")}>
+                        <XIcon className="w-3.5 h-3.5 mr-1" /> Rejeitar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {filteredRequests.length === 0 && (
+              <p className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição</p>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Nº</TableHead>
                   <TableHead className="text-xs">Usuário</TableHead>
-                  <TableHead className="text-xs hidden sm:table-cell">Turno</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Turno</TableHead>
                   <TableHead className="text-xs">Item</TableHead>
                   <TableHead className="text-xs text-center">Qtd</TableHead>
                   <TableHead className="text-xs">Data</TableHead>
@@ -456,7 +519,7 @@ const InventarioRequisicoes = () => {
                     <TableRow key={r.id}>
                       <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
                       <TableCell className="text-xs">{r.user_name}</TableCell>
-                      <TableCell className="text-xs hidden sm:table-cell">{r.turno || "—"}</TableCell>
+                      <TableCell className="text-xs hidden md:table-cell">{r.turno || "—"}</TableCell>
                       <TableCell className="text-sm">{r.item_name}</TableCell>
                       <TableCell className="text-center">{r.quantity}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
@@ -484,9 +547,9 @@ const InventarioRequisicoes = () => {
               </TableBody>
             </Table>
           </div>
+          </>
         )}
       </div>
-
       {/* Insufficient stock dialog */}
       <AlertDialog open={!!insufficientDialog} onOpenChange={() => setInsufficientDialog(null)}>
         <AlertDialogContent>

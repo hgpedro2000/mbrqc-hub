@@ -7,7 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, QrCode, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, QrCode, Loader2, Mail } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -25,7 +25,7 @@ const QrProfilePage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, full_name, cargo, qr_code_id")
+        .select("id, full_name, cargo, qr_code_id, email")
         .eq("id", impersonating!.id)
         .single();
       if (error) throw error;
@@ -35,6 +35,7 @@ const QrProfilePage = () => {
   });
 
   const activeProfile = impersonating ? impersonatedProfile : profile;
+  const userEmail = activeProfile?.email;
 
   const exportAs = async (format: "jpg" | "pdf") => {
     if (!cardRef.current) return;
@@ -54,6 +55,28 @@ const QrProfilePage = () => {
       toast.success(`QR Code exportado como ${format.toUpperCase()}`);
     } catch {
       toast.error("Erro ao exportar");
+    }
+  };
+
+  const sendEmail = async () => {
+    if (!cardRef.current || !userEmail) return;
+    try {
+      toast.info("Gerando e enviando por e-mail...");
+      const canvas = await html2canvas(cardRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      const imgData = canvas.toDataURL("image/png");
+
+      const { error } = await supabase.functions.invoke("send-qr-email", {
+        body: {
+          to: userEmail,
+          name: activeProfile?.full_name || "",
+          qrCodeId: activeProfile?.qr_code_id || "",
+          imageBase64: imgData,
+        },
+      });
+      if (error) throw error;
+      toast.success(`QR Code enviado para ${userEmail}`);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao enviar e-mail");
     }
   };
 
@@ -86,21 +109,26 @@ const QrProfilePage = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 max-w-md">
         <div className="form-section text-center space-y-4">
-          <div ref={cardRef} className="inline-block p-6 bg-white rounded-xl shadow-sm">
-            <QRCodeSVG value={activeProfile?.qr_code_id || ""} size={200} level="H" />
+          <div ref={cardRef} className="inline-block p-6 sm:p-8 bg-white rounded-xl shadow-sm">
+            <QRCodeSVG value={activeProfile?.qr_code_id || ""} size={280} level="H" className="w-[240px] h-[240px] sm:w-[280px] sm:h-[280px]" />
             <div className="mt-3">
               <h2 className="text-lg font-heading font-bold text-foreground">{activeProfile?.full_name}</h2>
               {activeProfile?.cargo && <p className="text-sm text-muted-foreground">{activeProfile.cargo}</p>}
               <p className="text-xs font-mono text-muted-foreground mt-1 bg-muted/30 inline-block px-2 py-0.5 rounded">{activeProfile?.qr_code_id}</p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button onClick={() => exportAs("jpg")} variant="outline" className="gap-2">
+          <div className="flex flex-col gap-2 justify-center">
+            <Button onClick={() => exportAs("jpg")} variant="outline" className="gap-2 w-full">
               <Download className="w-4 h-4" /> Exportar JPG
             </Button>
-            <Button onClick={() => exportAs("pdf")} variant="outline" className="gap-2">
+            <Button onClick={() => exportAs("pdf")} variant="outline" className="gap-2 w-full">
               <Download className="w-4 h-4" /> Exportar PDF
             </Button>
+            {userEmail && (
+              <Button onClick={sendEmail} variant="outline" className="gap-2 w-full">
+                <Mail className="w-4 h-4" /> Enviar por E-mail
+              </Button>
+            )}
           </div>
         </div>
       </main>

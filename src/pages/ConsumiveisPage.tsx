@@ -291,12 +291,6 @@ const InventarioRequisicoes = () => {
       setEditSaving(false);
     }
   };
-      qc.invalidateQueries({ queryKey: ["consumable-items"] });
-      setDeleteTarget(null);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
-  };
 
   // Dashboard stats
   const totalRequests = allRequests.length;

@@ -21,6 +21,7 @@ const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Part Name", dbField: "part_name", label: "Part Name", required: true },
   { excelHeader: "Projeto", dbField: "project", label: "Projeto" },
   { excelHeader: "Módulo de Linha", dbField: "line_module", label: "Módulo" },
+  { excelHeader: "ALC Code", dbField: "alc_code", label: "ALC Code" },
 ];
 
 const PartNumbersTab = () => {
@@ -32,6 +33,7 @@ const PartNumbersTab = () => {
   const [partName, setPartName] = useState("");
   const [project, setProject] = useState("");
   const [lineModule, setLineModule] = useState("");
+  const [alcCode, setAlcCode] = useState("N/A");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -58,13 +60,13 @@ const PartNumbersTab = () => {
     if (!searchTerm.trim()) return partNumbers;
     const term = searchTerm.toLowerCase();
     return partNumbers.filter((p: any) =>
-      p.part_number?.toLowerCase().includes(term) || p.part_name?.toLowerCase().includes(term) || p.suppliers?.name?.toLowerCase().includes(term) || p.project?.toLowerCase().includes(term)
+      p.part_number?.toLowerCase().includes(term) || p.part_name?.toLowerCase().includes(term) || p.suppliers?.name?.toLowerCase().includes(term) || p.project?.toLowerCase().includes(term) || p.alc_code?.toLowerCase().includes(term)
     );
   }, [partNumbers, searchTerm]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule } as any;
+      const payload = { supplier_id: supplierId, part_number: partNumber, part_name: partName, project, line_module: lineModule, alc_code: alcCode } as any;
       if (editId) { const { error } = await supabase.from("part_numbers").update(payload).eq("id", editId); if (error) throw error; }
       else { const { error } = await supabase.from("part_numbers").insert(payload); if (error) throw error; }
     },
@@ -91,8 +93,8 @@ const PartNumbersTab = () => {
     qc.invalidateQueries({ queryKey: ["eng-part-numbers"] });
   };
 
-  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); };
-  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setOpen(true); };
+  const resetForm = () => { setOpen(false); setEditId(null); setSupplierId(""); setPartNumber(""); setPartName(""); setProject(""); setLineModule(""); setAlcCode("N/A"); };
+  const openEdit = (p: any) => { setEditId(p.id); setSupplierId(p.supplier_id); setPartNumber(p.part_number); setPartName(p.part_name); setProject(p.project); setLineModule(p.line_module); setAlcCode(p.alc_code || "N/A"); setOpen(true); };
   const toggleSelect = (id: string) => { setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
 
   return (
@@ -101,10 +103,10 @@ const PartNumbersTab = () => {
         <h2 className="text-lg font-heading font-semibold">Part Numbers</h2>
         <div className="flex flex-wrap gap-2">
           {selectedIds.size > 0 && <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}><Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}</Button>}
-          <ExcelExportButton data={partNumbers.map((p: any) => ({ supplier_code: p.suppliers?.code || "", supplier_name: p.suppliers?.name || "", part_number: p.part_number, part_name: p.part_name, project: p.project, line_module: p.line_module, active: p.active }))} columns={[{ header: "Fornecedor (Código)", key: "supplier_code" }, { header: "Fornecedor (Nome)", key: "supplier_name" }, { header: "Part Number", key: "part_number" }, { header: "Part Name", key: "part_name" }, { header: "Projeto", key: "project" }, { header: "Módulo", key: "line_module" }, { header: "Ativo", key: "active" }]} fileName="part_numbers" />
+          <ExcelExportButton data={partNumbers.map((p: any) => ({ supplier_code: p.suppliers?.code || "", supplier_name: p.suppliers?.name || "", part_number: p.part_number, part_name: p.part_name, project: p.project, line_module: p.line_module, alc_code: p.alc_code || "N/A", active: p.active }))} columns={[{ header: "Fornecedor (Código)", key: "supplier_code" }, { header: "Fornecedor (Nome)", key: "supplier_name" }, { header: "Part Number", key: "part_number" }, { header: "Part Name", key: "part_name" }, { header: "Projeto", key: "project" }, { header: "Módulo", key: "line_module" }, { header: "ALC Code", key: "alc_code" }, { header: "Ativo", key: "active" }]} fileName="part_numbers" />
           <ExcelImportDialog title="Part Numbers" columns={PN_COLUMNS}
             checkDuplicates={async (rows) => { const pns = rows.map((r) => r.part_number); const { data } = await supabase.from("part_numbers").select("part_number").in("part_number", pns); const existing = new Set((data || []).map((d) => d.part_number)); return rows.map((r) => existing.has(r.part_number)); }}
-            onImport={async (rows) => { const codes = [...new Set(rows.map((r) => r.supplier_code))]; const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes); const codeToId = new Map((suppData || []).map((s) => [s.code, s.id])); const toInsert = rows.filter((r) => codeToId.has(r.supplier_code)).map((r) => ({ supplier_id: codeToId.get(r.supplier_code)!, part_number: r.part_number, part_name: r.part_name, project: r.project || "", line_module: r.line_module || "" })); const skipped = rows.length - toInsert.length; if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado."); const { error } = await supabase.from("part_numbers").upsert(toInsert, { onConflict: "part_number" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(`${toInsert.length} importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s).` : ""}`); }}
+            onImport={async (rows) => { const codes = [...new Set(rows.map((r) => r.supplier_code))]; const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes); const codeToId = new Map((suppData || []).map((s) => [s.code, s.id])); const toInsert = rows.filter((r) => codeToId.has(r.supplier_code)).map((r) => ({ supplier_id: codeToId.get(r.supplier_code)!, part_number: r.part_number, part_name: r.part_name, project: r.project || "", line_module: r.line_module || "", alc_code: r.alc_code || "N/A" })); const skipped = rows.length - toInsert.length; if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado."); const { error } = await supabase.from("part_numbers").upsert(toInsert, { onConflict: "part_number" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(`${toInsert.length} importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s).` : ""}`); }}
           />
           <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
             <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
@@ -116,6 +118,7 @@ const PartNumbersTab = () => {
                 <div className="space-y-2"><Label>Part Name *</Label><Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" /></div>
                 <div className="space-y-2"><Label>Projeto</Label><Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" /></div>
                 <div className="space-y-2"><Label>Módulo de Linha</Label><Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" /></div>
+                <div className="space-y-2"><Label>ALC Code</Label><Input value={alcCode} onChange={(e) => setAlcCode(e.target.value)} placeholder="N/A" /></div>
                 <Button onClick={() => saveMutation.mutate()} disabled={!supplierId || !partNumber || !partName || saveMutation.isPending} className="w-full">{saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Salvar</Button>
               </div>
             </DialogContent>
@@ -123,7 +126,7 @@ const PartNumbersTab = () => {
         </div>
       </div>
 
-      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por part number, nome, fornecedor..." className="pl-9" /></div>
+      <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por part number, nome, fornecedor, ALC..." className="pl-9" /></div>
 
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir {selectedIds.size} part numbers?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
@@ -142,6 +145,7 @@ const PartNumbersTab = () => {
                 <TableHead className="hidden md:table-cell">Part Name</TableHead>
                 <TableHead className="hidden lg:table-cell">Projeto</TableHead>
                 <TableHead className="hidden lg:table-cell">Módulo</TableHead>
+                <TableHead className="hidden lg:table-cell">ALC</TableHead>
                 <TableHead className="hidden sm:table-cell">Ativo</TableHead>
                 <TableHead className="w-20"></TableHead>
               </TableRow>
@@ -155,6 +159,7 @@ const PartNumbersTab = () => {
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.part_name}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.project || "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.line_module || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm font-mono">{p.alc_code || "N/A"}</TableCell>
                   <TableCell className="hidden sm:table-cell"><Switch checked={p.active} onCheckedChange={() => toggleActive(p.id, p.active)} /></TableCell>
                   <TableCell>
                     <div className="flex gap-1">
@@ -167,7 +172,7 @@ const PartNumbersTab = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
+              {filtered.length === 0 && (<TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
             </TableBody>
           </Table>
         </div>

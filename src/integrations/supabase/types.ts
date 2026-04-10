@@ -1057,6 +1057,7 @@ export type Database = {
       part_numbers: {
         Row: {
           active: boolean
+          alc_code: string
           created_at: string
           id: string
           line_module: string
@@ -1069,6 +1070,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          alc_code?: string
           created_at?: string
           id?: string
           line_module?: string
@@ -1081,6 +1083,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          alc_code?: string
           created_at?: string
           id?: string
           line_module?: string

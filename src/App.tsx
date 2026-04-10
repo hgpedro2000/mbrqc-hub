@@ -28,9 +28,11 @@ import ApontamentoForm from "./pages/ApontamentoForm";
 import ApontamentoDashboard from "./pages/ApontamentoDashboard";
 import AlertaQualidade from "./pages/AlertaQualidade";
 import AlertaQualidadeForm from "./pages/AlertaQualidadeForm";
-import AlertaQualidadeDashboard from "./pages/AlertaQualidadeDashboard";
+import AlertaQualidadeView from "./pages/AlertaQualidadeView";
+import AlertaQualidadeFeed from "./pages/AlertaQualidadeFeed";
 import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
+import QrProfilePage from "./pages/QrProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -105,11 +107,14 @@ const App = () => (
             {/* Alertas de Qualidade */}
             <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/dashboard" element={<ProtectedRoute><AlertaQualidadeDashboard /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/ver/:id" element={<ProtectedRoute><AlertaQualidadeView /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/feed" element={<ProtectedRoute><AlertaQualidadeFeed /></ProtectedRoute>} />
             
             {/* Consumíveis */}
             <Route path="/consumiveis" element={<ProtectedRoute><ConsumiveisPage /></ProtectedRoute>} />
+            
+            {/* QR Profile */}
+            <Route path="/meu-qr" element={<ProtectedRoute><QrProfilePage /></ProtectedRoute>} />
             
             {/* Consulta de Peças */}
             <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />

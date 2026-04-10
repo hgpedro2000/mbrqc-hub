@@ -291,7 +291,71 @@ const MatrizVersatilidade = () => {
           </div>
         )}
 
-        <div className="overflow-x-auto -mx-3 px-3">
+        {/* Mobile card layout */}
+        <div className="sm:hidden space-y-3">
+          {filtered.map((ins: any) => {
+            const overall = getOverallStatus(ins.id);
+            return (
+              <div key={ins.id} className="form-section p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{ins.full_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{ins.cargo || "—"} • {ins.turno || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate("/meu-qr")}><QrCode className="w-3 h-3" /></Button>
+                    {overall === "apto" ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
+                    ) : overall === "atencao" ? (
+                      <Badge className="bg-red-500/10 text-red-700 border-red-300 text-[9px] px-1.5 animate-pulse">Atenção</Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-[9px]">—</span>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {AREAS.map(area => {
+                    const qual = getQual(ins.id, area.key);
+                    const isHab = qual?.habilitado;
+                    const status = getTrainingStatus(qual);
+                    return (
+                      <div key={area.key} className="flex items-center gap-1 text-[10px]">
+                        <Checkbox
+                          checked={isHab || false}
+                          onCheckedChange={() => isLider && toggleHabilitado(ins.id, area.key)}
+                          disabled={!isLider}
+                          className="h-3.5 w-3.5"
+                        />
+                        <button
+                          onClick={() => isHab && isLider && openEditDates(ins.id, area.key)}
+                          className={cn(
+                            "truncate",
+                            isHab && status === "vencido" ? "text-red-700 font-bold" :
+                            isHab && status === "em_dia" ? "text-emerald-700" :
+                            "text-muted-foreground"
+                          )}
+                        >
+                          {area.label}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="form-section text-center py-8">
+              <p className="text-muted-foreground text-sm">Nenhum inspetor encontrado</p>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
           <table className="w-full text-xs border-collapse min-w-[900px]">
             <thead>
               <tr className="border-b-2 border-border">

@@ -218,7 +218,7 @@ const AlertaQualidadeForm = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl space-y-4">
         {/* Row 1: Header fields */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
           <div className="space-y-1">
             {reqLabel("Modelo do Carro")}
             <Select value={form.modelo} onValueChange={(v) => set("modelo", v)}>
@@ -374,7 +374,7 @@ const AlertaQualidadeForm = () => {
 
         {/* Save */}
         <div className="flex justify-end pt-2 pb-8">
-          <Button onClick={handleSave} disabled={saving} className="gap-2 bg-[#1a5276] hover:bg-[#154360] min-w-[200px]">
+          <Button onClick={handleSave} disabled={saving} className="gap-2 bg-[#1a5276] hover:bg-[#154360] w-full sm:w-auto sm:min-w-[200px]">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {isEdit ? "Salvar Alterações" : "Salvar Alerta"}
           </Button>

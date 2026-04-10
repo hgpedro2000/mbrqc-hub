@@ -400,38 +400,63 @@ const InventarioRequisicoes = () => {
           {loadingItems ? (
             <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="text-center">Unidade</TableHead>
-                    <TableHead className="text-center">Estoque</TableHead>
-                    <TableHead className="text-center">Mín.</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((i: any) => (
-                    <TableRow key={i.id} className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5" : ""}>
-                      <TableCell className="font-medium text-sm">{i.name}</TableCell>
-                      <TableCell className="text-center text-sm">{i.unit}</TableCell>
-                      <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
-                      <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
-                        </div>
-                      </TableCell>
+            <>
+              {/* Mobile cards */}
+              <div className="sm:hidden space-y-2">
+                {items.map((i: any) => (
+                  <div key={i.id} className={`border rounded-lg p-3 space-y-1 ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5 border-destructive/20" : ""}`}>
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">{i.name}</p>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Unid: <strong>{i.unit}</strong></span>
+                      <span className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive font-semibold" : ""}>Estoque: <strong>{i.stock_qty}</strong></span>
+                      <span>Mín: <strong>{i.min_qty}</strong></span>
+                    </div>
+                  </div>
+                ))}
+                {items.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">Nenhum item cadastrado</p>
+                )}
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-center">Unidade</TableHead>
+                      <TableHead className="text-center">Estoque</TableHead>
+                      <TableHead className="text-center">Mín.</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                  {items.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {items.map((i: any) => (
+                      <TableRow key={i.id} className={i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5" : ""}>
+                        <TableCell className="font-medium text-sm">{i.name}</TableCell>
+                        <TableCell className="text-center text-sm">{i.unit}</TableCell>
+                        <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {items.length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -664,8 +689,8 @@ const ConsumiveisPage = () => {
               <ReportErrorButton moduleName="Consumíveis" />
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
         </div>
       </header>
 

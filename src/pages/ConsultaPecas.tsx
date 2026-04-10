@@ -48,7 +48,7 @@ const ConsultaPecas = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6 md:py-12">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-12">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -63,12 +63,12 @@ const ConsultaPecas = () => {
               <ReportErrorButton moduleName="Consulta de Peças" />
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Pesquise peças por Part Number, nome, fornecedor ou ALC Code.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Pesquise peças por Part Number, nome, fornecedor ou ALC Code.</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 -mt-6 pb-12 space-y-4">
+      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 space-y-4">
         <div className="form-section">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />

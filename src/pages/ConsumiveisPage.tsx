@@ -121,7 +121,30 @@ const RequisitarItem = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto">
+        {/* Mobile cards */}
+        <div className="sm:hidden space-y-2">
+          {filteredRequests.map((r: any) => {
+            const cfg = statusConfig[r.status] || statusConfig.aguardando;
+            return (
+              <div key={r.id} className="border rounded-lg p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
+                  <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
+                </div>
+                <p className="text-sm font-medium">{r.item_name}</p>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>Qtd: <strong>{r.quantity}</strong></span>
+                  <span>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
+                </div>
+              </div>
+            );
+          })}
+          {filteredRequests.length === 0 && (
+            <p className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido encontrado</p>
+          )}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

@@ -146,17 +146,17 @@ const ModulePermissionsTab = () => {
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className="overflow-x-auto -mx-4 px-4">
+        <div className="overflow-x-auto -mx-2 px-2 max-w-full">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="min-w-[150px]">Usuário</TableHead>
+                <TableHead className="min-w-[120px] sticky left-0 bg-background z-10">Usuário</TableHead>
                 {ALL_MODULES.map((m) => (
-                  <TableHead key={m.id} className="text-center min-w-[100px] text-xs">
+                  <TableHead key={m.id} className="text-center min-w-[70px] text-[10px] px-1">
                     {m.label}
                   </TableHead>
                 ))}
-                <TableHead className="text-center min-w-[90px] text-xs">Ações</TableHead>
+                <TableHead className="text-center min-w-[80px] text-[10px] px-1">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

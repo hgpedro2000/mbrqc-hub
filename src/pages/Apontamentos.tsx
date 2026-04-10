@@ -445,22 +445,22 @@ const Apontamentos = () => {
               </div>
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Apontamentos</span>
             </div>
-            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.hub")}</span>
+            <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Hub">
+                <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.hub")}</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Dashboard</span>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
+                <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <Calendar className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Relatório do Dia</span>
+              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
+                <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <AlertTriangle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Peças NG</span>
+              <Button variant="ghost" size="icon" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
+                <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">NG</span>
               </Button>
               <ReportErrorButton moduleName="Apontamentos" />
-              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
+              <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Sair">
+                <LogOut className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.logout")}</span>
               </Button>
             </div>
           </div>
@@ -469,7 +469,7 @@ const Apontamentos = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 space-y-8">
+      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-24 space-y-8" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
           {TYPES.map((tipo, i) => {

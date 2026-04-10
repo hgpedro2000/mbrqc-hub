@@ -195,49 +195,80 @@ const ErrorReportsTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((r: any) => selectedIds.has(r.id))} onCheckedChange={() => {
-                  if (filtered.every((r: any) => selectedIds.has(r.id))) setSelectedIds(new Set());
-                  else setSelectedIds(new Set(filtered.map((r: any) => r.id)));
-                }} /></TableHead>
-                <TableHead className="text-xs">Nº</TableHead>
-                <TableHead className="text-xs">Data</TableHead>
-                <TableHead className="text-xs">Usuário</TableHead>
-                <TableHead className="text-xs">Módulo</TableHead>
-                <TableHead className="hidden md:table-cell text-xs">Descrição</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((r: any) => {
-                const cfg = statusConfig[r.status] || statusConfig.pendente;
-                return (
-                  <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
-                    </TableCell>
-                    <TableCell className="text-xs font-mono text-muted-foreground" onClick={() => openView(r)}>{r.numero || "—"}</TableCell>
-                    <TableCell className="text-xs" onClick={() => openView(r)}>{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                    <TableCell className="text-xs sm:text-sm" onClick={() => openView(r)}>{r.user_name}</TableCell>
-                    <TableCell onClick={() => openView(r)}>
-                      <Badge variant="outline" className={`text-xs ${getModuleColor(r.module)}`}>{r.module}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px] truncate" onClick={() => openView(r)}>{r.description}</TableCell>
-                    <TableCell onClick={() => openView(r)}><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openView(r)}><Eye className="w-4 h-4" /></Button></TableCell>
-                  </TableRow>
-                );
-              })}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum chamado encontrado</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          {/* Mobile card layout */}
+          <div className="sm:hidden space-y-2">
+            {filtered.map((r: any) => {
+              const cfg = statusConfig[r.status] || statusConfig.pendente;
+              return (
+                <div key={r.id} className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => openView(r)}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} className="mt-0.5" />
+                      <div className="flex-1 min-w-0" onClick={() => openView(r)}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-mono text-muted-foreground">#{r.numero || "—"}</span>
+                          <Badge variant="outline" className={`text-[10px] ${getModuleColor(r.module)}`}>{r.module}</Badge>
+                          <Badge variant="outline" className={`text-[10px] ${cfg.color}`}>{cfg.label}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{r.user_name} • {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{r.description}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openView(r)}><Eye className="w-4 h-4" /></Button>
+                  </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div className="text-center text-muted-foreground py-8 text-sm">Nenhum chamado encontrado</div>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((r: any) => selectedIds.has(r.id))} onCheckedChange={() => {
+                    if (filtered.every((r: any) => selectedIds.has(r.id))) setSelectedIds(new Set());
+                    else setSelectedIds(new Set(filtered.map((r: any) => r.id)));
+                  }} /></TableHead>
+                  <TableHead className="text-xs">Nº</TableHead>
+                  <TableHead className="text-xs">Data</TableHead>
+                  <TableHead className="text-xs">Usuário</TableHead>
+                  <TableHead className="text-xs">Módulo</TableHead>
+                  <TableHead className="hidden md:table-cell text-xs">Descrição</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="w-12"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r: any) => {
+                  const cfg = statusConfig[r.status] || statusConfig.pendente;
+                  return (
+                    <TableRow key={r.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} />
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground" onClick={() => openView(r)}>{r.numero || "—"}</TableCell>
+                      <TableCell className="text-xs" onClick={() => openView(r)}>{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                      <TableCell className="text-xs" onClick={() => openView(r)}>{r.user_name}</TableCell>
+                      <TableCell onClick={() => openView(r)}>
+                        <Badge variant="outline" className={`text-xs ${getModuleColor(r.module)}`}>{r.module}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[200px] truncate" onClick={() => openView(r)}>{r.description}</TableCell>
+                      <TableCell onClick={() => openView(r)}><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                      <TableCell><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openView(r)}><Eye className="w-4 h-4" /></Button></TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum chamado encontrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
 
       {/* Detail dialog */}

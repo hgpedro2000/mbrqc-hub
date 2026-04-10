@@ -97,6 +97,10 @@
     "consultaPecas": {
       "title": "Part Lookup",
       "description": "Quick part search by part number, name or supplier."
+    },
+    "matrizVersatilidade": {
+      "title": "Versatility Matrix",
+      "description": "Inspector qualifications and training tracking."
     }
   },
   "login": {

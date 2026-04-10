@@ -689,8 +689,8 @@ const ConsumiveisPage = () => {
               <ReportErrorButton moduleName="Consumíveis" />
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
         </div>
       </header>
 

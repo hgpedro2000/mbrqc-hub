@@ -437,7 +437,7 @@ const Apontamentos = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6 md:py-12">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-12">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -445,7 +445,7 @@ const Apontamentos = () => {
               </div>
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Apontamentos</span>
             </div>
-            <div className="flex items-center gap-1 md:gap-2">
+            <div className="flex items-center gap-1 md:gap-2 flex-wrap">
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.hub")}</span>
               </Button>
@@ -464,12 +464,12 @@ const Apontamentos = () => {
               </Button>
             </div>
           </div>
-          <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Apontamentos</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Selecione o tipo de apontamento para registrar.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Apontamentos</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Selecione o tipo de apontamento para registrar.</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 -mt-6 pb-12 space-y-8">
+      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 space-y-8">
         {/* Module cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
           {TYPES.map((tipo, i) => {

@@ -122,6 +122,7 @@ const UsersTab = () => {
           email: email || null,
           empresa,
           empresa_terceira: empresa === "empresa_terceira" ? empresaTerceira : null,
+          cargo: cargo || null,
         },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
@@ -143,6 +144,7 @@ const UsersTab = () => {
     setEditRole(getRoleForUser(profile.id));
     setEditTurno((profile as any).turno || "");
     setEditEmail(profile.email || "");
+    setEditCargo((profile as any).cargo || "");
     setEditEmpresa((profile as any).empresa || "mobis_brasil");
     setEditEmpresaTerceira((profile as any).empresa_terceira || "");
     setEditOpen(true);
@@ -164,6 +166,7 @@ const UsersTab = () => {
           email: editEmail || null,
           empresa: editEmpresa,
           empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
+          cargo: editCargo || null,
         } as any)
         .eq("id", editId);
       if (profileError) throw profileError;
@@ -254,6 +257,7 @@ const UsersTab = () => {
     setPassword("");
     setTurno("");
     setEmail("");
+    setCargo("");
     setEmpresa("mobis_brasil");
     setEmpresaTerceira("");
   };

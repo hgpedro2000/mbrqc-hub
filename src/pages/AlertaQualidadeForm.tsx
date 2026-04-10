@@ -376,7 +376,7 @@ const AlertaQualidadeForm = () => {
         <div className="flex justify-end pt-2 pb-8">
           <Button onClick={handleSave} disabled={saving} className="gap-2 bg-[#1a5276] hover:bg-[#154360] min-w-[200px]">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Salvar Alerta
+            {isEdit ? "Salvar Alterações" : "Salvar Alerta"}
           </Button>
         </div>
       </main>

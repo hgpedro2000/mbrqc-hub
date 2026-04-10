@@ -211,7 +211,7 @@ const AlertaQualidadeForm = () => {
             <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold mt-2 text-center tracking-wide" style={{ fontFamily: "Arial, sans-serif" }}>
-            ALERTA DE QUALIDADE
+            {isEdit ? "EDITAR ALERTA DE QUALIDADE" : "ALERTA DE QUALIDADE"}
           </h1>
         </div>
       </header>

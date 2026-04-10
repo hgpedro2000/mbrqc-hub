@@ -71,8 +71,7 @@ const AlertaQualidadeForm = () => {
       const val = addMonths(d, 3);
       setForm(p => ({ ...p, data_validade: format(val, "yyyy-MM-dd") }));
     }
-    }
-  }, [form.data_ocorrencia]);
+  }, [form.data_ocorrencia, isEdit]);
 
   const { data: projetos } = useQuery({
     queryKey: ["projetos-alerta"],

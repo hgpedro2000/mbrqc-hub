@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
@@ -33,6 +34,10 @@ const AlertaQualidade = () => {
   const [includeCiencias, setIncludeCiencias] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [successPopup, setSuccessPopup] = useState<{ name: string } | null>(null);
+  const [deleteAlertaId, setDeleteAlertaId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [statusEditAlert, setStatusEditAlert] = useState<any>(null);
+  const [newStatus, setNewStatus] = useState("");
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", user?.id],
@@ -72,27 +77,19 @@ const AlertaQualidade = () => {
     },
   });
 
-  // Fetch all qualified inspectors grouped by area
   const { data: qualifications = [] } = useQuery({
     queryKey: ["inspector-qualifications-all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("inspector_qualifications")
-        .select("user_id, area")
-        .eq("habilitado", true);
+      const { data, error } = await supabase.from("inspector_qualifications").select("user_id, area").eq("habilitado", true);
       if (error) throw error;
       return data;
     },
   });
 
-  // Fetch part_numbers to map part names → line_module
   const { data: partNumbers = [] } = useQuery({
     queryKey: ["part-numbers-line-map"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("part_numbers")
-        .select("part_name, line_module")
-        .eq("active", true);
+      const { data, error } = await supabase.from("part_numbers").select("part_name, line_module").eq("active", true);
       if (error) throw error;
       return data;
     },
@@ -110,10 +107,8 @@ const AlertaQualidade = () => {
 
   const resolveArea = (linhaPeca: string | null): string | null => {
     if (!linhaPeca) return null;
-    // Direct match (e.g. "BP", "CP")
     const direct = lineAreaMap[linhaPeca];
     if (direct) return direct;
-    // It might be a part name - look up its line_module
     const part = partNumbers.find((p: any) => p.part_name === linhaPeca);
     if (part) {
       const mapped = lineAreaMap[part.line_module];
@@ -125,8 +120,7 @@ const AlertaQualidade = () => {
   const getQualifiedCount = (linhaPeca: string | null): number => {
     const areaKey = resolveArea(linhaPeca);
     if (!areaKey) return 0;
-    const uniqueUsers = new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id));
-    return uniqueUsers.size;
+    return new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id)).size;
   };
 
   const getCienciaProgress = (alertaId: string, linhaPeca: string | null) => {
@@ -138,12 +132,10 @@ const AlertaQualidade = () => {
   };
 
   const getCienciaStatus = (alertaId: string, linhaPeca: string | null, createdAt: string) => {
-    const { count, total, pending } = getCienciaProgress(alertaId, linhaPeca);
+    const { total, pending } = getCienciaProgress(alertaId, linhaPeca);
     if (total === 0) return { label: "Sem destino", color: "border-muted text-muted-foreground bg-muted/20" };
     if (pending === 0) return { label: "Completo", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" };
-    const created = new Date(createdAt);
-    const now = new Date();
-    const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays >= 3) return { label: "Atrasado", color: "border-red-500 text-red-600 bg-red-500/10" };
     return { label: "Em andamento", color: "border-amber-500 text-amber-600 bg-amber-500/10" };
   };
@@ -182,19 +174,53 @@ const AlertaQualidade = () => {
   const handleExportConfirm = async (format: "jpg" | "pdf") => {
     if (!exportAlertaId) return;
     setExporting(true);
-    const params = new URLSearchParams({
-      export: format,
-      ciencias: includeCiencias ? "1" : "0",
-    });
+    const params = new URLSearchParams({ export: format, ciencias: includeCiencias ? "1" : "0" });
     navigate(`/alerta-qualidade/ver/${exportAlertaId}?${params.toString()}`);
     setExportAlertaId(null);
     setExporting(false);
   };
 
-  const canEdit = (alerta: any) => {
-    if (isAdmin) return true;
-    return alerta.criado_por_id === user?.id;
+  const handleDelete = async () => {
+    if (!deleteAlertaId) return;
+    setDeleting(true);
+    try {
+      // Delete ciencias first
+      await supabase.from("ciencias").delete().eq("alerta_id", deleteAlertaId);
+      const { error } = await supabase.from("alertas").delete().eq("id", deleteAlertaId);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["alertas-lista-mestra"] });
+      toast.success("Alerta excluído com sucesso");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDeleting(false);
+      setDeleteAlertaId(null);
+    }
   };
+
+  const handleStatusChange = async () => {
+    if (!statusEditAlert || !newStatus) return;
+    try {
+      const { error } = await supabase.from("alertas").update({ status: newStatus } as any).eq("id", statusEditAlert.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["alertas-lista-mestra"] });
+      toast.success("Status atualizado");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setStatusEditAlert(null);
+      setNewStatus("");
+    }
+  };
+
+  const canEdit = (alerta: any) => isAdmin || alerta.criado_por_id === user?.id;
+
+  const statusOptions = [
+    { value: "Em andamento", label: "Em andamento" },
+    { value: "Completo", label: "Completo" },
+    { value: "Atrasado", label: "Atrasado" },
+    { value: "Sem destino", label: "Sem destino" },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -276,10 +302,21 @@ const AlertaQualidade = () => {
                       <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
                         {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                       </td>
-                      <td className="py-2.5 px-2 text-center">
-                        <Badge variant="outline" className={status.color}>
-                          {status.label}
-                        </Badge>
+                      <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        {isAdmin ? (
+                          <button
+                            onClick={() => { setStatusEditAlert(a); setNewStatus(a.status || status.label); }}
+                            title="Clique para alterar status"
+                          >
+                            <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>
+                              {a.status && a.status !== "ativo" ? a.status : status.label}
+                            </Badge>
+                          </button>
+                        ) : (
+                          <Badge variant="outline" className={status.color}>
+                            {a.status && a.status !== "ativo" ? a.status : status.label}
+                          </Badge>
+                        )}
                       </td>
                       <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex flex-col items-center gap-1 min-w-[100px]">
@@ -290,26 +327,25 @@ const AlertaQualidade = () => {
                         </div>
                       </td>
                       <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1 flex-wrap">
                           {canEdit(a) && (
                             <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </Button>
                           )}
                           {isLider && (
                             <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
-                              <Camera className="w-4 h-4" />
+                              <Camera className="w-3.5 h-3.5" />
                             </Button>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            title="Exportar"
-                            onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}
-                          >
-                            <Download className="w-4 h-4" />
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
+                            <Download className="w-3.5 h-3.5" />
                           </Button>
+                          {isAdmin && (
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -323,7 +359,7 @@ const AlertaQualidade = () => {
 
       <QrScannerModal open={!!scanAlertaId} onClose={() => setScanAlertaId(null)} onScan={handleQrScan} title="Registrar Ciência via QR" />
 
-      {/* Success popup after QR scan */}
+      {/* Success popup */}
       <Dialog open={!!successPopup} onOpenChange={(o) => { if (!o) setSuccessPopup(null); }}>
         <DialogContent className="max-w-xs text-center">
           <div className="flex flex-col items-center gap-3 py-4">
@@ -334,9 +370,7 @@ const AlertaQualidade = () => {
             <p className="text-sm text-muted-foreground">
               Captura realizada com sucesso. O registro de <strong>{successPopup?.name}</strong> foi validado.
             </p>
-            <Button onClick={() => setSuccessPopup(null)} className="bg-emerald-600 hover:bg-emerald-700 mt-2">
-              OK
-            </Button>
+            <Button onClick={() => setSuccessPopup(null)} className="bg-emerald-600 hover:bg-emerald-700 mt-2">OK</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -344,26 +378,47 @@ const AlertaQualidade = () => {
       {/* Export dialog */}
       <Dialog open={!!exportAlertaId} onOpenChange={(o) => { if (!o) setExportAlertaId(null); }}>
         <DialogContent className="max-w-xs">
-          <DialogHeader>
-            <DialogTitle>Exportar Alerta</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Exportar Alerta</DialogTitle></DialogHeader>
           <div className="flex items-center gap-2 py-2">
-            <Checkbox
-              id="include-ciencias"
-              checked={includeCiencias}
-              onCheckedChange={(c) => setIncludeCiencias(!!c)}
-            />
-            <Label htmlFor="include-ciencias" className="text-sm cursor-pointer">
-              Incluir lista de ciências
-            </Label>
+            <Checkbox id="include-ciencias" checked={includeCiencias} onCheckedChange={(c) => setIncludeCiencias(!!c)} />
+            <Label htmlFor="include-ciencias" className="text-sm cursor-pointer">Incluir lista de ciências</Label>
           </div>
           <DialogFooter className="flex gap-2 sm:gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("jpg")} disabled={exporting}>
-              JPG
+            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("jpg")} disabled={exporting}>JPG</Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("pdf")} disabled={exporting}>PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <Dialog open={!!deleteAlertaId} onOpenChange={(o) => { if (!o) setDeleteAlertaId(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Confirmar Exclusão</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Tem certeza que deseja excluir este alerta? Esta ação não pode ser desfeita.</p>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteAlertaId(null)}>Cancelar</Button>
+            <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+              {deleting ? "Excluindo..." : "Excluir"}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("pdf")} disabled={exporting}>
-              PDF
-            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin status edit dialog */}
+      <Dialog open={!!statusEditAlert} onOpenChange={(o) => { if (!o) setStatusEditAlert(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>Alterar Status</DialogTitle></DialogHeader>
+          <Select value={newStatus} onValueChange={setNewStatus}>
+            <SelectTrigger className="h-9"><SelectValue placeholder="Selecione o status" /></SelectTrigger>
+            <SelectContent>
+              {statusOptions.map(s => (
+                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setStatusEditAlert(null)}>Cancelar</Button>
+            <Button size="sm" onClick={handleStatusChange} disabled={!newStatus}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

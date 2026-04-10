@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Check, X } from "lucide-react";
+import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -19,6 +20,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const AREAS = [
   { key: "inspecao_peca", label: "Inspeção de Peça" },
@@ -50,8 +53,10 @@ const MatrizVersatilidade = () => {
   const [editDates, setEditDates] = useState<{ lastDate: string; nextDate: string }>({ lastDate: "", nextDate: "" });
   const [lastDateOpen, setLastDateOpen] = useState(false);
   const [nextDateOpen, setNextDateOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [exportingQrs, setExportingQrs] = useState(false);
+  const qrExportRef = useRef<HTMLDivElement>(null);
 
-  // Check user role
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-matriz", user?.id],
     queryFn: async () => {
@@ -63,7 +68,6 @@ const MatrizVersatilidade = () => {
   });
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
 
-  // Get qualifying profiles (Mobis Brasil + quality cargos)
   const { data: inspectors = [] } = useQuery({
     queryKey: ["matriz-inspectors"],
     queryFn: async () => {
@@ -79,7 +83,6 @@ const MatrizVersatilidade = () => {
     },
   });
 
-  // Get qualifications
   const { data: qualifications = [] } = useQuery({
     queryKey: ["inspector-qualifications"],
     queryFn: async () => {
@@ -89,14 +92,12 @@ const MatrizVersatilidade = () => {
     },
   });
 
-  // Auto-populate qualifications for new inspectors
   useEffect(() => {
     const populateQualifications = async () => {
       if (!isLider || inspectors.length === 0) return;
       const existingUserIds = new Set(qualifications.map((q: any) => q.user_id));
       const newInspectors = inspectors.filter((i: any) => !existingUserIds.has(i.id));
       if (newInspectors.length === 0) return;
-
       const inserts: any[] = [];
       for (const ins of newInspectors) {
         for (const area of AREAS) {
@@ -111,15 +112,12 @@ const MatrizVersatilidade = () => {
     populateQualifications();
   }, [inspectors, qualifications, isLider]);
 
-  const getQual = (userId: string, area: string) => {
-    return qualifications.find((q: any) => q.user_id === userId && q.area === area);
-  };
+  const getQual = (userId: string, area: string) => qualifications.find((q: any) => q.user_id === userId && q.area === area);
 
   const getTrainingStatus = (qual: any) => {
     if (!qual || !qual.habilitado) return "na";
     if (!qual.next_evaluation_date) return "sem_data";
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const next = new Date(qual.next_evaluation_date + "T12:00:00");
     return today > next ? "vencido" : "em_dia";
   };
@@ -127,11 +125,7 @@ const MatrizVersatilidade = () => {
   const getOverallStatus = (userId: string) => {
     const userQuals = qualifications.filter((q: any) => q.user_id === userId && q.habilitado);
     if (userQuals.length === 0) return "na";
-    const hasVencido = userQuals.some((q: any) => {
-      const status = getTrainingStatus(q);
-      return status === "vencido";
-    });
-    return hasVencido ? "atencao" : "apto";
+    return userQuals.some((q: any) => getTrainingStatus(q) === "vencido") ? "atencao" : "apto";
   };
 
   const toggleHabilitado = async (userId: string, area: string) => {
@@ -148,20 +142,14 @@ const MatrizVersatilidade = () => {
   const openEditDates = (userId: string, area: string) => {
     const qual = getQual(userId, area);
     setEditDialog({ userId, area });
-    setEditDates({
-      lastDate: qual?.last_evaluation_date || "",
-      nextDate: qual?.next_evaluation_date || "",
-    });
+    setEditDates({ lastDate: qual?.last_evaluation_date || "", nextDate: qual?.next_evaluation_date || "" });
   };
 
   const saveDates = async () => {
     if (!editDialog) return;
     const { userId, area } = editDialog;
     const existing = getQual(userId, area);
-    const updateData = {
-      last_evaluation_date: editDates.lastDate || null,
-      next_evaluation_date: editDates.nextDate || null,
-    };
+    const updateData = { last_evaluation_date: editDates.lastDate || null, next_evaluation_date: editDates.nextDate || null };
     if (existing) {
       await supabase.from("inspector_qualifications").update(updateData as any).eq("id", existing.id);
     } else {
@@ -178,16 +166,58 @@ const MatrizVersatilidade = () => {
       const term = searchTerm.toLowerCase();
       result = result.filter((i: any) => i.full_name?.toLowerCase().includes(term) || i.employee_number?.toLowerCase().includes(term));
     }
-    if (turnoFilter) {
-      result = result.filter((i: any) => i.turno === turnoFilter);
-    }
+    if (turnoFilter) result = result.filter((i: any) => i.turno === turnoFilter);
     return result;
   }, [inspectors, searchTerm, turnoFilter]);
 
-  // Alert for expired trainings
-  const expiredInspectors = useMemo(() => {
-    return inspectors.filter((ins: any) => getOverallStatus(ins.id) === "atencao");
-  }, [inspectors, qualifications]);
+  const expiredInspectors = useMemo(() => inspectors.filter((ins: any) => getOverallStatus(ins.id) === "atencao"), [inspectors, qualifications]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((i: any) => i.id)));
+    }
+  };
+
+  const selectedInspectors = inspectors.filter((i: any) => selectedIds.has(i.id));
+
+  const exportSelectedQrs = async (format: "jpg" | "pdf") => {
+    if (selectedInspectors.length === 0) return;
+    setExportingQrs(true);
+    try {
+      await new Promise(r => setTimeout(r, 300)); // wait for render
+      if (!qrExportRef.current) return;
+      const canvas = await html2canvas(qrExportRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      if (format === "jpg") {
+        const link = document.createElement("a");
+        link.download = `QR-Codes-${selectedInspectors.length}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 0.95);
+        link.click();
+      } else {
+        const imgData = canvas.toDataURL("image/png");
+        const ratio = canvas.height / canvas.width;
+        const pdfW = 210;
+        const pdfH = pdfW * ratio;
+        const pdf = new jsPDF({ orientation: pdfH > pdfW ? "portrait" : "landscape", unit: "mm", format: [pdfW, Math.max(pdfH + 10, 100)] });
+        pdf.addImage(imgData, "PNG", 5, 5, pdfW - 10, (pdfW - 10) * ratio);
+        pdf.save(`QR-Codes-${selectedInspectors.length}.pdf`);
+      }
+      toast.success(`${selectedInspectors.length} QR Code(s) exportados`);
+    } catch {
+      toast.error("Erro ao exportar");
+    } finally {
+      setExportingQrs(false);
+    }
+  };
 
   const parseDate = (s: string) => s ? new Date(s + "T12:00:00") : undefined;
 
@@ -215,7 +245,6 @@ const MatrizVersatilidade = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
-        {/* Expired training alert */}
         {isLider && expiredInspectors.length > 0 && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
@@ -228,7 +257,6 @@ const MatrizVersatilidade = () => {
           </div>
         )}
 
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -245,11 +273,31 @@ const MatrizVersatilidade = () => {
           </Select>
         </div>
 
-        {/* Matrix table */}
+        {/* Bulk QR export bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-accent/30 border border-accent rounded-lg p-3">
+            <span className="text-sm font-medium">{selectedIds.size} inspetor(es) selecionado(s)</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("jpg")} disabled={exportingQrs} className="gap-1 text-xs">
+                <Download className="w-3 h-3" /> JPG
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("pdf")} disabled={exportingQrs} className="gap-1 text-xs">
+                <Download className="w-3 h-3" /> PDF
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-xs">
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto -mx-3 px-3">
           <table className="w-full text-xs border-collapse min-w-[900px]">
             <thead>
               <tr className="border-b-2 border-border">
+                <th className="py-2 px-1 w-8">
+                  <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
+                </th>
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-16">INSP-ID</th>
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-8">QR</th>
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[120px]">Nome</th>
@@ -268,6 +316,9 @@ const MatrizVersatilidade = () => {
                 const overall = getOverallStatus(ins.id);
                 return (
                   <tr key={ins.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <td className="py-2 px-1 text-center">
+                      <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
+                    </td>
                     <td className="py-2 px-1.5 font-mono text-[10px] font-bold">{ins.qr_code_id || "—"}</td>
                     <td className="py-2 px-1.5">
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate("/meu-qr")} title="QR Code">
@@ -325,12 +376,28 @@ const MatrizVersatilidade = () => {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={5 + AREAS.length + 1} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
+                <tr><td colSpan={6 + AREAS.length + 1} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
               )}
             </tbody>
           </table>
         </div>
         <p className="text-xs text-muted-foreground text-center">{filtered.length} inspetor(es)</p>
+
+        {/* Hidden QR cards for bulk export */}
+        {selectedInspectors.length > 0 && (
+          <div ref={qrExportRef} className="fixed left-[-9999px] top-0 bg-white p-4" style={{ width: `${Math.min(selectedInspectors.length, 4) * 200}px` }}>
+            <div className="flex flex-wrap gap-4">
+              {selectedInspectors.map((ins: any) => (
+                <div key={ins.id} className="flex flex-col items-center p-3 border border-gray-200 rounded-lg" style={{ width: 180 }}>
+                  <QRCodeSVG value={ins.qr_code_id || ""} size={120} level="H" />
+                  <p className="text-xs font-bold mt-2 text-center" style={{ color: "#000" }}>{ins.full_name}</p>
+                  <p className="text-[10px] text-gray-500">{ins.cargo}</p>
+                  <p className="text-[9px] font-mono text-gray-400 mt-0.5">{ins.qr_code_id}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Edit dates dialog */}

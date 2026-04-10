@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +36,7 @@ const RequisitarItem = () => {
   const [selectedItem, setSelectedItem] = useState("");
   const [qty, setQty] = useState(1);
   const [sending, setSending] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["consumable-items-active"],
@@ -56,6 +57,15 @@ const RequisitarItem = () => {
     },
     enabled: !!user?.id,
   });
+
+  const filteredRequests = useMemo(() => {
+    if (!searchTerm.trim()) return myRequests;
+    const term = searchTerm.toLowerCase();
+    return myRequests.filter((r: any) =>
+      r.item_name?.toLowerCase().includes(term) ||
+      r.numero?.toLowerCase().includes(term)
+    );
+  }, [myRequests, searchTerm]);
 
   const handleSubmit = async () => {
     if (!selectedItem) { toast.error("Selecione um item"); return; }
@@ -101,6 +111,13 @@ const RequisitarItem = () => {
       </div>
 
       <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
+      
+      {/* Search filter */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por item ou número..." className="pl-9 h-8 text-xs" />
+      </div>
+
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
@@ -116,7 +133,7 @@ const RequisitarItem = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {myRequests.map((r: any) => {
+              {filteredRequests.map((r: any) => {
                 const cfg = statusConfig[r.status] || statusConfig.aguardando;
                 return (
                   <TableRow key={r.id}>
@@ -128,8 +145,8 @@ const RequisitarItem = () => {
                   </TableRow>
                 );
               })}
-              {myRequests.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum pedido realizado</TableCell></TableRow>
+              {filteredRequests.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum pedido encontrado</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -179,6 +196,7 @@ const InventarioRequisicoes = () => {
   const [newMinQty, setNewMinQty] = useState(0);
   const [saving, setSaving] = useState(false);
   const [turnoFilter, setTurnoFilter] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<any>(null);
   const [editName, setEditName] = useState("");
@@ -186,6 +204,7 @@ const InventarioRequisicoes = () => {
   const [editStock, setEditStock] = useState(0);
   const [editMinQty, setEditMinQty] = useState(0);
   const [editSaving, setEditSaving] = useState(false);
+  const [insufficientDialog, setInsufficientDialog] = useState<{ itemName: string; stock: number; requested: number } | null>(null);
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],
@@ -208,45 +227,65 @@ const InventarioRequisicoes = () => {
   const lowStockItems = useMemo(() => items.filter((i: any) => i.active && i.stock_qty <= i.min_qty && i.min_qty > 0), [items]);
 
   const filteredRequests = useMemo(() => {
-    if (!turnoFilter) return allRequests;
-    return allRequests.filter((r: any) => r.turno === turnoFilter);
-  }, [allRequests, turnoFilter]);
+    let result = allRequests;
+    if (turnoFilter) result = result.filter((r: any) => r.turno === turnoFilter);
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter((r: any) =>
+        r.item_name?.toLowerCase().includes(term) ||
+        r.user_name?.toLowerCase().includes(term) ||
+        r.numero?.toLowerCase().includes(term)
+      );
+    }
+    return result;
+  }, [allRequests, turnoFilter, searchTerm]);
 
   const handleAddItem = async () => {
     if (!newName.trim()) { toast.error("Nome obrigatório"); return; }
     setSaving(true);
     try {
       const { error } = await supabase.from("consumable_items").insert({
-        name: newName.trim(),
-        unit: newUnit,
-        stock_qty: newStock,
-        min_qty: newMinQty,
+        name: newName.trim(), unit: newUnit, stock_qty: newStock, min_qty: newMinQty,
       } as any);
       if (error) throw error;
       toast.success("Item registrado");
-      setAddItemOpen(false);
-      setNewName("");
-      setNewUnit("un");
-      setNewStock(0);
-      setNewMinQty(0);
+      setAddItemOpen(false); setNewName(""); setNewUnit("un"); setNewStock(0); setNewMinQty(0);
       qc.invalidateQueries({ queryKey: ["consumable-items"] });
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setSaving(false);
-    }
+    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
   const updateRequestStatus = async (id: string, status: string) => {
     try {
+      const request = allRequests.find((r: any) => r.id === id);
+      if (!request) return;
+
+      if (status === "entregue") {
+        // Check stock before approving
+        const item = items.find((i: any) => i.id === request.item_id);
+        if (item && item.stock_qty < request.quantity) {
+          setInsufficientDialog({
+            itemName: item.name,
+            stock: item.stock_qty,
+            requested: request.quantity,
+          });
+          return;
+        }
+        // Deduct from stock
+        if (item) {
+          const newQty = item.stock_qty - request.quantity;
+          const { error: stockErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", item.id);
+          if (stockErr) throw stockErr;
+        }
+      }
+
       const { error } = await supabase.from("consumable_requests").update({ status } as any).eq("id", id);
       if (error) throw error;
       toast.success("Status atualizado");
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const handleDeleteItem = async () => {
@@ -257,17 +296,11 @@ const InventarioRequisicoes = () => {
       toast.success("Item excluído");
       qc.invalidateQueries({ queryKey: ["consumable-items"] });
       setDeleteTarget(null);
-    } catch (e: any) {
-      toast.error(e.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const openEditItem = (item: any) => {
-    setEditItem(item);
-    setEditName(item.name);
-    setEditUnit(item.unit);
-    setEditStock(item.stock_qty);
-    setEditMinQty(item.min_qty);
+    setEditItem(item); setEditName(item.name); setEditUnit(item.unit); setEditStock(item.stock_qty); setEditMinQty(item.min_qty);
   };
 
   const handleEditItem = async () => {
@@ -275,24 +308,15 @@ const InventarioRequisicoes = () => {
     setEditSaving(true);
     try {
       const { error } = await supabase.from("consumable_items").update({
-        name: editName.trim(),
-        unit: editUnit,
-        stock_qty: editStock,
-        min_qty: editMinQty,
+        name: editName.trim(), unit: editUnit, stock_qty: editStock, min_qty: editMinQty,
       } as any).eq("id", editItem.id);
       if (error) throw error;
-      toast.success("Item atualizado");
-      setEditItem(null);
+      toast.success("Item atualizado"); setEditItem(null);
       qc.invalidateQueries({ queryKey: ["consumable-items"] });
       qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setEditSaving(false);
-    }
+    } catch (e: any) { toast.error(e.message); } finally { setEditSaving(false); }
   };
 
-  // Dashboard stats
   const totalRequests = allRequests.length;
   const pendingRequests = allRequests.filter((r: any) => r.status === "aguardando").length;
   const deliveredRequests = allRequests.filter((r: any) => r.status === "entregue").length;
@@ -319,7 +343,6 @@ const InventarioRequisicoes = () => {
         </div>
       </div>
 
-      {/* Low stock alert */}
       {lowStockItems.length > 0 && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
           <p className="text-sm font-semibold text-destructive mb-1">⚠ Estoque Baixo</p>
@@ -333,8 +356,7 @@ const InventarioRequisicoes = () => {
         </div>
       )}
 
-      {/* Stock list button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
@@ -391,18 +413,24 @@ const InventarioRequisicoes = () => {
 
       {/* Requests table */}
       <div>
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
           <h3 className="text-base font-heading font-semibold">Requisições</h3>
-          <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-40 h-8 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os turnos</SelectItem>
-              <SelectItem value="1º Turno">1º Turno</SelectItem>
-              <SelectItem value="2º Turno">2º Turno</SelectItem>
-              <SelectItem value="3º Turno">3º Turno</SelectItem>
-              <SelectItem value="ADM">ADM</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-8 text-xs w-full sm:w-48" />
+            </div>
+            <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-full sm:w-40 h-8 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os turnos</SelectItem>
+                <SelectItem value="1º Turno">1º Turno</SelectItem>
+                <SelectItem value="2º Turno">2º Turno</SelectItem>
+                <SelectItem value="3º Turno">3º Turno</SelectItem>
+                <SelectItem value="ADM">ADM</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {loadingReqs ? (
           <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
@@ -459,6 +487,25 @@ const InventarioRequisicoes = () => {
         )}
       </div>
 
+      {/* Insufficient stock dialog */}
+      <AlertDialog open={!!insufficientDialog} onOpenChange={() => setInsufficientDialog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-destructive" /> Estoque Insuficiente
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              O item <strong>{insufficientDialog?.itemName}</strong> possui apenas <strong>{insufficientDialog?.stock}</strong> unidade(s) em estoque, mas a requisição solicita <strong>{insufficientDialog?.requested}</strong> unidade(s).
+              <br /><br />
+              Não é possível aprovar este pedido. Atualize o estoque antes de prosseguir.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setInsufficientDialog(null)}>Entendido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Add item dialog */}
       <Dialog open={addItemOpen} onOpenChange={setAddItemOpen}>
         <DialogContent className="max-w-sm">
@@ -469,29 +516,13 @@ const InventarioRequisicoes = () => {
               <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: Luvas de nitrilo" />
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Select value={newUnit} onValueChange={setNewUnit}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="un">un</SelectItem>
-                    <SelectItem value="par">par</SelectItem>
-                    <SelectItem value="cx">cx</SelectItem>
-                    <SelectItem value="pct">pct</SelectItem>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="L">L</SelectItem>
-                    <SelectItem value="m">m</SelectItem>
-                  </SelectContent>
+              <div className="space-y-2"><Label>Unidade</Label>
+                <Select value={newUnit} onValueChange={setNewUnit}><SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="un">un</SelectItem><SelectItem value="par">par</SelectItem><SelectItem value="cx">cx</SelectItem><SelectItem value="pct">pct</SelectItem><SelectItem value="kg">kg</SelectItem><SelectItem value="L">L</SelectItem><SelectItem value="m">m</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Estoque</Label>
-                <Input type="number" min={0} value={newStock} onChange={(e) => setNewStock(Number(e.target.value))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Qtd Mín.</Label>
-                <Input type="number" min={0} value={newMinQty} onChange={(e) => setNewMinQty(Number(e.target.value))} />
-              </div>
+              <div className="space-y-2"><Label>Estoque</Label><Input type="number" min={0} value={newStock} onChange={(e) => setNewStock(Number(e.target.value))} /></div>
+              <div className="space-y-2"><Label>Qtd Mín.</Label><Input type="number" min={0} value={newMinQty} onChange={(e) => setNewMinQty(Number(e.target.value))} /></div>
             </div>
             <Button onClick={handleAddItem} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
@@ -506,34 +537,15 @@ const InventarioRequisicoes = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Editar Consumível</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nome do Item *</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
+            <div className="space-y-2"><Label>Nome do Item *</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
             <div className="grid grid-cols-3 gap-3">
-              <div className="space-y-2">
-                <Label>Unidade</Label>
-                <Select value={editUnit} onValueChange={setEditUnit}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="un">un</SelectItem>
-                    <SelectItem value="par">par</SelectItem>
-                    <SelectItem value="cx">cx</SelectItem>
-                    <SelectItem value="pct">pct</SelectItem>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="L">L</SelectItem>
-                    <SelectItem value="m">m</SelectItem>
-                  </SelectContent>
+              <div className="space-y-2"><Label>Unidade</Label>
+                <Select value={editUnit} onValueChange={setEditUnit}><SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="un">un</SelectItem><SelectItem value="par">par</SelectItem><SelectItem value="cx">cx</SelectItem><SelectItem value="pct">pct</SelectItem><SelectItem value="kg">kg</SelectItem><SelectItem value="L">L</SelectItem><SelectItem value="m">m</SelectItem></SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Estoque</Label>
-                <Input type="number" min={0} value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} />
-              </div>
-              <div className="space-y-2">
-                <Label>Qtd Mín.</Label>
-                <Input type="number" min={0} value={editMinQty} onChange={(e) => setEditMinQty(Number(e.target.value))} />
-              </div>
+              <div className="space-y-2"><Label>Estoque</Label><Input type="number" min={0} value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} /></div>
+              <div className="space-y-2"><Label>Qtd Mín.</Label><Input type="number" min={0} value={editMinQty} onChange={(e) => setEditMinQty(Number(e.target.value))} /></div>
             </div>
             <Button onClick={handleEditItem} disabled={editSaving} className="w-full">
               {editSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
@@ -557,21 +569,15 @@ const InventarioRequisicoes = () => {
 /* ─── Main Consumíveis Page ─── */
 const ConsumiveisPage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const { impersonating } = useImpersonation();
   const { enabledModules } = useEnabledModules(impersonating?.id);
   
-  // Check sub-module permissions
-  // "consumiveis" alone = only requisitar; need explicit "consumiveis_requisitar" or "consumiveis_inventario" for sub-access
   const hasParent = enabledModules.includes("consumiveis" as any);
   const hasRequisitar = enabledModules.includes("consumiveis_requisitar" as any);
   const hasInventario = enabledModules.includes("consumiveis_inventario" as any);
-  
-  // If user has parent but no sub-modules explicitly enabled, show only requisitar (default behavior)
   const showRequisitar = isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario);
   const showInventario = isAdmin || hasInventario;
-  
   const defaultTab = showRequisitar ? "requisitar" : showInventario ? "inventario" : "requisitar";
 
   return (

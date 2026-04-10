@@ -17,6 +17,11 @@ import ModulePermissionsTab from "./ModulePermissionsTab";
 
 const TURNOS = ["1T", "2T", "3T"];
 const EMPRESA_TERCEIRA_OPTIONS = ["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"];
+const CARGOS = [
+  "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
+  "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
+  "Gerente de Qualidade", "Diretor de Qualidade",
+];
 
 const UsersTab = () => {
   const qc = useQueryClient();
@@ -29,6 +34,7 @@ const UsersTab = () => {
   const [password, setPassword] = useState("");
   const [turno, setTurno] = useState("");
   const [email, setEmail] = useState("");
+  const [cargo, setCargo] = useState("");
   const [empresa, setEmpresa] = useState("mobis_brasil");
   const [empresaTerceira, setEmpresaTerceira] = useState("");
   const [saving, setSaving] = useState(false);
@@ -45,6 +51,7 @@ const UsersTab = () => {
   const [editRole, setEditRole] = useState("user");
   const [editTurno, setEditTurno] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editCargo, setEditCargo] = useState("");
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
 
@@ -115,6 +122,7 @@ const UsersTab = () => {
           email: email || null,
           empresa,
           empresa_terceira: empresa === "empresa_terceira" ? empresaTerceira : null,
+          cargo: cargo || null,
         },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
@@ -136,6 +144,7 @@ const UsersTab = () => {
     setEditRole(getRoleForUser(profile.id));
     setEditTurno((profile as any).turno || "");
     setEditEmail(profile.email || "");
+    setEditCargo((profile as any).cargo || "");
     setEditEmpresa((profile as any).empresa || "mobis_brasil");
     setEditEmpresaTerceira((profile as any).empresa_terceira || "");
     setEditOpen(true);
@@ -157,6 +166,7 @@ const UsersTab = () => {
           email: editEmail || null,
           empresa: editEmpresa,
           empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
+          cargo: editCargo || null,
         } as any)
         .eq("id", editId);
       if (profileError) throw profileError;
@@ -247,6 +257,7 @@ const UsersTab = () => {
     setPassword("");
     setTurno("");
     setEmail("");
+    setCargo("");
     setEmpresa("mobis_brasil");
     setEmpresaTerceira("");
   };
@@ -339,6 +350,13 @@ const UsersTab = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select value={cargo} onValueChange={setCargo}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                    <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>E-mail</Label>
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com (opcional)" />
                 </div>
@@ -393,6 +411,13 @@ const UsersTab = () => {
               <Select value={editTurno} onValueChange={setEditTurno}>
                 <SelectTrigger><SelectValue placeholder="Selecione o turno" /></SelectTrigger>
                 <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Select value={editCargo} onValueChange={setEditCargo}>
+                <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
@@ -454,6 +479,7 @@ const UsersTab = () => {
                 <TableHead className="hidden md:table-cell">Empresa</TableHead>
                 <TableHead className="hidden md:table-cell">Turno</TableHead>
                 <TableHead className="hidden lg:table-cell">E-mail</TableHead>
+                <TableHead className="hidden md:table-cell">Cargo</TableHead>
                 <TableHead>Perfil</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Último Login</TableHead>
@@ -475,6 +501,7 @@ const UsersTab = () => {
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.turno || "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.email || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.cargo || "—"}</TableCell>
                   <TableCell className="capitalize text-xs sm:text-sm">{getRoleForUser(p.id)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />

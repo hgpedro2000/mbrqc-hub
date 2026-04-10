@@ -6,21 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
+const lineAreaMap: Record<string, string> = {
+  "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",
+  "Incoming": "incoming", "Pintura": "pintura", "Injeção": "injecao",
+  "Sala do Áudio": "sala_audio", "Inspeção de Peça": "inspecao_peca",
+};
+
 const AlertaQualidade = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
@@ -28,6 +32,7 @@ const AlertaQualidade = () => {
   const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
   const [includeCiencias, setIncludeCiencias] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [successPopup, setSuccessPopup] = useState<{ name: string } | null>(null);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", user?.id],
@@ -67,6 +72,19 @@ const AlertaQualidade = () => {
     },
   });
 
+  // Fetch all qualified inspectors grouped by area
+  const { data: qualifications = [] } = useQuery({
+    queryKey: ["inspector-qualifications-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("inspector_qualifications")
+        .select("user_id, area")
+        .eq("habilitado", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel("ciencias-realtime")
@@ -77,12 +95,31 @@ const AlertaQualidade = () => {
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
-  const getCienciaProgress = (alertaId: string, totalDestinatarios: number) => {
+  const getQualifiedCount = (linhaPeca: string | null): number => {
+    const areaKey = linhaPeca ? lineAreaMap[linhaPeca] : null;
+    if (!areaKey) return 0;
+    const uniqueUsers = new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id));
+    return uniqueUsers.size;
+  };
+
+  const getCienciaProgress = (alertaId: string, linhaPeca: string | null) => {
     const count = ciencias.filter((c: any) => c.alerta_id === alertaId).length;
-    const total = totalDestinatarios || 0;
+    const total = getQualifiedCount(linhaPeca);
     const pending = Math.max(total - count, 0);
     const pct = total > 0 ? Math.round((count / total) * 100) : 0;
     return { count, total, pending, pct };
+  };
+
+  const getCienciaStatus = (alertaId: string, linhaPeca: string | null, createdAt: string) => {
+    const { count, total, pending } = getCienciaProgress(alertaId, linhaPeca);
+    if (total === 0) return { label: "Sem destino", color: "border-muted text-muted-foreground bg-muted/20" };
+    if (pending === 0) return { label: "Completo", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" };
+    // Check if 3+ days since creation
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays >= 3) return { label: "Atrasado", color: "border-red-500 text-red-600 bg-red-500/10" };
+    return { label: "Em andamento", color: "border-amber-500 text-amber-600 bg-amber-500/10" };
   };
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
@@ -105,22 +142,20 @@ const AlertaQualidade = () => {
         .from("profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
       if (findErr || !inspetor) { toast.error("QR Code não reconhecido."); return; }
       const { data: existing } = await supabase.from("ciencias").select("id").eq("alerta_id", scanAlertaId).eq("inspetor_id", inspetor.id).maybeSingle();
-      if (existing) { toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`); return; }
+      if (existing) { toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`); setScanAlertaId(null); return; }
       const { error: insertErr } = await supabase.from("ciencias").insert({
         alerta_id: scanAlertaId, inspetor_id: inspetor.id, metodo: "qr_lider", registrado_por_id: user?.id,
       } as any);
       if (insertErr) throw insertErr;
-      toast.success(`✓ Ciência registrada: ${inspetor.full_name}`);
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
       setScanAlertaId(null);
+      setSuccessPopup({ name: inspetor.full_name });
     } catch (e: any) { toast.error(e.message); }
   };
 
   const handleExportConfirm = async (format: "jpg" | "pdf") => {
     if (!exportAlertaId) return;
     setExporting(true);
-    // Navigate to view page to capture, but we'll do it by opening in a hidden way
-    // Instead, redirect to view page with export params
     const params = new URLSearchParams({
       export: format,
       ciencias: includeCiencias ? "1" : "0",
@@ -189,7 +224,8 @@ const AlertaQualidade = () => {
               </thead>
               <tbody>
                 {filtered.map((a: any) => {
-                  const prog = getCienciaProgress(a.id, a.total_destinatarios);
+                  const prog = getCienciaProgress(a.id, a.linha_peca);
+                  const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
                   return (
                     <tr
                       key={a.id}
@@ -210,8 +246,8 @@ const AlertaQualidade = () => {
                         {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                       </td>
                       <td className="py-2.5 px-2 text-center">
-                        <Badge variant="outline" className={a.status === "ativo" ? "border-emerald-500 text-emerald-600 bg-emerald-500/10" : "border-muted text-muted-foreground bg-muted/20"}>
-                          {a.status === "ativo" ? "Ativo" : "Encerrado"}
+                        <Badge variant="outline" className={status.color}>
+                          {status.label}
                         </Badge>
                       </td>
                       <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
@@ -250,6 +286,24 @@ const AlertaQualidade = () => {
       </main>
 
       <QrScannerModal open={!!scanAlertaId} onClose={() => setScanAlertaId(null)} onScan={handleQrScan} title="Registrar Ciência via QR" />
+
+      {/* Success popup after QR scan */}
+      <Dialog open={!!successPopup} onOpenChange={(o) => { if (!o) setSuccessPopup(null); }}>
+        <DialogContent className="max-w-xs text-center">
+          <div className="flex flex-col items-center gap-3 py-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+            </div>
+            <h3 className="text-lg font-bold text-foreground">Ciência Registrada!</h3>
+            <p className="text-sm text-muted-foreground">
+              Captura realizada com sucesso. O registro de <strong>{successPopup?.name}</strong> foi validado.
+            </p>
+            <Button onClick={() => setSuccessPopup(null)} className="bg-emerald-600 hover:bg-emerald-700 mt-2">
+              OK
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Export dialog */}
       <Dialog open={!!exportAlertaId} onOpenChange={(o) => { if (!o) setExportAlertaId(null); }}>

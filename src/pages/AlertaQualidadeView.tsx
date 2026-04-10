@@ -75,7 +75,6 @@ const AlertaQualidadeView = () => {
     enabled: !!id && !!alerta,
   });
 
-  // Auto-export if coming from master list with export params
   useEffect(() => {
     const exportFormat = searchParams.get("export") as "jpg" | "pdf" | null;
     const showCiencias = searchParams.get("ciencias");
@@ -92,17 +91,13 @@ const AlertaQualidadeView = () => {
     if (!contentRef.current) return;
     setExporting(true);
     try {
-      // Temporarily hide/show ciencias section
       if (cienciasRef.current && !withCiencias) {
         cienciasRef.current.style.display = "none";
       }
-
       const canvas = await html2canvas(contentRef.current, { useCORS: true, scale: 2, backgroundColor: "#f8fafc" });
-
       if (cienciasRef.current && !withCiencias) {
         cienciasRef.current.style.display = "";
       }
-
       if (format === "jpg") {
         const link = document.createElement("a");
         link.download = `alerta-${alerta?.sequencial || "export"}.jpg`;
@@ -130,6 +125,7 @@ const AlertaQualidadeView = () => {
   if (!alerta) return <div className="min-h-screen flex items-center justify-center"><p>Alerta não encontrado</p></div>;
 
   const a = alerta as any;
+  const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
   const fieldRow = (label: string, value: string, color: "red" | "blue" = "blue") => (
     <div className="space-y-0.5 min-w-0">
@@ -160,35 +156,33 @@ const AlertaQualidadeView = () => {
             </div>
           </div>
           <div className="text-center mt-2">
-            <h1 className="text-lg sm:text-xl font-bold tracking-wide">ALERTA DE QUALIDADE #{a.sequencial}</h1>
-            <Badge className={a.status === "ativo" ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}>{a.status === "ativo" ? "Ativo" : "Encerrado"}</Badge>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-wide">ALERTA DE QUALIDADE</h1>
+            <p className="text-lg sm:text-xl font-mono font-bold mt-1">{formatSeq(a.sequencial)}</p>
+            <Badge className={`mt-1 ${a.status === "ativo" ? "bg-white/20 text-white" : "bg-white/10 text-white/70"}`}>{a.status === "ativo" ? "Ativo" : "Encerrado"}</Badge>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 max-w-4xl space-y-4" ref={contentRef}>
-        {/* Repeat header info for export capture */}
         <div className="bg-[#c0392b] text-white rounded-lg p-3 text-center" style={{ display: "none" }} id="export-header">
-          <h2 className="text-lg font-bold">ALERTA DE QUALIDADE #{a.sequencial}</h2>
+          <h2 className="text-lg font-bold">ALERTA DE QUALIDADE {formatSeq(a.sequencial)}</h2>
         </div>
 
-        {/* Fields grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3 form-section">
-          {fieldRow("Modelo", a.modelo)}
+        {/* Fields grid - labels with red color for key fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 form-section">
+          {fieldRow("Modelo", a.modelo, "red")}
           {fieldRow("Modo de Falha", a.modo_falha, "red")}
-          {fieldRow("Linha/Peça", a.linha_peca)}
+          {fieldRow("Linha/Peça", a.linha_peca, "red")}
           {fieldRow("Local Detectado", a.local_detectado, "red")}
           {fieldRow("Data Ocorrência", a.data_ocorrencia ? new Date(a.data_ocorrencia + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
           {fieldRow("Data Validade", a.data_validade ? new Date(a.data_validade + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
           {fieldRow("Turno", a.turno, "red")}
+          {fieldRow("Responsabilidade", a.responsabilidade, "red")}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 form-section">
-          <div className="md:col-span-2">{fieldRow("Descrição", a.descricao)}</div>
-          <div className="space-y-2">
-            {fieldRow("Responsabilidade", a.responsabilidade, "red")}
-            {fieldRow("VIN", a.vin)}
-          </div>
+          <div className="md:col-span-2">{fieldRow("Descrição", a.descricao, "red")}</div>
+          <div>{fieldRow("VIN", a.vin, "red")}</div>
         </div>
 
         {/* Photos */}

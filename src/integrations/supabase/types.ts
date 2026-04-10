@@ -1030,6 +1030,27 @@ export type Database = {
         }
         Relationships: []
       }
+      matriz_editors: {
+        Row: {
+          created_at: string
+          granted_by: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       painting_checklists: {
         Row: {
           checked_items: Json

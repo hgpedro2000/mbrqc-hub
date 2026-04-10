@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/compressImage";
 
 export async function uploadPhotos(
   files: File[],
@@ -8,12 +9,14 @@ export async function uploadPhotos(
   const results: { file_path: string; file_name: string }[] = [];
 
   for (const file of files) {
-    const ext = file.name.split(".").pop();
+    // Compress before upload
+    const compressed = await compressImage(file);
+    const ext = compressed.name.split(".").pop();
     const filePath = `${checklistType}/${checklistId}/${crypto.randomUUID()}.${ext}`;
 
     const { error: uploadError } = await supabase.storage
       .from("checklist-photos")
-      .upload(filePath, file);
+      .upload(filePath, compressed);
 
     if (uploadError) {
       console.error("Upload error:", uploadError);

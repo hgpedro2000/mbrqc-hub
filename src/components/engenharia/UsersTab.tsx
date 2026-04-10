@@ -17,6 +17,11 @@ import ModulePermissionsTab from "./ModulePermissionsTab";
 
 const TURNOS = ["1T", "2T", "3T"];
 const EMPRESA_TERCEIRA_OPTIONS = ["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"];
+const CARGOS = [
+  "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
+  "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
+  "Gerente de Qualidade", "Diretor de Qualidade",
+];
 
 const UsersTab = () => {
   const qc = useQueryClient();
@@ -29,6 +34,7 @@ const UsersTab = () => {
   const [password, setPassword] = useState("");
   const [turno, setTurno] = useState("");
   const [email, setEmail] = useState("");
+  const [cargo, setCargo] = useState("");
   const [empresa, setEmpresa] = useState("mobis_brasil");
   const [empresaTerceira, setEmpresaTerceira] = useState("");
   const [saving, setSaving] = useState(false);
@@ -45,6 +51,7 @@ const UsersTab = () => {
   const [editRole, setEditRole] = useState("user");
   const [editTurno, setEditTurno] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editCargo, setEditCargo] = useState("");
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
 

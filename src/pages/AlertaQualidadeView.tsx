@@ -173,7 +173,7 @@ const AlertaQualidadeView = () => {
         </div>
 
         {/* Fields grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3 form-section">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3 form-section">
           {fieldRow("Modelo", a.modelo)}
           {fieldRow("Modo de Falha", a.modo_falha, "red")}
           {fieldRow("Linha/Peça", a.linha_peca)}

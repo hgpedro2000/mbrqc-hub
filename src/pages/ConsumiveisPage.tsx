@@ -549,7 +549,7 @@ const InventarioRequisicoes = () => {
           </div>
           </>
         )}
-
+      </div>
       {/* Insufficient stock dialog */}
       <AlertDialog open={!!insufficientDialog} onOpenChange={() => setInsufficientDialog(null)}>
         <AlertDialogContent>

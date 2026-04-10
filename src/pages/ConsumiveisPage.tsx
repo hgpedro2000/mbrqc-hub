@@ -576,8 +576,11 @@ const ConsumiveisPage = () => {
   const hasParent = enabledModules.includes("consumiveis" as any);
   const hasRequisitar = enabledModules.includes("consumiveis_requisitar" as any);
   const hasInventario = enabledModules.includes("consumiveis_inventario" as any);
-  const showRequisitar = isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario);
-  const showInventario = isAdmin || hasInventario;
+  // In test mode (impersonating), block inventário - only show what the impersonated user has access to
+  const showRequisitar = impersonating 
+    ? (hasRequisitar || (hasParent && !hasRequisitar && !hasInventario))
+    : (isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario));
+  const showInventario = impersonating ? hasInventario : (isAdmin || hasInventario);
   const defaultTab = showRequisitar ? "requisitar" : showInventario ? "inventario" : "requisitar";
 
   return (

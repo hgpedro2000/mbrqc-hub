@@ -20,6 +20,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
+  const { id: editId } = useParams();
+  const isEdit = !!editId;
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const ngInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +35,7 @@ const AlertaQualidadeForm = () => {
   const [linhaPecaSearch, setLinhaPecaSearch] = useState("");
   const [ocorrenciaOpen, setOcorrenciaOpen] = useState(false);
   const [validadeOpen, setValidadeOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
@@ -42,11 +45,32 @@ const AlertaQualidadeForm = () => {
     vin: "", observacoes: "", sequencia_bp: "", vin_bp: "",
   });
 
+  // Load existing alert for editing
   useEffect(() => {
-    if (form.data_ocorrencia) {
+    if (!editId || loaded) return;
+    (async () => {
+      const { data, error } = await supabase.from("alertas").select("*").eq("id", editId).single();
+      if (error || !data) { toast.error("Alerta não encontrado"); navigate("/alerta-qualidade"); return; }
+      setForm({
+        modelo: data.modelo || "", modo_falha: data.modo_falha || "", linha_peca: data.linha_peca || "",
+        local_detectado: data.local_detectado || "", data_ocorrencia: data.data_ocorrencia || "",
+        data_validade: data.data_validade || "", turno: data.turno || "Todos",
+        descricao: data.descricao || "", responsabilidade: data.responsabilidade || "",
+        vin: data.vin || "", observacoes: data.observacoes || "",
+        sequencia_bp: data.sequencia_bp || "", vin_bp: data.vin_bp || "",
+      });
+      if (data.foto_ng_url) setNgPreview(data.foto_ng_url);
+      if (data.foto_ok_url) setOkPreview(data.foto_ok_url);
+      setLoaded(true);
+    })();
+  }, [editId, loaded, navigate]);
+
+  useEffect(() => {
+    if (form.data_ocorrencia && !isEdit) {
       const d = new Date(form.data_ocorrencia + "T12:00:00");
       const val = addMonths(d, 3);
       setForm(p => ({ ...p, data_validade: format(val, "yyyy-MM-dd") }));
+    }
     }
   }, [form.data_ocorrencia]);
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
@@ -85,6 +85,19 @@ const AlertaQualidade = () => {
     },
   });
 
+  // Fetch part_numbers to map part names → line_module
+  const { data: partNumbers = [] } = useQuery({
+    queryKey: ["part-numbers-line-map"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("part_name, line_module")
+        .eq("active", true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
   useEffect(() => {
     const channel = supabase
       .channel("ciencias-realtime")
@@ -95,8 +108,22 @@ const AlertaQualidade = () => {
     return () => { supabase.removeChannel(channel); };
   }, [qc]);
 
+  const resolveArea = (linhaPeca: string | null): string | null => {
+    if (!linhaPeca) return null;
+    // Direct match (e.g. "BP", "CP")
+    const direct = lineAreaMap[linhaPeca];
+    if (direct) return direct;
+    // It might be a part name - look up its line_module
+    const part = partNumbers.find((p: any) => p.part_name === linhaPeca);
+    if (part) {
+      const mapped = lineAreaMap[part.line_module];
+      if (mapped) return mapped;
+    }
+    return null;
+  };
+
   const getQualifiedCount = (linhaPeca: string | null): number => {
-    const areaKey = linhaPeca ? lineAreaMap[linhaPeca] : null;
+    const areaKey = resolveArea(linhaPeca);
     if (!areaKey) return 0;
     const uniqueUsers = new Set(qualifications.filter((q: any) => q.area === areaKey).map((q: any) => q.user_id));
     return uniqueUsers.size;
@@ -114,7 +141,6 @@ const AlertaQualidade = () => {
     const { count, total, pending } = getCienciaProgress(alertaId, linhaPeca);
     if (total === 0) return { label: "Sem destino", color: "border-muted text-muted-foreground bg-muted/20" };
     if (pending === 0) return { label: "Completo", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" };
-    // Check if 3+ days since creation
     const created = new Date(createdAt);
     const now = new Date();
     const diffDays = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
@@ -163,6 +189,11 @@ const AlertaQualidade = () => {
     navigate(`/alerta-qualidade/ver/${exportAlertaId}?${params.toString()}`);
     setExportAlertaId(null);
     setExporting(false);
+  };
+
+  const canEdit = (alerta: any) => {
+    if (isAdmin) return true;
+    return alerta.criado_por_id === user?.id;
   };
 
   return (
@@ -260,6 +291,11 @@ const AlertaQualidade = () => {
                       </td>
                       <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
+                          {canEdit(a) && (
+                            <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          )}
                           {isLider && (
                             <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
                               <Camera className="w-4 h-4" />

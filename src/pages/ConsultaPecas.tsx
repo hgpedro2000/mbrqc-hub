@@ -77,7 +77,7 @@ const ConsultaPecas = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar por Part Number, nome, fornecedor, ALC Code..."
               className="pl-10 h-12 text-base"
-              autoFocus
+              
             />
           </div>
         </div>

@@ -262,6 +262,42 @@ const InventarioRequisicoes = () => {
     }
   };
 
+  const openEditItem = (item: any) => {
+    setEditItem(item);
+    setEditName(item.name);
+    setEditUnit(item.unit);
+    setEditStock(item.stock_qty);
+    setEditMinQty(item.min_qty);
+  };
+
+  const handleEditItem = async () => {
+    if (!editItem || !editName.trim()) { toast.error("Nome obrigatório"); return; }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase.from("consumable_items").update({
+        name: editName.trim(),
+        unit: editUnit,
+        stock_qty: editStock,
+        min_qty: editMinQty,
+      } as any).eq("id", editItem.id);
+      if (error) throw error;
+      toast.success("Item atualizado");
+      setEditItem(null);
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      setDeleteTarget(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   // Dashboard stats
   const totalRequests = allRequests.length;
   const pendingRequests = allRequests.filter((r: any) => r.status === "aguardando").length;

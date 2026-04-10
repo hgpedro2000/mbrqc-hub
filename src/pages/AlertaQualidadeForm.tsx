@@ -141,8 +141,8 @@ const AlertaQualidadeForm = () => {
     if (!form.turno) missing.push("Turno");
     if (!form.descricao) missing.push("Descrição");
     if (!form.responsabilidade) missing.push("Responsabilidade");
-    if (!ngFile) missing.push("Foto NG");
-    if (!okFile) missing.push("Foto OK");
+    if (!isEdit && !ngFile) missing.push("Foto NG");
+    if (!isEdit && !okFile) missing.push("Foto OK");
 
     if (missing.length > 0) {
       toast.error(`Campos obrigatórios: ${missing.join(", ")}`);
@@ -150,22 +150,35 @@ const AlertaQualidadeForm = () => {
     }
     setSaving(true);
     try {
-      let foto_ng_url = "";
-      let foto_ok_url = "";
+      let foto_ng_url = ngPreview || "";
+      let foto_ok_url = okPreview || "";
       if (ngFile) foto_ng_url = await uploadPhoto(ngFile, "ng");
       if (okFile) foto_ok_url = await uploadPhoto(okFile, "ok");
-      const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
-      const { error } = await supabase.from("alertas").insert({
-        modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
-        local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
-        data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
-        responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
-        observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
-        emitido_por: profile?.full_name || "", criado_por_id: user?.id,
-        total_destinatarios: count || 0,
-      } as any);
-      if (error) throw error;
-      toast.success("Alerta criado com sucesso!");
+
+      if (isEdit) {
+        const { error } = await supabase.from("alertas").update({
+          modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
+          local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
+          data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
+          responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
+          observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
+        } as any).eq("id", editId!);
+        if (error) throw error;
+        toast.success("Alerta atualizado com sucesso!");
+      } else {
+        const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
+        const { error } = await supabase.from("alertas").insert({
+          modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
+          local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
+          data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
+          responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
+          observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
+          emitido_por: profile?.full_name || "", criado_por_id: user?.id,
+          total_destinatarios: count || 0,
+        } as any);
+        if (error) throw error;
+        toast.success("Alerta criado com sucesso!");
+      }
       navigate("/alerta-qualidade");
     } catch (e: any) { toast.error(e.message); }
     finally { setSaving(false); }

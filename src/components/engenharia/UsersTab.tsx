@@ -414,6 +414,13 @@ const UsersTab = () => {
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Select value={editCargo} onValueChange={setEditCargo}>
+                <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>E-mail</Label>
               <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@exemplo.com" />
             </div>
@@ -472,6 +479,7 @@ const UsersTab = () => {
                 <TableHead className="hidden md:table-cell">Empresa</TableHead>
                 <TableHead className="hidden md:table-cell">Turno</TableHead>
                 <TableHead className="hidden lg:table-cell">E-mail</TableHead>
+                <TableHead className="hidden md:table-cell">Cargo</TableHead>
                 <TableHead>Perfil</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Último Login</TableHead>

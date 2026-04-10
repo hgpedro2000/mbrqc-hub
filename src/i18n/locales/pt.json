@@ -97,6 +97,10 @@
     "consultaPecas": {
       "title": "Consulta de Peças",
       "description": "Pesquisa rápida de peças por part number, nome ou fornecedor."
+    },
+    "matrizVersatilidade": {
+      "title": "Matriz de Versatilidade",
+      "description": "Habilitações e treinamentos dos inspetores de qualidade."
     }
   },
   "login": {

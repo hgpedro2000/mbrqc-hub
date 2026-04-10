@@ -350,6 +350,13 @@ const UsersTab = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label>Cargo</Label>
+                  <Select value={cargo} onValueChange={setCargo}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                    <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label>E-mail</Label>
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com (opcional)" />
                 </div>

@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Plus, AlertTriangle, Eye, Camera, Search } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 const AlertaQualidade = () => {
   const navigate = useNavigate();
@@ -20,6 +25,9 @@ const AlertaQualidade = () => {
   const qc = useQueryClient();
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
+  const [includeCiencias, setIncludeCiencias] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", user?.id],
@@ -71,9 +79,9 @@ const AlertaQualidade = () => {
 
   const getCienciaProgress = (alertaId: string, totalDestinatarios: number) => {
     const count = ciencias.filter((c: any) => c.alerta_id === alertaId).length;
-    const total = totalDestinatarios || 1;
-    const pct = Math.round((count / total) * 100);
-    return { count, total: totalDestinatarios, pct };
+    const total = totalDestinatarios || 0;
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return { count, total, pct };
   };
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
@@ -104,6 +112,20 @@ const AlertaQualidade = () => {
       toast.success(`✓ Ciência registrada: ${inspetor.full_name}`);
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleExportConfirm = async (format: "jpg" | "pdf") => {
+    if (!exportAlertaId) return;
+    setExporting(true);
+    // Navigate to view page to capture, but we'll do it by opening in a hidden way
+    // Instead, redirect to view page with export params
+    const params = new URLSearchParams({
+      export: format,
+      ciencias: includeCiencias ? "1" : "0",
+    });
+    navigate(`/alerta-qualidade/ver/${exportAlertaId}?${params.toString()}`);
+    setExportAlertaId(null);
+    setExporting(false);
   };
 
   return (
@@ -167,7 +189,11 @@ const AlertaQualidade = () => {
                 {filtered.map((a: any) => {
                   const prog = getCienciaProgress(a.id, a.total_destinatarios);
                   return (
-                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <tr
+                      key={a.id}
+                      className="border-b border-border/50 hover:bg-muted/30 cursor-pointer"
+                      onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
+                    >
                       <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
                       <td className="py-2.5 px-2 hidden sm:table-cell">
                         {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
@@ -186,21 +212,29 @@ const AlertaQualidade = () => {
                           {a.status === "ativo" ? "Ativo" : "Encerrado"}
                         </Badge>
                       </td>
-                      <td className="py-2.5 px-2">
+                      <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex flex-col items-center gap-1 min-w-[100px]">
                           <Progress value={prog.pct} className="h-2 w-full" />
-                          <span className="text-[10px] text-muted-foreground">{prog.pct}% ({prog.count}/{prog.total})</span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {prog.count}/{prog.total} ciente{prog.count !== 1 ? "s" : ""}
+                          </span>
                         </div>
                       </td>
-                      <td className="py-2.5 px-2">
+                      <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           {isLider && (
                             <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
                               <Camera className="w-4 h-4" />
                             </Button>
                           )}
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Visualizar" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
-                            <Eye className="w-4 h-4" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            title="Exportar"
+                            onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}
+                          >
+                            <Download className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -214,6 +248,33 @@ const AlertaQualidade = () => {
       </main>
 
       <QrScannerModal open={!!scanAlertaId} onClose={() => setScanAlertaId(null)} onScan={handleQrScan} title="Registrar Ciência via QR" />
+
+      {/* Export dialog */}
+      <Dialog open={!!exportAlertaId} onOpenChange={(o) => { if (!o) setExportAlertaId(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Exportar Alerta</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 py-2">
+            <Checkbox
+              id="include-ciencias"
+              checked={includeCiencias}
+              onCheckedChange={(c) => setIncludeCiencias(!!c)}
+            />
+            <Label htmlFor="include-ciencias" className="text-sm cursor-pointer">
+              Incluir lista de ciências
+            </Label>
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("jpg")} disabled={exporting}>
+              JPG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("pdf")} disabled={exporting}>
+              PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

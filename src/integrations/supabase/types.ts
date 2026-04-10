@@ -1245,6 +1245,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_module_order: {
+        Row: {
+          id: string
+          module_order: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          module_order?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          module_order?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_module_permissions: {
         Row: {
           created_at: string

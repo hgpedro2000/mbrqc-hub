@@ -21,8 +21,13 @@ const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: Q
 
     if (!scanner) return;
 
-    await scanner.stop().catch(() => {});
-    await scanner.clear().catch(() => {});
+    try {
+      await scanner.stop();
+    } catch {}
+
+    try {
+      await scanner.clear();
+    } catch {}
   };
 
   useEffect(() => {

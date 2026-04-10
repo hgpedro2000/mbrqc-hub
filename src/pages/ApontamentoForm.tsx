@@ -456,7 +456,7 @@ const ApontamentoForm = () => {
   if (isEdit && loadingExisting) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
           <div className="flex items-center gap-2">

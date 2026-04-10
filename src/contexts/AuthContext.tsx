@@ -12,6 +12,7 @@ interface Profile {
   empresa_terceira: string | null;
   cargo: string | null;
   qr_code_id: string | null;
+  email: string | null;
 }
 
 interface AuthContextType {

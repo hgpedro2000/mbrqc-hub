@@ -1,0 +1,1 @@
+ALTER TABLE public.part_numbers ADD COLUMN alc_code text NOT NULL DEFAULT 'N/A';

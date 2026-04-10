@@ -1,21 +1,42 @@
 import { useNavigate } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer, QrCode } from "lucide-react";
+import { ArrowLeft, Printer, QrCode, Loader2 } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 const QrProfilePage = () => {
   const navigate = useNavigate();
   const { profile, user } = useAuth();
+  const { impersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
+
+  // If impersonating, fetch the impersonated user's profile
+  const { data: impersonatedProfile, isLoading } = useQuery({
+    queryKey: ["impersonated-profile", impersonating?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, cargo, qr_code_id")
+        .eq("id", impersonating!.id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!impersonating?.id,
+  });
+
+  const activeProfile = impersonating ? impersonatedProfile : profile;
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>QR Code - ${profile?.full_name}</title>
+      <html><head><title>QR Code - ${activeProfile?.full_name}</title>
       <style>
         body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; margin: 0; }
         .container { text-align: center; width: 6cm; }
@@ -27,13 +48,13 @@ const QrProfilePage = () => {
       </style></head><body>
       <div class="container">
         <div class="qr" id="qr-print"></div>
-        <div class="name">${profile?.full_name || ""}</div>
-        <div class="cargo">${profile?.cargo || ""}</div>
-        <div class="code">${profile?.qr_code_id || ""}</div>
+        <div class="name">${activeProfile?.full_name || ""}</div>
+        <div class="cargo">${activeProfile?.cargo || ""}</div>
+        <div class="code">${activeProfile?.qr_code_id || ""}</div>
       </div>
       <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
       <script>
-        QRCode.toCanvas(document.createElement('canvas'), '${profile?.qr_code_id || ""}', { width: 200 }, function(err, canvas) {
+        QRCode.toCanvas(document.createElement('canvas'), '${activeProfile?.qr_code_id || ""}', { width: 200 }, function(err, canvas) {
           if (!err) document.getElementById('qr-print').appendChild(canvas);
           setTimeout(() => window.print(), 500);
         });
@@ -42,6 +63,14 @@ const QrProfilePage = () => {
     `);
     printWindow.document.close();
   };
+
+  if (impersonating && isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,12 +94,12 @@ const QrProfilePage = () => {
       <main className="container mx-auto px-4 py-6 max-w-md">
         <div className="form-section text-center space-y-4">
           <div className="inline-block p-4 bg-white rounded-xl shadow-sm">
-            <QRCodeSVG value={profile?.qr_code_id || ""} size={200} level="H" />
+            <QRCodeSVG value={activeProfile?.qr_code_id || ""} size={200} level="H" />
           </div>
           <div>
-            <h2 className="text-lg font-heading font-bold text-foreground">{profile?.full_name}</h2>
-            {profile?.cargo && <p className="text-sm text-muted-foreground">{profile.cargo}</p>}
-            <p className="text-xs font-mono text-muted-foreground mt-1 bg-muted/30 inline-block px-2 py-0.5 rounded">{profile?.qr_code_id}</p>
+            <h2 className="text-lg font-heading font-bold text-foreground">{activeProfile?.full_name}</h2>
+            {activeProfile?.cargo && <p className="text-sm text-muted-foreground">{activeProfile.cargo}</p>}
+            <p className="text-xs font-mono text-muted-foreground mt-1 bg-muted/30 inline-block px-2 py-0.5 rounded">{activeProfile?.qr_code_id}</p>
           </div>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="w-4 h-4" /> Imprimir QR Code

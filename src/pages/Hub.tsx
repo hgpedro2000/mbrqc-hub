@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search,
+  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -40,6 +40,7 @@ const Hub = () => {
 
   const showEngineering = isAdmin;
   const visibleModules = modules.filter((mod) => enabledModules.includes(mod.id as any));
+  const isMobisBrasil = !impersonating ? profile?.empresa === "mobis_brasil" : impersonating?.empresa === "mobis_brasil";
   
   return (
     <div className="min-h-screen bg-background">
@@ -53,6 +54,12 @@ const Hub = () => {
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
               <ReportErrorButton moduleName="Hub" />
+              {isMobisBrasil && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
+                  <QrCode className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Meu QR Code</span>
+                </Button>
+              )}
               {showEngineering && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <Settings2 className="w-4 h-4 md:mr-2" />

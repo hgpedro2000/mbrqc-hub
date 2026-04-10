@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -180,6 +180,12 @@ const InventarioRequisicoes = () => {
   const [saving, setSaving] = useState(false);
   const [turnoFilter, setTurnoFilter] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editUnit, setEditUnit] = useState("un");
+  const [editStock, setEditStock] = useState(0);
+  const [editMinQty, setEditMinQty] = useState(0);
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],
@@ -253,6 +259,36 @@ const InventarioRequisicoes = () => {
       setDeleteTarget(null);
     } catch (e: any) {
       toast.error(e.message);
+    }
+  };
+
+  const openEditItem = (item: any) => {
+    setEditItem(item);
+    setEditName(item.name);
+    setEditUnit(item.unit);
+    setEditStock(item.stock_qty);
+    setEditMinQty(item.min_qty);
+  };
+
+  const handleEditItem = async () => {
+    if (!editItem || !editName.trim()) { toast.error("Nome obrigatório"); return; }
+    setEditSaving(true);
+    try {
+      const { error } = await supabase.from("consumable_items").update({
+        name: editName.trim(),
+        unit: editUnit,
+        stock_qty: editStock,
+        min_qty: editMinQty,
+      } as any).eq("id", editItem.id);
+      if (error) throw error;
+      toast.success("Item atualizado");
+      setEditItem(null);
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -336,7 +372,10 @@ const InventarioRequisicoes = () => {
                       <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
                       <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-4 h-4" /></Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -457,6 +496,48 @@ const InventarioRequisicoes = () => {
             <Button onClick={handleAddItem} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Package className="w-4 h-4 mr-1" />}
               Registrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit item dialog */}
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Editar Consumível</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do Item *</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select value={editUnit} onValueChange={setEditUnit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="un">un</SelectItem>
+                    <SelectItem value="par">par</SelectItem>
+                    <SelectItem value="cx">cx</SelectItem>
+                    <SelectItem value="pct">pct</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="m">m</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estoque</Label>
+                <Input type="number" min={0} value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Qtd Mín.</Label>
+                <Input type="number" min={0} value={editMinQty} onChange={(e) => setEditMinQty(Number(e.target.value))} />
+              </div>
+            </div>
+            <Button onClick={handleEditItem} disabled={editSaving} className="w-full">
+              {editSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
+              Salvar Alterações
             </Button>
           </div>
         </DialogContent>

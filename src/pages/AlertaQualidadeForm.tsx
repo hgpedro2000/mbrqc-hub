@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
+  const { id: editId } = useParams();
+  const isEdit = !!editId;
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
   const ngInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +35,7 @@ const AlertaQualidadeForm = () => {
   const [linhaPecaSearch, setLinhaPecaSearch] = useState("");
   const [ocorrenciaOpen, setOcorrenciaOpen] = useState(false);
   const [validadeOpen, setValidadeOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
@@ -42,13 +45,33 @@ const AlertaQualidadeForm = () => {
     vin: "", observacoes: "", sequencia_bp: "", vin_bp: "",
   });
 
+  // Load existing alert for editing
   useEffect(() => {
-    if (form.data_ocorrencia) {
+    if (!editId || loaded) return;
+    (async () => {
+      const { data, error } = await supabase.from("alertas").select("*").eq("id", editId).single();
+      if (error || !data) { toast.error("Alerta não encontrado"); navigate("/alerta-qualidade"); return; }
+      setForm({
+        modelo: data.modelo || "", modo_falha: data.modo_falha || "", linha_peca: data.linha_peca || "",
+        local_detectado: data.local_detectado || "", data_ocorrencia: data.data_ocorrencia || "",
+        data_validade: data.data_validade || "", turno: data.turno || "Todos",
+        descricao: data.descricao || "", responsabilidade: data.responsabilidade || "",
+        vin: data.vin || "", observacoes: data.observacoes || "",
+        sequencia_bp: data.sequencia_bp || "", vin_bp: data.vin_bp || "",
+      });
+      if (data.foto_ng_url) setNgPreview(data.foto_ng_url);
+      if (data.foto_ok_url) setOkPreview(data.foto_ok_url);
+      setLoaded(true);
+    })();
+  }, [editId, loaded, navigate]);
+
+  useEffect(() => {
+    if (form.data_ocorrencia && !isEdit) {
       const d = new Date(form.data_ocorrencia + "T12:00:00");
       const val = addMonths(d, 3);
       setForm(p => ({ ...p, data_validade: format(val, "yyyy-MM-dd") }));
     }
-  }, [form.data_ocorrencia]);
+  }, [form.data_ocorrencia, isEdit]);
 
   const { data: projetos } = useQuery({
     queryKey: ["projetos-alerta"],
@@ -118,8 +141,8 @@ const AlertaQualidadeForm = () => {
     if (!form.turno) missing.push("Turno");
     if (!form.descricao) missing.push("Descrição");
     if (!form.responsabilidade) missing.push("Responsabilidade");
-    if (!ngFile) missing.push("Foto NG");
-    if (!okFile) missing.push("Foto OK");
+    if (!isEdit && !ngFile) missing.push("Foto NG");
+    if (!isEdit && !okFile) missing.push("Foto OK");
 
     if (missing.length > 0) {
       toast.error(`Campos obrigatórios: ${missing.join(", ")}`);
@@ -127,22 +150,35 @@ const AlertaQualidadeForm = () => {
     }
     setSaving(true);
     try {
-      let foto_ng_url = "";
-      let foto_ok_url = "";
+      let foto_ng_url = ngPreview || "";
+      let foto_ok_url = okPreview || "";
       if (ngFile) foto_ng_url = await uploadPhoto(ngFile, "ng");
       if (okFile) foto_ok_url = await uploadPhoto(okFile, "ok");
-      const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
-      const { error } = await supabase.from("alertas").insert({
-        modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
-        local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
-        data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
-        responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
-        observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
-        emitido_por: profile?.full_name || "", criado_por_id: user?.id,
-        total_destinatarios: count || 0,
-      } as any);
-      if (error) throw error;
-      toast.success("Alerta criado com sucesso!");
+
+      if (isEdit) {
+        const { error } = await supabase.from("alertas").update({
+          modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
+          local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
+          data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
+          responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
+          observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
+        } as any).eq("id", editId!);
+        if (error) throw error;
+        toast.success("Alerta atualizado com sucesso!");
+      } else {
+        const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
+        const { error } = await supabase.from("alertas").insert({
+          modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
+          local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
+          data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
+          responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
+          observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
+          emitido_por: profile?.full_name || "", criado_por_id: user?.id,
+          total_destinatarios: count || 0,
+        } as any);
+        if (error) throw error;
+        toast.success("Alerta criado com sucesso!");
+      }
       navigate("/alerta-qualidade");
     } catch (e: any) { toast.error(e.message); }
     finally { setSaving(false); }
@@ -175,7 +211,7 @@ const AlertaQualidadeForm = () => {
             <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold mt-2 text-center tracking-wide" style={{ fontFamily: "Arial, sans-serif" }}>
-            ALERTA DE QUALIDADE
+            {isEdit ? "EDITAR ALERTA DE QUALIDADE" : "ALERTA DE QUALIDADE"}
           </h1>
         </div>
       </header>
@@ -340,7 +376,7 @@ const AlertaQualidadeForm = () => {
         <div className="flex justify-end pt-2 pb-8">
           <Button onClick={handleSave} disabled={saving} className="gap-2 bg-[#1a5276] hover:bg-[#154360] min-w-[200px]">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Salvar Alerta
+            {isEdit ? "Salvar Alterações" : "Salvar Alerta"}
           </Button>
         </div>
       </main>

@@ -8,6 +8,12 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useState } from "react";
 
+const lineAreaMap: Record<string, string> = {
+  "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",
+  "Incoming": "incoming", "Pintura": "pintura", "Injeção": "injecao",
+  "Sala do Áudio": "sala_audio", "Inspeção de Peça": "inspecao_peca",
+};
+
 const AlertaQualidadeFeed = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -18,15 +24,46 @@ const AlertaQualidadeFeed = () => {
     queryKey: ["alertas-feed", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+
+      // Get inspector's qualified areas
+      const { data: quals } = await supabase
+        .from("inspector_qualifications")
+        .select("area")
+        .eq("user_id", user.id)
+        .eq("habilitado", true);
+      const myAreas = (quals || []).map((q: any) => q.area);
+
+      // Get part_numbers to resolve part names → line_module
+      const { data: parts } = await supabase
+        .from("part_numbers")
+        .select("part_name, line_module")
+        .eq("active", true);
+      const partMap = new Map((parts || []).map((p: any) => [p.part_name, p.line_module]));
+
       // Get all active alerts
       const { data: allAlertas, error: aErr } = await supabase.from("alertas").select("*").eq("status", "ativo").order("created_at", { ascending: false });
       if (aErr) throw aErr;
+
       // Get ciencias for this user
       const { data: myCiencias, error: cErr } = await supabase.from("ciencias").select("alerta_id").eq("inspetor_id", user.id);
       if (cErr) throw cErr;
       const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
-      // Filter out alerts user already acknowledged
-      return (allAlertas || []).filter((a: any) => !cienIds.has(a.id));
+
+      // Filter: only alerts matching inspector's qualified areas AND not yet acknowledged
+      return (allAlertas || []).filter((a: any) => {
+        if (cienIds.has(a.id)) return false;
+        if (myAreas.length === 0) return false;
+        const linhaPeca = a.linha_peca;
+        if (!linhaPeca) return false;
+        // Resolve area
+        let areaKey = lineAreaMap[linhaPeca];
+        if (!areaKey) {
+          const lineModule = partMap.get(linhaPeca);
+          if (lineModule) areaKey = lineAreaMap[lineModule];
+        }
+        if (!areaKey) return false;
+        return myAreas.includes(areaKey);
+      });
     },
     enabled: !!user?.id,
   });

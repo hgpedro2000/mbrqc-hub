@@ -108,6 +108,7 @@ const App = () => (
             {/* Alertas de Qualidade */}
             <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/ver/:id" element={<ProtectedRoute><AlertaQualidadeView /></ProtectedRoute>} />
             <Route path="/alerta-qualidade/feed" element={<ProtectedRoute><AlertaQualidadeFeed /></ProtectedRoute>} />
             

@@ -180,6 +180,12 @@ const InventarioRequisicoes = () => {
   const [saving, setSaving] = useState(false);
   const [turnoFilter, setTurnoFilter] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editUnit, setEditUnit] = useState("un");
+  const [editStock, setEditStock] = useState(0);
+  const [editMinQty, setEditMinQty] = useState(0);
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],

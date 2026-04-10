@@ -997,6 +997,39 @@ export type Database = {
         }
         Relationships: []
       }
+      inspector_qualifications: {
+        Row: {
+          area: string
+          created_at: string
+          habilitado: boolean
+          id: string
+          last_evaluation_date: string | null
+          next_evaluation_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          habilitado?: boolean
+          id?: string
+          last_evaluation_date?: string | null
+          next_evaluation_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          habilitado?: boolean
+          id?: string
+          last_evaluation_date?: string | null
+          next_evaluation_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       painting_checklists: {
         Row: {
           checked_items: Json

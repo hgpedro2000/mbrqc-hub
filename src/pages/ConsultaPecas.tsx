@@ -32,7 +32,8 @@ const ConsultaPecas = () => {
       p.part_number?.toLowerCase().includes(term) ||
       p.part_name?.toLowerCase().includes(term) ||
       p.suppliers?.name?.toLowerCase().includes(term) ||
-      p.suppliers?.code?.toLowerCase().includes(term)
+      p.suppliers?.code?.toLowerCase().includes(term) ||
+      p.alc_code?.toLowerCase().includes(term)
     );
   }, [partNumbers, searchTerm]);
 
@@ -63,7 +64,7 @@ const ConsultaPecas = () => {
             </div>
           </div>
           <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Pesquise peças por Part Number, nome ou fornecedor.</p>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-sm md:text-lg">Pesquise peças por Part Number, nome, fornecedor ou ALC Code.</p>
         </div>
       </header>
 
@@ -74,7 +75,7 @@ const ConsultaPecas = () => {
             <Input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por Part Number, nome da peça ou fornecedor..."
+              placeholder="Buscar por Part Number, nome, fornecedor, ALC Code..."
               className="pl-10 h-12 text-base"
               autoFocus
             />
@@ -99,11 +100,13 @@ const ConsultaPecas = () => {
                       {origemBadge(p.origem)}
                     </div>
                     <p className="text-sm text-muted-foreground">{p.part_name}</p>
-                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span>Fornecedor: <span className="font-medium text-foreground">{p.suppliers?.name || "—"}</span></span>
-                      <span>•</span>
+                      <span>Code Vendor: <span className="font-mono font-medium text-foreground">{p.suppliers?.code || "—"}</span></span>
+                      <span>ALC Code: <span className="font-mono font-medium text-foreground">{p.alc_code || "N/A"}</span></span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span>Projeto: <span className="font-medium text-foreground">{p.project || "—"}</span></span>
-                      <span>•</span>
                       <span>Linha/Módulo: <span className="font-medium text-foreground">{p.line_module || "—"}</span></span>
                     </div>
                   </div>

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download } from "lucide-react";
+import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -56,6 +56,9 @@ const MatrizVersatilidade = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportingQrs, setExportingQrs] = useState(false);
   const qrExportRef = useRef<HTMLDivElement>(null);
+  const [editorDialog, setEditorDialog] = useState(false);
+  const [editorSearch, setEditorSearch] = useState("");
+  const [savingEditors, setSavingEditors] = useState(false);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-matriz", user?.id],
@@ -66,7 +69,21 @@ const MatrizVersatilidade = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Fetch authorized editors
+  const { data: matrizEditors = [] } = useQuery({
+    queryKey: ["matriz-editors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("matriz_editors").select("*");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const isAuthorizedEditor = isAdmin || matrizEditors.some((e: any) => e.user_id === user?.id);
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
+  // Can edit: admin, authorized editor, or leader
+  const canEdit = isAuthorizedEditor || isLider;
 
   const { data: inspectors = [] } = useQuery({
     queryKey: ["matriz-inspectors"],
@@ -83,6 +100,17 @@ const MatrizVersatilidade = () => {
     },
   });
 
+  // All active profiles for editor selection
+  const { data: allProfiles = [] } = useQuery({
+    queryKey: ["all-profiles-for-editors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, full_name, employee_number, cargo").eq("status", "active").order("full_name");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: editorDialog,
+  });
+
   const { data: qualifications = [] } = useQuery({
     queryKey: ["inspector-qualifications"],
     queryFn: async () => {
@@ -94,7 +122,7 @@ const MatrizVersatilidade = () => {
 
   useEffect(() => {
     const populateQualifications = async () => {
-      if (!isLider || inspectors.length === 0) return;
+      if (!canEdit || inspectors.length === 0) return;
       const existingUserIds = new Set(qualifications.map((q: any) => q.user_id));
       const newInspectors = inspectors.filter((i: any) => !existingUserIds.has(i.id));
       if (newInspectors.length === 0) return;
@@ -110,7 +138,7 @@ const MatrizVersatilidade = () => {
       }
     };
     populateQualifications();
-  }, [inspectors, qualifications, isLider]);
+  }, [inspectors, qualifications, canEdit]);
 
   const getQual = (userId: string, area: string) => qualifications.find((q: any) => q.user_id === userId && q.area === area);
 
@@ -129,7 +157,7 @@ const MatrizVersatilidade = () => {
   };
 
   const toggleHabilitado = async (userId: string, area: string) => {
-    if (!isLider) return;
+    if (!canEdit) return;
     const existing = getQual(userId, area);
     if (existing) {
       await supabase.from("inspector_qualifications").update({ habilitado: !existing.habilitado } as any).eq("id", existing.id);
@@ -194,7 +222,7 @@ const MatrizVersatilidade = () => {
     if (selectedInspectors.length === 0) return;
     setExportingQrs(true);
     try {
-      await new Promise(r => setTimeout(r, 300)); // wait for render
+      await new Promise(r => setTimeout(r, 300));
       if (!qrExportRef.current) return;
       const canvas = await html2canvas(qrExportRef.current, { backgroundColor: "#ffffff", scale: 3 });
       if (format === "jpg") {
@@ -219,6 +247,33 @@ const MatrizVersatilidade = () => {
     }
   };
 
+  // Editor management
+  const editorUserIds = new Set(matrizEditors.map((e: any) => e.user_id));
+  
+  const toggleEditor = async (userId: string) => {
+    setSavingEditors(true);
+    try {
+      if (editorUserIds.has(userId)) {
+        const { error } = await supabase.from("matriz_editors").delete().eq("user_id", userId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("matriz_editors").insert({ user_id: userId, granted_by: user?.id } as any);
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["matriz-editors"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSavingEditors(false);
+    }
+  };
+
+  const filteredEditorProfiles = useMemo(() => {
+    if (!editorSearch.trim()) return allProfiles;
+    const term = editorSearch.toLowerCase();
+    return allProfiles.filter((p: any) => p.full_name?.toLowerCase().includes(term) || p.employee_number?.includes(term));
+  }, [allProfiles, editorSearch]);
+
   const parseDate = (s: string) => s ? new Date(s + "T12:00:00") : undefined;
 
   return (
@@ -232,7 +287,14 @@ const MatrizVersatilidade = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <ReportErrorButton moduleName="Matriz de Versatilidade" />
+            <div className="flex items-center gap-1">
+              {isAdmin && (
+                <Button variant="ghost" size="sm" onClick={() => setEditorDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground gap-1 text-xs px-2">
+                  <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Autorizar Editor</span>
+                </Button>
+              )}
+              <ReportErrorButton moduleName="Matriz de Versatilidade" />
+            </div>
           </div>
           <div className="flex items-center gap-2 mt-3">
             <Users className="w-6 h-6" />
@@ -245,7 +307,7 @@ const MatrizVersatilidade = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
-        {isLider && expiredInspectors.length > 0 && (
+        {canEdit && expiredInspectors.length > 0 && (
           <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle className="w-4 h-4 text-destructive" />
@@ -325,12 +387,12 @@ const MatrizVersatilidade = () => {
                       <div key={area.key} className="flex items-center gap-1 text-[10px]">
                         <Checkbox
                           checked={isHab || false}
-                          onCheckedChange={() => isLider && toggleHabilitado(ins.id, area.key)}
-                          disabled={!isLider}
+                          onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
+                          disabled={!canEdit}
                           className="h-3.5 w-3.5"
                         />
                         <button
-                          onClick={() => isHab && isLider && openEditDates(ins.id, area.key)}
+                          onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
                           className={cn(
                             "truncate",
                             isHab && status === "vencido" ? "text-red-700 font-bold" :
@@ -401,13 +463,13 @@ const MatrizVersatilidade = () => {
                           <div className="flex flex-col items-center gap-0.5">
                             <Checkbox
                               checked={isHab || false}
-                              onCheckedChange={() => isLider && toggleHabilitado(ins.id, area.key)}
-                              disabled={!isLider}
+                              onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
+                              disabled={!canEdit}
                               className="h-4 w-4"
                             />
                             {isHab && (
                               <button
-                                onClick={() => isLider && openEditDates(ins.id, area.key)}
+                                onClick={() => canEdit && openEditDates(ins.id, area.key)}
                                 className={cn(
                                   "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
                                   status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
@@ -499,6 +561,46 @@ const MatrizVersatilidade = () => {
             </div>
             <Button onClick={saveDates} className="w-full">Salvar</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Authorize Editors dialog (ADM only) */}
+      <Dialog open={editorDialog} onOpenChange={setEditorDialog}>
+        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5" /> Autorizar Editores
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione os usuários autorizados a editar a Matriz de Versatilidade.</p>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input value={editorSearch} onChange={(e) => setEditorSearch(e.target.value)} placeholder="Buscar usuário..." className="pl-9 h-8 text-xs" />
+          </div>
+          <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
+            {filteredEditorProfiles.map((p: any) => (
+              <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={editorUserIds.has(p.id)}
+                    onCheckedChange={() => toggleEditor(p.id)}
+                    disabled={savingEditors}
+                    className="h-4 w-4"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{p.full_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{p.cargo || ""} • {p.employee_number}</p>
+                  </div>
+                </div>
+                {editorUserIds.has(p.id) && (
+                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px]">Editor</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setEditorDialog(false)}>Fechar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

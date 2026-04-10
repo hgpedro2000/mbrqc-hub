@@ -23,9 +23,19 @@ const lineAreaMap: Record<string, string> = {
   "Sala do Áudio": "sala_audio", "Inspeção de Peça": "inspecao_peca",
 };
 
+// Cargos that can CREATE alerts
+const CARGOS_CRIAR_ALERTA = [
+  "Lider de Qualidade",
+  "Assistente de Qualidade",
+  "Analista de Qualidade",
+  "Supervisor de Qualidade",
+  "Gerente de Qualidade",
+  "Diretor de Qualidade",
+];
+
 const AlertaQualidade = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
@@ -52,6 +62,12 @@ const AlertaQualidade = () => {
 
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
   const isInspetor = roles.some((r: any) => r.role === "inspetor");
+
+  // Can CREATE alerts: admin OR has a quality cargo
+  const canCreateAlert = isAdmin || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+
+  // Can SCAN QR: any leader role (regardless of cargo)
+  const canScanQr = isLider;
 
   useEffect(() => {
     if (!isLider && isInspetor) {
@@ -146,10 +162,9 @@ const AlertaQualidade = () => {
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
-  // Filter: inspectors/auxiliars only see alerts where they are in the ciência list
+  // Visibility: admin/lider see all; others only see alerts for their qualified areas
   const filteredByVisibility = useMemo(() => {
     if (isAdmin || isLider) return alertas;
-    // For inspectors: only show alerts where they are a qualified inspector for that area
     if (!user?.id) return [];
     return alertas.filter((a: any) => {
       const qualifiedInspectors = getQualifiedInspectors(a.linha_peca);
@@ -227,6 +242,7 @@ const AlertaQualidade = () => {
     }
   };
 
+  // Edit: only admin or who created the alert
   const canEdit = (alerta: any) => isAdmin || alerta.criado_por_id === user?.id;
 
   const statusOptions = [
@@ -264,7 +280,7 @@ const AlertaQualidade = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-9" />
           </div>
-          {isLider && (
+          {canCreateAlert && (
             <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
               <Plus className="w-4 h-4" /> Novo Alerta
             </Button>
@@ -279,7 +295,6 @@ const AlertaQualidade = () => {
             <p className="text-muted-foreground">Nenhum alerta encontrado</p>
           </div>
         ) : (
-          /* Mobile: card layout, Desktop: table */
           <>
             {/* Mobile cards */}
             <div className="sm:hidden space-y-3">
@@ -318,7 +333,7 @@ const AlertaQualidade = () => {
                           <Pencil className="w-3 h-3" />
                         </Button>
                       )}
-                      {isLider && (
+                      {canScanQr && (
                         <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => setScanAlertaId(a.id)}>
                           <Camera className="w-3 h-3" />
                         </Button>
@@ -394,7 +409,7 @@ const AlertaQualidade = () => {
                                 <Pencil className="w-3.5 h-3.5" />
                               </Button>
                             )}
-                            {isLider && (
+                            {canScanQr && (
                               <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
                                 <Camera className="w-3.5 h-3.5" />
                               </Button>

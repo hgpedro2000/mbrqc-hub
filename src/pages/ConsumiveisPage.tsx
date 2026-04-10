@@ -112,7 +112,6 @@ const RequisitarItem = () => {
 
       <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
       
-      {/* Search filter */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por item ou número..." className="pl-9 h-8 text-xs" />
@@ -122,7 +121,6 @@ const RequisitarItem = () => {
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <>
-        {/* Mobile cards */}
         <div className="sm:hidden space-y-2">
           {filteredRequests.map((r: any) => {
             const cfg = statusConfig[r.status] || statusConfig.aguardando;
@@ -144,7 +142,6 @@ const RequisitarItem = () => {
             <p className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido encontrado</p>
           )}
         </div>
-        {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
@@ -178,7 +175,6 @@ const RequisitarItem = () => {
         </>
       )}
 
-      {/* Add item dialog */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Requisitar Consumível</DialogTitle></DialogHeader>
@@ -209,9 +205,11 @@ const RequisitarItem = () => {
   );
 };
 
-/* ─── Inventário e Requisições sub-module (admin) ─── */
+/* ─── Inventário e Requisições sub-module ─── */
 const InventarioRequisicoes = () => {
   const { isAdmin } = useUserRole();
+  const { enabledModules } = useEnabledModules();
+  const hasInventarioPermission = isAdmin || enabledModules.includes("consumiveis_inventario" as any);
   const qc = useQueryClient();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [stockListOpen, setStockListOpen] = useState(false);
@@ -285,7 +283,6 @@ const InventarioRequisicoes = () => {
       if (!request) return;
 
       if (status === "entregue") {
-        // Check stock before approving
         const item = items.find((i: any) => i.id === request.item_id);
         if (item && item.stock_qty < request.quantity) {
           setInsufficientDialog({
@@ -295,7 +292,6 @@ const InventarioRequisicoes = () => {
           });
           return;
         }
-        // Deduct from stock
         if (item) {
           const newQty = item.stock_qty - request.quantity;
           const { error: stockErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", item.id);
@@ -346,9 +342,11 @@ const InventarioRequisicoes = () => {
   const pendingRequests = allRequests.filter((r: any) => r.status === "aguardando").length;
   const deliveredRequests = allRequests.filter((r: any) => r.status === "entregue").length;
 
+  // Can approve: admin or user with inventario permission
+  const canApprove = hasInventarioPermission;
+
   return (
     <div className="space-y-6">
-      {/* Dashboard cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="form-section p-3 text-center">
           <p className="text-2xl font-bold text-foreground">{items.filter((i: any) => i.active).length}</p>
@@ -387,9 +385,11 @@ const InventarioRequisicoes = () => {
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
             <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
           </Button>
-          <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
-            <Plus className="w-4 h-4" /> Registrar Consumível
-          </Button>
+          {isAdmin && (
+            <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
+              <Plus className="w-4 h-4" /> Registrar Consumível
+            </Button>
+          )}
         </div>
       </div>
 
@@ -401,16 +401,17 @@ const InventarioRequisicoes = () => {
             <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : (
             <>
-              {/* Mobile cards */}
               <div className="sm:hidden space-y-2">
                 {items.map((i: any) => (
                   <div key={i.id} className={`border rounded-lg p-3 space-y-1 ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5 border-destructive/20" : ""}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm">{i.name}</p>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                      </div>
+                      {isAdmin && (
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>Unid: <strong>{i.unit}</strong></span>
@@ -423,7 +424,6 @@ const InventarioRequisicoes = () => {
                   <p className="text-center text-muted-foreground py-6 text-sm">Nenhum item cadastrado</p>
                 )}
               </div>
-              {/* Desktop table */}
               <div className="hidden sm:block overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -432,7 +432,7 @@ const InventarioRequisicoes = () => {
                       <TableHead className="text-center">Unidade</TableHead>
                       <TableHead className="text-center">Estoque</TableHead>
                       <TableHead className="text-center">Mín.</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      {isAdmin && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -442,16 +442,18 @@ const InventarioRequisicoes = () => {
                         <TableCell className="text-center text-sm">{i.unit}</TableCell>
                         <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
-                          </div>
-                        </TableCell>
+                        {isAdmin && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                     {items.length === 0 && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -486,7 +488,6 @@ const InventarioRequisicoes = () => {
           <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
         ) : (
           <>
-          {/* Mobile cards */}
           <div className="sm:hidden space-y-2">
             {filteredRequests.map((r: any) => {
               const cfg = statusConfig[r.status] || statusConfig.aguardando;
@@ -505,7 +506,7 @@ const InventarioRequisicoes = () => {
                     <span>{r.turno || ""}</span>
                     <span>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
                   </div>
-                  {r.status === "aguardando" && (
+                  {r.status === "aguardando" && canApprove && (
                     <div className="flex items-center gap-1 justify-end pt-1">
                       <Button variant="ghost" size="sm" className="h-7 px-2 text-emerald-600 text-xs" onClick={() => updateRequestStatus(r.id, "entregue")}>
                         <Check className="w-3.5 h-3.5 mr-1" /> Entregar
@@ -522,7 +523,6 @@ const InventarioRequisicoes = () => {
               <p className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição</p>
             )}
           </div>
-          {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <Table>
               <TableHeader>
@@ -534,7 +534,7 @@ const InventarioRequisicoes = () => {
                   <TableHead className="text-xs text-center">Qtd</TableHead>
                   <TableHead className="text-xs">Data</TableHead>
                   <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs text-right">Ações</TableHead>
+                  {canApprove && <TableHead className="text-xs text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -549,25 +549,27 @@ const InventarioRequisicoes = () => {
                       <TableCell className="text-center">{r.quantity}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {r.status === "aguardando" && (
-                            <>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600" onClick={() => updateRequestStatus(r.id, "entregue")} title="Entregar">
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => updateRequestStatus(r.id, "rejeitado")} title="Rejeitar">
-                                <XIcon className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
+                      {canApprove && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {r.status === "aguardando" && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600" onClick={() => updateRequestStatus(r.id, "entregue")} title="Entregar">
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => updateRequestStatus(r.id, "rejeitado")} title="Rejeitar">
+                                  <XIcon className="w-4 h-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
                 {filteredRequests.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Nenhuma requisição</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={canApprove ? 8 : 7} className="text-center text-muted-foreground py-6">Nenhuma requisição</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -664,7 +666,6 @@ const ConsumiveisPage = () => {
   const hasParent = enabledModules.includes("consumiveis" as any);
   const hasRequisitar = enabledModules.includes("consumiveis_requisitar" as any);
   const hasInventario = enabledModules.includes("consumiveis_inventario" as any);
-  // In test mode (impersonating), block inventário - only show what the impersonated user has access to
   const showRequisitar = impersonating 
     ? (hasRequisitar || (hasParent && !hasRequisitar && !hasInventario))
     : (isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario));

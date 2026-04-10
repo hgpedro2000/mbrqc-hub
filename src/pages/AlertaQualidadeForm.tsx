@@ -117,7 +117,7 @@ const AlertaQualidadeForm = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-4xl space-y-4">
         {/* Grid 7 campos */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-7 gap-3">
           <div className="space-y-1">
             {normalLabel("Modelo do Carro")}
             <Input value={form.modelo} onChange={(e) => set("modelo", e.target.value)} className="text-sm" />
@@ -157,12 +157,12 @@ const AlertaQualidadeForm = () => {
         </div>
 
         {/* Descrição e Responsabilidade */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="md:col-span-2 space-y-1">
+        <div className="grid grid-cols-7 gap-3">
+          <div className="col-span-5 space-y-1">
             {normalLabel("Descrição")}
-            <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className="min-h-[80px] text-sm" />
+            <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className="min-h-[100px] text-sm" />
           </div>
-          <div className="space-y-3">
+          <div className="col-span-2 space-y-3">
             <div className="space-y-1">
               {requiredLabel("Responsabilidade")}
               <Input value={form.responsabilidade} onChange={(e) => set("responsabilidade", e.target.value)} className="text-sm border-[#c0392b]/30" />

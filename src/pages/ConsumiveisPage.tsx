@@ -501,6 +501,48 @@ const InventarioRequisicoes = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit item dialog */}
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Editar Consumível</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Nome do Item *</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Unidade</Label>
+                <Select value={editUnit} onValueChange={setEditUnit}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="un">un</SelectItem>
+                    <SelectItem value="par">par</SelectItem>
+                    <SelectItem value="cx">cx</SelectItem>
+                    <SelectItem value="pct">pct</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="m">m</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estoque</Label>
+                <Input type="number" min={0} value={editStock} onChange={(e) => setEditStock(Number(e.target.value))} />
+              </div>
+              <div className="space-y-2">
+                <Label>Qtd Mín.</Label>
+                <Input type="number" min={0} value={editMinQty} onChange={(e) => setEditMinQty(Number(e.target.value))} />
+              </div>
+            </div>
+            <Button onClick={handleEditItem} disabled={editSaving} className="w-full">
+              {editSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete item confirm */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>

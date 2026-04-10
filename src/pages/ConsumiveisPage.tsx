@@ -121,6 +121,7 @@ const RequisitarItem = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
+        <>
         {/* Mobile cards */}
         <div className="sm:hidden space-y-2">
           {filteredRequests.map((r: any) => {
@@ -174,6 +175,7 @@ const RequisitarItem = () => {
             </TableBody>
           </Table>
         </div>
+        </>
       )}
 
       {/* Add item dialog */}

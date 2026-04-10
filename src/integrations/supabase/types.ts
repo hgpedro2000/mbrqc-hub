@@ -1030,6 +1030,39 @@ export type Database = {
         }
         Relationships: []
       }
+      matriz_attachments: {
+        Row: {
+          area: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          uploaded_by: string
+          user_id: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          uploaded_by: string
+          user_id: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          uploaded_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       matriz_editors: {
         Row: {
           created_at: string

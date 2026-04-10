@@ -273,8 +273,8 @@ const Apontamentos = () => {
           const hasNg = (item.quantidade_ng || 0) > 0;
 
           return (
-            <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
-              <div className="flex items-start justify-between gap-2">
+            <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer overflow-hidden" onClick={() => setViewTarget(item.id)}>
+              <div className="flex items-start justify-between gap-2 min-w-0">
                 <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                   {isAdmin && (
                     <div className="pt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -359,7 +359,7 @@ const Apontamentos = () => {
 
                 {/* Main photo thumbnail */}
                 {firstPhotoByItem[item.id] && (
-                  <div className="shrink-0 w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
+                  <div className="shrink-0 w-16 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
                     <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                   </div>
                 )}

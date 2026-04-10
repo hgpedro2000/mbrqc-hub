@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2, Paperclip, Upload, Trash2, FileText, Eye } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -24,16 +24,23 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 const AREAS = [
-  { key: "inspecao_peca", label: "Inspeção de Peça" },
-  { key: "incoming", label: "Incoming" },
-  { key: "pintura", label: "Pintura" },
-  { key: "injecao", label: "Injeção" },
-  { key: "sala_audio", label: "Sala do Áudio" },
-  { key: "cp", label: "CP" },
-  { key: "bp", label: "BP" },
-  { key: "ch", label: "CH" },
-  { key: "oem", label: "OEM" },
+  { key: "inspecao_peca", label: "Inspeção de Peça", color: "bg-blue-700" },
+  { key: "incoming", label: "Incoming", color: "bg-emerald-700" },
+  { key: "pintura", label: "Pintura", color: "bg-amber-700" },
+  { key: "injecao", label: "Injeção", color: "bg-purple-700" },
+  { key: "sala_audio", label: "Sala do Áudio", color: "bg-rose-700" },
+  { key: "cp", label: "CP", color: "bg-cyan-700" },
+  { key: "bp", label: "BP", color: "bg-orange-700" },
+  { key: "ch", label: "CH", color: "bg-indigo-700" },
+  { key: "oem", label: "OEM", color: "bg-slate-700" },
 ];
+
+// Renamed from "Inspeção de Qualidade" to "Noções de Qualidade"
+const AREA_DISPLAY_LABELS: Record<string, string> = {
+  inspecao_peca: "Noções de Qualidade",
+};
+
+const getAreaLabel = (key: string, label: string) => AREA_DISPLAY_LABELS[key] || label;
 
 const CARGOS_QUALIDADE = [
   "Auxiliar de Qualidade",
@@ -59,6 +66,9 @@ const MatrizVersatilidade = () => {
   const [editorDialog, setEditorDialog] = useState(false);
   const [editorSearch, setEditorSearch] = useState("");
   const [savingEditors, setSavingEditors] = useState(false);
+  const [qrDialog, setQrDialog] = useState<any>(null);
+  const [attachDialog, setAttachDialog] = useState<{ userId: string; area: string } | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-matriz", user?.id],
@@ -84,6 +94,8 @@ const MatrizVersatilidade = () => {
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
   // Can edit: admin, authorized editor, or leader
   const canEdit = isAuthorizedEditor || isLider;
+  // Only ADM and authorized editors can see/edit flags
+  const canSeeFlags = isAuthorizedEditor;
 
   const { data: inspectors = [] } = useQuery({
     queryKey: ["matriz-inspectors"],
@@ -115,6 +127,15 @@ const MatrizVersatilidade = () => {
     queryKey: ["inspector-qualifications"],
     queryFn: async () => {
       const { data, error } = await supabase.from("inspector_qualifications").select("*");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: attachments = [] } = useQuery({
+    queryKey: ["matriz-attachments"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("matriz_attachments").select("*");
       if (error) throw error;
       return data || [];
     },
@@ -218,14 +239,14 @@ const MatrizVersatilidade = () => {
 
   const selectedInspectors = inspectors.filter((i: any) => selectedIds.has(i.id));
 
-  const exportSelectedQrs = async (format: "jpg" | "pdf") => {
+  const exportSelectedQrs = async (fmt: "jpg" | "pdf") => {
     if (selectedInspectors.length === 0) return;
     setExportingQrs(true);
     try {
       await new Promise(r => setTimeout(r, 300));
       if (!qrExportRef.current) return;
       const canvas = await html2canvas(qrExportRef.current, { backgroundColor: "#ffffff", scale: 3 });
-      if (format === "jpg") {
+      if (fmt === "jpg") {
         const link = document.createElement("a");
         link.download = `QR-Codes-${selectedInspectors.length}.jpg`;
         link.href = canvas.toDataURL("image/jpeg", 0.95);
@@ -247,7 +268,6 @@ const MatrizVersatilidade = () => {
     }
   };
 
-  // Editor management
   const editorUserIds = new Set(matrizEditors.map((e: any) => e.user_id));
   
   const toggleEditor = async (userId: string) => {
@@ -275,6 +295,54 @@ const MatrizVersatilidade = () => {
   }, [allProfiles, editorSearch]);
 
   const parseDate = (s: string) => s ? new Date(s + "T12:00:00") : undefined;
+
+  // Attachment helpers
+  const getAttachments = (userId: string, area: string) => 
+    attachments.filter((a: any) => a.user_id === userId && a.area === area);
+
+  const handleAttachUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!attachDialog || !e.target.files?.length) return;
+    setUploading(true);
+    try {
+      const file = e.target.files[0];
+      const ext = file.name.split(".").pop();
+      const path = `${attachDialog.userId}/${attachDialog.area}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("matriz-attachments").upload(path, file);
+      if (uploadErr) throw uploadErr;
+      const { error: dbErr } = await supabase.from("matriz_attachments").insert({
+        user_id: attachDialog.userId,
+        area: attachDialog.area,
+        file_name: file.name,
+        file_path: path,
+        file_size: file.size,
+        uploaded_by: user?.id,
+      } as any);
+      if (dbErr) throw dbErr;
+      qc.invalidateQueries({ queryKey: ["matriz-attachments"] });
+      toast.success("Anexo enviado");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar anexo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const deleteAttachment = async (att: any) => {
+    await supabase.storage.from("matriz-attachments").remove([att.file_path]);
+    await supabase.from("matriz_attachments").delete().eq("id", att.id);
+    qc.invalidateQueries({ queryKey: ["matriz-attachments"] });
+    toast.success("Anexo removido");
+  };
+
+  const viewAttachment = (att: any) => {
+    const { data } = supabase.storage.from("matriz-attachments").getPublicUrl(att.file_path);
+    window.open(data.publicUrl, "_blank");
+  };
+
+  // QR Code dialog - uses inspector's data, NOT logged-in user
+  const openQrDialog = (ins: any) => {
+    setQrDialog(ins);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -358,17 +426,17 @@ const MatrizVersatilidade = () => {
           {filtered.map((ins: any) => {
             const overall = getOverallStatus(ins.id);
             return (
-              <div key={ins.id} className="form-section p-3 space-y-2">
+              <div key={ins.id} className="form-section p-3 space-y-2 overflow-hidden">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{ins.full_name}</p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{ins.full_name}</p>
                       <p className="text-[10px] text-muted-foreground">{ins.cargo || "—"} • {ins.turno || "—"}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate("/meu-qr")}><QrCode className="w-3 h-3" /></Button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openQrDialog(ins)}><QrCode className="w-3 h-3" /></Button>
                     {overall === "apto" ? (
                       <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
                     ) : overall === "atencao" ? (
@@ -378,30 +446,68 @@ const MatrizVersatilidade = () => {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1">
+
+                {/* Show flags only for authorized editors */}
+                {canSeeFlags && (
+                  <div className="grid grid-cols-3 gap-1">
+                    {AREAS.map(area => {
+                      const qual = getQual(ins.id, area.key);
+                      const isHab = qual?.habilitado;
+                      const status = getTrainingStatus(qual);
+                      return (
+                        <div key={area.key} className="flex items-center gap-1 text-[10px]">
+                          <Checkbox
+                            checked={isHab || false}
+                            onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
+                            disabled={!canEdit}
+                            className="h-3.5 w-3.5"
+                          />
+                          <button
+                            onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
+                            className={cn(
+                              "truncate",
+                              isHab && status === "vencido" ? "text-red-700 font-bold" :
+                              isHab && status === "em_dia" ? "text-emerald-700" :
+                              "text-muted-foreground"
+                            )}
+                          >
+                            {getAreaLabel(area.key, area.label)}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Always show: dates, status, attachments */}
+                <div className="space-y-1 text-[10px]">
                   {AREAS.map(area => {
                     const qual = getQual(ins.id, area.key);
-                    const isHab = qual?.habilitado;
+                    if (!qual?.habilitado) return null;
                     const status = getTrainingStatus(qual);
+                    const atts = getAttachments(ins.id, area.key);
                     return (
-                      <div key={area.key} className="flex items-center gap-1 text-[10px]">
-                        <Checkbox
-                          checked={isHab || false}
-                          onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
-                          disabled={!canEdit}
-                          className="h-3.5 w-3.5"
-                        />
-                        <button
-                          onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
-                          className={cn(
-                            "truncate",
-                            isHab && status === "vencido" ? "text-red-700 font-bold" :
-                            isHab && status === "em_dia" ? "text-emerald-700" :
-                            "text-muted-foreground"
+                      <div key={area.key} className="flex items-center justify-between gap-1 bg-muted/30 rounded px-2 py-1">
+                        <span className={cn("font-medium truncate flex-1", area.color.replace("bg-", "text-").replace("700", "700"))}>{getAreaLabel(area.key, area.label)}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {qual.next_evaluation_date && (
+                            <span className="text-muted-foreground">{new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
                           )}
-                        >
-                          {area.label}
-                        </button>
+                          <span className={cn(
+                            "px-1 py-0.5 rounded text-[9px] font-semibold",
+                            status === "vencido" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                          )}>
+                            {status === "vencido" ? "Vencido" : "Em dia"}
+                          </span>
+                          {atts.length > 0 && (
+                            <button onClick={() => viewAttachment(atts[0])} className="text-blue-600"><Paperclip className="w-3 h-3" /></button>
+                          )}
+                          {canSeeFlags && (
+                            <button onClick={() => setAttachDialog({ userId: ins.id, area: area.key })} className="text-muted-foreground hover:text-foreground">
+                              <Upload className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -421,40 +527,53 @@ const MatrizVersatilidade = () => {
           <table className="w-full text-xs border-collapse min-w-[900px]">
             <thead>
               <tr className="border-b-2 border-border">
-                <th className="py-2 px-1 w-8">
+                <th className="py-2 px-1 w-8 sticky left-0 bg-background z-10">
                   <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
                 </th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-16">INSP-ID</th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-8">QR</th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[120px]">Nome</th>
+                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-16 sticky left-8 bg-background z-10">INSP-ID</th>
+                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-8 sticky left-24 bg-background z-10">QR</th>
+                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[120px] sticky left-32 bg-background z-10">Nome</th>
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-20">Cargo</th>
                 <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Turno</th>
-                {AREAS.map(a => (
-                  <th key={a.key} className="text-center py-2 px-1 font-semibold text-muted-foreground w-16">
-                    <span className="block text-[9px] leading-tight">{a.label}</span>
+                {canSeeFlags && AREAS.map(a => (
+                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-16 rounded-t", a.color)}>
+                    <span className="block text-[9px] leading-tight">{getAreaLabel(a.key, a.label)}</span>
                   </th>
                 ))}
+                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-14">Últ. Aval.</th>
+                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-14">Próx. Aval.</th>
                 <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-16">Status</th>
+                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Anexo</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((ins: any) => {
                 const overall = getOverallStatus(ins.id);
+                // Get latest dates across all areas
+                const enabledQuals = qualifications.filter((q: any) => q.user_id === ins.id && q.habilitado);
+                const latestLast = enabledQuals.reduce((max: string, q: any) => q.last_evaluation_date && q.last_evaluation_date > max ? q.last_evaluation_date : max, "");
+                const earliestNext = enabledQuals.reduce((min: string, q: any) => {
+                  if (!q.next_evaluation_date) return min;
+                  if (!min) return q.next_evaluation_date;
+                  return q.next_evaluation_date < min ? q.next_evaluation_date : min;
+                }, "");
+                const totalAtts = AREAS.reduce((sum, a) => sum + getAttachments(ins.id, a.key).length, 0);
+
                 return (
                   <tr key={ins.id} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="py-2 px-1 text-center">
+                    <td className="py-2 px-1 text-center sticky left-0 bg-background">
                       <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
                     </td>
-                    <td className="py-2 px-1.5 font-mono text-[10px] font-bold">{ins.qr_code_id || "—"}</td>
-                    <td className="py-2 px-1.5">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate("/meu-qr")} title="QR Code">
+                    <td className="py-2 px-1.5 font-mono text-[10px] font-bold sticky left-8 bg-background">{ins.qr_code_id || "—"}</td>
+                    <td className="py-2 px-1.5 sticky left-24 bg-background">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openQrDialog(ins)} title="QR Code">
                         <QrCode className="w-3 h-3" />
                       </Button>
                     </td>
-                    <td className="py-2 px-1.5 font-medium text-foreground">{ins.full_name}</td>
+                    <td className="py-2 px-1.5 font-medium text-foreground sticky left-32 bg-background">{ins.full_name}</td>
                     <td className="py-2 px-1.5 text-muted-foreground text-[10px]">{ins.cargo || "—"}</td>
                     <td className="py-2 px-1.5 text-center">{ins.turno || "—"}</td>
-                    {AREAS.map(area => {
+                    {canSeeFlags && AREAS.map(area => {
                       const qual = getQual(ins.id, area.key);
                       const isHab = qual?.habilitado;
                       const status = getTrainingStatus(qual);
@@ -480,15 +599,16 @@ const MatrizVersatilidade = () => {
                                 {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
                               </button>
                             )}
-                            {isHab && qual?.next_evaluation_date && (
-                              <span className="text-[7px] text-muted-foreground">
-                                {new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}
-                              </span>
-                            )}
                           </div>
                         </td>
                       );
                     })}
+                    <td className="py-2 px-1.5 text-center text-[9px] text-muted-foreground">
+                      {latestLast ? new Date(latestLast + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                    </td>
+                    <td className="py-2 px-1.5 text-center text-[9px] text-muted-foreground">
+                      {earliestNext ? new Date(earliestNext + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                    </td>
                     <td className="py-2 px-1.5 text-center">
                       {overall === "apto" ? (
                         <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
@@ -498,11 +618,24 @@ const MatrizVersatilidade = () => {
                         <span className="text-muted-foreground text-[9px]">—</span>
                       )}
                     </td>
+                    <td className="py-2 px-1.5 text-center">
+                      {totalAtts > 0 ? (
+                        <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-blue-600 hover:text-blue-800">
+                          <Paperclip className="w-3.5 h-3.5 mx-auto" />
+                        </button>
+                      ) : canSeeFlags ? (
+                        <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-muted-foreground hover:text-foreground">
+                          <Upload className="w-3.5 h-3.5 mx-auto" />
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground text-[9px]">—</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={6 + AREAS.length + 1} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
+                <tr><td colSpan={canSeeFlags ? 6 + AREAS.length + 4 : 10} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
               )}
             </tbody>
           </table>
@@ -525,6 +658,80 @@ const MatrizVersatilidade = () => {
           </div>
         )}
       </main>
+
+      {/* QR Code dialog - shows INSPECTOR's QR, not logged-in user */}
+      <Dialog open={!!qrDialog} onOpenChange={(open) => { if (!open) setQrDialog(null); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader><DialogTitle>QR Code</DialogTitle></DialogHeader>
+          {qrDialog && (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <QRCodeSVG value={qrDialog.qr_code_id || ""} size={180} level="H" />
+              <p className="text-sm font-bold">{qrDialog.full_name}</p>
+              <p className="text-xs text-muted-foreground">{qrDialog.cargo}</p>
+              <p className="text-xs font-mono text-muted-foreground">{qrDialog.qr_code_id}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setQrDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Attachment dialog */}
+      <Dialog open={!!attachDialog} onOpenChange={(open) => { if (!open) setAttachDialog(null); }}>
+        <DialogContent className="max-w-sm max-h-[80vh] flex flex-col">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Paperclip className="w-4 h-4" /> Anexos</DialogTitle></DialogHeader>
+          {attachDialog && (
+            <div className="space-y-3 flex-1 overflow-y-auto">
+              {/* Area selector */}
+              <Select value={attachDialog.area} onValueChange={(v) => setAttachDialog({ ...attachDialog, area: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {AREAS.map(a => <SelectItem key={a.key} value={a.key}>{getAreaLabel(a.key, a.label)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              {/* Existing attachments */}
+              {getAttachments(attachDialog.userId, attachDialog.area).map((att: any) => (
+                <div key={att.id} className="flex items-center justify-between gap-2 bg-muted/30 rounded p-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="text-xs truncate">{att.file_name}</span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => viewAttachment(att)}>
+                      <Eye className="w-3 h-3" />
+                    </Button>
+                    {canSeeFlags && (
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteAttachment(att)}>
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {getAttachments(attachDialog.userId, attachDialog.area).length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">Nenhum anexo nesta área</p>
+              )}
+
+              {/* Upload button - only for editors */}
+              {canSeeFlags && (
+                <div className="pt-2">
+                  <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-muted/30 transition-colors">
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{uploading ? "Enviando..." : "Enviar anexo (PDF, imagem)"}</span>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={handleAttachUpload} disabled={uploading} />
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setAttachDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit dates dialog */}
       <Dialog open={!!editDialog} onOpenChange={(open) => { if (!open) setEditDialog(null); }}>
@@ -566,7 +773,7 @@ const MatrizVersatilidade = () => {
 
       {/* Authorize Editors dialog (ADM only) */}
       <Dialog open={editorDialog} onOpenChange={setEditorDialog}>
-        <DialogContent className="max-w-md max-h-[80vh] flex flex-col">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShieldCheck className="w-5 h-5" /> Autorizar Editores
@@ -580,20 +787,20 @@ const MatrizVersatilidade = () => {
           <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
             {filteredEditorProfiles.map((p: any) => (
               <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <Checkbox
                     checked={editorUserIds.has(p.id)}
                     onCheckedChange={() => toggleEditor(p.id)}
                     disabled={savingEditors}
-                    className="h-4 w-4"
+                    className="h-4 w-4 shrink-0"
                   />
-                  <div>
-                    <p className="text-sm font-medium">{p.full_name}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{p.full_name}</p>
                     <p className="text-[10px] text-muted-foreground">{p.cargo || ""} • {p.employee_number}</p>
                   </div>
                 </div>
                 {editorUserIds.has(p.id) && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px]">Editor</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] shrink-0">Editor</Badge>
                 )}
               </div>
             ))}

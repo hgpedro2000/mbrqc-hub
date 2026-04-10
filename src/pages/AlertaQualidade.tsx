@@ -1,121 +1,232 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, AlertTriangle, BarChart3, Pencil, Trash2 } from "lucide-react";
-import ReportErrorButton from "@/components/ReportErrorButton";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ArrowLeft, Plus, AlertTriangle, Eye, Camera } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
-import EngineeringMode from "@/components/EngineeringMode";
-import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import QrScannerModal from "@/components/QrScannerModal";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 const AlertaQualidade = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
+  const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
+
+  // Check if user is lider
+  const { data: roles = [] } = useQuery({
+    queryKey: ["my-roles-alerta", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
+  const isInspetor = roles.some((r: any) => r.role === "inspetor");
+
+  // Redirect inspetor to feed
+  useEffect(() => {
+    if (!isLider && isInspetor) {
+      navigate("/alerta-qualidade/feed", { replace: true });
+    }
+  }, [isLider, isInspetor, navigate]);
 
   const { data: alertas = [], isLoading } = useQuery({
-    queryKey: ["alertas_qualidade"],
-    queryFn: async () => { const { data, error } = await supabase.from("alertas_qualidade").select("*").order("created_at", { ascending: false }); if (error) throw error; return data; },
+    queryKey: ["alertas-lista-mestra"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("alertas").select("*").order("sequencial", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => { const { error } = await supabase.from("alertas_qualidade").delete().eq("id", id); if (error) throw error; },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["alertas_qualidade"] }); toast.success(t("alertaQualidade.deleteSuccess")); setDeleteId(null); },
-    onError: (e: any) => toast.error(e.message),
+  const { data: ciencias = [] } = useQuery({
+    queryKey: ["ciencias-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ciencias").select("*");
+      if (error) throw error;
+      return data;
+    },
   });
 
-  const filters: FilterConfig[] = useMemo(() => {
-    const partNumbers = [...new Set(alertas.map((a) => a.part_number).filter(Boolean))] as string[];
-    const emitentes = [...new Set(alertas.map((a) => a.emitente).filter(Boolean))] as string[];
-    const statuses = [...new Set(alertas.map((a) => a.status).filter(Boolean))] as string[];
-    return [
-      { key: "part_number", label: "Part Number", options: partNumbers },
-      { key: "emitente", label: t("alertaQualidade.issuer"), options: emitentes },
-      { key: "status", label: t("common.status"), options: statuses },
-    ];
-  }, [alertas, t]);
+  // Realtime subscription for ciencias
+  useEffect(() => {
+    const channel = supabase
+      .channel("ciencias-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "ciencias" }, () => {
+        qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 
-  const filtered = useMemo(() => alertas.filter((a) => matchesSearch(a, ["numero_alerta", "titulo", "emitente", "part_number", "part_name", "responsavel"]) && matchesFilters(a)), [alertas, search, filterValues]);
+  const getCienciaProgress = (alertaId: string, totalDestinatarios: number) => {
+    const count = ciencias.filter((c: any) => c.alerta_id === alertaId).length;
+    const total = totalDestinatarios || 1;
+    const pct = Math.round((count / total) * 100);
+    return { count, total: totalDestinatarios, pct };
+  };
 
-  const statusColors: Record<string, string> = { ativo: "bg-red-500/10 text-red-600", em_verificacao: "bg-amber-500/10 text-amber-600", encerrado: "bg-emerald-500/10 text-emerald-600", cancelado: "bg-muted text-muted-foreground" };
-  const severidadeColors: Record<string, string> = { baixa: "bg-emerald-500/10 text-emerald-600", media: "bg-amber-500/10 text-amber-600", alta: "bg-orange-500/10 text-orange-600", critica: "bg-red-500/10 text-red-600" };
+  const handleQrScan = async (qrValue: string) => {
+    if (!scanAlertaId) return;
+    try {
+      // Find inspetor by qr_code_id
+      const { data: inspetor, error: findErr } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .eq("qr_code_id", qrValue)
+        .maybeSingle();
+
+      if (findErr || !inspetor) {
+        toast.error("QR Code não reconhecido. Inspetor não encontrado.");
+        return;
+      }
+
+      // Check if already registered
+      const { data: existing } = await supabase
+        .from("ciencias")
+        .select("id")
+        .eq("alerta_id", scanAlertaId)
+        .eq("inspetor_id", inspetor.id)
+        .maybeSingle();
+
+      if (existing) {
+        toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`);
+        return;
+      }
+
+      // Insert ciencia
+      const { error: insertErr } = await supabase.from("ciencias").insert({
+        alerta_id: scanAlertaId,
+        inspetor_id: inspetor.id,
+        metodo: "qr_lider",
+        registrado_por_id: user?.id,
+      } as any);
+
+      if (insertErr) throw insertErr;
+      toast.success(`✓ Ciência registrada: ${inspetor.full_name}`);
+      qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.hub")}</span></Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Hub</span>
+              </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <div className="flex items-center gap-1">
-              <ReportErrorButton moduleName="Alerta de Qualidade" />
-              {isAdmin && <EngineeringMode module="Alerta de Qualidade" />}
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <AlertTriangle className="w-6 h-6" />
+            <div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">Lista Mestra de Alertas</h1>
+              <p className="text-primary-foreground/70 text-xs">Gestão de Alertas de Qualidade</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3 mt-3 md:mt-4"><AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" /><div><h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">{t("alertaQualidade.title")}</h1><p className="text-primary-foreground/70 text-xs md:text-sm">{t("alertaQualidade.subtitle")}</p></div></div>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2"><Plus className="w-4 h-4" /> {t("alertaQualidade.newAlert")}</Button>
-          <Button variant="outline" onClick={() => navigate("/alerta-qualidade/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
-        </div>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-5xl">
+        {isLider && (
+          <div className="flex justify-end">
+            <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226]">
+              <Plus className="w-4 h-4" /> Novo Alerta
+            </Button>
+          </div>
+        )}
 
-        <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
-
-        {isLoading ? (<div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
-        ) : filtered.length === 0 ? (<div className="form-section text-center py-12"><AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground">{alertas.length === 0 ? t("alertaQualidade.noAlerts") : t("common.noResults")}</p></div>
+        {isLoading ? (
+          <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+        ) : alertas.length === 0 ? (
+          <div className="form-section text-center py-12">
+            <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">Nenhum alerta cadastrado</p>
+          </div>
         ) : (
-          <div className="grid gap-3 md:gap-4">
-            {filtered.map((a) => (
-              <div key={a.id} className="form-section hover:border-accent/30 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{a.numero_alerta}</span>
-                      <h3 className="font-heading font-semibold text-foreground text-sm md:text-base">{a.titulo}</h3>
-                    </div>
-                    <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">{a.descricao_problema}</p>
-                    <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-xs text-muted-foreground mt-1">
-                      <span>{t("alertaQualidade.issuer")}: {a.emitente}</span><span>•</span><span>{new Date(a.data_emissao).toLocaleDateString("pt-BR")}</span>
-                      {a.part_number && <><span>•</span><span>PN: {a.part_number}</span></>}
-                      {a.responsavel && <><span>•</span><span>{t("common.responsible")}: {a.responsavel}</span></>}
-                    </div>
-                  </div>
-                  <div className="flex sm:flex-col items-center sm:items-end gap-1.5 shrink-0">
-                    <span className={`status-badge ${statusColors[a.status]}`}>{t(`alertaQualidade.status.${a.status}`)}</span>
-                    <span className={`status-badge ${severidadeColors[a.severidade || "media"]}`}>{t(`alertaQualidade.severity.${a.severidade || "media"}`)}</span>
-                    {isAdmin && (
-                      <div className="flex gap-1 sm:mt-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(a.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Seq.</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Ocorrência</th>
+                  <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Validade</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
+                  <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alertas.map((a: any) => {
+                  const prog = getCienciaProgress(a.id, a.total_destinatarios);
+                  return (
+                    <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2.5 px-2 font-mono text-xs font-bold">{a.sequencial}</td>
+                      <td className="py-2.5 px-2">
+                        <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
+                        {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
+                      </td>
+                      <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
+                        {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td className="py-2.5 px-2 text-xs text-muted-foreground hidden sm:table-cell">
+                        {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td className="py-2.5 px-2 text-center">
+                        <Badge variant="outline" className={a.status === "ativo" ? "border-emerald-500 text-emerald-600 bg-emerald-500/10" : "border-muted text-muted-foreground bg-muted/20"}>
+                          {a.status === "ativo" ? "Ativo" : "Encerrado"}
+                        </Badge>
+                      </td>
+                      <td className="py-2.5 px-2">
+                        <div className="flex flex-col items-center gap-1 min-w-[100px]">
+                          <Progress value={prog.pct} className="h-2 w-full" />
+                          <span className="text-[10px] text-muted-foreground">{prog.pct}% ({prog.count}/{prog.total})</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2">
+                        <div className="flex items-center justify-center gap-1">
+                          {isLider && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
+                              <Camera className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Visualizar" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </main>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>{t("common.confirmDelete")}</AlertDialogTitle><AlertDialogDescription>{t("alertaQualidade.deleteConfirm")}</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <QrScannerModal
+        open={!!scanAlertaId}
+        onClose={() => setScanAlertaId(null)}
+        onScan={handleQrScan}
+        title="Registrar Ciência via QR"
+      />
     </div>
   );
 };

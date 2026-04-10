@@ -1,0 +1,129 @@
+import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import logo from "@/assets/hyundai-mobis-logo.png";
+import { toast } from "sonner";
+import { useState } from "react";
+
+const AlertaQualidadeFeed = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [confirming, setConfirming] = useState<string | null>(null);
+
+  const { data: alertas = [], isLoading } = useQuery({
+    queryKey: ["alertas-feed", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      // Get all active alerts
+      const { data: allAlertas, error: aErr } = await supabase.from("alertas").select("*").eq("status", "ativo").order("created_at", { ascending: false });
+      if (aErr) throw aErr;
+      // Get ciencias for this user
+      const { data: myCiencias, error: cErr } = await supabase.from("ciencias").select("alerta_id").eq("inspetor_id", user.id);
+      if (cErr) throw cErr;
+      const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
+      // Filter out alerts user already acknowledged
+      return (allAlertas || []).filter((a: any) => !cienIds.has(a.id));
+    },
+    enabled: !!user?.id,
+  });
+
+  const handleConfirm = async (alertaId: string) => {
+    if (!user?.id) return;
+    setConfirming(alertaId);
+    try {
+      const { error } = await supabase.from("ciencias").insert({
+        alerta_id: alertaId,
+        inspetor_id: user.id,
+        metodo: "app_proprio",
+        registrado_por_id: user.id,
+      } as any);
+      if (error) throw error;
+      toast.success("Ciência registrada com sucesso!");
+      qc.invalidateQueries({ queryKey: ["alertas-feed"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setConfirming(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="gradient-header">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Hub</span>
+              </Button>
+              <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <AlertTriangle className="w-6 h-6" />
+            <div>
+              <h1 className="text-lg sm:text-xl font-heading font-bold">Alertas Pendentes</h1>
+              <p className="text-primary-foreground/70 text-xs">Confirme ciência dos alertas ativos</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl space-y-4">
+        {isLoading ? (
+          <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+        ) : alertas.length === 0 ? (
+          <div className="form-section text-center py-12">
+            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+            <p className="text-foreground font-semibold">Tudo em dia!</p>
+            <p className="text-muted-foreground text-sm">Nenhum alerta pendente de ciência</p>
+          </div>
+        ) : (
+          alertas.map((a: any) => (
+            <div key={a.id} className="form-section space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="text-xs font-mono font-bold text-[#c0392b]">#{a.sequencial}</span>
+                  <h3 className="font-heading font-semibold text-foreground">{a.modo_falha || a.descricao}</h3>
+                  {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
+                </div>
+              </div>
+              {a.descricao && <p className="text-sm text-muted-foreground">{a.descricao}</p>}
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                {a.data_ocorrencia && <span>Ocorrência: {new Date(a.data_ocorrencia).toLocaleDateString("pt-BR")}</span>}
+                {a.data_validade && <span>Validade: {new Date(a.data_validade).toLocaleDateString("pt-BR")}</span>}
+                {a.turno && <span>Turno: {a.turno}</span>}
+              </div>
+              {(a.foto_ng_url || a.foto_ok_url) && (
+                <div className="grid grid-cols-2 gap-2">
+                  {a.foto_ng_url && (
+                    <div>
+                      <span className="text-[10px] font-bold text-[#c0392b]">NG</span>
+                      <img src={a.foto_ng_url} alt="NG" className="rounded border border-[#c0392b] w-full h-24 object-cover" />
+                    </div>
+                  )}
+                  {a.foto_ok_url && (
+                    <div>
+                      <span className="text-[10px] font-bold text-[#1e8449]">OK</span>
+                      <img src={a.foto_ok_url} alt="OK" className="rounded border border-[#1e8449] w-full h-24 object-cover" />
+                    </div>
+                  )}
+                </div>
+              )}
+              <Button onClick={() => handleConfirm(a.id)} disabled={confirming === a.id} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+                {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                Confirmar Ciência
+              </Button>
+            </div>
+          ))
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default AlertaQualidadeFeed;

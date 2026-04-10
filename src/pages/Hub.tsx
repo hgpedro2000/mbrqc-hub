@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode,
+  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -21,6 +21,7 @@ const modules = [
   { id: "alerta-qualidade", titleKey: "modules.alertaQualidade.title", descriptionKey: "modules.alertaQualidade.description", icon: AlertTriangle, path: "/alerta-qualidade", color: "from-red-500/15 to-rose-500/5", iconBg: "bg-red-500/10 text-red-600" },
   { id: "consumiveis", titleKey: "modules.consumiveis.title", descriptionKey: "modules.consumiveis.description", icon: Package, path: "/consumiveis", color: "from-teal-500/15 to-cyan-500/5", iconBg: "bg-teal-500/10 text-teal-600" },
   { id: "consulta-pecas", titleKey: "modules.consultaPecas.title", descriptionKey: "modules.consultaPecas.description", icon: Search, path: "/consulta-pecas", color: "from-indigo-500/15 to-blue-500/5", iconBg: "bg-indigo-500/10 text-indigo-600" },
+  { id: "matriz-versatilidade", titleKey: "modules.matrizVersatilidade.title", descriptionKey: "modules.matrizVersatilidade.description", icon: Users, path: "/matriz-versatilidade", color: "from-pink-500/15 to-fuchsia-500/5", iconBg: "bg-pink-500/10 text-pink-600" },
 ];
 
 const Hub = () => {

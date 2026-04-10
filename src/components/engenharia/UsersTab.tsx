@@ -501,6 +501,7 @@ const UsersTab = () => {
                   </TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.turno || "—"}</TableCell>
                   <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.email || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.cargo || "—"}</TableCell>
                   <TableCell className="capitalize text-xs sm:text-sm">{getRoleForUser(p.id)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />

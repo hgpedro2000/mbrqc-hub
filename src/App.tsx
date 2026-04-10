@@ -33,6 +33,7 @@ import AlertaQualidadeFeed from "./pages/AlertaQualidadeFeed";
 import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
 import QrProfilePage from "./pages/QrProfilePage";
+import MatrizVersatilidade from "./pages/MatrizVersatilidade";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -118,6 +119,9 @@ const App = () => (
             
             {/* Consulta de Peças */}
             <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />
+            
+            {/* Matriz de Versatilidade */}
+            <Route path="/matriz-versatilidade" element={<ProtectedRoute><MatrizVersatilidade /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

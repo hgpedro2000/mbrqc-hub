@@ -12,13 +12,16 @@ interface QrScannerModalProps {
 const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: QrScannerModalProps) => {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState("");
+  const scannedRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      scannedRef.current = false;
+      return;
+    }
     setError("");
     const readerId = "qr-reader-" + Date.now();
 
-    // Wait for DOM
     const timer = setTimeout(async () => {
       const el = document.getElementById("qr-reader-container");
       if (!el) return;
@@ -31,9 +34,14 @@ const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: Q
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            onScan(decodedText);
-            scanner.stop().catch(() => {});
-            onClose();
+            if (scannedRef.current) return;
+            scannedRef.current = true;
+            // Stop scanner first, then process
+            scanner.stop().catch(() => {}).finally(() => {
+              onScan(decodedText);
+              // Small delay to ensure state updates complete before closing
+              setTimeout(() => onClose(), 300);
+            });
           },
           () => {}
         );

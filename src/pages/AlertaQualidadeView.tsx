@@ -1,22 +1,27 @@
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useRef } from "react";
 
 const AlertaQualidadeView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [photoPopup, setPhotoPopup] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [exportDialog, setExportDialog] = useState(false);
+  const [includeCiencias, setIncludeCiencias] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const cienciasRef = useRef<HTMLDivElement>(null);
 
   const { data: alerta, isLoading } = useQuery({
     queryKey: ["alerta-view", id],
@@ -38,20 +43,16 @@ const AlertaQualidadeView = () => {
     enabled: !!id,
   });
 
-  // Get inspectors based on qualifications for the alert's line
   const { data: inspetores = [] } = useQuery({
     queryKey: ["inspetores-qualificados", id, alerta?.linha_peca],
     queryFn: async () => {
-      // Map line to area key
       const lineAreaMap: Record<string, string> = {
         "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",
         "Incoming": "incoming", "Pintura": "pintura", "Injeção": "injecao",
         "Sala do Áudio": "sala_audio", "Inspeção de Peça": "inspecao_peca",
       };
 
-      // Get all qualified inspectors
       let query = supabase.from("inspector_qualifications").select("user_id").eq("habilitado", true);
-      
       const areaKey = alerta?.linha_peca ? lineAreaMap[alerta.linha_peca] : null;
       if (areaKey) {
         query = query.eq("area", areaKey);
@@ -74,11 +75,34 @@ const AlertaQualidadeView = () => {
     enabled: !!id && !!alerta,
   });
 
-  const handleExport = async (format: "jpg" | "pdf") => {
+  // Auto-export if coming from master list with export params
+  useEffect(() => {
+    const exportFormat = searchParams.get("export") as "jpg" | "pdf" | null;
+    const showCiencias = searchParams.get("ciencias");
+    if (exportFormat && alerta && !isLoading) {
+      const timer = setTimeout(() => {
+        handleExport(exportFormat, showCiencias === "1");
+        setSearchParams({}, { replace: true });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, alerta, isLoading]);
+
+  const handleExport = async (format: "jpg" | "pdf", withCiencias: boolean = true) => {
     if (!contentRef.current) return;
     setExporting(true);
     try {
+      // Temporarily hide/show ciencias section
+      if (cienciasRef.current && !withCiencias) {
+        cienciasRef.current.style.display = "none";
+      }
+
       const canvas = await html2canvas(contentRef.current, { useCORS: true, scale: 2, backgroundColor: "#f8fafc" });
+
+      if (cienciasRef.current && !withCiencias) {
+        cienciasRef.current.style.display = "";
+      }
+
       if (format === "jpg") {
         const link = document.createElement("a");
         link.download = `alerta-${alerta?.sequencial || "export"}.jpg`;
@@ -97,10 +121,16 @@ const AlertaQualidadeView = () => {
     }
   };
 
+  const handleExportWithDialog = (format: "jpg" | "pdf") => {
+    handleExport(format, includeCiencias);
+    setExportDialog(false);
+  };
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>;
   if (!alerta) return <div className="min-h-screen flex items-center justify-center"><p>Alerta não encontrado</p></div>;
 
   const a = alerta as any;
+
   const fieldRow = (label: string, value: string, color: "red" | "blue" = "blue") => (
     <div className="space-y-0.5 min-w-0">
       <span className={`text-[10px] font-bold uppercase block ${color === "red" ? "text-[#c0392b]" : "text-[#1a5276]"}`}>{label}</span>
@@ -117,24 +147,15 @@ const AlertaQualidadeView = () => {
               <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
             </Button>
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={exporting}
-                  className="text-white/80 hover:text-white gap-1 text-xs"
-                  onClick={() => {
-                    const menu = document.getElementById("export-menu-alerta");
-                    if (menu) menu.classList.toggle("hidden");
-                  }}
-                >
-                  <Download className="w-4 h-4" /> Exportar
-                </Button>
-                <div id="export-menu-alerta" className="hidden absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 min-w-[120px]">
-                  <button className="w-full px-3 py-2 text-sm text-foreground hover:bg-muted text-left rounded-t-lg" onClick={() => { handleExport("jpg"); document.getElementById("export-menu-alerta")?.classList.add("hidden"); }}>JPG</button>
-                  <button className="w-full px-3 py-2 text-sm text-foreground hover:bg-muted text-left rounded-b-lg" onClick={() => { handleExport("pdf"); document.getElementById("export-menu-alerta")?.classList.add("hidden"); }}>PDF</button>
-                </div>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={exporting}
+                className="text-white/80 hover:text-white gap-1 text-xs"
+                onClick={() => { setExportDialog(true); setIncludeCiencias(true); }}
+              >
+                <Download className="w-4 h-4" /> Exportar
+              </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 bg-white rounded-md px-2 py-0.5" />
             </div>
           </div>
@@ -146,8 +167,13 @@ const AlertaQualidadeView = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 max-w-4xl space-y-4" ref={contentRef}>
-        {/* Fields grid - responsive */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 form-section">
+        {/* Repeat header info for export capture */}
+        <div className="bg-[#c0392b] text-white rounded-lg p-3 text-center" style={{ display: "none" }} id="export-header">
+          <h2 className="text-lg font-bold">ALERTA DE QUALIDADE #{a.sequencial}</h2>
+        </div>
+
+        {/* Fields grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3 form-section">
           {fieldRow("Modelo", a.modelo)}
           {fieldRow("Modo de Falha", a.modo_falha, "red")}
           {fieldRow("Linha/Peça", a.linha_peca)}
@@ -165,7 +191,7 @@ const AlertaQualidadeView = () => {
           </div>
         </div>
 
-        {/* Photos - clickable for popup */}
+        {/* Photos */}
         {(a.foto_ng_url || a.foto_ok_url) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {a.foto_ng_url && (
@@ -207,7 +233,7 @@ const AlertaQualidadeView = () => {
         )}
 
         {/* Inspetores status */}
-        <div className="form-section">
+        <div className="form-section" ref={cienciasRef}>
           <h3 className="text-sm font-heading font-bold mb-3">Status de Ciência dos Inspetores</h3>
           <div className="divide-y divide-border">
             {inspetores.map((ins: any) => {
@@ -248,6 +274,33 @@ const AlertaQualidadeView = () => {
           {photoPopup && (
             <img src={photoPopup} alt="Foto ampliada" className="w-full max-h-[80vh] object-contain rounded" />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Export dialog */}
+      <Dialog open={exportDialog} onOpenChange={setExportDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Exportar Alerta</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center gap-2 py-2">
+            <Checkbox
+              id="include-ciencias-view"
+              checked={includeCiencias}
+              onCheckedChange={(c) => setIncludeCiencias(!!c)}
+            />
+            <Label htmlFor="include-ciencias-view" className="text-sm cursor-pointer">
+              Incluir lista de ciências
+            </Label>
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("jpg")} disabled={exporting}>
+              JPG
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pdf")} disabled={exporting}>
+              PDF
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

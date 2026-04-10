@@ -80,8 +80,9 @@ const AlertaQualidade = () => {
   const getCienciaProgress = (alertaId: string, totalDestinatarios: number) => {
     const count = ciencias.filter((c: any) => c.alerta_id === alertaId).length;
     const total = totalDestinatarios || 0;
+    const pending = Math.max(total - count, 0);
     const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-    return { count, total, pct };
+    return { count, total, pending, pct };
   };
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
@@ -111,6 +112,7 @@ const AlertaQualidade = () => {
       if (insertErr) throw insertErr;
       toast.success(`✓ Ciência registrada: ${inspetor.full_name}`);
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      setScanAlertaId(null);
     } catch (e: any) { toast.error(e.message); }
   };
 
@@ -216,7 +218,7 @@ const AlertaQualidade = () => {
                         <div className="flex flex-col items-center gap-1 min-w-[100px]">
                           <Progress value={prog.pct} className="h-2 w-full" />
                           <span className="text-[10px] text-muted-foreground">
-                            {prog.count}/{prog.total} ciente{prog.count !== 1 ? "s" : ""}
+                            {prog.pending} pend. / {prog.count} ciente{prog.count !== 1 ? "s" : ""}
                           </span>
                         </div>
                       </td>

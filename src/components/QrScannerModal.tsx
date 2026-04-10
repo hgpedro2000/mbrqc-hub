@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -13,20 +13,33 @@ const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: Q
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [error, setError] = useState("");
   const scannedRef = useRef(false);
+  const readerId = useId().replace(/:/g, "");
+
+  const cleanupScanner = async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+
+    if (!scanner) return;
+
+    try {
+      await scanner.stop();
+    } catch {}
+
+    try {
+      await scanner.clear();
+    } catch {}
+  };
 
   useEffect(() => {
     if (!open) {
       scannedRef.current = false;
+      void cleanupScanner();
       return;
     }
+
     setError("");
-    const readerId = "qr-reader-" + Date.now();
 
     const timer = setTimeout(async () => {
-      const el = document.getElementById("qr-reader-container");
-      if (!el) return;
-      el.id = readerId;
-
       try {
         const scanner = new Html5Qrcode(readerId);
         scannerRef.current = scanner;
@@ -36,34 +49,30 @@ const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: Q
           (decodedText) => {
             if (scannedRef.current) return;
             scannedRef.current = true;
-            // Stop scanner first, then process
-            scanner.stop().catch(() => {}).finally(() => {
+
+            void (async () => {
+              await cleanupScanner();
               onScan(decodedText);
-              // Small delay to ensure state updates complete before closing
-              setTimeout(() => onClose(), 300);
-            });
+            })();
           },
           () => {}
         );
       } catch (err: any) {
         setError("Não foi possível acessar a câmera. Verifique as permissões.");
       }
-    }, 300);
+    }, 150);
 
     return () => {
       clearTimeout(timer);
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
+      void cleanupScanner();
     };
-  }, [open]);
+  }, [open, readerId]);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>{title}</DialogTitle></DialogHeader>
-        <div id="qr-reader-container" className="w-full min-h-[300px] rounded-lg overflow-hidden bg-muted" />
+        <div id={readerId} className="w-full min-h-[300px] rounded-lg overflow-hidden bg-muted" />
         {error && <p className="text-destructive text-sm text-center">{error}</p>}
         <p className="text-muted-foreground text-xs text-center">Aponte a câmera para o QR Code do crachá</p>
       </DialogContent>

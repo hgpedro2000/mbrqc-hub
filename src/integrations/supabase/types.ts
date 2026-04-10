@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      alertas: {
+        Row: {
+          created_at: string
+          criado_por_id: string | null
+          data_ocorrencia: string | null
+          data_validade: string | null
+          descricao: string | null
+          emitido_por: string | null
+          foto_ng_url: string | null
+          foto_ok_url: string | null
+          id: string
+          linha_peca: string | null
+          local_detectado: string | null
+          modelo: string | null
+          modo_falha: string | null
+          observacoes: string | null
+          responsabilidade: string | null
+          sequencia_bp: string | null
+          sequencial: number
+          status: string
+          total_destinatarios: number | null
+          turno: string | null
+          vin: string | null
+          vin_bp: string | null
+        }
+        Insert: {
+          created_at?: string
+          criado_por_id?: string | null
+          data_ocorrencia?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          emitido_por?: string | null
+          foto_ng_url?: string | null
+          foto_ok_url?: string | null
+          id?: string
+          linha_peca?: string | null
+          local_detectado?: string | null
+          modelo?: string | null
+          modo_falha?: string | null
+          observacoes?: string | null
+          responsabilidade?: string | null
+          sequencia_bp?: string | null
+          sequencial?: never
+          status?: string
+          total_destinatarios?: number | null
+          turno?: string | null
+          vin?: string | null
+          vin_bp?: string | null
+        }
+        Update: {
+          created_at?: string
+          criado_por_id?: string | null
+          data_ocorrencia?: string | null
+          data_validade?: string | null
+          descricao?: string | null
+          emitido_por?: string | null
+          foto_ng_url?: string | null
+          foto_ok_url?: string | null
+          id?: string
+          linha_peca?: string | null
+          local_detectado?: string | null
+          modelo?: string | null
+          modo_falha?: string | null
+          observacoes?: string | null
+          responsabilidade?: string | null
+          sequencia_bp?: string | null
+          sequencial?: never
+          status?: string
+          total_destinatarios?: number | null
+          turno?: string | null
+          vin?: string | null
+          vin_bp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_criado_por_id_fkey"
+            columns: ["criado_por_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alertas_qualidade: {
         Row: {
           acao_corretiva: string | null
@@ -481,6 +564,55 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      ciencias: {
+        Row: {
+          alerta_id: string
+          created_at: string
+          id: string
+          inspetor_id: string
+          metodo: string
+          registrado_por_id: string | null
+        }
+        Insert: {
+          alerta_id: string
+          created_at?: string
+          id?: string
+          inspetor_id: string
+          metodo?: string
+          registrado_por_id?: string | null
+        }
+        Update: {
+          alerta_id?: string
+          created_at?: string
+          id?: string
+          inspetor_id?: string
+          metodo?: string
+          registrado_por_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ciencias_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ciencias_inspetor_id_fkey"
+            columns: ["inspetor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ciencias_registrado_por_id_fkey"
+            columns: ["registrado_por_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumable_items: {
         Row: {

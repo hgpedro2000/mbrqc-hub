@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira } = await req.json();
+    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira, cargo } = await req.json();
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       email: email || null,
       empresa: empresa || "mobis_brasil",
       empresa_terceira: empresa_terceira || null,
+      cargo: cargo || null,
     });
 
     // Assign role

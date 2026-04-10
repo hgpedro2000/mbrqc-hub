@@ -130,7 +130,7 @@ const AlertaQualidadeView = () => {
   const fieldRow = (label: string, value: string, color: "red" | "blue" = "blue") => (
     <div className="space-y-0.5 min-w-0">
       <span className={`text-[10px] font-bold uppercase block ${color === "red" ? "text-[#c0392b]" : "text-[#1a5276]"}`}>{label}</span>
-      <p className="text-sm text-foreground bg-muted/20 rounded px-2 py-1 break-words">{value || "—"}</p>
+      <p className="text-sm bg-muted/20 rounded px-2 py-2 break-words text-center flex items-center justify-center min-h-[36px]" style={{ color: "#0000FF" }}>{value || "—"}</p>
     </div>
   );
 

@@ -94,20 +94,20 @@ const ConsultaPecas = () => {
             {filtered.map((p: any) => (
               <div key={p.id} className="form-section hover:border-accent/30 transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="space-y-1 flex-1 min-w-0">
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-heading font-bold text-foreground">{p.part_number}</span>
                       {origemBadge(p.origem)}
                     </div>
-                    <p className="text-sm text-muted-foreground">{p.part_name}</p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span>Fornecedor: <span className="font-medium text-foreground">{p.suppliers?.name || "—"}</span></span>
-                      <span>Code Vendor: <span className="font-mono font-medium text-foreground">{p.suppliers?.code || "—"}</span></span>
-                      <span>ALC Code: <span className="font-mono font-medium text-foreground">{p.alc_code || "N/A"}</span></span>
+                    <p className="text-sm font-medium text-foreground">{p.part_name}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+                      <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
+                      <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 bg-amber-50">{p.suppliers?.code || "—"}</Badge></span>
+                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-violet-400 text-violet-700 bg-violet-50">{p.alc_code || "N/A"}</Badge></span>
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span>Projeto: <span className="font-medium text-foreground">{p.project || "—"}</span></span>
-                      <span>Linha/Módulo: <span className="font-medium text-foreground">{p.line_module || "—"}</span></span>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+                      <span className="text-muted-foreground">Projeto: <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50">{p.project || "—"}</Badge></span>
+                      <span className="text-muted-foreground">Linha/Módulo: <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-400 text-cyan-700 bg-cyan-50">{p.line_module || "—"}</Badge></span>
                     </div>
                   </div>
                 </div>

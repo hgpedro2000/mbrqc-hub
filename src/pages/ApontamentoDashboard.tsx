@@ -252,7 +252,7 @@ const ApontamentoDashboard = () => {
   };
 
   const exportToPptx = async () => {
-    const pptx = new pptxgen();
+    const pptx = new pptxgen() as any;
     pptx.layout = "LAYOUT_WIDE"; // 13.3 x 7.5
     pptx.author = "MBR QC";
     pptx.title = `Dashboard ${TYPE_LABELS[activeType]} — Apontamentos`;

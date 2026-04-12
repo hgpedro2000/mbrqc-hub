@@ -297,15 +297,24 @@ const ApontamentoDashboard = () => {
   const exportOneSlide = async () => {
     const pptx = createPptx();
     const s = pptx.addSlide();
-    addSlideHeader(pptx, s, `${TYPE_LABELS[activeType]} — Dashboard Completo`);
+    s.background = { color: BG };
 
-    const ttlOkLocal = supplierData.reduce((a: number, b: any) => a + b.ok, 0);
-    const ttlNgLocal = supplierData.reduce((a: number, b: any) => a + b.ng, 0);
+    const SLIDE_W = 13.33;
+    const COLS = 12;
+    const COL_W = SLIDE_W / COLS;
+    const PAD = 0.08; // inner padding for elements
 
-    // ---- COLUMN 1 (x: 0.2 – 4.2): General Quality Status table + Problem Type table ----
-    addSectionLabel(pptx, s, "General Quality Status", 0.2, 0.85, 4.0);
+    const ttlOkL = supplierData.reduce((a: number, b: any) => a + b.ok, 0);
+    const ttlNgL = supplierData.reduce((a: number, b: any) => a + b.ng, 0);
 
-    const supHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, fontFace: "Calibri" };
+    // ---- ROW 1, COL 1: General Quality Status (col-span-3) ----
+    const r1c1x = 0 * COL_W + PAD;
+    const r1c1y = 0.4;
+    const r1c1w = 3 * COL_W - PAD * 2;
+    const r1c1h = 3.2;
+
+    addSectionLabel(pptx, s, `General Quality ${TYPE_LABELS[activeType]} Status`, r1c1x, r1c1y, r1c1w);
+    const supHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 6, fontFace: "Calibri" };
     const supRows: any[][] = [[
       { text: "Fornecedor", options: { ...supHdr } },
       { text: "PN", options: { ...supHdr, align: "center" } },
@@ -315,7 +324,7 @@ const ApontamentoDashboard = () => {
     ]];
     supplierData.forEach((sup, i) => {
       const bg = i % 2 === 0 ? "1E2538" : "232A3E";
-      const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+      const co = { color: TXT, fontSize: 5.5, fill: { color: bg }, fontFace: "Calibri" };
       supRows.push([
         { text: sup.name, options: { ...co, color: ACCENT } },
         { text: String(sup.qtyPN), options: { ...co, align: "center" } },
@@ -324,32 +333,106 @@ const ApontamentoDashboard = () => {
         { text: String(sup.total), options: { ...co, align: "center" } },
       ]);
     });
-    const ttlRow = { bold: true, color: TXT, fontSize: 7, fill: { color: HEADER_BG }, fontFace: "Calibri" };
+    const ttlRow = { bold: true, color: TXT, fontSize: 6, fill: { color: HEADER_BG }, fontFace: "Calibri" };
     supRows.push([
       { text: "TOTAL", options: { ...ttlRow } },
       { text: String(supplierData.reduce((a: number, b: any) => a + b.qtyPN, 0)), options: { ...ttlRow, align: "center" } },
-      { text: String(ttlOkLocal), options: { ...ttlRow, align: "center" } },
-      { text: String(ttlNgLocal), options: { ...ttlRow, align: "center" } },
-      { text: String(ttlOkLocal + ttlNgLocal), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlOkL), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlNgL), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlOkL + ttlNgL), options: { ...ttlRow, align: "center" } },
     ]);
     s.addTable(supRows, {
-      x: 0.2, y: 1.25, w: 4.0, colW: [1.5, 0.5, 0.6, 0.6, 0.8],
-      fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+      x: r1c1x, y: r1c1y + 0.38, w: r1c1w,
+      colW: [r1c1w * 0.38, r1c1w * 0.12, r1c1w * 0.15, r1c1w * 0.15, r1c1w * 0.20],
+      fontSize: 5.5, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
     });
 
-    // Problem Type table below
-    const ptStartY = 1.25 + Math.min(supRows.length, 14) * 0.22 + 0.15;
+    // ---- ROW 1, COL 2: Supplier Status chart (col-span-4) ----
+    const r1c2x = 3 * COL_W + PAD;
+    const r1c2y = 0.4;
+    const r1c2w = 4 * COL_W - PAD * 2;
+    const r1c2h = 3.2;
+
+    addSectionLabel(pptx, s, "Supplier Status", r1c2x, r1c2y, r1c2w);
+    if (supplierData.length > 0) {
+      s.addChart(pptx.charts.BAR, [
+        { name: "OK", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ok) },
+        { name: "NG", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ng) },
+      ], {
+        x: r1c2x, y: r1c2y + 0.38, w: r1c2w, h: r1c2h - 0.38,
+        barDir: "bar", barGrouping: "stacked",
+        chartColors: [OK_HEX, NG_HEX],
+        showValue: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 6,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 6, valAxisHidden: true,
+        catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
+        showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 6,
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
+      });
+    }
+
+    // ---- ROW 1, COL 3 TOP: Project Status donuts (col-span-5, top half) ----
+    const r1c3x = 7 * COL_W + PAD;
+    const r1c3y = 0.4;
+    const r1c3w = 5 * COL_W - PAD * 2;
+
+    addSectionLabel(pptx, s, "Project Status", r1c3x, r1c3y, r1c3w);
+    if (projectData.length > 0) {
+      const donutCols = Math.min(projectData.length, 4);
+      const donutW = r1c3w / donutCols;
+      const donutH = 1.2;
+      projectData.forEach((proj, idx) => {
+        const dx = r1c3x + idx * donutW;
+        const dy = r1c3y + 0.38;
+        s.addChart(pptx.charts.DOUGHNUT, [{
+          name: proj.name, labels: ["OK", "NG"], values: [proj.ok, proj.ng],
+        }], {
+          x: dx, y: dy, w: donutW, h: donutH,
+          chartColors: [DONUT_OK, DONUT_NG],
+          showPercent: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 7,
+          showLegend: false, showTitle: true, title: proj.name,
+          titleColor: "FFFFFF", titleFontSize: 7,
+          plotArea: { fill: { color: BG } }, chartArea: { fill: { color: "1E2538" }, roundedCorners: true },
+        });
+      });
+    }
+
+    // ---- ROW 1, COL 3 BOTTOM: Main Failure Mode (col-span-5, bottom half) ----
+    const fmY = 2.2;
+    const fmH = 1.4;
+
+    addSectionLabel(pptx, s, "Main Failure Mode", r1c3x, fmY, r1c3w);
+    if (failureModeData.length > 0) {
+      s.addChart(pptx.charts.BAR, [{
+        name: "Quantidade",
+        labels: failureModeData.map((f: any) => f.name),
+        values: failureModeData.map((f: any) => f.value),
+      }], {
+        x: r1c3x, y: fmY + 0.35, w: r1c3w, h: fmH,
+        barDir: "col", chartColors: fmColors,
+        showValue: true, dataLabelPosition: "outEnd", dataLabelColor: TXT, dataLabelFontSize: 6,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 5, catAxisLabelRotate: 330,
+        valAxisHidden: true, catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
+        showLegend: false,
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
+      });
+    }
+
+    // ---- ROW 2, COL 1: Incoming Data – Problema (col-span-4) ----
+    const r2c1x = 0 * COL_W + PAD;
+    const r2c1y = 3.8;
+    const r2c1w = 4 * COL_W - PAD * 2;
+
+    addSectionLabel(pptx, s, `${TYPE_LABELS[activeType]} Data — Problem`, r2c1x, r2c1y, r2c1w);
     if (problemTypes.items.length > 0) {
-      addSectionLabel(pptx, s, `${TYPE_LABELS[activeType]} Data — Problem`, 0.2, ptStartY, 4.0);
-      const ptHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, fontFace: "Calibri" };
+      const ptHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 6, fontFace: "Calibri" };
       const ptRows: any[][] = [[
         { text: "Tipo de Problema", options: { ...ptHdr } },
         { text: "Qty", options: { ...ptHdr, align: "center" } },
         { text: "%", options: { ...ptHdr, align: "center" } },
       ]];
-      problemTypes.items.slice(0, 8).forEach((p, i) => {
+      problemTypes.items.slice(0, 10).forEach((p, i) => {
         const bg = i % 2 === 0 ? "1E2538" : "232A3E";
-        const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+        const co = { color: TXT, fontSize: 5.5, fill: { color: bg }, fontFace: "Calibri" };
         ptRows.push([
           { text: p.type, options: { ...co } },
           { text: String(p.qty), options: { ...co, align: "center" } },
@@ -357,100 +440,45 @@ const ApontamentoDashboard = () => {
         ]);
       });
       s.addTable(ptRows, {
-        x: 0.2, y: ptStartY + 0.4, w: 4.0, colW: [2.2, 0.8, 1.0],
-        fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+        x: r2c1x, y: r2c1y + 0.38, w: r2c1w,
+        colW: [r2c1w * 0.55, r2c1w * 0.2, r2c1w * 0.25],
+        fontSize: 5.5, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
       });
     }
 
-    // ---- COLUMN 2 (x: 4.4 – 8.8): Supplier Status chart + Failure Mode chart ----
-    addSectionLabel(pptx, s, "Supplier Status", 4.4, 0.85, 4.4);
-    if (supplierData.length > 0) {
-      s.addChart(pptx.charts.BAR, [
-        { name: "OK", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ok) },
-        { name: "NG", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ng) },
-      ], {
-        x: 4.4, y: 1.25, w: 4.4, h: 2.8,
-        barDir: "bar", barGrouping: "stacked",
-        chartColors: [OK_HEX, NG_HEX],
-        showValue: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 7,
-        catAxisLabelColor: TXT, catAxisLabelFontSize: 7, valAxisHidden: true,
-        catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
-        showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 7,
-        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
-      });
-    }
+    // ---- ROW 2, COL 2: Main Issues (col-span-8) ----
+    const r2c2x = 4 * COL_W + PAD;
+    const r2c2y = 3.8;
+    const r2c2w = 8 * COL_W - PAD * 2;
 
-    // Main Failure Mode (vertical bars)
-    addSectionLabel(pptx, s, "Main Failure Mode", 4.4, 4.2, 4.4);
-    if (failureModeData.length > 0) {
-      s.addChart(pptx.charts.BAR, [{
-        name: "Quantidade",
-        labels: failureModeData.map((f: any) => f.name),
-        values: failureModeData.map((f: any) => f.value),
-      }], {
-        x: 4.4, y: 4.6, w: 4.4, h: 2.4,
-        barDir: "col", chartColors: fmColors,
-        showValue: true, dataLabelPosition: "outEnd", dataLabelColor: TXT, dataLabelFontSize: 7,
-        catAxisLabelColor: TXT, catAxisLabelFontSize: 6, catAxisLabelRotate: 330,
-        valAxisHidden: true, catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
-        showLegend: false,
-        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
-      });
-    }
-
-    // ---- COLUMN 3 (x: 9.0 – 13.1): Project Status donuts + Main Issues table ----
-    addSectionLabel(pptx, s, "Project Status", 9.0, 0.85, 4.1);
-    if (projectData.length > 0) {
-      const donutW = 1.9;
-      const donutH = 1.8;
-      const cols = 2;
-      projectData.forEach((proj, idx) => {
-        const col = idx % cols;
-        const row = Math.floor(idx / cols);
-        const dx = 9.0 + col * (donutW + 0.15);
-        const dy = 1.25 + row * (donutH + 0.35);
-
-        s.addChart(pptx.charts.DOUGHNUT, [{
-          name: proj.name,
-          labels: ["OK", "NG"],
-          values: [proj.ok, proj.ng],
-        }], {
-          x: dx, y: dy, w: donutW, h: donutH,
-          chartColors: [DONUT_OK, DONUT_NG],
-          showPercent: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 8,
-          showLegend: false, showTitle: true, title: proj.name,
-          titleColor: "FFFFFF", titleFontSize: 9,
-          plotArea: { fill: { color: BG } }, chartArea: { fill: { color: "1E2538" }, roundedCorners: true },
-        });
-      });
-    }
-
-    // Main Issues table at bottom of column 3
-    addSectionLabel(pptx, s, "Main Issues (NG)", 9.0, 4.9, 4.1);
+    addSectionLabel(pptx, s, "Main Issues (NG)", r2c2x, r2c2y, r2c2w);
     const issHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 6, fontFace: "Calibri" };
     const issRows: any[][] = [[
       { text: "Supplier", options: { ...issHdr } },
       { text: "PN", options: { ...issHdr } },
+      { text: "Description", options: { ...issHdr } },
       { text: "Category", options: { ...issHdr } },
       { text: "NG", options: { ...issHdr, align: "center" } },
     ]];
-    mainIssues.slice(0, 8).forEach((iss, i) => {
+    mainIssues.slice(0, 10).forEach((iss, i) => {
       const bg = i % 2 === 0 ? "1E2538" : "232A3E";
-      const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+      const co = { color: TXT, fontSize: 5.5, fill: { color: bg }, fontFace: "Calibri" };
       issRows.push([
         { text: iss.supplier, options: { ...co } },
         { text: iss.pn, options: { ...co } },
+        { text: iss.description, options: { ...co } },
         { text: iss.category, options: { ...co } },
         { text: String(iss.ng), options: { ...co, color: NG_HEX, bold: true, align: "center" } },
       ]);
     });
     if (mainIssues.length === 0) {
-      const e = { color: TXT_DIM, fontSize: 6, fill: { color: "1E2538" }, fontFace: "Calibri" };
-      issRows.push([{ text: "Sem issues.", options: { ...e, colspan: 4, align: "center" } }]);
+      const e = { color: TXT_DIM, fontSize: 5.5, fill: { color: "1E2538" }, fontFace: "Calibri" };
+      issRows.push([{ text: "Sem issues.", options: { ...e, colspan: 5, align: "center" } }]);
     }
     s.addTable(issRows, {
-      x: 9.0, y: 5.3, w: 4.1, colW: [1.1, 1.0, 1.2, 0.8],
-      fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+      x: r2c2x, y: r2c2y + 0.38, w: r2c2w,
+      colW: [r2c2w * 0.18, r2c2w * 0.16, r2c2w * 0.30, r2c2w * 0.24, r2c2w * 0.12],
+      fontSize: 5.5, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
     });
 
     addFooter(s);

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Download, CalendarIcon, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -16,6 +16,9 @@ import {
 import {
   ChartContainer, ChartTooltip, ChartTooltipContent,
 } from "@/components/ui/chart";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
 
@@ -251,48 +254,220 @@ const ApontamentoDashboard = () => {
     return `${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`.toUpperCase();
   };
 
-  const exportToPptx = async () => {
+  // ========== PPTX HELPERS ==========
+  const createPptx = () => {
     const pptx = new pptxgen() as any;
-    pptx.layout = "LAYOUT_WIDE"; // 13.3 x 7.5
+    pptx.layout = "LAYOUT_WIDE";
     pptx.author = "MBR QC";
     pptx.title = `Dashboard ${TYPE_LABELS[activeType]} — Apontamentos`;
+    return pptx;
+  };
 
-    // Color palette (hex, no #)
-    const BG = "1A2035";
-    const HEADER_BG = "2A3040";
-    const TXT = "E0E0E0";
-    const TXT_DIM = "999999";
-    const BORDER_CLR = "3A4050";
-    const OK_HEX = hslToHex(140, 55, 45);   // green
-    const NG_HEX = hslToHex(0, 55, 50);     // red
-    const DONUT_OK = hslToHex(45, 80, 55);   // gold
-    const DONUT_NG = hslToHex(0, 70, 55);    // red-orange
-    const ACCENT = "5B9BD5";
+  const BG = "1A2035";
+  const HEADER_BG = "2A3040";
+  const TXT = "E0E0E0";
+  const TXT_DIM = "999999";
+  const BORDER_CLR = "3A4050";
+  const OK_HEX = hslToHex(140, 55, 45);
+  const NG_HEX = hslToHex(0, 55, 50);
+  const DONUT_OK = hslToHex(45, 80, 55);
+  const DONUT_NG = hslToHex(0, 70, 55);
+  const ACCENT = "5B9BD5";
 
-    // Failure mode colors (dynamic)
-    const fmColors = failureModeData.map((_, i) => hslToHex(210 - i * 15, 60 + i * 5, 55 + i * 3));
+  const addSlideHeader = (pptx: any, slide: any, title: string) => {
+    slide.background = { color: BG };
+    slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.3, h: 0.65, fill: { color: HEADER_BG } });
+    slide.addText(title, { x: 0.4, y: 0.08, w: 9, h: 0.5, fontSize: 20, color: "FFFFFF", bold: true, fontFace: "Calibri" });
+    slide.addText(`Total: ${total}  |  ${TYPE_LABELS[activeType]}`, { x: 9.5, y: 0.08, w: 3.5, h: 0.5, fontSize: 11, color: TXT_DIM, align: "right", fontFace: "Calibri" });
+  };
 
-    // Helper: add slide title bar
-    const addSlideHeader = (slide: any, title: string) => {
-      slide.background = { color: BG };
-      slide.addShape(pptx.shapes.RECTANGLE, { x: 0, y: 0, w: 13.3, h: 0.65, fill: { color: HEADER_BG } });
-      slide.addText(title, { x: 0.4, y: 0.08, w: 9, h: 0.5, fontSize: 20, color: "FFFFFF", bold: true, fontFace: "Calibri" });
-      slide.addText(`Total: ${total}  |  ${TYPE_LABELS[activeType]}`, { x: 9.5, y: 0.08, w: 3.5, h: 0.5, fontSize: 11, color: TXT_DIM, align: "right", fontFace: "Calibri" });
-    };
+  const addSectionLabel = (pptx: any, slide: any, text: string, x: number, y: number, w: number) => {
+    slide.addShape(pptx.shapes.RECTANGLE, { x, y, w, h: 0.35, fill: { color: HEADER_BG } });
+    slide.addText(text, { x, y, w, h: 0.35, fontSize: 10, color: "FFFFFF", bold: true, align: "center", fontFace: "Calibri" });
+  };
 
-    const addSectionLabel = (slide: any, text: string, x: number, y: number, w: number) => {
-      slide.addShape(pptx.shapes.RECTANGLE, { x, y, w, h: 0.35, fill: { color: HEADER_BG } });
-      slide.addText(text, { x, y, w, h: 0.35, fontSize: 10, color: "FFFFFF", bold: true, align: "center", fontFace: "Calibri" });
-    };
+  const addFooter = (slide: any) => {
+    slide.addText("Hyundai Mobis — MBR QC Dashboard", { x: 0.4, y: 7.1, w: 6, h: 0.3, fontSize: 7, color: TXT_DIM, fontFace: "Calibri" });
+    slide.addText(format(new Date(), "dd/MM/yyyy", { locale: ptBR }), { x: 9, y: 7.1, w: 3.9, h: 0.3, fontSize: 7, color: TXT_DIM, align: "right", fontFace: "Calibri" });
+  };
 
-    // =============================================
+  const fmColors = failureModeData.map((_, i) => hslToHex(210 - i * 15, 60 + i * 5, 55 + i * 3));
+
+  // ========== EXPORT: 1 SLIDE ==========
+  const exportOneSlide = async () => {
+    const pptx = createPptx();
+    const s = pptx.addSlide();
+    addSlideHeader(pptx, s, `${TYPE_LABELS[activeType]} — Dashboard Completo`);
+
+    const ttlOkLocal = supplierData.reduce((a: number, b: any) => a + b.ok, 0);
+    const ttlNgLocal = supplierData.reduce((a: number, b: any) => a + b.ng, 0);
+
+    // ---- COLUMN 1 (x: 0.2 – 4.2): General Quality Status table + Problem Type table ----
+    addSectionLabel(pptx, s, "General Quality Status", 0.2, 0.85, 4.0);
+
+    const supHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, fontFace: "Calibri" };
+    const supRows: any[][] = [[
+      { text: "Fornecedor", options: { ...supHdr } },
+      { text: "PN", options: { ...supHdr, align: "center" } },
+      { text: "OK", options: { ...supHdr, align: "center" } },
+      { text: "NG", options: { ...supHdr, align: "center" } },
+      { text: "Total", options: { ...supHdr, align: "center" } },
+    ]];
+    supplierData.forEach((sup, i) => {
+      const bg = i % 2 === 0 ? "1E2538" : "232A3E";
+      const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+      supRows.push([
+        { text: sup.name, options: { ...co, color: ACCENT } },
+        { text: String(sup.qtyPN), options: { ...co, align: "center" } },
+        { text: String(sup.ok), options: { ...co, align: "center" } },
+        { text: String(sup.ng), options: { ...co, align: "center" } },
+        { text: String(sup.total), options: { ...co, align: "center" } },
+      ]);
+    });
+    const ttlRow = { bold: true, color: TXT, fontSize: 7, fill: { color: HEADER_BG }, fontFace: "Calibri" };
+    supRows.push([
+      { text: "TOTAL", options: { ...ttlRow } },
+      { text: String(supplierData.reduce((a: number, b: any) => a + b.qtyPN, 0)), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlOkLocal), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlNgLocal), options: { ...ttlRow, align: "center" } },
+      { text: String(ttlOkLocal + ttlNgLocal), options: { ...ttlRow, align: "center" } },
+    ]);
+    s.addTable(supRows, {
+      x: 0.2, y: 1.25, w: 4.0, colW: [1.5, 0.5, 0.6, 0.6, 0.8],
+      fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+    });
+
+    // Problem Type table below
+    const ptStartY = 1.25 + Math.min(supRows.length, 14) * 0.22 + 0.15;
+    if (problemTypes.items.length > 0) {
+      addSectionLabel(pptx, s, `${TYPE_LABELS[activeType]} Data — Problem`, 0.2, ptStartY, 4.0);
+      const ptHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 7, fontFace: "Calibri" };
+      const ptRows: any[][] = [[
+        { text: "Tipo de Problema", options: { ...ptHdr } },
+        { text: "Qty", options: { ...ptHdr, align: "center" } },
+        { text: "%", options: { ...ptHdr, align: "center" } },
+      ]];
+      problemTypes.items.slice(0, 8).forEach((p, i) => {
+        const bg = i % 2 === 0 ? "1E2538" : "232A3E";
+        const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+        ptRows.push([
+          { text: p.type, options: { ...co } },
+          { text: String(p.qty), options: { ...co, align: "center" } },
+          { text: problemTypes.total > 0 ? `${((p.qty / problemTypes.total) * 100).toFixed(0)}%` : "0%", options: { ...co, align: "center" } },
+        ]);
+      });
+      s.addTable(ptRows, {
+        x: 0.2, y: ptStartY + 0.4, w: 4.0, colW: [2.2, 0.8, 1.0],
+        fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+      });
+    }
+
+    // ---- COLUMN 2 (x: 4.4 – 8.8): Supplier Status chart + Failure Mode chart ----
+    addSectionLabel(pptx, s, "Supplier Status", 4.4, 0.85, 4.4);
+    if (supplierData.length > 0) {
+      s.addChart(pptx.charts.BAR, [
+        { name: "OK", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ok) },
+        { name: "NG", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ng) },
+      ], {
+        x: 4.4, y: 1.25, w: 4.4, h: 2.8,
+        barDir: "bar", barGrouping: "stacked",
+        chartColors: [OK_HEX, NG_HEX],
+        showValue: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 7,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 7, valAxisHidden: true,
+        catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
+        showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 7,
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
+      });
+    }
+
+    // Main Failure Mode (vertical bars)
+    addSectionLabel(pptx, s, "Main Failure Mode", 4.4, 4.2, 4.4);
+    if (failureModeData.length > 0) {
+      s.addChart(pptx.charts.BAR, [{
+        name: "Quantidade",
+        labels: failureModeData.map((f: any) => f.name),
+        values: failureModeData.map((f: any) => f.value),
+      }], {
+        x: 4.4, y: 4.6, w: 4.4, h: 2.4,
+        barDir: "col", chartColors: fmColors,
+        showValue: true, dataLabelPosition: "outEnd", dataLabelColor: TXT, dataLabelFontSize: 7,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 6, catAxisLabelRotate: 330,
+        valAxisHidden: true, catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
+        showLegend: false,
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
+      });
+    }
+
+    // ---- COLUMN 3 (x: 9.0 – 13.1): Project Status donuts + Main Issues table ----
+    addSectionLabel(pptx, s, "Project Status", 9.0, 0.85, 4.1);
+    if (projectData.length > 0) {
+      const donutW = 1.9;
+      const donutH = 1.8;
+      const cols = 2;
+      projectData.forEach((proj, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const dx = 9.0 + col * (donutW + 0.15);
+        const dy = 1.25 + row * (donutH + 0.35);
+
+        s.addChart(pptx.charts.DOUGHNUT, [{
+          name: proj.name,
+          labels: ["OK", "NG"],
+          values: [proj.ok, proj.ng],
+        }], {
+          x: dx, y: dy, w: donutW, h: donutH,
+          chartColors: [DONUT_OK, DONUT_NG],
+          showPercent: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 8,
+          showLegend: false, showTitle: true, title: proj.name,
+          titleColor: "FFFFFF", titleFontSize: 9,
+          plotArea: { fill: { color: BG } }, chartArea: { fill: { color: "1E2538" }, roundedCorners: true },
+        });
+      });
+    }
+
+    // Main Issues table at bottom of column 3
+    addSectionLabel(pptx, s, "Main Issues (NG)", 9.0, 4.9, 4.1);
+    const issHdr = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 6, fontFace: "Calibri" };
+    const issRows: any[][] = [[
+      { text: "Supplier", options: { ...issHdr } },
+      { text: "PN", options: { ...issHdr } },
+      { text: "Category", options: { ...issHdr } },
+      { text: "NG", options: { ...issHdr, align: "center" } },
+    ]];
+    mainIssues.slice(0, 8).forEach((iss, i) => {
+      const bg = i % 2 === 0 ? "1E2538" : "232A3E";
+      const co = { color: TXT, fontSize: 6, fill: { color: bg }, fontFace: "Calibri" };
+      issRows.push([
+        { text: iss.supplier, options: { ...co } },
+        { text: iss.pn, options: { ...co } },
+        { text: iss.category, options: { ...co } },
+        { text: String(iss.ng), options: { ...co, color: NG_HEX, bold: true, align: "center" } },
+      ]);
+    });
+    if (mainIssues.length === 0) {
+      const e = { color: TXT_DIM, fontSize: 6, fill: { color: "1E2538" }, fontFace: "Calibri" };
+      issRows.push([{ text: "Sem issues.", options: { ...e, colspan: 4, align: "center" } }]);
+    }
+    s.addTable(issRows, {
+      x: 9.0, y: 5.3, w: 4.1, colW: [1.1, 1.0, 1.2, 0.8],
+      fontSize: 6, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+    });
+
+    addFooter(s);
+    await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_1Slide.pptx` });
+  };
+
+  // ========== EXPORT: 4 SLIDES ==========
+  const exportFourSlides = async () => {
+    const pptx = createPptx();
+
+    const ttlOkLocal = supplierData.reduce((a: number, b: any) => a + b.ok, 0);
+    const ttlNgLocal = supplierData.reduce((a: number, b: any) => a + b.ng, 0);
+
     // SLIDE 1 — Status Geral + Tabela de Fornecedores
-    // =============================================
     const s1 = pptx.addSlide();
-    addSlideHeader(s1, `${TYPE_LABELS[activeType]} — Status Geral`);
-
-    // Supplier table
-    addSectionLabel(s1, "General Quality Incoming Status", 0.4, 0.85, 5.5);
+    addSlideHeader(pptx, s1, `${TYPE_LABELS[activeType]} — Status Geral`);
+    addSectionLabel(pptx, s1, "General Quality Incoming Status", 0.4, 0.85, 5.5);
 
     const supHeaderOpts = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 9, fontFace: "Calibri" };
     const supRows: any[][] = [[
@@ -302,58 +477,49 @@ const ApontamentoDashboard = () => {
       { text: "NG", options: { ...supHeaderOpts, align: "center" } },
       { text: "Total", options: { ...supHeaderOpts, align: "center" } },
     ]];
-
-    supplierData.forEach((s, i) => {
+    supplierData.forEach((sup, i) => {
       const rowBg = i % 2 === 0 ? "1E2538" : "232A3E";
       const cellOpts = { color: TXT, fontSize: 8, fill: { color: rowBg }, fontFace: "Calibri" };
       supRows.push([
-        { text: s.name, options: { ...cellOpts, color: ACCENT } },
-        { text: String(s.qtyPN), options: { ...cellOpts, align: "center" } },
-        { text: String(s.ok), options: { ...cellOpts, align: "center" } },
-        { text: String(s.ng), options: { ...cellOpts, align: "center" } },
-        { text: String(s.total), options: { ...cellOpts, align: "center" } },
+        { text: sup.name, options: { ...cellOpts, color: ACCENT } },
+        { text: String(sup.qtyPN), options: { ...cellOpts, align: "center" } },
+        { text: String(sup.ok), options: { ...cellOpts, align: "center" } },
+        { text: String(sup.ng), options: { ...cellOpts, align: "center" } },
+        { text: String(sup.total), options: { ...cellOpts, align: "center" } },
       ]);
     });
-
-    // Total row
-    const ttlPN = supplierData.reduce((a, b) => a + b.qtyPN, 0);
+    const ttlPN = supplierData.reduce((a: number, b: any) => a + b.qtyPN, 0);
     const totalRow = { bold: true, color: TXT, fontSize: 9, fill: { color: HEADER_BG }, fontFace: "Calibri" };
     supRows.push([
       { text: "TOTAL", options: { ...totalRow } },
       { text: String(ttlPN), options: { ...totalRow, align: "center" } },
-      { text: String(ttlOk), options: { ...totalRow, align: "center" } },
-      { text: String(ttlNg), options: { ...totalRow, align: "center" } },
-      { text: String(ttlOk + ttlNg), options: { ...totalRow, align: "center" } },
+      { text: String(ttlOkLocal), options: { ...totalRow, align: "center" } },
+      { text: String(ttlNgLocal), options: { ...totalRow, align: "center" } },
+      { text: String(ttlOkLocal + ttlNgLocal), options: { ...totalRow, align: "center" } },
     ]);
-
     s1.addTable(supRows, {
-      x: 0.4, y: 1.25, w: 5.5,
-      colW: [2.0, 0.8, 0.8, 0.8, 1.1],
-      fontSize: 8,
-      border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+      x: 0.4, y: 1.25, w: 5.5, colW: [2.0, 0.8, 0.8, 0.8, 1.1],
+      fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
     });
 
-    // Summary KPIs on right side
-    addSectionLabel(s1, "Resumo", 6.5, 0.85, 6.2);
+    // KPIs on right
+    addSectionLabel(pptx, s1, "Resumo", 6.5, 0.85, 6.2);
     const kpiY = 1.4;
     const kpiBoxW = 2.8;
     const kpiBoxH = 1.2;
-    // OK box
     s1.addShape(pptx.shapes.RECTANGLE, { x: 6.5, y: kpiY, w: kpiBoxW, h: kpiBoxH, fill: { color: "1E2538" }, line: { color: BORDER_CLR, width: 1 } });
     s1.addText("OK", { x: 6.5, y: kpiY + 0.1, w: kpiBoxW, h: 0.3, fontSize: 12, color: OK_HEX, bold: true, align: "center", fontFace: "Calibri" });
-    s1.addText(String(ttlOk), { x: 6.5, y: kpiY + 0.4, w: kpiBoxW, h: 0.5, fontSize: 36, color: OK_HEX, bold: true, align: "center", fontFace: "Calibri" });
-    // NG box
+    s1.addText(String(ttlOkLocal), { x: 6.5, y: kpiY + 0.4, w: kpiBoxW, h: 0.5, fontSize: 36, color: OK_HEX, bold: true, align: "center", fontFace: "Calibri" });
     s1.addShape(pptx.shapes.RECTANGLE, { x: 9.8, y: kpiY, w: kpiBoxW, h: kpiBoxH, fill: { color: "1E2538" }, line: { color: BORDER_CLR, width: 1 } });
     s1.addText("NG", { x: 9.8, y: kpiY + 0.1, w: kpiBoxW, h: 0.3, fontSize: 12, color: NG_HEX, bold: true, align: "center", fontFace: "Calibri" });
-    s1.addText(String(ttlNg), { x: 9.8, y: kpiY + 0.4, w: kpiBoxW, h: 0.5, fontSize: 36, color: NG_HEX, bold: true, align: "center", fontFace: "Calibri" });
-    // Rate
-    const okRate = (ttlOk + ttlNg) > 0 ? ((ttlOk / (ttlOk + ttlNg)) * 100).toFixed(1) : "0";
+    s1.addText(String(ttlNgLocal), { x: 9.8, y: kpiY + 0.4, w: kpiBoxW, h: 0.5, fontSize: 36, color: NG_HEX, bold: true, align: "center", fontFace: "Calibri" });
+    const okRate = (ttlOkLocal + ttlNgLocal) > 0 ? ((ttlOkLocal / (ttlOkLocal + ttlNgLocal)) * 100).toFixed(1) : "0";
     s1.addShape(pptx.shapes.RECTANGLE, { x: 6.5, y: kpiY + 1.4, w: 6.1, h: 0.6, fill: { color: "1E2538" }, line: { color: BORDER_CLR, width: 1 } });
     s1.addText(`Taxa de Aprovação: ${okRate}%`, { x: 6.5, y: kpiY + 1.4, w: 6.1, h: 0.6, fontSize: 16, color: ACCENT, bold: true, align: "center", fontFace: "Calibri" });
 
     // Problem type table on slide 1 bottom-right
     if (problemTypes.items.length > 0) {
-      addSectionLabel(s1, `${TYPE_LABELS[activeType]} Data — Problem`, 6.5, 3.6, 6.2);
+      addSectionLabel(pptx, s1, `${TYPE_LABELS[activeType]} Data — Problem`, 6.5, 3.6, 6.2);
       const ptHeaderOpts = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, fontFace: "Calibri" };
       const ptRows: any[][] = [[
         { text: "Tipo de Problema", options: { ...ptHeaderOpts } },
@@ -370,89 +536,59 @@ const ApontamentoDashboard = () => {
         ]);
       });
       s1.addTable(ptRows, {
-        x: 6.5, y: 4.0, w: 6.2,
-        colW: [3.6, 1.2, 1.4],
-        fontSize: 8,
-        border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+        x: 6.5, y: 4.0, w: 6.2, colW: [3.6, 1.2, 1.4],
+        fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
       });
     }
 
-    // =============================================
     // SLIDE 2 — Supplier Status (stacked horizontal bars)
-    // =============================================
     const s2 = pptx.addSlide();
-    addSlideHeader(s2, `${TYPE_LABELS[activeType]} — Supplier Status`);
-    addSectionLabel(s2, "Status of Supplier OK vs NG", 0.4, 0.85, 12.5);
-
+    addSlideHeader(pptx, s2, `${TYPE_LABELS[activeType]} — Supplier Status`);
+    addSectionLabel(pptx, s2, "Status of Supplier OK vs NG", 0.4, 0.85, 12.5);
     if (supplierData.length > 0) {
       s2.addChart(pptx.charts.BAR, [
-        { name: "OK", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ok) },
-        { name: "NG", labels: supplierData.map(s => s.name), values: supplierData.map(s => s.ng) },
+        { name: "OK", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ok) },
+        { name: "NG", labels: supplierData.map((x: any) => x.name), values: supplierData.map((x: any) => x.ng) },
       ], {
         x: 0.4, y: 1.4, w: 12.5, h: 5.5,
-        barDir: "bar",
-        barGrouping: "stacked",
+        barDir: "bar", barGrouping: "stacked",
         chartColors: [OK_HEX, NG_HEX],
-        showValue: true,
-        dataLabelColor: "FFFFFF",
-        dataLabelFontSize: 8,
-        catAxisLabelColor: TXT,
-        catAxisLabelFontSize: 9,
-        valAxisHidden: true,
-        catGridLine: { style: "none" },
-        valGridLine: { color: BORDER_CLR, size: 0.5 },
-        showLegend: true,
-        legendPos: "b",
-        legendColor: TXT_DIM,
-        legendFontSize: 9,
-        plotArea: { fill: { color: BG } },
-        chartArea: { fill: { color: BG }, roundedCorners: false },
+        showValue: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 8,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 9, valAxisHidden: true,
+        catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
+        showLegend: true, legendPos: "b", legendColor: TXT_DIM, legendFontSize: 9,
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
       });
     } else {
       s2.addText("Sem dados de fornecedor.", { x: 2, y: 3, w: 9, h: 1, fontSize: 16, color: TXT_DIM, align: "center" });
     }
 
-    // =============================================
     // SLIDE 3 — Project Status (doughnut charts)
-    // =============================================
     const s3 = pptx.addSlide();
-    addSlideHeader(s3, `${TYPE_LABELS[activeType]} — Project Status`);
-    addSectionLabel(s3, "Project Status — OK vs NG by Project", 0.4, 0.85, 12.5);
-
+    addSlideHeader(pptx, s3, `${TYPE_LABELS[activeType]} — Project Status`);
+    addSectionLabel(pptx, s3, "Project Status — OK vs NG by Project", 0.4, 0.85, 12.5);
     if (projectData.length > 0) {
       const donutW = 2.8;
       const donutH = 3.5;
       const gap = 0.4;
       const totalDonutsW = projectData.length * donutW + (projectData.length - 1) * gap;
       const startX = (13.3 - totalDonutsW) / 2;
-
       projectData.forEach((proj, idx) => {
         const dx = startX + idx * (donutW + gap);
         const dy = 1.5;
-
         s3.addChart(pptx.charts.DOUGHNUT, [{
-          name: proj.name,
-          labels: ["OK", "NG"],
-          values: [proj.ok, proj.ng],
+          name: proj.name, labels: ["OK", "NG"], values: [proj.ok, proj.ng],
         }], {
           x: dx, y: dy, w: donutW, h: donutH,
           chartColors: [DONUT_OK, DONUT_NG],
-          showPercent: true,
-          dataLabelColor: "FFFFFF",
-          dataLabelFontSize: 10,
-          showLegend: false,
-          showTitle: true,
-          title: proj.name,
-          titleColor: "FFFFFF",
-          titleFontSize: 12,
-          plotArea: { fill: { color: BG } },
-          chartArea: { fill: { color: "1E2538" }, roundedCorners: true },
+          showPercent: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 10,
+          showLegend: false, showTitle: true, title: proj.name,
+          titleColor: "FFFFFF", titleFontSize: 12,
+          plotArea: { fill: { color: BG } }, chartArea: { fill: { color: "1E2538" }, roundedCorners: true },
         });
-
-        // Stats below each donut
-        const total = proj.ok + proj.ng;
-        const okP = total > 0 ? ((proj.ok / total) * 100).toFixed(1) : "0";
-        const ngP = total > 0 ? ((proj.ng / total) * 100).toFixed(1) : "0";
+        const totalP = proj.ok + proj.ng;
+        const okP = totalP > 0 ? ((proj.ok / totalP) * 100).toFixed(1) : "0";
+        const ngP = totalP > 0 ? ((proj.ng / totalP) * 100).toFixed(1) : "0";
         s3.addText([
           { text: `OK: ${proj.ok} (${okP}%)`, options: { color: DONUT_OK, fontSize: 9, bold: true, breakLine: true } },
           { text: `NG: ${proj.ng} (${ngP}%)`, options: { color: DONUT_NG, fontSize: 9, bold: true } },
@@ -462,71 +598,47 @@ const ApontamentoDashboard = () => {
       s3.addText("Sem dados de projeto.", { x: 2, y: 3, w: 9, h: 1, fontSize: 16, color: TXT_DIM, align: "center" });
     }
 
-    // =============================================
-    // SLIDE 4 — Failure Mode + Main Issues
-    // =============================================
+    // SLIDE 4 — Failure Mode + Problem Type + Main Issues
     const s4 = pptx.addSlide();
-    addSlideHeader(s4, `${TYPE_LABELS[activeType]} — Failure Mode & Main Issues`);
-
-    // Main Failure Mode bar chart (vertical)
-    addSectionLabel(s4, "Main Failure Mode", 0.4, 0.85, 6.0);
-
+    addSlideHeader(pptx, s4, `${TYPE_LABELS[activeType]} — Failure Mode & Main Issues`);
+    addSectionLabel(pptx, s4, "Main Failure Mode", 0.4, 0.85, 6.0);
     if (failureModeData.length > 0) {
       s4.addChart(pptx.charts.BAR, [{
         name: "Quantidade",
-        labels: failureModeData.map(f => f.name),
-        values: failureModeData.map(f => f.value),
+        labels: failureModeData.map((f: any) => f.name),
+        values: failureModeData.map((f: any) => f.value),
       }], {
         x: 0.4, y: 1.3, w: 6.0, h: 3.2,
-        barDir: "col",
-        chartColors: fmColors,
-        showValue: true,
-        dataLabelPosition: "outEnd",
-        dataLabelColor: TXT,
-        dataLabelFontSize: 8,
-        catAxisLabelColor: TXT,
-        catAxisLabelFontSize: 7,
-        catAxisLabelRotate: 330,
-        valAxisHidden: true,
-        catGridLine: { style: "none" },
-        valGridLine: { color: BORDER_CLR, size: 0.5 },
+        barDir: "col", chartColors: fmColors,
+        showValue: true, dataLabelPosition: "outEnd", dataLabelColor: TXT, dataLabelFontSize: 8,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 7, catAxisLabelRotate: 330,
+        valAxisHidden: true, catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
         showLegend: false,
-        plotArea: { fill: { color: BG } },
-        chartArea: { fill: { color: BG }, roundedCorners: false },
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
       });
     } else {
       s4.addText("Sem dados.", { x: 0.4, y: 2, w: 6, h: 1, fontSize: 14, color: TXT_DIM, align: "center" });
     }
 
-    // Problem type bar chart (horizontal) on right
-    addSectionLabel(s4, `${TYPE_LABELS[activeType]} Data — Problem`, 6.8, 0.85, 6.1);
-
+    addSectionLabel(pptx, s4, `${TYPE_LABELS[activeType]} Data — Problem`, 6.8, 0.85, 6.1);
     if (problemTypes.items.length > 0) {
       const ptSlice = problemTypes.items.slice(0, 8);
       s4.addChart(pptx.charts.BAR, [{
         name: "Qty",
-        labels: ptSlice.map(p => p.type),
-        values: ptSlice.map(p => p.qty),
+        labels: ptSlice.map((p: any) => p.type),
+        values: ptSlice.map((p: any) => p.qty),
       }], {
         x: 6.8, y: 1.3, w: 6.1, h: 3.2,
-        barDir: "bar",
-        chartColors: [ACCENT],
-        showValue: true,
-        dataLabelColor: "FFFFFF",
-        dataLabelFontSize: 8,
-        catAxisLabelColor: TXT,
-        catAxisLabelFontSize: 8,
-        valAxisHidden: true,
-        catGridLine: { style: "none" },
-        valGridLine: { color: BORDER_CLR, size: 0.5 },
+        barDir: "bar", chartColors: [ACCENT],
+        showValue: true, dataLabelColor: "FFFFFF", dataLabelFontSize: 8,
+        catAxisLabelColor: TXT, catAxisLabelFontSize: 8, valAxisHidden: true,
+        catGridLine: { style: "none" }, valGridLine: { color: BORDER_CLR, size: 0.5 },
         showLegend: false,
-        plotArea: { fill: { color: BG } },
-        chartArea: { fill: { color: BG }, roundedCorners: false },
+        plotArea: { fill: { color: BG } }, chartArea: { fill: { color: BG }, roundedCorners: false },
       });
     }
 
-    // Main Issues table at bottom
-    addSectionLabel(s4, "Main Issues (NG)", 0.4, 4.7, 12.5);
+    addSectionLabel(pptx, s4, "Main Issues (NG)", 0.4, 4.7, 12.5);
     const issHeaderOpts = { bold: true, color: "FFFFFF", fill: { color: HEADER_BG }, fontSize: 8, fontFace: "Calibri" };
     const issRows: any[][] = [[
       { text: "Supplier", options: { ...issHeaderOpts } },
@@ -535,7 +647,6 @@ const ApontamentoDashboard = () => {
       { text: "Category", options: { ...issHeaderOpts } },
       { text: "NG", options: { ...issHeaderOpts, align: "center" } },
     ]];
-
     mainIssues.slice(0, 8).forEach((iss, i) => {
       const bg = i % 2 === 0 ? "1E2538" : "232A3E";
       const co = { color: TXT, fontSize: 7, fill: { color: bg }, fontFace: "Calibri" };
@@ -547,26 +658,17 @@ const ApontamentoDashboard = () => {
         { text: String(iss.ng), options: { ...co, color: NG_HEX, bold: true, align: "center" } },
       ]);
     });
-
     if (mainIssues.length === 0) {
       const emptyRow = { color: TXT_DIM, fontSize: 8, fill: { color: "1E2538" }, fontFace: "Calibri" };
       issRows.push([{ text: "Sem issues registrados.", options: { ...emptyRow, colspan: 5, align: "center" } }]);
     }
-
     s4.addTable(issRows, {
-      x: 0.4, y: 5.1, w: 12.5,
-      colW: [2.5, 2.0, 3.5, 2.8, 1.7],
-      fontSize: 8,
-      border: { type: "solid", pt: 0.5, color: BORDER_CLR },
+      x: 0.4, y: 5.1, w: 12.5, colW: [2.5, 2.0, 3.5, 2.8, 1.7],
+      fontSize: 8, border: { type: "solid", pt: 0.5, color: BORDER_CLR },
     });
 
-    // Footer all slides
-    [s1, s2, s3, s4].forEach((s) => {
-      s.addText("Hyundai Mobis — MBR QC Dashboard", { x: 0.4, y: 7.1, w: 6, h: 0.3, fontSize: 7, color: TXT_DIM, fontFace: "Calibri" });
-      s.addText(format(new Date(), "dd/MM/yyyy", { locale: ptBR }), { x: 9, y: 7.1, w: 3.9, h: 0.3, fontSize: 7, color: TXT_DIM, align: "right", fontFace: "Calibri" });
-    });
-
-    await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_Apontamentos.pptx` });
+    [s1, s2, s3, s4].forEach(addFooter);
+    await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_4Slides.pptx` });
   };
 
   if (isLoading) {
@@ -622,9 +724,21 @@ const ApontamentoDashboard = () => {
             )}
           </div>
           <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {total}</span>
-          <Button variant="outline" size="sm" onClick={exportToPptx} className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
-            <Download className="w-3.5 h-3.5 mr-1" />PPTX
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
+                <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">
+              <DropdownMenuItem onClick={exportOneSlide} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                Exportar em 1 Slide (Dashboard Completo)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportFourSlides} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                Exportar em 4 Slides (Versão Detalhada)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -454,7 +454,9 @@ const ApontamentoDashboard = () => {
     });
 
     addFooter(s);
-    await pptx.writeFile({ fileName: `Dashboard_${TYPE_LABELS[activeType]}_1Slide.pptx` });
+    const now = new Date();
+    const fname = `Incoming_Status_${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}.pptx`;
+    await pptx.writeFile({ fileName: fname });
   };
 
   // ========== EXPORT: 4 SLIDES ==========

@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2, Paperclip, Upload, Trash2, FileText, Eye, Calendar as CalendarIconSolid } from "lucide-react";
+import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2, Paperclip, Upload, Trash2, FileText, Eye, Calendar as CalendarIconSolid, History, Plus } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -73,6 +74,17 @@ const MatrizVersatilidade = () => {
   const [exportingTraining, setExportingTraining] = useState(false);
   const trainingRef = useRef<HTMLDivElement>(null);
 
+  // Training history state
+  const [historyDialog, setHistoryDialog] = useState<{ userId: string; userName: string } | null>(null);
+  const [historyArea, setHistoryArea] = useState(AREAS[0].key);
+  const [addingHistory, setAddingHistory] = useState(false);
+  const [newHistoryDate, setNewHistoryDate] = useState("");
+  const [newHistoryNextDate, setNewHistoryNextDate] = useState("");
+  const [newHistoryNotes, setNewHistoryNotes] = useState("");
+  const [newHistoryDateOpen, setNewHistoryDateOpen] = useState(false);
+  const [newHistoryNextDateOpen, setNewHistoryNextDateOpen] = useState(false);
+  const [savingHistory, setSavingHistory] = useState(false);
+
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-matriz", user?.id],
     queryFn: async () => {
@@ -95,7 +107,6 @@ const MatrizVersatilidade = () => {
   const isAuthorizedEditor = isAdmin || matrizEditors.some((e: any) => e.user_id === user?.id);
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
   const canEdit = isAuthorizedEditor || isLider;
-  // CHANGE 1: Only admin (isAdmin) and authorized editors can interact with checkboxes
   const canSeeFlags = isAuthorizedEditor;
 
   const { data: inspectors = [] } = useQuery({
@@ -136,6 +147,15 @@ const MatrizVersatilidade = () => {
     queryKey: ["matriz-attachments"],
     queryFn: async () => {
       const { data, error } = await supabase.from("matriz_attachments").select("*");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const { data: trainingHistoryData = [] } = useQuery({
+    queryKey: ["training-history"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("training_history").select("*").order("training_date", { ascending: false });
       if (error) throw error;
       return data || [];
     },
@@ -218,18 +238,14 @@ const MatrizVersatilidade = () => {
     setEditDates({ lastDate: qual?.last_evaluation_date || "", nextDate: qual?.next_evaluation_date || "" });
   };
 
-  // CHANGE 4: Validate dates before saving
   const saveDates = async () => {
     if (!editDialog) return;
     const { userId, area } = editDialog;
 
-    // Check if setting to Apto requires dates on primary module
-    if (area === "inspecao_peca") {
-      const qual = getQual(userId, area);
-      if (qual?.habilitado && (!editDates.lastDate || !editDates.nextDate)) {
-        toast.error("Não é possível definir como Apto sem datas de avaliação.");
-        return;
-      }
+    // Validate: don't allow saving without both dates
+    if (!editDates.lastDate || !editDates.nextDate) {
+      toast.error("Preencha ambas as datas de avaliação.");
+      return;
     }
 
     const existing = getQual(userId, area);
@@ -244,16 +260,20 @@ const MatrizVersatilidade = () => {
     toast.success("Datas atualizadas");
   };
 
-  // CHANGE 4: validate when toggling habilitado on primary module
   const handleToggleHabilitado = async (userId: string, area: string) => {
     if (!canEdit) return;
     const existing = getQual(userId, area);
     const willBeEnabled = !existing?.habilitado;
 
+    // If DISABLING (unflagging), allow it regardless of dates
+    if (!willBeEnabled) {
+      await toggleHabilitado(userId, area);
+      return;
+    }
+
     // If enabling inspecao_peca, check dates
     if (willBeEnabled && area === "inspecao_peca") {
       if (!existing?.last_evaluation_date || !existing?.next_evaluation_date) {
-        // Open edit dates dialog instead
         openEditDates(userId, area);
         toast.info("Preencha as datas de avaliação para habilitar Noções de Qualidade.");
         return;
@@ -275,7 +295,6 @@ const MatrizVersatilidade = () => {
 
   const expiredInspectors = useMemo(() => inspectors.filter((ins: any) => getOverallStatus(ins.id) === "atencao"), [inspectors, qualifications]);
 
-  // CHANGE 5: Training schedule data
   const trainingScheduleData = useMemo(() => {
     const result: Record<string, { area: any; inspectors: any[] }> = {};
     for (const area of AREAS) {
@@ -342,7 +361,6 @@ const MatrizVersatilidade = () => {
     }
   };
 
-  // CHANGE 5: Export training schedule PDF
   const exportTrainingPdf = async () => {
     if (!trainingRef.current) return;
     setExportingTraining(true);
@@ -441,6 +459,67 @@ const MatrizVersatilidade = () => {
   const fmtDate = (d: string | null | undefined) =>
     d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
 
+  // Training history helpers
+  const getHistoryForUser = (userId: string, area: string) =>
+    trainingHistoryData.filter((h: any) => h.user_id === userId && h.area === area);
+
+  const openHistoryDialog = (ins: any) => {
+    setHistoryDialog({ userId: ins.id, userName: ins.full_name });
+    setHistoryArea(AREAS[0].key);
+    setAddingHistory(false);
+    resetHistoryForm();
+  };
+
+  const resetHistoryForm = () => {
+    setNewHistoryDate("");
+    setNewHistoryNextDate("");
+    setNewHistoryNotes("");
+  };
+
+  const saveHistoryEntry = async () => {
+    if (!historyDialog) return;
+    if (!newHistoryDate) { toast.error("Preencha a data do último treinamento"); return; }
+    if (!newHistoryNextDate) { toast.error("Preencha a data do próximo treinamento"); return; }
+
+    setSavingHistory(true);
+    try {
+      const { error } = await supabase.from("training_history").insert({
+        user_id: historyDialog.userId,
+        area: historyArea,
+        training_date: newHistoryDate,
+        next_training_date: newHistoryNextDate,
+        notes: newHistoryNotes || null,
+        created_by: user?.id,
+      } as any);
+      if (error) throw error;
+
+      // Also update the qualification dates
+      const existing = getQual(historyDialog.userId, historyArea);
+      const updateData = { last_evaluation_date: newHistoryDate, next_evaluation_date: newHistoryNextDate };
+      if (existing) {
+        await supabase.from("inspector_qualifications").update(updateData as any).eq("id", existing.id);
+      } else {
+        await supabase.from("inspector_qualifications").insert({ user_id: historyDialog.userId, area: historyArea, habilitado: true, ...updateData } as any);
+      }
+
+      qc.invalidateQueries({ queryKey: ["training-history"] });
+      qc.invalidateQueries({ queryKey: ["inspector-qualifications"] });
+      toast.success("Histórico de treinamento registrado");
+      setAddingHistory(false);
+      resetHistoryForm();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar");
+    } finally {
+      setSavingHistory(false);
+    }
+  };
+
+  const deleteHistoryEntry = async (id: string) => {
+    await supabase.from("training_history").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["training-history"] });
+    toast.success("Registro removido");
+  };
+
   return (
     <TooltipProvider delayDuration={200}>
       <div className="min-h-screen bg-background">
@@ -454,7 +533,6 @@ const MatrizVersatilidade = () => {
                 <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
               </div>
               <div className="flex items-center gap-1">
-                {/* CHANGE 5: Training Schedule button - only for editors */}
                 {canSeeFlags && (
                   <Button variant="ghost" size="sm" onClick={() => setTrainingDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground gap-1 text-xs px-2">
                     <CalendarIcon className="w-4 h-4" /> <span className="hidden sm:inline">Agenda de Treinamento</span>
@@ -507,7 +585,6 @@ const MatrizVersatilidade = () => {
             </Select>
           </div>
 
-          {/* Bulk QR export bar */}
           {selectedIds.size > 0 && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-accent/30 border border-accent rounded-lg p-3">
               <span className="text-sm font-medium">{selectedIds.size} inspetor(es) selecionado(s)</span>
@@ -541,6 +618,9 @@ const MatrizVersatilidade = () => {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openQrDialog(ins)}><QrCode className="w-4 h-4" /></Button>
+                      {canSeeFlags && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openHistoryDialog(ins)}><History className="w-4 h-4" /></Button>
+                      )}
                       {overall === "apto" ? (
                         <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
                       ) : overall === "atencao" ? (
@@ -551,7 +631,7 @@ const MatrizVersatilidade = () => {
                     </div>
                   </div>
 
-                  {/* CHANGE 1: Show flags only for authorized editors — read-only indicators for others */}
+                  {/* Only show checkboxes for authorized editors */}
                   {canSeeFlags && (
                     <div className="grid grid-cols-3 gap-1">
                       {AREAS.map(area => {
@@ -562,12 +642,11 @@ const MatrizVersatilidade = () => {
                           <div key={area.key} className="flex items-center gap-1 text-[10px]">
                             <Checkbox
                               checked={isHab || false}
-                              onCheckedChange={() => canEdit && handleToggleHabilitado(ins.id, area.key)}
-                              disabled={!canEdit}
+                              onCheckedChange={() => handleToggleHabilitado(ins.id, area.key)}
                               className="h-4 w-4"
                             />
                             <button
-                              onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
+                              onClick={() => isHab && openEditDates(ins.id, area.key)}
                               className={cn(
                                 "truncate",
                                 isHab && (status === "vencido") ? "text-red-700 font-bold" :
@@ -627,7 +706,7 @@ const MatrizVersatilidade = () => {
             )}
           </div>
 
-          {/* Desktop table — CHANGE 3: removed global Últ. Aval. and Próx. Aval. columns */}
+          {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
             <table className="w-full text-xs border-collapse min-w-[900px]">
               <thead>
@@ -647,6 +726,9 @@ const MatrizVersatilidade = () => {
                   ))}
                   <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-16">Status</th>
                   <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Anexo</th>
+                  {canSeeFlags && (
+                    <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-14">Histórico</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -676,19 +758,31 @@ const MatrizVersatilidade = () => {
 
                         const cellContent = (
                           <div className="flex flex-col items-center gap-0.5">
-                            {/* CHANGE 1: Checkbox visible to all, interactive only for editors */}
-                            <Checkbox
-                              checked={isHab || false}
-                              onCheckedChange={() => canEdit && handleToggleHabilitado(ins.id, area.key)}
-                              disabled={!canEdit}
-                              className="h-4 w-4"
-                            />
+                            {/* Only show checkbox for authorized editors */}
+                            {canSeeFlags ? (
+                              <Checkbox
+                                checked={isHab || false}
+                                onCheckedChange={() => handleToggleHabilitado(ins.id, area.key)}
+                                className="h-4 w-4"
+                              />
+                            ) : (
+                              // Non-editors see a colored dot indicator
+                              isHab ? (
+                                <div className={cn("w-3.5 h-3.5 rounded-full", 
+                                  status === "vencido" ? "bg-red-500" :
+                                  status === "a_vencer" ? "bg-amber-500" :
+                                  status === "em_dia" ? "bg-emerald-500" : "bg-muted-foreground/30"
+                                )} />
+                              ) : (
+                                <div className="w-3.5 h-3.5 rounded-full bg-muted-foreground/10" />
+                              )
+                            )}
                             {isHab && (
                               <button
-                                onClick={() => canEdit ? openEditDates(ins.id, area.key) : undefined}
+                                onClick={() => canSeeFlags ? openEditDates(ins.id, area.key) : undefined}
                                 className={cn(
                                   "text-[8px] leading-tight px-1 py-0.5 rounded",
-                                  canEdit && "cursor-pointer",
+                                  canSeeFlags && "cursor-pointer",
                                   getStatusClasses(status)
                                 )}
                               >
@@ -698,7 +792,6 @@ const MatrizVersatilidade = () => {
                           </div>
                         );
 
-                        // CHANGE 2: Tooltip on desktop for cells with date info
                         if (hasDateInfo) {
                           return (
                             <td key={area.key} className="py-1 px-0.5 text-center">
@@ -742,18 +835,23 @@ const MatrizVersatilidade = () => {
                             <Paperclip className="w-3.5 h-3.5 mx-auto" />
                           </button>
                         ) : canSeeFlags ? (
-                          <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-muted-foreground hover:text-foreground">
+                          <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-muted-foreground/40 hover:text-muted-foreground">
                             <Upload className="w-3.5 h-3.5 mx-auto" />
                           </button>
-                        ) : (
-                          <span className="text-muted-foreground text-[9px]">—</span>
-                        )}
+                        ) : null}
                       </td>
+                      {canSeeFlags && (
+                        <td className="py-2 px-1.5 text-center">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openHistoryDialog(ins)} title="Histórico de Treinamento">
+                            <History className="w-3.5 h-3.5" />
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7 + AREAS.length + 2} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
+                  <tr><td colSpan={7 + AREAS.length + (canSeeFlags ? 3 : 2)} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
                 )}
               </tbody>
             </table>
@@ -854,7 +952,7 @@ const MatrizVersatilidade = () => {
             <DialogHeader><DialogTitle>Datas de Treinamento</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Última Avaliação</label>
+                <label className="text-sm font-medium">Última Avaliação *</label>
                 <Popover open={lastDateOpen} onOpenChange={setLastDateOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-sm h-10">
@@ -868,7 +966,7 @@ const MatrizVersatilidade = () => {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Próxima Avaliação</label>
+                <label className="text-sm font-medium">Próxima Avaliação *</label>
                 <Popover open={nextDateOpen} onOpenChange={setNextDateOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start text-sm h-10">
@@ -881,9 +979,8 @@ const MatrizVersatilidade = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              {/* CHANGE 4: inline error */}
-              {editDialog?.area === "inspecao_peca" && (!editDates.lastDate || !editDates.nextDate) && (
-                <p className="text-xs text-destructive">Não é possível definir como Apto sem datas de avaliação.</p>
+              {(!editDates.lastDate || !editDates.nextDate) && (
+                <p className="text-xs text-destructive">Preencha ambas as datas para salvar.</p>
               )}
               <Button onClick={saveDates} className="w-full min-h-[44px]">Salvar</Button>
             </div>
@@ -930,7 +1027,7 @@ const MatrizVersatilidade = () => {
           </DialogContent>
         </Dialog>
 
-        {/* CHANGE 5: Training Schedule dialog */}
+        {/* Training Schedule dialog */}
         <Dialog open={trainingDialog} onOpenChange={setTrainingDialog}>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col">
             <DialogHeader>
@@ -957,7 +1054,6 @@ const MatrizVersatilidade = () => {
                     <h3 className={cn("text-sm font-semibold px-2 py-1 rounded", group.area.color, "text-white")}>
                       {getAreaLabel(group.area.key, group.area.label)} ({group.inspectors.length})
                     </h3>
-                    {/* Mobile cards */}
                     <div className="sm:hidden space-y-1">
                       {group.inspectors.map((ins: any) => (
                         <div key={ins.id} className="bg-muted/30 rounded-lg p-3 space-y-1">
@@ -972,7 +1068,6 @@ const MatrizVersatilidade = () => {
                         </div>
                       ))}
                     </div>
-                    {/* Desktop table */}
                     <table className="hidden sm:table w-full text-xs">
                       <thead>
                         <tr className="border-b border-border">
@@ -1049,6 +1144,114 @@ const MatrizVersatilidade = () => {
 
             <DialogFooter>
               <Button variant="outline" size="sm" onClick={() => setTrainingDialog(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Training History dialog */}
+        <Dialog open={!!historyDialog} onOpenChange={(open) => { if (!open) { setHistoryDialog(null); setAddingHistory(false); resetHistoryForm(); } }}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[85vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <History className="w-5 h-5" /> Histórico de Treinamento
+              </DialogTitle>
+            </DialogHeader>
+            {historyDialog && (
+              <>
+                <p className="text-sm font-medium">{historyDialog.userName}</p>
+                
+                {/* Area selector */}
+                <Select value={historyArea} onValueChange={(v) => { setHistoryArea(v); setAddingHistory(false); resetHistoryForm(); }}>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {AREAS.map(a => <SelectItem key={a.key} value={a.key}>{getAreaLabel(a.key, a.label)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                {/* History list */}
+                <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+                  {getHistoryForUser(historyDialog.userId, historyArea).length === 0 && !addingHistory && (
+                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum registro de treinamento</p>
+                  )}
+                  {getHistoryForUser(historyDialog.userId, historyArea).map((h: any) => (
+                    <div key={h.id} className="bg-muted/30 rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-3 text-xs">
+                          <span><span className="text-muted-foreground">Treinamento:</span> <span className="font-medium">{fmtDate(h.training_date)}</span></span>
+                          <span><span className="text-muted-foreground">Próximo:</span> <span className="font-medium">{fmtDate(h.next_training_date)}</span></span>
+                        </div>
+                        {canSeeFlags && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteHistoryEntry(h.id)}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
+                      {h.notes && <p className="text-[10px] text-muted-foreground">{h.notes}</p>}
+                      <p className="text-[9px] text-muted-foreground">{new Date(h.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                  ))}
+
+                  {/* Add new history entry form */}
+                  {addingHistory && (
+                    <div className="border rounded-lg p-3 space-y-3">
+                      <p className="text-sm font-medium">Novo Registro</p>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium">Data do Último Treinamento *</label>
+                        <Popover open={newHistoryDateOpen} onOpenChange={setNewHistoryDateOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start text-xs h-9">
+                              <CalendarIcon className="w-3 h-3 mr-2" />
+                              {newHistoryDate ? format(new Date(newHistoryDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={parseDate(newHistoryDate)} onSelect={(d) => { if (d) { setNewHistoryDate(format(d, "yyyy-MM-dd")); setNewHistoryDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium">Data do Próximo Treinamento *</label>
+                        <Popover open={newHistoryNextDateOpen} onOpenChange={setNewHistoryNextDateOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start text-xs h-9">
+                              <CalendarIcon className="w-3 h-3 mr-2" />
+                              {newHistoryNextDate ? format(new Date(newHistoryNextDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={parseDate(newHistoryNextDate)} onSelect={(d) => { if (d) { setNewHistoryNextDate(format(d, "yyyy-MM-dd")); setNewHistoryNextDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium">Observações <span className="text-muted-foreground">(opcional)</span></label>
+                        <Textarea value={newHistoryNotes} onChange={(e) => setNewHistoryNotes(e.target.value)} placeholder="Anotações sobre o treinamento..." rows={2} className="text-xs" />
+                      </div>
+                      {(!newHistoryDate || !newHistoryNextDate) && (
+                        <p className="text-xs text-destructive">Ambas as datas são obrigatórias.</p>
+                      )}
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={saveHistoryEntry} disabled={savingHistory} className="flex-1 min-h-[40px]">
+                          {savingHistory ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Salvar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => { setAddingHistory(false); resetHistoryForm(); }} className="min-h-[40px]">
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {canSeeFlags && !addingHistory && (
+                  <Button variant="outline" size="sm" onClick={() => setAddingHistory(true)} className="w-full gap-1 min-h-[44px]">
+                    <Plus className="w-4 h-4" /> Adicionar Registro
+                  </Button>
+                )}
+              </>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => { setHistoryDialog(null); setAddingHistory(false); resetHistoryForm(); }}>Fechar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

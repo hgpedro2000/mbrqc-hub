@@ -25,18 +25,34 @@ const CARGOS = [
 
 const UsersTab = () => {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    const prefill = sessionStorage.getItem("prefill_new_user");
+    return !!prefill;
+  });
   const [modulesOpen, setModulesOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [employeeNumber, setEmployeeNumber] = useState("");
-  const [fullName, setFullName] = useState("");
+
+  // Pre-fill from HelpDesk request
+  const prefillData = (() => {
+    try {
+      const raw = sessionStorage.getItem("prefill_new_user");
+      if (raw) {
+        sessionStorage.removeItem("prefill_new_user");
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return null;
+  })();
+
+  const [employeeNumber, setEmployeeNumber] = useState(prefillData?.employee_number || "");
+  const [fullName, setFullName] = useState(prefillData?.full_name || "");
   const [role, setRole] = useState("user");
   const [password, setPassword] = useState("");
-  const [turno, setTurno] = useState("");
-  const [email, setEmail] = useState("");
-  const [cargo, setCargo] = useState("");
-  const [empresa, setEmpresa] = useState("mobis_brasil");
-  const [empresaTerceira, setEmpresaTerceira] = useState("");
+  const [turno, setTurno] = useState(prefillData?.turno || "");
+  const [email, setEmail] = useState(prefillData?.email || "");
+  const [cargo, setCargo] = useState(prefillData?.cargo || "");
+  const [empresa, setEmpresa] = useState(prefillData?.empresa || "mobis_brasil");
+  const [empresaTerceira, setEmpresaTerceira] = useState(prefillData?.empresa_terceira || "");
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

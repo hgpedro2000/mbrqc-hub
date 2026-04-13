@@ -716,6 +716,82 @@ const InventarioRequisicoes = () => {
           <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDeleteItem}>Excluir</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Replenish stock dialog */}
+      <Dialog open={replenishOpen} onOpenChange={setReplenishOpen}>
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Atualizar Estoque</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Item *</Label>
+              <Select value={replenishItem} onValueChange={setReplenishItem}>
+                <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+                <SelectContent>
+                  {items.filter((i: any) => i.active).map((i: any) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name} (atual: {i.stock_qty} {i.unit})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Movimentação *</Label>
+              <Select value={replenishType} onValueChange={setReplenishType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada / Reposição</SelectItem>
+                  <SelectItem value="saida">Saída / Ajuste</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Quantidade *</Label>
+              <Input type="number" min={1} value={replenishQty || ""} onChange={(e) => setReplenishQty(Number(e.target.value))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Observação</Label>
+              <Input value={replenishNotes} onChange={(e) => setReplenishNotes(e.target.value)} placeholder="Motivo da movimentação" />
+            </div>
+            <Button onClick={handleReplenish} disabled={replenishSaving} className="w-full min-h-[44px]">
+              {replenishSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+              Confirmar Movimentação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stock history dialog */}
+      <Dialog open={historyOpen} onOpenChange={(v) => { setHistoryOpen(v); if (!v) setHistoryItemId(""); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Histórico de Movimentação</DialogTitle></DialogHeader>
+          {historyItemId && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{items.find((i: any) => i.id === historyItemId)?.name || "Item"}</p>
+              {stockHistory.length === 0 ? (
+                <p className="text-center text-muted-foreground text-sm py-6">Nenhum registro encontrado</p>
+              ) : (
+                <div className="space-y-2">
+                  {stockHistory.map((h: any) => (
+                    <div key={h.id} className="border rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className={h.type === "entrada" ? "border-emerald-500 text-emerald-600 bg-emerald-500/10" : h.type === "saida" ? "border-red-500 text-red-600 bg-red-500/10" : "border-blue-500 text-blue-600 bg-blue-500/10"}>
+                          {h.type === "entrada" ? "Entrada" : h.type === "saida" ? "Saída" : h.type === "reposicao" ? "Reposição" : h.type}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Qtd: <strong>{h.quantity}</strong></span>
+                        <span className="text-muted-foreground">({h.previous_qty} → {h.new_qty})</span>
+                      </div>
+                      {h.notes && <p className="text-xs text-muted-foreground">{h.notes}</p>}
+                      <p className="text-xs text-muted-foreground">Por: {h.created_by_name}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

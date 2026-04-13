@@ -477,7 +477,13 @@ const Apontamentos = () => {
             const cfg = typeConfig[tipo];
             const Icon = cfg.icon;
             return (
-              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => navigate(`/apontamentos/novo/${tipo}`)}>
+              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
+                if (tipo === "incoming") {
+                  setShowInspectionLocationDialog(true);
+                } else {
+                  navigate(`/apontamentos/novo/${tipo}`);
+                }
+              }}>
                 <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
                 <div className="relative">
                   <div className="module-card-icon"><Icon className="w-6 h-6 md:w-7 md:h-7" /></div>

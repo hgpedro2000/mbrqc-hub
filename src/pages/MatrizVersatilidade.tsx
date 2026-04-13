@@ -487,26 +487,29 @@ const MatrizVersatilidade = () => {
                     const status = getTrainingStatus(qual);
                     const atts = getAttachments(ins.id, area.key);
                     return (
-                      <div key={area.key} className="flex items-center justify-between gap-1 bg-muted/30 rounded px-2 py-1">
-                        <span className={cn("font-medium truncate flex-1", area.color.replace("bg-", "text-").replace("700", "700"))}>{getAreaLabel(area.key, area.label)}</span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          {qual.next_evaluation_date && (
-                            <span className="text-muted-foreground">{new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                          )}
-                          <span className={cn(
-                            "px-1 py-0.5 rounded text-[9px] font-semibold",
-                            status === "vencido" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
-                          )}>
-                            {status === "vencido" ? "Vencido" : "Em dia"}
-                          </span>
-                          {atts.length > 0 && (
-                            <button onClick={() => viewAttachment(atts[0])} className="text-blue-600"><Paperclip className="w-3 h-3" /></button>
-                          )}
-                          {canSeeFlags && (
-                            <button onClick={() => setAttachDialog({ userId: ins.id, area: area.key })} className="text-muted-foreground hover:text-foreground">
-                              <Upload className="w-3 h-3" />
-                            </button>
-                          )}
+                      <div key={area.key} className="bg-muted/30 rounded px-2 py-1.5 space-y-0.5">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={cn("font-medium truncate flex-1", area.color.replace("bg-", "text-").replace("700", "700"))}>{getAreaLabel(area.key, area.label)}</span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={cn(
+                              "px-1 py-0.5 rounded text-[9px] font-semibold",
+                              status === "vencido" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
+                            )}>
+                              {status === "vencido" ? "Vencido" : "Em dia"}
+                            </span>
+                            {atts.length > 0 && (
+                              <button onClick={() => viewAttachment(atts[0])} className="text-blue-600"><Paperclip className="w-3 h-3" /></button>
+                            )}
+                            {canSeeFlags && (
+                              <button onClick={() => setAttachDialog({ userId: ins.id, area: area.key })} className="text-muted-foreground hover:text-foreground">
+                                <Upload className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-3 text-[9px] text-muted-foreground">
+                          <span>Últ: {qual.last_evaluation_date ? new Date(qual.last_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</span>
+                          <span>Próx: {qual.next_evaluation_date ? new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</span>
                         </div>
                       </div>
                     );
@@ -524,7 +527,7 @@ const MatrizVersatilidade = () => {
 
         {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
-          <table className="w-full text-xs border-collapse min-w-[900px]">
+          <table className="w-full text-xs border-collapse min-w-[1100px]">
             <thead>
               <tr className="border-b-2 border-border">
                 <th className="py-2 px-1 w-8 sticky left-0 bg-background z-10">
@@ -536,7 +539,7 @@ const MatrizVersatilidade = () => {
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-20">Cargo</th>
                 <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Turno</th>
                 {canSeeFlags && AREAS.map(a => (
-                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-16 rounded-t", a.color)}>
+                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-20 rounded-t", a.color)}>
                     <span className="block text-[9px] leading-tight">{getAreaLabel(a.key, a.label)}</span>
                   </th>
                 ))}
@@ -587,17 +590,25 @@ const MatrizVersatilidade = () => {
                               className="h-4 w-4"
                             />
                             {isHab && (
-                              <button
-                                onClick={() => canEdit && openEditDates(ins.id, area.key)}
-                                className={cn(
-                                  "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
-                                  status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
-                                  status === "em_dia" ? "bg-emerald-100 text-emerald-700" :
-                                  "bg-muted text-muted-foreground"
+                              <>
+                                <button
+                                  onClick={() => canEdit && openEditDates(ins.id, area.key)}
+                                  className={cn(
+                                    "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
+                                    status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
+                                    status === "em_dia" ? "bg-emerald-100 text-emerald-700" :
+                                    "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
+                                </button>
+                                {qual?.last_evaluation_date && (
+                                  <span className="text-[7px] text-muted-foreground leading-none">Últ: {new Date(qual.last_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
                                 )}
-                              >
-                                {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
-                              </button>
+                                {qual?.next_evaluation_date && (
+                                  <span className="text-[7px] text-muted-foreground leading-none">Próx: {new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>

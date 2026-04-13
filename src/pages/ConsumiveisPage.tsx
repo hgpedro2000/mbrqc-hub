@@ -228,6 +228,14 @@ const InventarioRequisicoes = () => {
   const [editMinQty, setEditMinQty] = useState(0);
   const [editSaving, setEditSaving] = useState(false);
   const [insufficientDialog, setInsufficientDialog] = useState<{ itemName: string; stock: number; requested: number } | null>(null);
+  const [replenishOpen, setReplenishOpen] = useState(false);
+  const [replenishItem, setReplenishItem] = useState("");
+  const [replenishQty, setReplenishQty] = useState(0);
+  const [replenishType, setReplenishType] = useState("entrada");
+  const [replenishNotes, setReplenishNotes] = useState("");
+  const [replenishSaving, setReplenishSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItemId, setHistoryItemId] = useState("");
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],

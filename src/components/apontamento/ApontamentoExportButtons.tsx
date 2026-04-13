@@ -1,4 +1,4 @@
-import domtoimage from "dom-to-image-more";
+import html2canvas from "html2canvas";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, FileSpreadsheet } from "lucide-react";
@@ -30,48 +30,34 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
   const el = contentRef.current;
 
   const exportBtns = el.querySelectorAll("[data-export-btn]");
-  exportBtns.forEach((b) => (b as HTMLElement).style.visibility = "hidden");
+  exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
 
-  type S = { el: HTMLElement; mh: string; ov: string; ovy: string; h: string };
-  const saved: S[] = [];
-  let cur = el.parentElement;
-  while (cur && cur !== document.body) {
-    const cs = window.getComputedStyle(cur);
-    if (cs.overflow !== "visible" || cs.overflowY !== "visible" || cs.maxHeight !== "none") {
-      saved.push({ el: cur, mh: cur.style.maxHeight, ov: cur.style.overflow, ovy: cur.style.overflowY, h: cur.style.height });
-      cur.style.maxHeight = "none";
-      cur.style.overflow = "visible";
-      cur.style.overflowY = "visible";
-      cur.style.height = "auto";
-    }
-    cur = cur.parentElement;
+  const parent = el.closest("[class*='overflow-y-auto']") as HTMLElement | null;
+  const prevMaxH = parent?.style.maxHeight;
+  const prevOverflow = parent?.style.overflow;
+  if (parent) {
+    parent.style.maxHeight = "none";
+    parent.style.overflow = "visible";
   }
 
-  const prevW = el.style.width;
-  const prevMW = el.style.minWidth;
-  el.style.width = "768px";
-  el.style.minWidth = "768px";
-
   try {
-    await document.fonts.ready;
-    await new Promise((r) => setTimeout(r, 300));
+    if (typeof document !== "undefined" && "fonts" in document) {
+      await (document as Document & { fonts: FontFaceSet }).fonts.ready;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 80));
 
-    const blob = await domtoimage.toBlob(el, {
-      width: 768,
-      height: el.scrollHeight,
-      style: { transform: "scale(1)", transformOrigin: "top left" },
-      bgcolor: "#ffffff",
-      quality: 1,
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      windowWidth: 768,
+      scrollX: 0,
+      scrollY: -window.scrollY,
     });
 
-    const imgData = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-
-    const imgW = 768;
-    const imgH = el.scrollHeight;
+    const imgData = canvas.toDataURL("image/png");
+    const imgW = canvas.width;
+    const imgH = canvas.height;
     const pdfW = 210;
     const margin = 8;
     const contentW = pdfW - margin * 2;
@@ -80,17 +66,23 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
 
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, pdfH] });
     pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
-    pdf.save(`apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`);
+
+    const fileName = `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`;
+    const blob = pdf.output("blob");
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   } finally {
-    el.style.width = prevW;
-    el.style.minWidth = prevMW;
-    saved.forEach(s => {
-      s.el.style.maxHeight = s.mh;
-      s.el.style.overflow = s.ov;
-      s.el.style.overflowY = s.ovy;
-      s.el.style.height = s.h;
-    });
-    exportBtns.forEach((b) => (b as HTMLElement).style.visibility = "");
+    exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
+    if (parent) {
+      parent.style.maxHeight = prevMaxH || "";
+      parent.style.overflow = prevOverflow || "";
+    }
   }
 }
 

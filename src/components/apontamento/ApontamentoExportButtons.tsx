@@ -28,116 +28,67 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
   if (!contentRef.current) return;
   const el = contentRef.current;
 
-  // Collect all <style> and <link rel="stylesheet"> from current document
-  const styleSheets = Array.from(document.styleSheets)
-    .map((sheet) => {
-      try {
-        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
-        const rules = Array.from(sheet.cssRules).map((r) => r.cssText).join("\n");
-        return `<style>${rules}</style>`;
-      } catch {
-        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
-        return "";
-      }
-    })
-    .join("\n");
+  // 1. Hide export button
+  const exportBtns = el.querySelectorAll("[data-export-btn]");
+  exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "hidden");
 
-  // Get the full HTML of the content element
-  const contentHtml = el.outerHTML;
+  // 2. Fix letter-spacing on ALL elements (Tailwind tracking-* breaks html2canvas)
+  const allEls = el.querySelectorAll("*");
+  const prevLetterSpacing: string[] = [];
+  allEls.forEach((node, i) => {
+    const h = node as HTMLElement;
+    prevLetterSpacing[i] = h.style.letterSpacing;
+    h.style.letterSpacing = "normal";
+  });
 
-  // Build a full HTML document with dark theme forced on <html>
-  const fullHtml = `<!DOCTYPE html>
-<html class="dark" style="background:#0f1629;color-scheme:dark;">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  ${styleSheets}
-  <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: hsl(222 47% 11%);
-      color: hsl(210 40% 98%);
-      width: 794px;
-      font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  // 3. Unlock all overflow ancestors
+  type Saved = { el: HTMLElement; maxHeight: string; overflow: string; overflowY: string; height: string };
+  const saved: Saved[] = [];
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const cs = window.getComputedStyle(node);
+    if (cs.overflow !== "visible" || cs.overflowY !== "visible" || cs.maxHeight !== "none") {
+      saved.push({ el: node, maxHeight: node.style.maxHeight, overflow: node.style.overflow, overflowY: node.style.overflowY, height: node.style.height });
+      node.style.maxHeight = "none";
+      node.style.overflow  = "visible";
+      node.style.overflowY = "visible";
+      node.style.height    = "auto";
     }
-    /* Force dark CSS variables */
-    :root {
-      --background: 222 47% 11%;
-      --foreground: 210 40% 98%;
-      --card: 217 32% 17%;
-      --card-foreground: 210 40% 98%;
-      --popover: 215 24% 26%;
-      --popover-foreground: 210 40% 98%;
-      --primary: 212 26% 83%;
-      --primary-foreground: 228 84% 4%;
-      --secondary: 215 19% 34%;
-      --secondary-foreground: 210 40% 98%;
-      --muted: 215 16% 46%;
-      --muted-foreground: 210 40% 98%;
-      --accent: 228 84% 4%;
-      --accent-foreground: 215 20% 65%;
-      --destructive: 0 84% 60%;
-      --destructive-foreground: 0 85% 97%;
-      --border: 215 19% 34%;
-      --input: 215 19% 34%;
-      --ring: 212 26% 83%;
-      --radius: 0rem;
-    }
-    /* Hide export button in popup */
-    [data-export-btn] { display: none !important; }
-    /* Remove dialog chrome */
-    [role="dialog"] { box-shadow: none !important; border: none !important; }
-  </style>
-</head>
-<body>
-  <div style="width:794px;min-height:100vh;background:hsl(222,47%,11%);">
-    ${contentHtml}
-  </div>
-</body>
-</html>`;
-
-  // Open a hidden popup window
-  const popup = window.open("", "_blank", "width=794,height=1200,left=-9999,top=0");
-  if (!popup) {
-    alert("Por favor, permita popups para exportar o PDF.");
-    return;
+    node = node.parentElement;
   }
 
-  popup.document.open();
-  popup.document.write(fullHtml);
-  popup.document.close();
+  // 4. Fix element width to its natural scroll width
+  const naturalW = el.scrollWidth;
+  const prevW    = el.style.width;
+  const prevMinW = el.style.minWidth;
+  el.style.width    = naturalW + "px";
+  el.style.minWidth = naturalW + "px";
 
   try {
-    // Wait for fonts and images to load inside the popup
-    await new Promise<void>((resolve) => {
-      if (popup.document.readyState === "complete") {
-        resolve();
-      } else {
-        popup.addEventListener("load", () => resolve(), { once: true });
-      }
-    });
-
-    if ("fonts" in popup.document) {
-      await (popup.document as any).fonts.ready;
+    if (typeof document !== "undefined" && "fonts" in document) {
+      await (document as any).fonts.ready;
     }
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
-    const targetEl = popup.document.body.firstElementChild as HTMLElement;
-
-    const canvas = await html2canvas(targetEl, {
+    const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
-      backgroundColor: "#0f1629",
-      windowWidth: 794,
-      width: 794,
+      backgroundColor: "#ffffff",
+      windowWidth: naturalW,
+      width: naturalW,
       scrollX: 0,
       scrollY: 0,
+      x: 0,
+      y: 0,
       logging: false,
-      onclone: (clonedDoc) => {
-        clonedDoc.documentElement.classList.add("dark");
-        clonedDoc.documentElement.style.background = "hsl(222,47%,11%)";
+      onclone: (doc) => {
+        // Fix letter-spacing inside the clone too
+        doc.querySelectorAll("*").forEach((n) => {
+          (n as HTMLElement).style.letterSpacing = "normal";
+        });
+        // Ensure white background on html and body
+        doc.documentElement.style.background = "#ffffff";
+        doc.body.style.background = "#ffffff";
       },
     });
 
@@ -151,10 +102,20 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, pdfH] });
     pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
 
-    const fileName = `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`;
-    pdf.save(fileName);
+    pdf.save(`apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`);
   } finally {
-    popup.close();
+    el.style.width    = prevW;
+    el.style.minWidth = prevMinW;
+    allEls.forEach((n, i) => {
+      (n as HTMLElement).style.letterSpacing = prevLetterSpacing[i];
+    });
+    saved.forEach(s => {
+      s.el.style.maxHeight = s.maxHeight;
+      s.el.style.overflow  = s.overflow;
+      s.el.style.overflowY = s.overflowY;
+      s.el.style.height    = s.height;
+    });
+    exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "");
   }
 }
 function exportToExcel(data: Record<string, any>) {

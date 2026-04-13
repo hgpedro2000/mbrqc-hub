@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -49,6 +49,7 @@ const Apontamentos = () => {
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -343,6 +344,20 @@ const Apontamentos = () => {
                       </p>
                     ) : null}
 
+                    {/* TAG badge */}
+                    {(item as any).tag_number && (
+                      <Badge className="bg-indigo-500/15 text-indigo-700 border-indigo-300 text-xs gap-1">
+                        <Tag className="w-3 h-3" />
+                        TAG: {(item as any).tag_number}
+                      </Badge>
+                    )}
+                    {(item.quantidade_ng || 0) > 0 && !(item as any).tag_number && (
+                      <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-600 bg-amber-50 gap-1">
+                        <Tag className="w-3 h-3" />
+                        Aguardando número de TAG
+                      </Badge>
+                    )}
+
                     {/* Meta row */}
                     <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                       <span>{item.responsavel}</span>
@@ -476,7 +491,13 @@ const Apontamentos = () => {
             const cfg = typeConfig[tipo];
             const Icon = cfg.icon;
             return (
-              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => navigate(`/apontamentos/novo/${tipo}`)}>
+              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
+                if (tipo === "incoming") {
+                  setShowInspectionLocationDialog(true);
+                } else {
+                  navigate(`/apontamentos/novo/${tipo}`);
+                }
+              }}>
                 <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
                 <div className="relative">
                   <div className="module-card-icon"><Icon className="w-6 h-6 md:w-7 md:h-7" /></div>
@@ -598,6 +619,39 @@ const Apontamentos = () => {
           </DialogContent>
         </Dialog>
       )}
+      {/* Inspection Location Dialog */}
+      <Dialog open={showInspectionLocationDialog} onOpenChange={setShowInspectionLocationDialog}>
+        <DialogContent className="max-w-sm max-w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-blue-500" />Local de Inspeção</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o local onde a inspeção será realizada:</p>
+          <div className="grid grid-cols-1 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
+              onClick={() => {
+                setShowInspectionLocationDialog(false);
+                navigate("/apontamentos/novo/incoming?local=Sala do Audio");
+              }}
+            >
+              <span className="font-semibold text-base">🔊 Sala do Audio</span>
+              <span className="text-xs text-muted-foreground">Inspeção na sala de áudio</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-emerald-400 hover:bg-emerald-50"
+              onClick={() => {
+                setShowInspectionLocationDialog(false);
+                navigate("/apontamentos/novo/incoming?local=Área de Incoming");
+              }}
+            >
+              <span className="font-semibold text-base">📦 Área de Incoming</span>
+              <span className="text-xs text-muted-foreground">Inspeção na área de recebimento</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

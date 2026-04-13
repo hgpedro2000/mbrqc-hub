@@ -206,6 +206,7 @@ export type Database = {
           setor: string | null
           severidade: string | null
           status: string
+          tag_number: string | null
           tempo_inspecao: string | null
           tipo: string
           titulo: string
@@ -252,6 +253,7 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tag_number?: string | null
           tempo_inspecao?: string | null
           tipo: string
           titulo: string
@@ -298,6 +300,7 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tag_number?: string | null
           tempo_inspecao?: string | null
           tipo?: string
           titulo?: string

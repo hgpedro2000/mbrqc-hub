@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock } from "lucide-react";
+import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
@@ -48,10 +48,12 @@ interface DefeitoDetalhe {
 const ApontamentoForm = () => {
   const navigate = useNavigate();
   const { id, tipo: paramTipo } = useParams();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
   const { profile, user } = useAuth();
   const { impersonating } = useImpersonation();
   const activeProfile = impersonating || profile;
+  const queryClient = useQueryClient();
 
   const tipo = (isEdit ? undefined : paramTipo) as ApontamentoTipo | undefined;
 
@@ -103,6 +105,7 @@ const ApontamentoForm = () => {
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
+  const [tagNumber, setTagNumber] = useState("");
 
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({
@@ -172,6 +175,14 @@ const ApontamentoForm = () => {
     }
   }, [activeProfile, isEdit]);
 
+  // Auto-fill Local de Inspeção from URL param for incoming
+  useEffect(() => {
+    if (!isEdit && tipo === "incoming") {
+      const localParam = searchParams.get("local");
+      if (localParam) setFase(localParam);
+    }
+  }, [isEdit, tipo, searchParams]);
+
   useEffect(() => {
     if (existing) {
       setFormTipo(existing.tipo as ApontamentoTipo);
@@ -204,6 +215,7 @@ const ApontamentoForm = () => {
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
+      setTagNumber((existing as any).tag_number || "");
       const ti = (existing as any).tempo_inspecao || "";
       if (ti.includes(" - ")) {
         const parts = ti.split(" - ");
@@ -349,7 +361,7 @@ const ApontamentoForm = () => {
     if (!fornecedor) { errors.add("fornecedor"); msgs.push("Fornecedor"); }
     if (!partNumber) { errors.add("partNumber"); msgs.push("Part Number"); }
 
-    if (!isOem && !fase) { errors.add("fase"); msgs.push("Fase"); }
+    if (!isOem && !isIncoming && !fase) { errors.add("fase"); msgs.push("Fase"); }
     if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }
 
     if (isIncoming) {
@@ -427,7 +439,8 @@ const ApontamentoForm = () => {
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
         tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
-      };
+        tag_number: isIncoming ? (quantidadeNg > 0 ? (tagNumber || null) : null) : null,
+      } as any;
 
       let recordId = id;
 
@@ -470,11 +483,11 @@ const ApontamentoForm = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl overflow-x-hidden overflow-y-auto">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-5xl overflow-x-hidden overflow-y-auto">
         {/* IDENTIFICAÇÃO */}
         <div className="form-section">
           <h2 className="form-section-title">Identificação</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-1.5">
               <Label className={errLabelClass("data")}>Data *</Label>
               <Input type="date" value={data} max={today} onChange={(e) => { setData(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("data"); return n; }); }} className={errClass("data")} />
@@ -487,13 +500,19 @@ const ApontamentoForm = () => {
               <Label className={errLabelClass("turno")}>Turno *</Label>
               <Input value={turno || "—"} readOnly className="bg-muted" />
             </div>
-            {!isOem && (
+            {!isOem && !isIncoming && (
               <div className="space-y-1.5">
                 <Label className={errLabelClass("fase")}>Fase *</Label>
                 <Select value={fase} onValueChange={(v) => { setFase(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fase"); return n; }); }}>
                   <SelectTrigger className={errClass("fase")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{FASES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+            )}
+            {isIncoming && (
+              <div className="space-y-1.5">
+                <Label>Local de Inspeção</Label>
+                <Input value={fase || "—"} readOnly className="bg-muted" />
               </div>
             )}
             {isOem && (
@@ -551,56 +570,57 @@ const ApontamentoForm = () => {
           </div>
         )}
 
-        {/* TEMPO DE INSPEÇÃO - Incoming only */}
+        {/* TEMPO + QUANTIDADES - Incoming - side by side on PC */}
         {isIncoming && (
-          <div className="form-section">
-            <h2 className="form-section-title">Tempo de Inspeção</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* TEMPO DE INSPEÇÃO */}
+            <div className="form-section">
+              <h2 className="form-section-title">Tempo de Inspeção</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Duração</Label>
-                <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
-                  {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                <div className="space-y-1.5">
+                  <Label>Duração</Label>
+                  <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
+                    {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* QUANTIDADES - Incoming */}
-        {isIncoming && (
-          <div className="form-section">
-            <h2 className="form-section-title">Quantidades</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("quantidadeInspecionada")}>Quantidade Inspecionada *</Label>
-                <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+            {/* QUANTIDADES */}
+            <div className="form-section">
+              <h2 className="form-section-title">Quantidades</h2>
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
+                  <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>NG *</Label>
+                  <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>OK</Label>
+                  <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Quantidade NG *</Label>
-                <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+              <div className="mt-3 sm:mt-4 space-y-1.5">
+                <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
+                <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
               </div>
-              <div className="space-y-1.5">
-                <Label>Quantidade OK</Label>
-                <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
-              </div>
-            </div>
-            <div className="mt-3 sm:mt-4 space-y-1.5">
-              <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
-              <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
             </div>
           </div>
         )}
@@ -829,7 +849,30 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* ACTIONS */}
+        {/* TAG NUMBER - Incoming only */}
+        {isIncoming && (
+          <div className="form-section">
+            <h2 className="form-section-title flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Número da TAG
+            </h2>
+            {quantidadeNg === 0 ? (
+              <Input value="N/A" readOnly className="bg-muted max-w-xs" />
+            ) : (
+              <div className="space-y-1.5">
+                <Input
+                  value={tagNumber}
+                  onChange={(e) => setTagNumber(e.target.value)}
+                  placeholder="Digite o número da TAG (opcional)"
+                  className="max-w-md"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {tagNumber ? "" : "Se não preenchido, ficará como \"Aguardando número de TAG\""}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
           <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>

@@ -106,7 +106,7 @@ const UsersTab = () => {
   }, [profiles, searchTerm]);
 
   const handleCreate = async () => {
-    if (!employeeNumber || !fullName || !password || !turno) {
+    if (!employeeNumber || !fullName || !turno) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }

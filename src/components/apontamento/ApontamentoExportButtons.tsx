@@ -288,6 +288,44 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
   const fileName = `apontamento-${tipoLabel}-${d.numero || "export"}.pdf`;
   pdf.save(fileName);
 }
+function exportToExcel(data: Record<string, any>) {
+  const rows = [
+    { Campo: "Número", Valor: data.numero || "—" },
+    { Campo: "Tipo", Valor: typeLabels[data.tipo] || data.tipo },
+    { Campo: "Data", Valor: fmt("data", data.data) },
+    { Campo: "Apontado por", Valor: data.responsavel || "—" },
+    { Campo: "Turno", Valor: data.turno || "—" },
+    { Campo: "Projeto", Valor: data.projeto || "—" },
+    { Campo: "Fornecedor", Valor: data.fornecedor || "—" },
+    { Campo: "Part Number", Valor: data.part_number || "—" },
+    { Campo: "Part Name", Valor: data.part_name || "—" },
+    { Campo: "Fase", Valor: data.fase || "—" },
+    { Campo: "Qtd. Inspecionada", Valor: String(data.quantidade_inspecionada || 0) },
+    { Campo: "Qtd. NG", Valor: String(data.quantidade_ng || 0) },
+    { Campo: "Qtd. OK", Valor: String(data.quantidade_ok || 0) },
+    { Campo: "Modo de Falha", Valor: data.modo_falha || "—" },
+    { Campo: "Descrição", Valor: data.descricao || "—" },
+    { Campo: "Severidade", Valor: data.severidade || "—" },
+    { Campo: "Comentário", Valor: data.comentario_adicional || "—" },
+  ];
+
+  if (data.tipo === "oem") {
+    rows.push(
+      { Campo: "VIN", Valor: data.vin_number || "—" },
+      { Campo: "Qtd. Detectado", Valor: String(data.quantidade_detectado || 0) },
+      { Campo: "Local Detecção", Valor: data.local_deteccao || "—" },
+      { Campo: "Lançamento", Valor: data.lancamento || "—" },
+      { Campo: "Análise Inicial", Valor: data.analise_inicial || "—" },
+      { Campo: "Ação Imediata", Valor: data.acao_imediata || "—" },
+    );
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [{ wch: 25 }, { wch: 45 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Apontamento");
+  XLSX.writeFile(wb, `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "sem-numero"}.xlsx`);
+}
 
 export const ApontamentoExportButtons = ({ data, photos, contentRef }: Props) => (
   <DropdownMenu>

@@ -20,10 +20,13 @@ Deno.serve(async (req) => {
 
     const internalEmail = `${employee_number}@internal.qhub`;
 
+    // Use provided password or default to 123456
+    const userPassword = password || "123456";
+
     // Create auth user
     const { data: authUser, error: authError } = await admin.auth.admin.createUser({
       email: internalEmail,
-      password,
+      password: userPassword,
       email_confirm: true,
     });
 
@@ -55,6 +58,16 @@ Deno.serve(async (req) => {
       await admin.from("user_roles").insert({
         user_id: userId,
         role,
+      });
+    }
+
+    // Auto-assign default module permissions: Apontamentos + Consulta de Peças
+    const defaultModules = ["apontamentos", "consulta_pecas"];
+    for (const mod of defaultModules) {
+      await admin.from("user_module_permissions").insert({
+        user_id: userId,
+        module: mod,
+        enabled: true,
       });
     }
 

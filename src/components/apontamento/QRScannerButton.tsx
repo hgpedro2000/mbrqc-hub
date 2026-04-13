@@ -1,8 +1,8 @@
-import { useState, useRef, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QrCode, X, AlertTriangle, Pencil, Send, Loader2 } from "lucide-react";
+import { QrCode, X, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,15 @@ interface QRScannerButtonProps {
 }
 
 const READER_ID = "qr-reader-incoming";
+const SUPPORTED_FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.AZTEC,
+  Html5QrcodeSupportedFormats.PDF_417,
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.EAN_13,
+];
 
 export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const { user, profile } = useAuth();
@@ -20,85 +29,152 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
   const [rawQR, setRawQR] = useState("");
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
-  const stopScanner = useCallback(async () => {
-    const s = scannerRef.current;
-    scannerRef.current = null;
-    if (!s) return;
-    try { await s.stop(); } catch {}
-    try { await s.clear(); } catch {}
-  }, []);
+  const handleDecodedText = useCallback((decoded: string) => {
+    const parsed = parseHyundaiQR(decoded);
 
-  // Called directly from user click — preserves gesture chain for camera access
-  const handleOpenScanner = useCallback(async () => {
-    hasScanned.current = false;
-    setCameraError(null);
-    setScannerOpen(true);
-
-    // Wait a tick for the Dialog DOM to mount the reader div
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-    const el = document.getElementById(READER_ID);
-    if (!el) {
-      setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+    if (parsed) {
+      onScan(parsed);
+      toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
       return;
     }
 
-    try {
-      const scanner = new Html5Qrcode(READER_ID, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.DATA_MATRIX,
-          Html5QrcodeSupportedFormats.AZTEC,
-          Html5QrcodeSupportedFormats.PDF_417,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.EAN_13,
-        ],
-        verbose: false,
-      });
-      scannerRef.current = scanner;
-
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1.0 },
-        (decoded) => {
-          if (hasScanned.current) return;
-          hasScanned.current = true;
-
-          scanner.stop().catch(() => {});
-          scannerRef.current = null;
-          setScannerOpen(false);
-
-          const parsed = parseHyundaiQR(decoded);
-          if (parsed) {
-            onScan(parsed);
-            toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
-          } else {
-            setRawQR(decoded);
-            setReportSent(false);
-            setIncompatibleOpen(true);
-          }
-        },
-        () => {}
-      );
-    } catch {
-      setCameraError("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-    }
+    setRawQR(decoded);
+    setReportSent(false);
+    setIncompatibleOpen(true);
   }, [onScan, toast]);
+
+  const stopScanner = useCallback(async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+
+    if (!scanner) return;
+
+    try {
+      await scanner.stop();
+    } catch {}
+
+    try {
+      await scanner.clear();
+    } catch {}
+  }, []);
 
   const closeScanner = useCallback(() => {
     void stopScanner();
     setScannerOpen(false);
     setCameraError(null);
+    setIsProcessingImage(false);
   }, [stopScanner]);
+
+  const createScanner = useCallback(() => {
+    return new Html5Qrcode(READER_ID, {
+      formatsToSupport: SUPPORTED_FORMATS,
+      verbose: false,
+    });
+  }, []);
+
+  const handleOpenScanner = useCallback(async () => {
+    hasScanned.current = false;
+    setCameraError(null);
+    setScannerOpen(true);
+
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    if (!document.getElementById(READER_ID)) {
+      setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+      return;
+    }
+
+    try {
+      const scanner = createScanner();
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        {
+          facingMode: { exact: "environment" },
+        },
+        {
+          fps: 20,
+          qrbox: { width: 320, height: 320 },
+          aspectRatio: 1,
+          disableFlip: true,
+        },
+        (decoded) => {
+          if (hasScanned.current) return;
+          hasScanned.current = true;
+          void stopScanner();
+          setScannerOpen(false);
+          handleDecodedText(decoded);
+        },
+        () => {}
+      );
+    } catch {
+      try {
+        const scanner = createScanner();
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 20,
+            qrbox: { width: 320, height: 320 },
+            aspectRatio: 1,
+            disableFlip: true,
+          },
+          (decoded) => {
+            if (hasScanned.current) return;
+            hasScanned.current = true;
+            void stopScanner();
+            setScannerOpen(false);
+            handleDecodedText(decoded);
+          },
+          () => {}
+        );
+      } catch {
+        setCameraError("Não foi possível acessar ou decodificar pela câmera. Use a opção de tirar foto da etiqueta.");
+      }
+    }
+  }, [createScanner, handleDecodedText, stopScanner]);
+
+  const handlePickImage = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) return;
+
+    setCameraError(null);
+    setIsProcessingImage(true);
+
+    try {
+      await stopScanner();
+
+      const scanner = createScanner();
+      scannerRef.current = scanner;
+      const decoded = await scanner.scanFile(file, true);
+      await scanner.clear();
+      scannerRef.current = null;
+
+      setScannerOpen(false);
+      handleDecodedText(decoded);
+    } catch {
+      setCameraError("Não foi possível ler a etiqueta pela foto. Tente aproximar mais, melhorar a iluminação ou enquadrar só o código.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [createScanner, handleDecodedText, stopScanner]);
 
   const handleSendReport = async () => {
     setSending(true);
@@ -119,10 +195,6 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
   };
 
-  const handleFillManually = () => {
-    setIncompatibleOpen(false);
-  };
-
   return (
     <>
       <Button
@@ -135,11 +207,10 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
         Ler Etiqueta QR
       </Button>
 
-      {/* Scanner Dialog — controlled, no auto-focus stealing */}
-      <Dialog open={scannerOpen} onOpenChange={(o) => { if (!o) closeScanner(); }}>
+      <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
         <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 pr-10">
               <QrCode className="w-5 h-5" />
               Escanear Etiqueta
             </DialogTitle>
@@ -148,24 +219,44 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
             </Button>
           </DialogHeader>
 
-          {cameraError ? (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <AlertTriangle className="w-10 h-10 text-amber-500" />
-              <p className="text-sm text-muted-foreground">{cameraError}</p>
-              <Button onClick={closeScanner}>Fechar</Button>
+          <div className="space-y-3">
+            {cameraError ? (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <AlertTriangle className="w-10 h-10 text-amber-500" />
+                <p className="text-sm text-muted-foreground">{cameraError}</p>
+              </div>
+            ) : null}
+
+            <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
+
+            <p className="text-xs text-muted-foreground text-center">
+              Aponte a câmera para o código da etiqueta Hyundai Mobis.
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Button type="button" onClick={handlePickImage} variant="secondary" className="w-full gap-2 min-h-[44px]">
+                {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                {isProcessingImage ? "Lendo foto..." : "Tirar foto da etiqueta"}
+              </Button>
+
+              <Button type="button" onClick={handlePickImage} variant="outline" className="w-full gap-2 min-h-[44px]">
+                <ImagePlus className="w-4 h-4" />
+                Escolher foto da galeria
+              </Button>
             </div>
-          ) : (
-            <>
-              <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
-              <p className="text-xs text-muted-foreground text-center">
-                Aponte a câmera para o QR Code da etiqueta Hyundai Mobis
-              </p>
-            </>
-          )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageSelected}
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Incompatible QR Dialog */}
       <Dialog open={incompatibleOpen} onOpenChange={setIncompatibleOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-md">
           <DialogHeader>
@@ -193,7 +284,7 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Button onClick={handleFillManually} className="w-full gap-2 min-h-[44px]">
+              <Button onClick={() => setIncompatibleOpen(false)} className="w-full gap-2 min-h-[44px]">
                 <Pencil className="w-4 h-4" />
                 Apontar manualmente
               </Button>

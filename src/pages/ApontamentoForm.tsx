@@ -439,7 +439,8 @@ const ApontamentoForm = () => {
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
         tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
-      };
+        tag_number: isIncoming ? (quantidadeNg > 0 ? (tagNumber || null) : null) : null,
+      } as any;
 
       let recordId = id;
 

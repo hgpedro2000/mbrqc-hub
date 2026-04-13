@@ -8,8 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { exportPdfFromRef } from "@/lib/exportPdfFromRef";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -91,20 +90,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
     const exportBtns = el.querySelectorAll("[data-export-btn]");
     exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
     try {
-      await new Promise((r) => setTimeout(r, 80));
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 900 });
-      const imgData = canvas.toDataURL("image/png");
-      const pdfW = 297; const margin = 8; const contentW = pdfW - margin * 2;
-      const contentH = (canvas.height * contentW) / canvas.width;
-      const pdfH = contentH + margin * 2;
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: [pdfW, pdfH] });
-      pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
       const fileName = mode === "daily" ? `relatorio-diario-${dateFrom}.pdf` : `relatorio-ng-${today}.pdf`;
-      const blob = pdf.output("blob");
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      await exportPdfFromRef(el, fileName, { orientation: "landscape", pageWidthMm: 297, windowWidth: 1200 });
     } finally {
       exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
     }

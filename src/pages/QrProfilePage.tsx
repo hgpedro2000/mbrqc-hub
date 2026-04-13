@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, QrCode, Loader2, Mail } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import html2canvas from "html2canvas";
+import { captureElementToCanvas } from "@/lib/exportPdfFromRef";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 
@@ -40,7 +40,7 @@ const QrProfilePage = () => {
   const exportAs = async (format: "jpg" | "pdf") => {
     if (!cardRef.current) return;
     try {
-      const canvas = await html2canvas(cardRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      const canvas = await captureElementToCanvas(cardRef.current, { windowWidth: 400 });
       if (format === "jpg") {
         const link = document.createElement("a");
         link.download = `QR-${activeProfile?.qr_code_id || "code"}.jpg`;
@@ -62,7 +62,7 @@ const QrProfilePage = () => {
     if (!cardRef.current || !userEmail) return;
     try {
       toast.info("Gerando e enviando por e-mail...");
-      const canvas = await html2canvas(cardRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      const canvas = await captureElementToCanvas(cardRef.current, { windowWidth: 400 });
       const imgData = canvas.toDataURL("image/png");
 
       const { error } = await supabase.functions.invoke("send-qr-email", {

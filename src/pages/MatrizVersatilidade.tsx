@@ -587,17 +587,25 @@ const MatrizVersatilidade = () => {
                               className="h-4 w-4"
                             />
                             {isHab && (
-                              <button
-                                onClick={() => canEdit && openEditDates(ins.id, area.key)}
-                                className={cn(
-                                  "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
-                                  status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
-                                  status === "em_dia" ? "bg-emerald-100 text-emerald-700" :
-                                  "bg-muted text-muted-foreground"
+                              <>
+                                <button
+                                  onClick={() => canEdit && openEditDates(ins.id, area.key)}
+                                  className={cn(
+                                    "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
+                                    status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
+                                    status === "em_dia" ? "bg-emerald-100 text-emerald-700" :
+                                    "bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
+                                </button>
+                                {qual?.last_evaluation_date && (
+                                  <span className="text-[7px] text-muted-foreground leading-none">Últ: {new Date(qual.last_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
                                 )}
-                              >
-                                {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
-                              </button>
+                                {qual?.next_evaluation_date && (
+                                  <span className="text-[7px] text-muted-foreground leading-none">Próx: {new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>

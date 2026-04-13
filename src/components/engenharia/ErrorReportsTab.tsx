@@ -11,9 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil } from "lucide-react";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface ErrorReportsTabProps {
+  onCreateUserFromRequest?: (data: any) => void;
+}
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pendente: { label: "Pendente", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
@@ -46,7 +50,7 @@ const moduleOptions = [
   { value: "Novo Usuário", label: "Novo Usuário" },
 ];
 
-const ErrorReportsTab = () => {
+const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {}) => {
   const qc = useQueryClient();
   const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");

@@ -257,6 +257,57 @@ const InventarioRequisicoes = () => {
 
   const lowStockItems = useMemo(() => items.filter((i: any) => i.active && i.stock_qty <= i.min_qty && i.min_qty > 0), [items]);
 
+  const { data: stockHistory = [] } = useQuery({
+    queryKey: ["stock-history", historyItemId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stock_history" as any).select("*").eq("item_id", historyItemId).order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!historyItemId,
+  });
+
+  const activeProfile = (() => {
+    // Just for getting name
+    return null;
+  })();
+
+  const handleReplenish = async () => {
+    if (!replenishItem) { toast.error("Selecione um item"); return; }
+    if (replenishQty <= 0) { toast.error("Quantidade deve ser maior que 0"); return; }
+    setReplenishSaving(true);
+    try {
+      const item = items.find((i: any) => i.id === replenishItem);
+      if (!item) throw new Error("Item não encontrado");
+      const prevQty = (item as any).stock_qty;
+      const newQty = replenishType === "entrada" ? prevQty + replenishQty : Math.max(0, prevQty - replenishQty);
+      
+      const { error: updateErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", replenishItem);
+      if (updateErr) throw updateErr;
+      
+      const { error: histErr } = await supabase.from("stock_history" as any).insert({
+        item_id: replenishItem,
+        type: replenishType,
+        quantity: replenishQty,
+        previous_qty: prevQty,
+        new_qty: newQty,
+        notes: replenishNotes || null,
+        created_by_name: "Admin",
+      });
+      if (histErr) throw histErr;
+
+      toast.success(`Estoque atualizado: ${(item as any).name} (${prevQty} → ${newQty})`);
+      setReplenishOpen(false);
+      setReplenishItem("");
+      setReplenishQty(0);
+      setReplenishType("entrada");
+      setReplenishNotes("");
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+      qc.invalidateQueries({ queryKey: ["stock-history"] });
+    } catch (e: any) { toast.error(e.message); } finally { setReplenishSaving(false); }
+  };
+
   const filteredRequests = useMemo(() => {
     let result = allRequests;
     if (turnoFilter) result = result.filter((r: any) => r.turno === turnoFilter);

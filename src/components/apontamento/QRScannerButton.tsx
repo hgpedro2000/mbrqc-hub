@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
 }
+
+const READER_ID = "qr-reader-incoming";
 
 export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const { user, profile } = useAuth();
@@ -26,48 +28,66 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
-  useEffect(() => {
-    if (!scannerOpen) return;
+  const stopScanner = useCallback(async () => {
+    const s = scannerRef.current;
+    scannerRef.current = null;
+    if (!s) return;
+    try { await s.stop(); } catch {}
+    try { await s.clear(); } catch {}
+  }, []);
+
+  // Called directly from user click — preserves gesture chain for camera access
+  const handleOpenScanner = useCallback(async () => {
     hasScanned.current = false;
     setCameraError(null);
+    setScannerOpen(true);
 
-    const scanner = new Html5Qrcode("qr-reader-incoming");
-    scannerRef.current = scanner;
+    // Wait a tick for the Dialog DOM to mount the reader div
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 240, height: 240 } },
-      (decoded) => {
-        if (hasScanned.current) return;
-        hasScanned.current = true;
-        scanner.stop().catch(() => {});
-        setScannerOpen(false);
+    const el = document.getElementById(READER_ID);
+    if (!el) {
+      setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+      return;
+    }
 
-        const parsed = parseHyundaiQR(decoded);
-        if (parsed) {
-          onScan(parsed);
-          toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
-        } else {
-          setRawQR(decoded);
-          setReportSent(false);
-          setIncompatibleOpen(true);
-        }
-      },
-      () => {}
-    ).catch(() => {
+    try {
+      const scanner = new Html5Qrcode(READER_ID);
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 240, height: 240 } },
+        (decoded) => {
+          if (hasScanned.current) return;
+          hasScanned.current = true;
+
+          scanner.stop().catch(() => {});
+          scannerRef.current = null;
+          setScannerOpen(false);
+
+          const parsed = parseHyundaiQR(decoded);
+          if (parsed) {
+            onScan(parsed);
+            toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
+          } else {
+            setRawQR(decoded);
+            setReportSent(false);
+            setIncompatibleOpen(true);
+          }
+        },
+        () => {}
+      );
+    } catch {
       setCameraError("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
-    });
+    }
+  }, [onScan, toast]);
 
-    return () => {
-      scanner.stop().catch(() => {});
-    };
-  }, [scannerOpen]);
-
-  const closeScanner = () => {
-    scannerRef.current?.stop().catch(() => {});
+  const closeScanner = useCallback(() => {
+    void stopScanner();
     setScannerOpen(false);
     setCameraError(null);
-  };
+  }, [stopScanner]);
 
   const handleSendReport = async () => {
     setSending(true);
@@ -98,13 +118,13 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
         type="button"
         variant="outline"
         className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10"
-        onClick={() => setScannerOpen(true)}
+        onClick={handleOpenScanner}
       >
         <QrCode className="w-5 h-5" />
         Ler Etiqueta QR
       </Button>
 
-      {/* Scanner Dialog */}
+      {/* Scanner Dialog — controlled, no auto-focus stealing */}
       <Dialog open={scannerOpen} onOpenChange={(o) => { if (!o) closeScanner(); }}>
         <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
           <DialogHeader>
@@ -125,7 +145,7 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
             </div>
           ) : (
             <>
-              <div id="qr-reader-incoming" className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
+              <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
               <p className="text-xs text-muted-foreground text-center">
                 Aponte a câmera para o QR Code da etiqueta Hyundai Mobis
               </p>

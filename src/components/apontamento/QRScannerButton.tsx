@@ -104,8 +104,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
           facingMode: { exact: "environment" },
         },
         {
-          fps: 20,
-          qrbox: { width: 320, height: 320 },
+          fps: 25,
+          qrbox: { width: 350, height: 350 },
           aspectRatio: 1,
           disableFlip: true,
         },

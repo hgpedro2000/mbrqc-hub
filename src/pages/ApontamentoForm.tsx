@@ -106,7 +106,6 @@ const ApontamentoForm = () => {
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
   const [tagNumber, setTagNumber] = useState("");
-  const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
 
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({

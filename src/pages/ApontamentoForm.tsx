@@ -846,7 +846,30 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* ACTIONS */}
+        {/* TAG NUMBER - Incoming only */}
+        {isIncoming && (
+          <div className="form-section">
+            <h2 className="form-section-title flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Número da TAG
+            </h2>
+            {quantidadeNg === 0 ? (
+              <Input value="N/A" readOnly className="bg-muted max-w-xs" />
+            ) : (
+              <div className="space-y-1.5">
+                <Input
+                  value={tagNumber}
+                  onChange={(e) => setTagNumber(e.target.value)}
+                  placeholder="Digite o número da TAG (opcional)"
+                  className="max-w-md"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {tagNumber ? "" : "Se não preenchido, ficará como \"Aguardando número de TAG\""}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
           <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>

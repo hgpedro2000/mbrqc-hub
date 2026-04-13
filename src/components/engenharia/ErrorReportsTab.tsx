@@ -333,6 +333,21 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
                   Salvar
                 </Button>
+                {viewItem.module === "Novo Usuário" && onCreateUserFromRequest && (
+                  <Button variant="secondary" className="w-full mt-2 gap-2" onClick={() => {
+                    const desc = viewItem.description || "";
+                    const lines = desc.split("\n");
+                    const parsed: Record<string, string> = {};
+                    lines.forEach((l: string) => {
+                      const [key, ...val] = l.split(": ");
+                      if (key && val.length) parsed[key.trim()] = val.join(": ").trim();
+                    });
+                    onCreateUserFromRequest(parsed);
+                    setViewItem(null);
+                  }}>
+                    <UserPlus className="w-4 h-4" /> Criar Usuário a partir desta solicitação
+                  </Button>
+                )}
               </div>
             </div>
           )}

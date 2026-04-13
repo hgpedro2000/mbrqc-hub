@@ -54,7 +54,19 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   const [newUserTurno, setNewUserTurno] = useState("");
   const [newUserCargo, setNewUserCargo] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserEmployeeNumber, setNewUserEmployeeNumber] = useState("");
   const [isNewUserMode, setIsNewUserMode] = useState(false);
+
+  // Suppliers for Residente
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers-for-new-user"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("suppliers").select("id, name, code").eq("active", true).order("name");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isNewUserMode && newUserEmpresaTerceira === "Residente" || newUserEmpresaTerceira.startsWith("Residente - "),
+  });
 
   const { data: myTickets = [], refetch: refetchTickets } = useQuery({
     queryKey: ["my-error-reports", user?.id],
@@ -73,6 +85,9 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
 
   const resolvedCount = myTickets.filter((t: any) => t.status === "resolvido").length;
   const hasNewResolved = resolvedCount > 0;
+
+  const isResidente = newUserEmpresaTerceira === "Residente" || newUserEmpresaTerceira.startsWith("Residente - ");
+  const residenteSupplier = newUserEmpresaTerceira.startsWith("Residente - ") ? newUserEmpresaTerceira.replace("Residente - ", "") : "";
 
   const handlePhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -124,6 +139,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     setNewUserTurno("");
     setNewUserCargo("");
     setNewUserEmail("");
+    setNewUserEmployeeNumber("");
     setIsNewUserMode(false);
     setDescription("");
     setPhotos([]);
@@ -132,16 +148,19 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
 
   const handleSubmit = async () => {
     if (isNewUserMode) {
-      // Validate new user form
       if (!newUserFullName.trim()) { toast.error("Preencha o nome completo"); return; }
       if (!newUserTurno) { toast.error("Selecione o turno"); return; }
       if (!newUserCargo) { toast.error("Selecione o cargo"); return; }
+      if (newUserEmpresa === "mobis_brasil" && !newUserEmployeeNumber.trim()) { toast.error("Preencha o número do usuário"); return; }
       if (newUserEmpresa === "empresa_terceira" && !newUserEmpresaTerceira) { toast.error("Selecione o tipo de empresa terceira"); return; }
+      if (newUserEmpresa === "empresa_terceira" && isResidente && !residenteSupplier) { toast.error("Selecione o fornecedor"); return; }
 
-      // Build description from form fields
-      const empresaLabel = newUserEmpresa === "mobis_brasil" ? "Mobis Brasil" : `Empresa Terceira - ${newUserEmpresaTerceira}`;
+      const empresaLabel = newUserEmpresa === "mobis_brasil" 
+        ? "Mobis Brasil" 
+        : `Empresa Terceira - ${newUserEmpresaTerceira}`;
       const descLines = [
         `Empresa: ${empresaLabel}`,
+        newUserEmpresa === "mobis_brasil" ? `Número do Usuário: ${newUserEmployeeNumber}` : null,
         `Nome Completo: ${newUserFullName}`,
         `Turno: ${newUserTurno}`,
         `Cargo: ${newUserCargo}`,
@@ -172,7 +191,6 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
       return;
     }
 
-    // Standard error report
     if (!description.trim()) {
       toast.error("Descreva o erro encontrado");
       return;
@@ -281,7 +299,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               {/* Empresa */}
               <div className="space-y-2">
                 <Label>Empresa *</Label>
-                <Select value={newUserEmpresa} onValueChange={(v) => { setNewUserEmpresa(v); setNewUserEmpresaTerceira(""); }}>
+                <Select value={newUserEmpresa} onValueChange={(v) => { setNewUserEmpresa(v); setNewUserEmpresaTerceira(""); setNewUserEmployeeNumber(""); }}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mobis_brasil">Mobis Brasil</SelectItem>
@@ -290,16 +308,43 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 </Select>
               </div>
 
+              {/* Número do Usuário - only for Mobis Brasil */}
+              {newUserEmpresa === "mobis_brasil" && (
+                <div className="space-y-2">
+                  <Label>Número do Usuário *</Label>
+                  <Input 
+                    value={newUserEmployeeNumber} 
+                    onChange={(e) => setNewUserEmployeeNumber(e.target.value)} 
+                    placeholder="Ex: 3501165" 
+                  />
+                </div>
+              )}
+
               {/* Tipo de Terceira */}
               {newUserEmpresa === "empresa_terceira" && (
                 <div className="space-y-2">
                   <Label>Tipo de Empresa Terceira *</Label>
-                  <Select value={newUserEmpresaTerceira} onValueChange={setNewUserEmpresaTerceira}>
+                  <Select value={isResidente ? "Residente" : newUserEmpresaTerceira} onValueChange={(v) => setNewUserEmpresaTerceira(v)}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="IL AUTOMOTIVE">IL AUTOMOTIVE</SelectItem>
                       <SelectItem value="TRIGO INSPEÇÕES">TRIGO INSPEÇÕES</SelectItem>
                       <SelectItem value="Residente">Residente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Fornecedor - only for Residente */}
+              {newUserEmpresa === "empresa_terceira" && isResidente && (
+                <div className="space-y-2">
+                  <Label>Fornecedor *</Label>
+                  <Select value={residenteSupplier} onValueChange={(v) => setNewUserEmpresaTerceira(`Residente - ${v}`)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o fornecedor" /></SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map((s: any) => (
+                        <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -345,7 +390,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 <span className="text-xs text-blue-800">Consulta de Peças será habilitada automaticamente</span>
               </div>
 
-              <Button onClick={handleSubmit} disabled={sending} className="w-full">
+              <Button onClick={handleSubmit} disabled={sending} className="w-full min-h-[44px]">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
                 Enviar Solicitação
               </Button>
@@ -376,7 +421,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                   )}
                 </div>
               </div>
-              <Button onClick={handleSubmit} disabled={sending} className="w-full">
+              <Button onClick={handleSubmit} disabled={sending} className="w-full min-h-[44px]">
                 {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
                 Enviar Relatório
               </Button>

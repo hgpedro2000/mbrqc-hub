@@ -175,6 +175,14 @@ const ApontamentoForm = () => {
     }
   }, [activeProfile, isEdit]);
 
+  // Auto-fill Local de Inspeção from URL param for incoming
+  useEffect(() => {
+    if (!isEdit && tipo === "incoming") {
+      const localParam = searchParams.get("local");
+      if (localParam) setFase(localParam);
+    }
+  }, [isEdit, tipo, searchParams]);
+
   useEffect(() => {
     if (existing) {
       setFormTipo(existing.tipo as ApontamentoTipo);

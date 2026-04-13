@@ -344,6 +344,20 @@ const Apontamentos = () => {
                       </p>
                     ) : null}
 
+                    {/* TAG badge */}
+                    {(item as any).tag_number && (
+                      <Badge className="bg-indigo-500/15 text-indigo-700 border-indigo-300 text-xs gap-1">
+                        <Tag className="w-3 h-3" />
+                        TAG: {(item as any).tag_number}
+                      </Badge>
+                    )}
+                    {(item.quantidade_ng || 0) > 0 && !(item as any).tag_number && (
+                      <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-600 bg-amber-50 gap-1">
+                        <Tag className="w-3 h-3" />
+                        Aguardando número de TAG
+                      </Badge>
+                    )}
+
                     {/* Meta row */}
                     <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                       <span>{item.responsavel}</span>

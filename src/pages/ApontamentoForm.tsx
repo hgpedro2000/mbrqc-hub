@@ -48,10 +48,12 @@ interface DefeitoDetalhe {
 const ApontamentoForm = () => {
   const navigate = useNavigate();
   const { id, tipo: paramTipo } = useParams();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
   const { profile, user } = useAuth();
   const { impersonating } = useImpersonation();
   const activeProfile = impersonating || profile;
+  const queryClient = useQueryClient();
 
   const tipo = (isEdit ? undefined : paramTipo) as ApontamentoTipo | undefined;
 

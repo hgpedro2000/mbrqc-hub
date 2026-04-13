@@ -28,49 +28,117 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
   if (!contentRef.current) return;
   const el = contentRef.current;
 
-  // Hide export button
-  const exportBtns = el.querySelectorAll("[data-export-btn]");
-  exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "hidden");
+  // Collect all <style> and <link rel="stylesheet"> from current document
+  const styleSheets = Array.from(document.styleSheets)
+    .map((sheet) => {
+      try {
+        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
+        const rules = Array.from(sheet.cssRules).map((r) => r.cssText).join("\n");
+        return `<style>${rules}</style>`;
+      } catch {
+        if (sheet.href) return `<link rel="stylesheet" href="${sheet.href}">`;
+        return "";
+      }
+    })
+    .join("\n");
 
-  // Unlock ALL scrollable/clipping ancestors up to body
-  type SavedStyle = { el: HTMLElement; maxHeight: string; overflow: string; height: string };
-  const saved: SavedStyle[] = [];
-  let node = el.parentElement;
-  while (node && node !== document.body) {
-    const cs = window.getComputedStyle(node);
-    if (cs.overflow !== "visible" || cs.maxHeight !== "none" || cs.overflowY !== "visible") {
-      saved.push({ el: node, maxHeight: node.style.maxHeight, overflow: node.style.overflow, height: node.style.height });
-      node.style.maxHeight = "none";
-      node.style.overflow  = "visible";
-      node.style.height    = "auto";
+  // Get the full HTML of the content element
+  const contentHtml = el.outerHTML;
+
+  // Build a full HTML document with dark theme forced on <html>
+  const fullHtml = `<!DOCTYPE html>
+<html class="dark" style="background:#0f1629;color-scheme:dark;">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  ${styleSheets}
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: hsl(222 47% 11%);
+      color: hsl(210 40% 98%);
+      width: 794px;
+      font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
     }
-    node = node.parentElement;
+    /* Force dark CSS variables */
+    :root {
+      --background: 222 47% 11%;
+      --foreground: 210 40% 98%;
+      --card: 217 32% 17%;
+      --card-foreground: 210 40% 98%;
+      --popover: 215 24% 26%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 212 26% 83%;
+      --primary-foreground: 228 84% 4%;
+      --secondary: 215 19% 34%;
+      --secondary-foreground: 210 40% 98%;
+      --muted: 215 16% 46%;
+      --muted-foreground: 210 40% 98%;
+      --accent: 228 84% 4%;
+      --accent-foreground: 215 20% 65%;
+      --destructive: 0 84% 60%;
+      --destructive-foreground: 0 85% 97%;
+      --border: 215 19% 34%;
+      --input: 215 19% 34%;
+      --ring: 212 26% 83%;
+      --radius: 0rem;
+    }
+    /* Hide export button in popup */
+    [data-export-btn] { display: none !important; }
+    /* Remove dialog chrome */
+    [role="dialog"] { box-shadow: none !important; border: none !important; }
+  </style>
+</head>
+<body>
+  <div style="width:794px;min-height:100vh;background:hsl(222,47%,11%);">
+    ${contentHtml}
+  </div>
+</body>
+</html>`;
+
+  // Open a hidden popup window
+  const popup = window.open("", "_blank", "width=794,height=1200,left=-9999,top=0");
+  if (!popup) {
+    alert("Por favor, permita popups para exportar o PDF.");
+    return;
   }
 
-  // Fix el own width to its natural rendered width before capture
-  const naturalW = el.scrollWidth;
-  const prevWidth = el.style.width;
-  const prevMinW  = el.style.minWidth;
-  el.style.width    = naturalW + "px";
-  el.style.minWidth = naturalW + "px";
+  popup.document.open();
+  popup.document.write(fullHtml);
+  popup.document.close();
 
   try {
-    if (typeof document !== "undefined" && "fonts" in document) {
-      await (document as any).fonts.ready;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    // Wait for fonts and images to load inside the popup
+    await new Promise<void>((resolve) => {
+      if (popup.document.readyState === "complete") {
+        resolve();
+      } else {
+        popup.addEventListener("load", () => resolve(), { once: true });
+      }
+    });
 
-    const canvas = await html2canvas(el, {
+    if ("fonts" in popup.document) {
+      await (popup.document as any).fonts.ready;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    const targetEl = popup.document.body.firstElementChild as HTMLElement;
+
+    const canvas = await html2canvas(targetEl, {
       scale: 2,
       useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: naturalW,
-      width: naturalW,
+      backgroundColor: "#0f1629",
+      windowWidth: 794,
+      width: 794,
       scrollX: 0,
       scrollY: 0,
-      x: 0,
-      y: 0,
       logging: false,
+      onclone: (clonedDoc) => {
+        clonedDoc.documentElement.classList.add("dark");
+        clonedDoc.documentElement.style.background = "hsl(222,47%,11%)";
+      },
     });
 
     const imgData = canvas.toDataURL("image/png");
@@ -86,15 +154,7 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
     const fileName = `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`;
     pdf.save(fileName);
   } finally {
-    // Restore everything
-    el.style.width    = prevWidth;
-    el.style.minWidth = prevMinW;
-    saved.forEach(s => {
-      s.el.style.maxHeight = s.maxHeight;
-      s.el.style.overflow  = s.overflow;
-      s.el.style.height    = s.height;
-    });
-    exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "");
+    popup.close();
   }
 }
 function exportToExcel(data: Record<string, any>) {

@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag } from "lucide-react";
+import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
+import { HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
@@ -106,6 +108,17 @@ const ApontamentoForm = () => {
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
   const [tagNumber, setTagNumber] = useState("");
+
+  const handleQRScan = (qrData: HyundaiQRData) => {
+    setPartNumber(qrData.partNumber);
+    if (qrData.lotNumber) setLoteInspecionado(qrData.lotNumber);
+    setValidationErrors((prev) => {
+      const next = new Set(prev);
+      next.delete("partNumber");
+      next.delete("loteInspecionado");
+      return next;
+    });
+  };
 
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({
@@ -522,6 +535,13 @@ const ApontamentoForm = () => {
               </div>
             )}
           </div>
+
+          {/* QR Scanner - mobile only, Incoming only */}
+          {isIncoming && (
+            <div className="mt-3 sm:hidden">
+              <QRScannerButton onScan={handleQRScan} />
+            </div>
+          )}
 
           {/* Fornecedor + Part Number */}
           <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">

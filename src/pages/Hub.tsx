@@ -175,7 +175,7 @@ const Hub = () => {
 
   const isMobisBrasil = !impersonating ? profile?.empresa === "mobis_brasil" : impersonating?.empresa === "mobis_brasil";
 
-  const activeCargo = impersonating?.cargo || profile?.cargo || "";
+  const activeCargo = profile?.cargo || "";
   const canRequestNewUser = ["lider", "assistente", "analista", "supervisor", "gerente"].some(
     (r) => activeCargo.toLowerCase().includes(r)
   );

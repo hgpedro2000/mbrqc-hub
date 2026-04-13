@@ -1299,6 +1299,39 @@ export type Database = {
         }
         Relationships: []
       }
+      training_history: {
+        Row: {
+          area: string
+          created_at: string
+          created_by: string | null
+          id: string
+          next_training_date: string
+          notes: string | null
+          training_date: string
+          user_id: string
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_training_date: string
+          notes?: string | null
+          training_date: string
+          user_id: string
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_training_date?: string
+          notes?: string | null
+          training_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_module_order: {
         Row: {
           id: string

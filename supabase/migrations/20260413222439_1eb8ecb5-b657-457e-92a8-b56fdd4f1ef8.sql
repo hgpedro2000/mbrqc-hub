@@ -1,0 +1,1 @@
+ALTER TABLE public.apontamentos ADD COLUMN tag_number TEXT;

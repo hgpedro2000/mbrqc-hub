@@ -361,8 +361,9 @@ const UsersTab = () => {
                   <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com (opcional)" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Senha Inicial *</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mínimo 6 caracteres" minLength={6} />
+                  <Label>Senha Inicial</Label>
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Padrão: 123456" minLength={6} />
+                  <p className="text-xs text-muted-foreground">Se vazio, senha padrão será 123456</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Perfil</Label>

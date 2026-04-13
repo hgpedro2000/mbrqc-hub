@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

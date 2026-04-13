@@ -62,6 +62,7 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
           Html5QrcodeSupportedFormats.CODE_39,
           Html5QrcodeSupportedFormats.EAN_13,
         ],
+        verbose: false,
       });
       scannerRef.current = scanner;
 

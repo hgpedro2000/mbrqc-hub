@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import html2canvas from "html2canvas";
+import { captureElementToCanvas } from "@/lib/exportPdfFromRef";
 import jsPDF from "jspdf";
 
 const AREAS = [
@@ -245,7 +245,7 @@ const MatrizVersatilidade = () => {
     try {
       await new Promise(r => setTimeout(r, 300));
       if (!qrExportRef.current) return;
-      const canvas = await html2canvas(qrExportRef.current, { backgroundColor: "#ffffff", scale: 3 });
+      const canvas = await captureElementToCanvas(qrExportRef.current, { windowWidth: 600 });
       if (fmt === "jpg") {
         const link = document.createElement("a");
         link.download = `QR-Codes-${selectedInspectors.length}.jpg`;

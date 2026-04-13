@@ -1,7 +1,6 @@
 import * as XLSX from "xlsx";
 import pptxgen from "pptxgenjs";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { exportPdfFromRef } from "@/lib/exportPdfFromRef";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet, Presentation, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -251,76 +250,9 @@ function blobToBase64(blob: Blob): Promise<string> {
 
 async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, checklistType: string, numero: string) {
   if (!contentRef.current) return;
-
-  const el = contentRef.current;
-
-  // Hide export buttons during capture
-  const exportBtns = el.querySelectorAll("[data-export-btn]");
-  exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
-
-  // Temporarily expand to full height (no scroll clipping)
-  const parent = el.closest("[class*='overflow-y-auto']") as HTMLElement | null;
-  const prevMaxH = parent?.style.maxHeight;
-  const prevOverflow = parent?.style.overflow;
-  if (parent) {
-    parent.style.maxHeight = "none";
-    parent.style.overflow = "visible";
-  }
-
-  try {
-    if (typeof document !== "undefined" && "fonts" in document) {
-      await (document as Document & { fonts: FontFaceSet }).fonts.ready;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 80));
-
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: 768,
-      scrollX: 0,
-      scrollY: -window.scrollY,
-    });
-
-    const imgData = canvas.toDataURL("image/png");
-    const imgW = canvas.width;
-    const imgH = canvas.height;
-
-    // Use A4 width but dynamic height to fit everything on ONE page
-    const pdfW = 210;
-    const margin = 8;
-    const contentW = pdfW - margin * 2;
-    const contentH = (imgH * contentW) / imgW;
-    const pdfH = contentH + margin * 2;
-
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: [pdfW, pdfH],
-    });
-
-    pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
-
-    const typeLabel = getTypeLabel(checklistType);
-    const fileName = `checklist-${typeLabel}-${numero || "export"}.pdf`;
-    
-    // Force download via anchor element (avoids mobile browsers opening PDF in same tab)
-    const blob = pdf.output("blob");
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-  } finally {
-    exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
-    if (parent) {
-      parent.style.maxHeight = prevMaxH || "";
-      parent.style.overflow = prevOverflow || "";
-    }
-  }
+  const typeLabel = getTypeLabel(checklistType);
+  const fileName = `checklist-${typeLabel}-${numero || "export"}.pdf`;
+  await exportPdfFromRef(contentRef.current, fileName);
 }
 
 export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef, catMap, defectMap }: ExportProps) => {

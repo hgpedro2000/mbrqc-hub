@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import html2canvas from "html2canvas";
+import { captureElementToCanvas } from "@/lib/exportPdfFromRef";
 import jsPDF from "jspdf";
 
 const AlertaQualidadeView = () => {
@@ -94,7 +94,7 @@ const AlertaQualidadeView = () => {
       if (cienciasRef.current && !withCiencias) {
         cienciasRef.current.style.display = "none";
       }
-      const canvas = await html2canvas(contentRef.current, { useCORS: true, scale: 2, backgroundColor: "#f8fafc" });
+      const canvas = await captureElementToCanvas(contentRef.current, { backgroundColor: "#f8fafc" });
       if (cienciasRef.current && !withCiencias) {
         cienciasRef.current.style.display = "";
       }

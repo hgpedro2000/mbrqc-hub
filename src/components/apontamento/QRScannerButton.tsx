@@ -146,8 +146,12 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
   }, [createScanner, handleDecodedText, stopScanner]);
 
-  const handlePickImage = useCallback(() => {
-    fileInputRef.current?.click();
+  const handlePickCamera = useCallback(() => {
+    cameraInputRef.current?.click();
+  }, []);
+
+  const handlePickGallery = useCallback(() => {
+    galleryInputRef.current?.click();
   }, []);
 
   const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {

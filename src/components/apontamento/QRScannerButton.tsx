@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, X, AlertTriangle, Pencil, Send, Loader2 } from "lucide-react";
@@ -52,12 +52,23 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
 
     try {
-      const scanner = new Html5Qrcode(READER_ID);
+      const scanner = new Html5Qrcode(READER_ID, {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.AZTEC,
+          Html5QrcodeSupportedFormats.PDF_417,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+        ],
+        verbose: false,
+      });
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 } },
+        { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1.0 },
         (decoded) => {
           if (hasScanned.current) return;
           hasScanned.current = true;

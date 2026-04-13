@@ -32,7 +32,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
   const [rawQR, setRawQR] = useState("");

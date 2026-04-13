@@ -255,20 +255,6 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   const fileName = `checklist-${typeLabel}-${numero || "export"}.pdf`;
   await exportPdfFromRef(contentRef.current, fileName);
 }
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
-  } finally {
-    exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
-    if (parent) {
-      parent.style.maxHeight = prevMaxH || "";
-      parent.style.overflow = prevOverflow || "";
-    }
-  }
-}
 
 export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef, catMap, defectMap }: ExportProps) => {
   const numero = data?.numero || "";

@@ -498,13 +498,19 @@ const ApontamentoForm = () => {
               <Label className={errLabelClass("turno")}>Turno *</Label>
               <Input value={turno || "—"} readOnly className="bg-muted" />
             </div>
-            {!isOem && (
+            {!isOem && !isIncoming && (
               <div className="space-y-1.5">
                 <Label className={errLabelClass("fase")}>Fase *</Label>
                 <Select value={fase} onValueChange={(v) => { setFase(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fase"); return n; }); }}>
                   <SelectTrigger className={errClass("fase")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{FASES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+            )}
+            {isIncoming && (
+              <div className="space-y-1.5">
+                <Label>Local de Inspeção</Label>
+                <Input value={fase || "—"} readOnly className="bg-muted" />
               </div>
             )}
             {isOem && (

@@ -619,6 +619,39 @@ const Apontamentos = () => {
           </DialogContent>
         </Dialog>
       )}
+      {/* Inspection Location Dialog */}
+      <Dialog open={showInspectionLocationDialog} onOpenChange={setShowInspectionLocationDialog}>
+        <DialogContent className="max-w-sm max-w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-blue-500" />Local de Inspeção</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o local onde a inspeção será realizada:</p>
+          <div className="grid grid-cols-1 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
+              onClick={() => {
+                setShowInspectionLocationDialog(false);
+                navigate("/apontamentos/novo/incoming?local=Sala do Audio");
+              }}
+            >
+              <span className="font-semibold text-base">🔊 Sala do Audio</span>
+              <span className="text-xs text-muted-foreground">Inspeção na sala de áudio</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-emerald-400 hover:bg-emerald-50"
+              onClick={() => {
+                setShowInspectionLocationDialog(false);
+                navigate("/apontamentos/novo/incoming?local=Área de Incoming");
+              }}
+            >
+              <span className="font-semibold text-base">📦 Área de Incoming</span>
+              <span className="text-xs text-muted-foreground">Inspeção na área de recebimento</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

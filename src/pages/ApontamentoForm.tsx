@@ -570,56 +570,57 @@ const ApontamentoForm = () => {
           </div>
         )}
 
-        {/* TEMPO DE INSPEÇÃO - Incoming only */}
+        {/* TEMPO + QUANTIDADES - Incoming - side by side on PC */}
         {isIncoming && (
-          <div className="form-section">
-            <h2 className="form-section-title">Tempo de Inspeção</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* TEMPO DE INSPEÇÃO */}
+            <div className="form-section">
+              <h2 className="form-section-title">Tempo de Inspeção</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Input type="time" value={horaInicio} onChange={(e) => { setHoraInicio(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaInicio"); return n; }); }} className={errClass("horaInicio")} />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("horaFim")}>Horário Final *</Label>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Input type="time" value={horaFim} onChange={(e) => { setHoraFim(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("horaFim"); return n; }); }} className={errClass("horaFim")} />
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Duração</Label>
-                <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
-                  {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                <div className="space-y-1.5">
+                  <Label>Duração</Label>
+                  <div className="flex items-center gap-2 h-10 px-3 rounded-md border bg-muted text-sm font-medium">
+                    {horaInicio && horaFim ? calcDuration(horaInicio, horaFim) : "—"}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* QUANTIDADES - Incoming */}
-        {isIncoming && (
-          <div className="form-section">
-            <h2 className="form-section-title">Quantidades</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="space-y-1.5">
-                <Label className={errLabelClass("quantidadeInspecionada")}>Quantidade Inspecionada *</Label>
-                <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+            {/* QUANTIDADES */}
+            <div className="form-section">
+              <h2 className="form-section-title">Quantidades</h2>
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="space-y-1.5">
+                  <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
+                  <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>NG *</Label>
+                  <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>OK</Label>
+                  <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Quantidade NG *</Label>
-                <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+              <div className="mt-3 sm:mt-4 space-y-1.5">
+                <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
+                <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
               </div>
-              <div className="space-y-1.5">
-                <Label>Quantidade OK</Label>
-                <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
-              </div>
-            </div>
-            <div className="mt-3 sm:mt-4 space-y-1.5">
-              <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
-              <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
             </div>
           </div>
         )}

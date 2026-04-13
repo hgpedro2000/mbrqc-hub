@@ -124,13 +124,27 @@ const ApontamentoForm = () => {
 
     // Auto-fill Projeto, Fornecedor, Part Name and Módulo from the part_numbers table
     try {
-      const { data: partData } = await supabase
+      // Try exact match first
+      let { data: partData } = await supabase
         .from("part_numbers")
         .select("part_name, project, line_module, supplier_id, suppliers(name)")
         .eq("part_number", pn)
         .eq("active", true)
         .limit(1)
         .maybeSingle();
+
+      // If no exact match, try partial match (PN without last 3 chars which are often color codes)
+      if (!partData && pn.length > 5) {
+        const pnBase = pn.slice(0, -3);
+        const { data: partialData } = await supabase
+          .from("part_numbers")
+          .select("part_name, project, line_module, supplier_id, suppliers(name)")
+          .like("part_number", `${pnBase}%`)
+          .eq("active", true)
+          .limit(1)
+          .maybeSingle();
+        partData = partialData;
+      }
 
       if (partData) {
         if (partData.part_name) setPartName(partData.part_name);

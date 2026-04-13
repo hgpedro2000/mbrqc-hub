@@ -149,7 +149,7 @@ const ApontamentoForm = () => {
         return [];
       }
       // Filter to only Mobis Brasil users for co-inspection
-      return (data || []).filter((p: any) => p.empresa !== "empresa_terceira");
+      return (data || []).filter((p: any) => p.empresa !== "empresa_terceira" && p.full_name !== "TESTER");
     },
     enabled: activeProfile?.empresa !== "empresa_terceira",
   });

@@ -31,47 +31,62 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
 
   // Hide export button
   const exportBtns = el.querySelectorAll("[data-export-btn]");
-  exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "hidden");
+  exportBtns.forEach((b) => (b as HTMLElement).style.visibility = "hidden");
 
-  // Unlock ALL scrollable/clipping ancestors up to body
-  type SavedStyle = { el: HTMLElement; maxHeight: string; overflow: string; height: string };
-  const saved: SavedStyle[] = [];
-  let node = el.parentElement;
-  while (node && node !== document.body) {
-    const cs = window.getComputedStyle(node);
-    if (cs.overflow !== "visible" || cs.maxHeight !== "none" || cs.overflowY !== "visible") {
-      saved.push({ el: node, maxHeight: node.style.maxHeight, overflow: node.style.overflow, height: node.style.height });
-      node.style.maxHeight = "none";
-      node.style.overflow  = "visible";
-      node.style.height    = "auto";
+  // Unlock overflow ancestors (Dialog has overflow-y-auto)
+  type S = { el: HTMLElement; mh: string; ov: string; ovy: string; h: string };
+  const saved: S[] = [];
+  let cur = el.parentElement;
+  while (cur && cur !== document.body) {
+    const cs = window.getComputedStyle(cur);
+    if (cs.overflow !== "visible" || cs.overflowY !== "visible" || cs.maxHeight !== "none") {
+      saved.push({ el: cur, mh: cur.style.maxHeight, ov: cur.style.overflow, ovy: cur.style.overflowY, h: cur.style.height });
+      cur.style.maxHeight = "none";
+      cur.style.overflow = "visible";
+      cur.style.overflowY = "visible";
+      cur.style.height = "auto";
     }
-    node = node.parentElement;
+    cur = cur.parentElement;
   }
 
-  // Fix el own width to its natural scroll width before capture
-  const naturalW = el.scrollWidth;
-  const prevWidth = el.style.width;
-  const prevMinW  = el.style.minWidth;
-  el.style.width    = naturalW + "px";
-  el.style.minWidth = naturalW + "px";
+  // Fix el width
+  const prevW = el.style.width;
+  const prevMW = el.style.minWidth;
+  el.style.width = "768px";
+  el.style.minWidth = "768px";
 
   try {
-    if (typeof document !== "undefined" && "fonts" in document) {
-      await (document as any).fonts.ready;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 150));
+    // Wait for Inter font to be ready
+    await document.fonts.load("400 14px Inter");
+    await document.fonts.load("500 14px Inter");
+    await document.fonts.load("600 14px Inter");
+    await document.fonts.load("700 14px Inter");
+    await document.fonts.ready;
+    await new Promise((r) => setTimeout(r, 300));
 
     const canvas = await html2canvas(el, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
-      windowWidth: naturalW,
-      width: naturalW,
+      windowWidth: 768,
+      width: 768,
       scrollX: 0,
       scrollY: 0,
       x: 0,
       y: 0,
       logging: false,
+      onclone: (_doc, clonedEl) => {
+        // Fix letter-spacing: html2canvas at scale:2 doubles spacing visually.
+        // tracking-wider = 0.05em, tracking-widest = 0.1em — zero both out.
+        clonedEl.querySelectorAll("*").forEach((n) => {
+          const h = n as HTMLElement;
+          const ls = window.getComputedStyle(n).letterSpacing;
+          // Only zero out elements that actually have tracking applied (> 0px)
+          if (ls && ls !== "normal" && parseFloat(ls) > 0) {
+            h.style.letterSpacing = "0px";
+          }
+        });
+      },
     });
 
     const imgData = canvas.toDataURL("image/png");
@@ -83,21 +98,17 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
 
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, pdfH] });
     pdf.addImage(imgData, "PNG", margin, margin, contentW, contentH);
-
-    const fileName = `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`;
-    pdf.save(fileName);
+    pdf.save(`apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "export"}.pdf`);
   } finally {
-    // Restore everything
-    el.style.width    = prevWidth;
-    el.style.minWidth = prevMinW;
-
+    el.style.width = prevW;
+    el.style.minWidth = prevMW;
     saved.forEach(s => {
-      s.el.style.maxHeight = s.maxHeight;
-      s.el.style.overflow  = s.overflow;
-      s.el.style.height    = s.height;
+      s.el.style.maxHeight = s.mh;
+      s.el.style.overflow = s.ov;
+      s.el.style.overflowY = s.ovy;
+      s.el.style.height = s.h;
     });
-
-    exportBtns.forEach((btn) => (btn as HTMLElement).style.visibility = "");
+    exportBtns.forEach((b) => (b as HTMLElement).style.visibility = "");
   }
 }
 

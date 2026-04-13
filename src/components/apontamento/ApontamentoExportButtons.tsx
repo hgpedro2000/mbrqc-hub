@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+import domtoimage from "dom-to-image-more";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download, FileText, FileSpreadsheet } from "lucide-react";
@@ -29,11 +29,9 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
   if (!contentRef.current) return;
   const el = contentRef.current;
 
-  // Hide export button
   const exportBtns = el.querySelectorAll("[data-export-btn]");
   exportBtns.forEach((b) => (b as HTMLElement).style.visibility = "hidden");
 
-  // Unlock overflow ancestors (Dialog has overflow-y-auto)
   type S = { el: HTMLElement; mh: string; ov: string; ovy: string; h: string };
   const saved: S[] = [];
   let cur = el.parentElement;
@@ -49,51 +47,35 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
     cur = cur.parentElement;
   }
 
-  // Fix el width
   const prevW = el.style.width;
   const prevMW = el.style.minWidth;
   el.style.width = "768px";
   el.style.minWidth = "768px";
 
   try {
-    // Wait for Inter font to be ready
-    await document.fonts.load("400 14px Inter");
-    await document.fonts.load("500 14px Inter");
-    await document.fonts.load("600 14px Inter");
-    await document.fonts.load("700 14px Inter");
     await document.fonts.ready;
     await new Promise((r) => setTimeout(r, 300));
 
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      windowWidth: 768,
+    const blob = await domtoimage.toBlob(el, {
       width: 768,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0,
-      logging: false,
-      onclone: (_doc, clonedEl) => {
-        // Fix letter-spacing: html2canvas at scale:2 doubles spacing visually.
-        // tracking-wider = 0.05em, tracking-widest = 0.1em — zero both out.
-        clonedEl.querySelectorAll("*").forEach((n) => {
-          const h = n as HTMLElement;
-          const ls = window.getComputedStyle(n).letterSpacing;
-          // Only zero out elements that actually have tracking applied (> 0px)
-          if (ls && ls !== "normal" && parseFloat(ls) > 0) {
-            h.style.letterSpacing = "0px";
-          }
-        });
-      },
+      height: el.scrollHeight,
+      style: { transform: "scale(1)", transformOrigin: "top left" },
+      bgcolor: "#ffffff",
+      quality: 1,
     });
 
-    const imgData = canvas.toDataURL("image/png");
+    const imgData = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+
+    const imgW = 768;
+    const imgH = el.scrollHeight;
     const pdfW = 210;
     const margin = 8;
     const contentW = pdfW - margin * 2;
-    const contentH = (canvas.height * contentW) / canvas.width;
+    const contentH = (imgH * contentW) / imgW;
     const pdfH = contentH + margin * 2;
 
     const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, pdfH] });

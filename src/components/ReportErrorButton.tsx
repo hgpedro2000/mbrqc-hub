@@ -145,8 +145,9 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
       {/* Menu popup */}
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="icon" className="text-destructive border-destructive/30 hover:bg-destructive/10 relative h-8 w-8">
+          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 relative h-8 w-8 md:w-auto md:px-3 gap-1.5">
             <AlertTriangle className="w-4 h-4" />
+            <span className="hidden md:inline text-xs">Help Desk</span>
             {hasNewResolved && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
             )}

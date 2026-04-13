@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus } from "lucide-react";
+import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { compressImage } from "@/lib/compressImage";
@@ -15,6 +15,7 @@ import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 
 interface Props {
   moduleName: string;
+  showNewUserRequest?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
@@ -23,8 +24,9 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
   resolvido: { label: "Resolvido", icon: CheckCircle, color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
 };
 
-const ReportErrorButton = ({ moduleName }: Props) => {
+const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
   const { user, profile } = useAuth();
+  const [activeModule, setActiveModule] = useState(moduleName);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -120,7 +122,7 @@ const ReportErrorButton = ({ moduleName }: Props) => {
         id: reportId,
         user_id: user?.id,
         user_name: profile?.full_name || "",
-        module: moduleName,
+        module: activeModule,
         description: description.trim(),
         photos: photoUrls,
       } as any);
@@ -143,10 +145,8 @@ const ReportErrorButton = ({ moduleName }: Props) => {
       {/* Menu popup */}
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs relative">
-            <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-            <span className="hidden sm:inline">Reportar Erro</span>
-            <span className="sm:hidden">Erro</span>
+          <Button variant="outline" size="icon" className="text-destructive border-destructive/30 hover:bg-destructive/10 relative h-8 w-8">
+            <AlertTriangle className="w-4 h-4" />
             {hasNewResolved && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
             )}
@@ -157,7 +157,7 @@ const ReportErrorButton = ({ moduleName }: Props) => {
             <DialogTitle className="text-center">Help Desk</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
-            <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setReportOpen(true); }}>
+            <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setActiveModule(moduleName); setReportOpen(true); }}>
               <AlertTriangle className="w-5 h-5 text-destructive" />
               <span className="text-sm font-medium">Reportar Erro</span>
             </Button>
@@ -168,6 +168,12 @@ const ReportErrorButton = ({ moduleName }: Props) => {
                 <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{resolvedCount}</Badge>
               )}
             </Button>
+            {showNewUserRequest && (
+              <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setActiveModule("Novo Usuário"); setReportOpen(true); }}>
+                <UserPlus className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-medium">Solicitar Novo Usuário</span>
+              </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -177,8 +183,11 @@ const ReportErrorButton = ({ moduleName }: Props) => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              Reportar Erro — {moduleName}
+              {activeModule === "Novo Usuário" ? (
+                <><UserPlus className="w-5 h-5 text-blue-600" />Solicitar Novo Usuário</>
+              ) : (
+                <><AlertTriangle className="w-5 h-5 text-destructive" />Reportar Erro — {activeModule}</>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

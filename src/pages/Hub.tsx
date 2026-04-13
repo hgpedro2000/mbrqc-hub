@@ -174,6 +174,11 @@ const Hub = () => {
   };
 
   const isMobisBrasil = !impersonating ? profile?.empresa === "mobis_brasil" : impersonating?.empresa === "mobis_brasil";
+
+  const activeCargo = profile?.cargo || "";
+  const canRequestNewUser = ["lider", "assistente", "analista", "supervisor", "gerente"].some(
+    (r) => activeCargo.toLowerCase().includes(r)
+  );
   
   return (
     <div className="min-h-screen bg-background">
@@ -182,11 +187,11 @@ const Hub = () => {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
               <img src={logo} alt="Hyundai Mobis" className="h-8 md:h-10 object-contain bg-white rounded-md px-2 py-1" />
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Quality Hub</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Quality Tools</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
-              <ReportErrorButton moduleName="Hub" />
+              <ReportErrorButton moduleName="Hub" showNewUserRequest={canRequestNewUser} />
               {isMobisBrasil && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <QrCode className="w-4 h-4 md:mr-2" />

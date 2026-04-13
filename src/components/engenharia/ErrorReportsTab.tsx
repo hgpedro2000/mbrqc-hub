@@ -30,6 +30,7 @@ const moduleColors: Record<string, string> = {
   "Alerta de Qualidade": "bg-red-500/15 text-red-700 border-red-300",
   "Consumíveis": "bg-teal-500/15 text-teal-700 border-teal-300",
   "Consulta de Peças": "bg-sky-500/15 text-sky-700 border-sky-300",
+  "Novo Usuário": "bg-blue-500/15 text-blue-700 border-blue-300",
 };
 
 const moduleOptions = [
@@ -42,6 +43,7 @@ const moduleOptions = [
   { value: "Alerta de Qualidade", label: "Alerta de Qualidade" },
   { value: "Consumíveis", label: "Consumíveis" },
   { value: "Consulta de Peças", label: "Consulta de Peças" },
+  { value: "Novo Usuário", label: "Novo Usuário" },
 ];
 
 const ErrorReportsTab = () => {

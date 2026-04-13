@@ -122,7 +122,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
         id: reportId,
         user_id: user?.id,
         user_name: profile?.full_name || "",
-        module: moduleName,
+        module: activeModule,
         description: description.trim(),
         photos: photoUrls,
       } as any);
@@ -183,8 +183,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
-              Reportar Erro — {moduleName}
+              {activeModule === "Novo Usuário" ? (
+                <><UserPlus className="w-5 h-5 text-blue-600" />Solicitar Novo Usuário</>
+              ) : (
+                <><AlertTriangle className="w-5 h-5 text-destructive" />Reportar Erro — {activeModule}</>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

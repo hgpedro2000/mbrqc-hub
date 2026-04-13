@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users, GripVertical,
@@ -118,8 +118,7 @@ const Hub = () => {
   const showEngineering = isAdmin;
   const visibleModuleIds = new Set(enabledModules);
   
-  // Sort modules based on saved order
-  const sortedModules = (() => {
+  const sortedModules = useMemo(() => {
     const visible = allModules.filter((mod) => visibleModuleIds.has(mod.id as any));
     if (!savedOrder || savedOrder.length === 0) return visible;
     const orderMap = new Map(savedOrder.map((id, idx) => [id, idx]));
@@ -128,13 +127,13 @@ const Hub = () => {
       const bIdx = orderMap.get(b.id) ?? 999;
       return aIdx - bIdx;
     });
-  })();
+  }, [savedOrder, enabledModules]);
 
   const [orderedModules, setOrderedModules] = useState(sortedModules);
 
   useEffect(() => {
     setOrderedModules(sortedModules);
-  }, [savedOrder, enabledModules]);
+  }, [sortedModules]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

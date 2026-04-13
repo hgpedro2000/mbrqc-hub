@@ -235,7 +235,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={Package} title="Dados da Inspeção" />
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          <DataField label="Fase" value={fmt("fase", d?.fase)} />
+          <DataField label="Local de Inspeção" value={fmt("fase", d?.fase)} />
           <DataField label="Qtd. Inspecionada" value={fmt("", d?.quantidade_inspecionada)} />
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />

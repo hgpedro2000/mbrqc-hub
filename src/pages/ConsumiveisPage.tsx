@@ -381,14 +381,19 @@ const InventarioRequisicoes = () => {
 
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
             <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
           </Button>
           {isAdmin && (
-            <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
-              <Plus className="w-4 h-4" /> Registrar Consumível
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
+                <RotateCcw className="w-4 h-4" /> Atualizar Estoque
+              </Button>
+              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
+                <Plus className="w-4 h-4" /> Registrar Consumível
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -470,7 +470,7 @@ const ApontamentoForm = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl overflow-x-hidden">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl overflow-x-hidden overflow-y-auto">
         {/* IDENTIFICAÇÃO */}
         <div className="form-section">
           <h2 className="form-section-title">Identificação</h2>

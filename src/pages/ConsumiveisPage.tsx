@@ -471,11 +471,11 @@ const InventarioRequisicoes = () => {
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm">{i.name}</p>
                         <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }}><History className="w-3.5 h-3.5" /></Button>
                           {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>}
                           {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
                         </div>
-                      )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>Unid: <strong>{i.unit}</strong></span>

@@ -32,7 +32,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
   const [rawQR, setRawQR] = useState("");
@@ -103,8 +104,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
           facingMode: { exact: "environment" },
         },
         {
-          fps: 20,
-          qrbox: { width: 320, height: 320 },
+          fps: 25,
+          qrbox: { width: 350, height: 350 },
           aspectRatio: 1,
           disableFlip: true,
         },
@@ -125,8 +126,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 20,
-            qrbox: { width: 320, height: 320 },
+            fps: 25,
+            qrbox: { width: 350, height: 350 },
             aspectRatio: 1,
             disableFlip: true,
           },
@@ -145,8 +146,12 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
   }, [createScanner, handleDecodedText, stopScanner]);
 
-  const handlePickImage = useCallback(() => {
-    fileInputRef.current?.click();
+  const handlePickCamera = useCallback(() => {
+    cameraInputRef.current?.click();
+  }, []);
+
+  const handlePickGallery = useCallback(() => {
+    galleryInputRef.current?.click();
   }, []);
 
   const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -234,22 +239,29 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
             </p>
 
             <div className="flex flex-col gap-2">
-              <Button type="button" onClick={handlePickImage} variant="secondary" className="w-full gap-2 min-h-[44px]">
+              <Button type="button" onClick={handlePickCamera} variant="secondary" className="w-full gap-2 min-h-[44px]">
                 {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 {isProcessingImage ? "Lendo foto..." : "Tirar foto da etiqueta"}
               </Button>
 
-              <Button type="button" onClick={handlePickImage} variant="outline" className="w-full gap-2 min-h-[44px]">
+              <Button type="button" onClick={handlePickGallery} variant="outline" className="w-full gap-2 min-h-[44px]">
                 <ImagePlus className="w-4 h-4" />
                 Escolher foto da galeria
               </Button>
             </div>
 
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
+              className="hidden"
+              onChange={handleImageSelected}
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
               className="hidden"
               onChange={handleImageSelected}
             />

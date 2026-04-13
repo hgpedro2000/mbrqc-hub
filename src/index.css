@@ -193,3 +193,7 @@
     @apply px-3;
   }
 }
+
+.pdf-no-tracking {
+  letter-spacing: 0 !important;
+}

@@ -40,13 +40,13 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
       <Icon className="w-4 h-4 text-primary" />
     </div>
-    <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">{title}</h4>
+    <h4 className="text-sm font-bold text-foreground uppercase tracking-wider pdf-no-tracking">{title}</h4>
   </div>
 );
 
 const DataField = ({ label, value, fullWidth }: { label: string; value: string; fullWidth?: boolean }) => (
   <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : ""}`}>
-    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{label}</p>
+    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">{label}</p>
     <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{value}</p>
   </div>
 );
@@ -167,7 +167,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {tempoDisplay && <DataField label="Tempo de Inspeção" value={tempoDisplay} />}
           {coInspetores.length > 0 && (
             <div className="space-y-0.5 col-span-full">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Co-Inspetores</p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Co-Inspetores</p>
               <div className="flex flex-wrap gap-1.5">
                 {coInspetores.map((name: string, idx: number) => (
                   <Badge key={idx} variant="secondary" className="text-xs">{name}</Badge>
@@ -198,7 +198,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           {/* If NG > 0 and has multiple failure modes, show ONLY the individual detail */}
           {hasNg && hasMultipleFailureModes ? (
             <div className="space-y-3">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Detalhamento por Modo de Falha</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Detalhamento por Modo de Falha</p>
               {segundoDefeitos.map((def: any, idx: number) => (
                 <div key={idx} className="border border-border rounded-lg p-3 bg-muted/20 space-y-1">
                   <div className="flex items-center gap-2">
@@ -367,7 +367,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                         {typeLabels[tipo] || tipo}
                       </Badge>
                       {d.numero && (
-                        <span className="inline-flex h-[29px] px-3 items-center justify-center font-mono text-sm font-bold text-primary leading-none shrink-0 bg-green-50 rounded-full border border-green-200">#{d.numero}</span>
+                        <span className="inline-flex h-[29px] px-3 items-center justify-center font-mono text-sm font-bold text-primary leading-none shrink-0 bg-green-50 rounded-full border border-green-200 pdf-no-tracking">#{d.numero}</span>
                       )}
                       <Badge variant="outline" className={`h-[29px] px-4 py-0 inline-flex items-center justify-center leading-none text-[11px] shrink-0 ${d.status === "draft" ? "bg-yellow-100 border-yellow-300 text-yellow-800" : "bg-emerald-100 border-emerald-300 text-emerald-800"}`}>
                         {d.status === "draft" ? "Rascunho" : "Finalizado"}

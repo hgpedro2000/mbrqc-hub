@@ -147,17 +147,7 @@ const ApontamentoForm = () => {
         }
       }
 
-      // Fallback: partial match (PN without last 3 chars — color codes)
-      if (!partData && pn.length > 5) {
-        const pnBase = pnNormalized.slice(0, -3);
-        const { data: allActive } = await supabase
-          .from("part_numbers")
-          .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
-          .eq("active", true);
-        if (allActive) {
-          partData = allActive.find((p) => p.part_number.replace(/-/g, "").startsWith(pnBase)) || null;
-        }
-      }
+      // Color suffix matters — no partial match fallback
 
       if (partData) {
         if (partData.part_name) setPartName(partData.part_name);

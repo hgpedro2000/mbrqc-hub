@@ -52,12 +52,22 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
 
     try {
-      const scanner = new Html5Qrcode(READER_ID);
+      const scanner = new Html5Qrcode(READER_ID, {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.AZTEC,
+          Html5QrcodeSupportedFormats.PDF_417,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+        ],
+      });
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 240, height: 240 } },
+        { fps: 15, qrbox: { width: 280, height: 280 }, aspectRatio: 1.0 },
         (decoded) => {
           if (hasScanned.current) return;
           hasScanned.current = true;

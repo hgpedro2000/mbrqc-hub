@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2, Paperclip, Upload, Trash2, FileText, Eye } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Users, Search, QrCode, CalendarIcon, AlertTriangle, Download, ShieldCheck, Loader2, Paperclip, Upload, Trash2, FileText, Eye, Calendar as CalendarIconSolid } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -35,7 +36,6 @@ const AREAS = [
   { key: "oem", label: "OEM", color: "bg-slate-700" },
 ];
 
-// Renamed from "Inspeção de Qualidade" to "Noções de Qualidade"
 const AREA_DISPLAY_LABELS: Record<string, string> = {
   inspecao_peca: "Noções de Qualidade",
 };
@@ -69,6 +69,9 @@ const MatrizVersatilidade = () => {
   const [qrDialog, setQrDialog] = useState<any>(null);
   const [attachDialog, setAttachDialog] = useState<{ userId: string; area: string } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [trainingDialog, setTrainingDialog] = useState(false);
+  const [exportingTraining, setExportingTraining] = useState(false);
+  const trainingRef = useRef<HTMLDivElement>(null);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-matriz", user?.id],
@@ -80,7 +83,6 @@ const MatrizVersatilidade = () => {
     enabled: !!user?.id,
   });
 
-  // Fetch authorized editors
   const { data: matrizEditors = [] } = useQuery({
     queryKey: ["matriz-editors"],
     queryFn: async () => {
@@ -92,9 +94,8 @@ const MatrizVersatilidade = () => {
 
   const isAuthorizedEditor = isAdmin || matrizEditors.some((e: any) => e.user_id === user?.id);
   const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
-  // Can edit: admin, authorized editor, or leader
   const canEdit = isAuthorizedEditor || isLider;
-  // Only ADM and authorized editors can see/edit flags
+  // CHANGE 1: Only admin (isAdmin) and authorized editors can interact with checkboxes
   const canSeeFlags = isAuthorizedEditor;
 
   const { data: inspectors = [] } = useQuery({
@@ -112,7 +113,6 @@ const MatrizVersatilidade = () => {
     },
   });
 
-  // All active profiles for editor selection
   const { data: allProfiles = [] } = useQuery({
     queryKey: ["all-profiles-for-editors"],
     queryFn: async () => {
@@ -168,13 +168,37 @@ const MatrizVersatilidade = () => {
     if (!qual.next_evaluation_date) return "sem_data";
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const next = new Date(qual.next_evaluation_date + "T12:00:00");
-    return today > next ? "vencido" : "em_dia";
+    const diff = (next.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
+    if (today > next) return "vencido";
+    if (diff <= 30) return "a_vencer";
+    return "em_dia";
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "vencido": return "Vencido";
+      case "a_vencer": return "A vencer";
+      case "em_dia": return "Em dia";
+      default: return "—";
+    }
+  };
+
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case "vencido": return "bg-red-100 text-red-700 font-bold";
+      case "a_vencer": return "bg-amber-100 text-amber-700 font-semibold";
+      case "em_dia": return "bg-emerald-100 text-emerald-700";
+      default: return "bg-muted text-muted-foreground";
+    }
   };
 
   const getOverallStatus = (userId: string) => {
     const userQuals = qualifications.filter((q: any) => q.user_id === userId && q.habilitado);
     if (userQuals.length === 0) return "na";
-    return userQuals.some((q: any) => getTrainingStatus(q) === "vencido") ? "atencao" : "apto";
+    const statuses = userQuals.map((q: any) => getTrainingStatus(q));
+    if (statuses.includes("vencido")) return "atencao";
+    if (statuses.includes("a_vencer")) return "atencao";
+    return "apto";
   };
 
   const toggleHabilitado = async (userId: string, area: string) => {
@@ -194,9 +218,20 @@ const MatrizVersatilidade = () => {
     setEditDates({ lastDate: qual?.last_evaluation_date || "", nextDate: qual?.next_evaluation_date || "" });
   };
 
+  // CHANGE 4: Validate dates before saving
   const saveDates = async () => {
     if (!editDialog) return;
     const { userId, area } = editDialog;
+
+    // Check if setting to Apto requires dates on primary module
+    if (area === "inspecao_peca") {
+      const qual = getQual(userId, area);
+      if (qual?.habilitado && (!editDates.lastDate || !editDates.nextDate)) {
+        toast.error("Não é possível definir como Apto sem datas de avaliação.");
+        return;
+      }
+    }
+
     const existing = getQual(userId, area);
     const updateData = { last_evaluation_date: editDates.lastDate || null, next_evaluation_date: editDates.nextDate || null };
     if (existing) {
@@ -207,6 +242,25 @@ const MatrizVersatilidade = () => {
     qc.invalidateQueries({ queryKey: ["inspector-qualifications"] });
     setEditDialog(null);
     toast.success("Datas atualizadas");
+  };
+
+  // CHANGE 4: validate when toggling habilitado on primary module
+  const handleToggleHabilitado = async (userId: string, area: string) => {
+    if (!canEdit) return;
+    const existing = getQual(userId, area);
+    const willBeEnabled = !existing?.habilitado;
+
+    // If enabling inspecao_peca, check dates
+    if (willBeEnabled && area === "inspecao_peca") {
+      if (!existing?.last_evaluation_date || !existing?.next_evaluation_date) {
+        // Open edit dates dialog instead
+        openEditDates(userId, area);
+        toast.info("Preencha as datas de avaliação para habilitar Noções de Qualidade.");
+        return;
+      }
+    }
+
+    await toggleHabilitado(userId, area);
   };
 
   const filtered = useMemo(() => {
@@ -220,6 +274,26 @@ const MatrizVersatilidade = () => {
   }, [inspectors, searchTerm, turnoFilter]);
 
   const expiredInspectors = useMemo(() => inspectors.filter((ins: any) => getOverallStatus(ins.id) === "atencao"), [inspectors, qualifications]);
+
+  // CHANGE 5: Training schedule data
+  const trainingScheduleData = useMemo(() => {
+    const result: Record<string, { area: any; inspectors: any[] }> = {};
+    for (const area of AREAS) {
+      const insWithIssues: any[] = [];
+      for (const ins of inspectors) {
+        const qual = getQual(ins.id, area.key);
+        if (!qual?.habilitado) continue;
+        const status = getTrainingStatus(qual);
+        if (status === "vencido" || status === "a_vencer") {
+          insWithIssues.push({ ...ins, qual, status });
+        }
+      }
+      if (insWithIssues.length > 0) {
+        result[area.key] = { area, inspectors: insWithIssues };
+      }
+    }
+    return result;
+  }, [inspectors, qualifications]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -268,8 +342,30 @@ const MatrizVersatilidade = () => {
     }
   };
 
+  // CHANGE 5: Export training schedule PDF
+  const exportTrainingPdf = async () => {
+    if (!trainingRef.current) return;
+    setExportingTraining(true);
+    try {
+      await new Promise(r => setTimeout(r, 300));
+      const canvas = await captureElementToCanvas(trainingRef.current, { windowWidth: 800 });
+      const imgData = canvas.toDataURL("image/png");
+      const ratio = canvas.height / canvas.width;
+      const pdfW = 210;
+      const pdfH = pdfW * ratio;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [pdfW, Math.max(pdfH + 20, 100)] });
+      pdf.addImage(imgData, "PNG", 5, 5, pdfW - 10, (pdfW - 10) * ratio);
+      pdf.save(`Agenda-Treinamentos-${format(new Date(), "yyyy-MM-dd")}.pdf`);
+      toast.success("PDF exportado");
+    } catch {
+      toast.error("Erro ao exportar PDF");
+    } finally {
+      setExportingTraining(false);
+    }
+  };
+
   const editorUserIds = new Set(matrizEditors.map((e: any) => e.user_id));
-  
+
   const toggleEditor = async (userId: string) => {
     setSavingEditors(true);
     try {
@@ -296,8 +392,7 @@ const MatrizVersatilidade = () => {
 
   const parseDate = (s: string) => s ? new Date(s + "T12:00:00") : undefined;
 
-  // Attachment helpers
-  const getAttachments = (userId: string, area: string) => 
+  const getAttachments = (userId: string, area: string) =>
     attachments.filter((a: any) => a.user_id === userId && a.area === area);
 
   const handleAttachUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -339,288 +434,113 @@ const MatrizVersatilidade = () => {
     window.open(data.publicUrl, "_blank");
   };
 
-  // QR Code dialog - uses inspector's data, NOT logged-in user
   const openQrDialog = (ins: any) => {
     setQrDialog(ins);
   };
 
+  const fmtDate = (d: string | null | undefined) =>
+    d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="gradient-header">
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
-                <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Hub</span>
-              </Button>
-              <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
-            </div>
-            <div className="flex items-center gap-1">
-              {isAdmin && (
-                <Button variant="ghost" size="sm" onClick={() => setEditorDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground gap-1 text-xs px-2">
-                  <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Autorizar Editor</span>
+    <TooltipProvider delayDuration={200}>
+      <div className="min-h-screen bg-background">
+        <header className="gradient-header">
+          <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                  <ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Hub</span>
                 </Button>
-              )}
-              <ReportErrorButton moduleName="Matriz de Versatilidade" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 mt-3">
-            <Users className="w-6 h-6" />
-            <div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">Matriz de Versatilidade</h1>
-              <p className="text-primary-foreground/70 text-xs">Habilitações e treinamentos dos inspetores</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
-        {canEdit && expiredInspectors.length > 0 && (
-          <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertTriangle className="w-4 h-4 text-destructive" />
-              <span className="text-sm font-semibold text-destructive">Treinamentos Vencidos</span>
-            </div>
-            <p className="text-xs text-destructive/80">
-              {expiredInspectors.map((i: any) => i.full_name).join(", ")} — Verifique a matriz destes inspetores.
-            </p>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome ou número..." className="pl-9 h-9" />
-          </div>
-          <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-full sm:w-40 h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os turnos</SelectItem>
-              <SelectItem value="1T">1T</SelectItem>
-              <SelectItem value="2T">2T</SelectItem>
-              <SelectItem value="3T">3T</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Bulk QR export bar */}
-        {selectedIds.size > 0 && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-accent/30 border border-accent rounded-lg p-3">
-            <span className="text-sm font-medium">{selectedIds.size} inspetor(es) selecionado(s)</span>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("jpg")} disabled={exportingQrs} className="gap-1 text-xs">
-                <Download className="w-3 h-3" /> JPG
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("pdf")} disabled={exportingQrs} className="gap-1 text-xs">
-                <Download className="w-3 h-3" /> PDF
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-xs">
-                Limpar
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Mobile card layout */}
-        <div className="sm:hidden space-y-3">
-          {filtered.map((ins: any) => {
-            const overall = getOverallStatus(ins.id);
-            return (
-              <div key={ins.id} className="form-section p-3 space-y-2 overflow-hidden">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4 shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{ins.full_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{ins.cargo || "—"} • {ins.turno || "—"}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openQrDialog(ins)}><QrCode className="w-3 h-3" /></Button>
-                    {overall === "apto" ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
-                    ) : overall === "atencao" ? (
-                      <Badge className="bg-red-500/10 text-red-700 border-red-300 text-[9px] px-1.5 animate-pulse">Atenção</Badge>
-                    ) : (
-                      <span className="text-muted-foreground text-[9px]">—</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Show flags only for authorized editors */}
-                {canSeeFlags && (
-                  <div className="grid grid-cols-3 gap-1">
-                    {AREAS.map(area => {
-                      const qual = getQual(ins.id, area.key);
-                      const isHab = qual?.habilitado;
-                      const status = getTrainingStatus(qual);
-                      return (
-                        <div key={area.key} className="flex items-center gap-1 text-[10px]">
-                          <Checkbox
-                            checked={isHab || false}
-                            onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
-                            disabled={!canEdit}
-                            className="h-3.5 w-3.5"
-                          />
-                          <button
-                            onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
-                            className={cn(
-                              "truncate",
-                              isHab && status === "vencido" ? "text-red-700 font-bold" :
-                              isHab && status === "em_dia" ? "text-emerald-700" :
-                              "text-muted-foreground"
-                            )}
-                          >
-                            {getAreaLabel(area.key, area.label)}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Always show: dates, status, attachments */}
-                <div className="space-y-1 text-[10px]">
-                  {AREAS.map(area => {
-                    const qual = getQual(ins.id, area.key);
-                    if (!qual?.habilitado) return null;
-                    const status = getTrainingStatus(qual);
-                    const atts = getAttachments(ins.id, area.key);
-                    return (
-                      <div key={area.key} className="bg-muted/30 rounded px-2 py-1.5 space-y-0.5">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className={cn("font-medium truncate flex-1", area.color.replace("bg-", "text-").replace("700", "700"))}>{getAreaLabel(area.key, area.label)}</span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className={cn(
-                              "px-1 py-0.5 rounded text-[9px] font-semibold",
-                              status === "vencido" ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"
-                            )}>
-                              {status === "vencido" ? "Vencido" : "Em dia"}
-                            </span>
-                            {atts.length > 0 && (
-                              <button onClick={() => viewAttachment(atts[0])} className="text-blue-600"><Paperclip className="w-3 h-3" /></button>
-                            )}
-                            {canSeeFlags && (
-                              <button onClick={() => setAttachDialog({ userId: ins.id, area: area.key })} className="text-muted-foreground hover:text-foreground">
-                                <Upload className="w-3 h-3" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-3 text-[9px] text-muted-foreground">
-                          <span>Últ: {qual.last_evaluation_date ? new Date(qual.last_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</span>
-                          <span>Próx: {qual.next_evaluation_date ? new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
               </div>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="form-section text-center py-8">
-              <p className="text-muted-foreground text-sm">Nenhum inspetor encontrado</p>
+              <div className="flex items-center gap-1">
+                {/* CHANGE 5: Training Schedule button - only for editors */}
+                {canSeeFlags && (
+                  <Button variant="ghost" size="sm" onClick={() => setTrainingDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground gap-1 text-xs px-2">
+                    <CalendarIcon className="w-4 h-4" /> <span className="hidden sm:inline">Agenda de Treinamento</span>
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" size="sm" onClick={() => setEditorDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground gap-1 text-xs px-2">
+                    <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Autorizar Editor</span>
+                  </Button>
+                )}
+                <ReportErrorButton moduleName="Matriz de Versatilidade" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2 mt-3">
+              <Users className="w-6 h-6" />
+              <div>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-heading font-bold">Matriz de Versatilidade</h1>
+                <p className="text-primary-foreground/70 text-xs">Habilitações e treinamentos dos inspetores</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4">
+          {canEdit && expiredInspectors.length > 0 && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-1">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
+                <span className="text-sm font-semibold text-destructive">Treinamentos Vencidos</span>
+              </div>
+              <p className="text-xs text-destructive/80">
+                {expiredInspectors.map((i: any) => i.full_name).join(", ")} — Verifique a matriz destes inspetores.
+              </p>
             </div>
           )}
-        </div>
 
-        {/* Desktop table */}
-        <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
-          <table className="w-full text-xs border-collapse min-w-[1100px]">
-            <thead>
-              <tr className="border-b-2 border-border">
-                <th className="py-2 px-1 w-8 sticky left-0 bg-background z-10">
-                  <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
-                </th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-16 sticky left-8 bg-background z-10">INSP-ID</th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-8 sticky left-24 bg-background z-10">QR</th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[120px] sticky left-32 bg-background z-10">Nome</th>
-                <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-20">Cargo</th>
-                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Turno</th>
-                {canSeeFlags && AREAS.map(a => (
-                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-20 rounded-t", a.color)}>
-                    <span className="block text-[9px] leading-tight">{getAreaLabel(a.key, a.label)}</span>
-                  </th>
-                ))}
-                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-14">Últ. Aval.</th>
-                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-14">Próx. Aval.</th>
-                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-16">Status</th>
-                <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Anexo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((ins: any) => {
-                const overall = getOverallStatus(ins.id);
-                // Get latest dates across all areas
-                const enabledQuals = qualifications.filter((q: any) => q.user_id === ins.id && q.habilitado);
-                const latestLast = enabledQuals.reduce((max: string, q: any) => q.last_evaluation_date && q.last_evaluation_date > max ? q.last_evaluation_date : max, "");
-                const earliestNext = enabledQuals.reduce((min: string, q: any) => {
-                  if (!q.next_evaluation_date) return min;
-                  if (!min) return q.next_evaluation_date;
-                  return q.next_evaluation_date < min ? q.next_evaluation_date : min;
-                }, "");
-                const totalAtts = AREAS.reduce((sum, a) => sum + getAttachments(ins.id, a.key).length, 0);
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome ou número..." className="pl-9 h-9" />
+            </div>
+            <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-full sm:w-40 h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os turnos</SelectItem>
+                <SelectItem value="1T">1T</SelectItem>
+                <SelectItem value="2T">2T</SelectItem>
+                <SelectItem value="3T">3T</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-                return (
-                  <tr key={ins.id} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="py-2 px-1 text-center sticky left-0 bg-background">
-                      <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
-                    </td>
-                    <td className="py-2 px-1.5 font-mono text-[10px] font-bold sticky left-8 bg-background">{ins.qr_code_id || "—"}</td>
-                    <td className="py-2 px-1.5 sticky left-24 bg-background">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openQrDialog(ins)} title="QR Code">
-                        <QrCode className="w-3 h-3" />
-                      </Button>
-                    </td>
-                    <td className="py-2 px-1.5 font-medium text-foreground sticky left-32 bg-background">{ins.full_name}</td>
-                    <td className="py-2 px-1.5 text-muted-foreground text-[10px]">{ins.cargo || "—"}</td>
-                    <td className="py-2 px-1.5 text-center">{ins.turno || "—"}</td>
-                    {canSeeFlags && AREAS.map(area => {
-                      const qual = getQual(ins.id, area.key);
-                      const isHab = qual?.habilitado;
-                      const status = getTrainingStatus(qual);
-                      return (
-                        <td key={area.key} className="py-1 px-0.5 text-center">
-                          <div className="flex flex-col items-center gap-0.5">
-                            <Checkbox
-                              checked={isHab || false}
-                              onCheckedChange={() => canEdit && toggleHabilitado(ins.id, area.key)}
-                              disabled={!canEdit}
-                              className="h-4 w-4"
-                            />
-                            {isHab && (
-                              <>
-                                <button
-                                  onClick={() => canEdit && openEditDates(ins.id, area.key)}
-                                  className={cn(
-                                    "text-[8px] leading-tight px-1 py-0.5 rounded cursor-pointer",
-                                    status === "vencido" ? "bg-red-100 text-red-700 font-bold" :
-                                    status === "em_dia" ? "bg-emerald-100 text-emerald-700" :
-                                    "bg-muted text-muted-foreground"
-                                  )}
-                                >
-                                  {status === "vencido" ? "Vencido" : status === "em_dia" ? "Em dia" : "—"}
-                                </button>
-                                {qual?.last_evaluation_date && (
-                                  <span className="text-[7px] text-muted-foreground leading-none">Últ: {new Date(qual.last_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                                )}
-                                {qual?.next_evaluation_date && (
-                                  <span className="text-[7px] text-muted-foreground leading-none">Próx: {new Date(qual.next_evaluation_date + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-                    <td className="py-2 px-1.5 text-center text-[9px] text-muted-foreground">
-                      {latestLast ? new Date(latestLast + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                    </td>
-                    <td className="py-2 px-1.5 text-center text-[9px] text-muted-foreground">
-                      {earliestNext ? new Date(earliestNext + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                    </td>
-                    <td className="py-2 px-1.5 text-center">
+          {/* Bulk QR export bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-accent/30 border border-accent rounded-lg p-3">
+              <span className="text-sm font-medium">{selectedIds.size} inspetor(es) selecionado(s)</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("jpg")} disabled={exportingQrs} className="gap-1 text-xs">
+                  <Download className="w-3 h-3" /> JPG
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => exportSelectedQrs("pdf")} disabled={exportingQrs} className="gap-1 text-xs">
+                  <Download className="w-3 h-3" /> PDF
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-xs">
+                  Limpar
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile card layout */}
+          <div className="sm:hidden space-y-3">
+            {filtered.map((ins: any) => {
+              const overall = getOverallStatus(ins.id);
+              return (
+                <div key={ins.id} className="form-section p-3 space-y-2 overflow-hidden">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-5 w-5 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{ins.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground">{ins.cargo || "—"} • {ins.turno || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openQrDialog(ins)}><QrCode className="w-4 h-4" /></Button>
                       {overall === "apto" ? (
                         <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
                       ) : overall === "atencao" ? (
@@ -628,200 +548,512 @@ const MatrizVersatilidade = () => {
                       ) : (
                         <span className="text-muted-foreground text-[9px]">—</span>
                       )}
-                    </td>
-                    <td className="py-2 px-1.5 text-center">
-                      {totalAtts > 0 ? (
-                        <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-blue-600 hover:text-blue-800">
-                          <Paperclip className="w-3.5 h-3.5 mx-auto" />
-                        </button>
-                      ) : canSeeFlags ? (
-                        <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-muted-foreground hover:text-foreground">
-                          <Upload className="w-3.5 h-3.5 mx-auto" />
-                        </button>
-                      ) : (
-                        <span className="text-muted-foreground text-[9px]">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr><td colSpan={canSeeFlags ? 6 + AREAS.length + 4 : 10} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-muted-foreground text-center">{filtered.length} inspetor(es)</p>
+                    </div>
+                  </div>
 
-        {/* Hidden QR cards for bulk export */}
-        {selectedInspectors.length > 0 && (
-          <div ref={qrExportRef} className="fixed left-[-9999px] top-0 bg-white p-4" style={{ width: `${Math.min(selectedInspectors.length, 4) * 200}px` }}>
-            <div className="flex flex-wrap gap-4">
-              {selectedInspectors.map((ins: any) => (
-                <div key={ins.id} className="flex flex-col items-center p-3 border border-gray-200 rounded-lg" style={{ width: 180 }}>
-                  <QRCodeSVG value={ins.qr_code_id || ""} size={120} level="H" />
-                  <p className="text-xs font-bold mt-2 text-center" style={{ color: "#000" }}>{ins.full_name}</p>
-                  <p className="text-[10px] text-gray-500">{ins.cargo}</p>
-                  <p className="text-[9px] font-mono text-gray-400 mt-0.5">{ins.qr_code_id}</p>
+                  {/* CHANGE 1: Show flags only for authorized editors — read-only indicators for others */}
+                  {canSeeFlags && (
+                    <div className="grid grid-cols-3 gap-1">
+                      {AREAS.map(area => {
+                        const qual = getQual(ins.id, area.key);
+                        const isHab = qual?.habilitado;
+                        const status = getTrainingStatus(qual);
+                        return (
+                          <div key={area.key} className="flex items-center gap-1 text-[10px]">
+                            <Checkbox
+                              checked={isHab || false}
+                              onCheckedChange={() => canEdit && handleToggleHabilitado(ins.id, area.key)}
+                              disabled={!canEdit}
+                              className="h-4 w-4"
+                            />
+                            <button
+                              onClick={() => isHab && canEdit && openEditDates(ins.id, area.key)}
+                              className={cn(
+                                "truncate",
+                                isHab && (status === "vencido") ? "text-red-700 font-bold" :
+                                isHab && (status === "a_vencer") ? "text-amber-700 font-semibold" :
+                                isHab && status === "em_dia" ? "text-emerald-700" :
+                                "text-muted-foreground"
+                              )}
+                            >
+                              {getAreaLabel(area.key, area.label)}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Always show: dates, status, attachments per module */}
+                  <div className="space-y-1 text-[10px]">
+                    {AREAS.map(area => {
+                      const qual = getQual(ins.id, area.key);
+                      if (!qual?.habilitado) return null;
+                      const status = getTrainingStatus(qual);
+                      const atts = getAttachments(ins.id, area.key);
+                      return (
+                        <div key={area.key} className="bg-muted/30 rounded px-2 py-1.5 space-y-0.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className={cn("font-medium truncate flex-1", area.color.replace("bg-", "text-").replace("700", "700"))}>{getAreaLabel(area.key, area.label)}</span>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className={cn("px-1 py-0.5 rounded text-[9px]", getStatusClasses(status))}>
+                                {getStatusLabel(status)}
+                              </span>
+                              {atts.length > 0 && (
+                                <button onClick={() => viewAttachment(atts[0])} className="text-blue-600"><Paperclip className="w-3 h-3" /></button>
+                              )}
+                              {canSeeFlags && (
+                                <button onClick={() => setAttachDialog({ userId: ins.id, area: area.key })} className="text-muted-foreground hover:text-foreground min-w-[28px] min-h-[28px] flex items-center justify-center">
+                                  <Upload className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-3 text-[9px] text-muted-foreground">
+                            <span>Últ: {fmtDate(qual.last_evaluation_date)}</span>
+                            <span>Próx: {fmtDate(qual.next_evaluation_date)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div className="form-section text-center py-8">
+                <p className="text-muted-foreground text-sm">Nenhum inspetor encontrado</p>
+              </div>
+            )}
           </div>
-        )}
-      </main>
 
-      {/* QR Code dialog - shows INSPECTOR's QR, not logged-in user */}
-      <Dialog open={!!qrDialog} onOpenChange={(open) => { if (!open) setQrDialog(null); }}>
-        <DialogContent className="max-w-xs">
-          <DialogHeader><DialogTitle>QR Code</DialogTitle></DialogHeader>
-          {qrDialog && (
-            <div className="flex flex-col items-center gap-3 py-4">
-              <QRCodeSVG value={qrDialog.qr_code_id || ""} size={180} level="H" />
-              <p className="text-sm font-bold">{qrDialog.full_name}</p>
-              <p className="text-xs text-muted-foreground">{qrDialog.cargo}</p>
-              <p className="text-xs font-mono text-muted-foreground">{qrDialog.qr_code_id}</p>
+          {/* Desktop table — CHANGE 3: removed global Últ. Aval. and Próx. Aval. columns */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
+            <table className="w-full text-xs border-collapse min-w-[900px]">
+              <thead>
+                <tr className="border-b-2 border-border">
+                  <th className="py-2 px-1 w-8 sticky left-0 bg-background z-10">
+                    <Checkbox checked={filtered.length > 0 && selectedIds.size === filtered.length} onCheckedChange={toggleSelectAll} className="h-4 w-4" />
+                  </th>
+                  <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-16 sticky left-8 bg-background z-10">INSP-ID</th>
+                  <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-8 sticky left-24 bg-background z-10">QR</th>
+                  <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[120px] sticky left-32 bg-background z-10">Nome</th>
+                  <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-20">Cargo</th>
+                  <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Turno</th>
+                  {AREAS.map(a => (
+                    <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-24 rounded-t", a.color)}>
+                      <span className="block text-[9px] leading-tight">{getAreaLabel(a.key, a.label)}</span>
+                    </th>
+                  ))}
+                  <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-16">Status</th>
+                  <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Anexo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((ins: any) => {
+                  const overall = getOverallStatus(ins.id);
+                  const totalAtts = AREAS.reduce((sum, a) => sum + getAttachments(ins.id, a.key).length, 0);
+
+                  return (
+                    <tr key={ins.id} className="border-b border-border/50 hover:bg-muted/30">
+                      <td className="py-2 px-1 text-center sticky left-0 bg-background">
+                        <Checkbox checked={selectedIds.has(ins.id)} onCheckedChange={() => toggleSelect(ins.id)} className="h-4 w-4" />
+                      </td>
+                      <td className="py-2 px-1.5 font-mono text-[10px] font-bold sticky left-8 bg-background">{ins.qr_code_id || "—"}</td>
+                      <td className="py-2 px-1.5 sticky left-24 bg-background">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openQrDialog(ins)} title="QR Code">
+                          <QrCode className="w-3 h-3" />
+                        </Button>
+                      </td>
+                      <td className="py-2 px-1.5 font-medium text-foreground sticky left-32 bg-background">{ins.full_name}</td>
+                      <td className="py-2 px-1.5 text-muted-foreground text-[10px]">{ins.cargo || "—"}</td>
+                      <td className="py-2 px-1.5 text-center">{ins.turno || "—"}</td>
+                      {AREAS.map(area => {
+                        const qual = getQual(ins.id, area.key);
+                        const isHab = qual?.habilitado;
+                        const status = getTrainingStatus(qual);
+                        const hasDateInfo = isHab && (qual?.last_evaluation_date || qual?.next_evaluation_date);
+
+                        const cellContent = (
+                          <div className="flex flex-col items-center gap-0.5">
+                            {/* CHANGE 1: Checkbox visible to all, interactive only for editors */}
+                            <Checkbox
+                              checked={isHab || false}
+                              onCheckedChange={() => canEdit && handleToggleHabilitado(ins.id, area.key)}
+                              disabled={!canEdit}
+                              className="h-4 w-4"
+                            />
+                            {isHab && (
+                              <button
+                                onClick={() => canEdit ? openEditDates(ins.id, area.key) : undefined}
+                                className={cn(
+                                  "text-[8px] leading-tight px-1 py-0.5 rounded",
+                                  canEdit && "cursor-pointer",
+                                  getStatusClasses(status)
+                                )}
+                              >
+                                {getStatusLabel(status)}
+                              </button>
+                            )}
+                          </div>
+                        );
+
+                        // CHANGE 2: Tooltip on desktop for cells with date info
+                        if (hasDateInfo) {
+                          return (
+                            <td key={area.key} className="py-1 px-0.5 text-center">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>{cellContent}</div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[220px] p-3 space-y-1.5">
+                                  <p className="font-semibold text-sm">{getAreaLabel(area.key, area.label)}</p>
+                                  <div className="text-xs space-y-0.5">
+                                    <p>Últ. Avaliação: <span className="font-medium">{fmtDate(qual?.last_evaluation_date)}</span></p>
+                                    <p>Próx. Avaliação: <span className="font-medium">{fmtDate(qual?.next_evaluation_date)}</span></p>
+                                  </div>
+                                  <Badge className={cn("text-[10px] px-1.5", getStatusClasses(status))}>
+                                    {getStatusLabel(status)}
+                                  </Badge>
+                                </TooltipContent>
+                              </Tooltip>
+                            </td>
+                          );
+                        }
+
+                        return (
+                          <td key={area.key} className="py-1 px-0.5 text-center">
+                            {cellContent}
+                          </td>
+                        );
+                      })}
+                      <td className="py-2 px-1.5 text-center">
+                        {overall === "apto" ? (
+                          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] px-1.5">Apto</Badge>
+                        ) : overall === "atencao" ? (
+                          <Badge className="bg-red-500/10 text-red-700 border-red-300 text-[9px] px-1.5 animate-pulse">Atenção</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-[9px]">—</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-1.5 text-center">
+                        {totalAtts > 0 ? (
+                          <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-blue-600 hover:text-blue-800">
+                            <Paperclip className="w-3.5 h-3.5 mx-auto" />
+                          </button>
+                        ) : canSeeFlags ? (
+                          <button onClick={() => setAttachDialog({ userId: ins.id, area: AREAS[0].key })} className="text-muted-foreground hover:text-foreground">
+                            <Upload className="w-3.5 h-3.5 mx-auto" />
+                          </button>
+                        ) : (
+                          <span className="text-muted-foreground text-[9px]">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7 + AREAS.length + 2} className="text-center text-muted-foreground py-8">Nenhum inspetor encontrado</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">{filtered.length} inspetor(es)</p>
+
+          {/* Hidden QR cards for bulk export */}
+          {selectedInspectors.length > 0 && (
+            <div ref={qrExportRef} className="fixed left-[-9999px] top-0 bg-white p-4" style={{ width: `${Math.min(selectedInspectors.length, 4) * 200}px` }}>
+              <div className="flex flex-wrap gap-4">
+                {selectedInspectors.map((ins: any) => (
+                  <div key={ins.id} className="flex flex-col items-center p-3 border border-gray-200 rounded-lg" style={{ width: 180 }}>
+                    <QRCodeSVG value={ins.qr_code_id || ""} size={120} level="H" />
+                    <p className="text-xs font-bold mt-2 text-center" style={{ color: "#000" }}>{ins.full_name}</p>
+                    <p className="text-[10px] text-gray-500">{ins.cargo}</p>
+                    <p className="text-[9px] font-mono text-gray-400 mt-0.5">{ins.qr_code_id}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setQrDialog(null)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </main>
 
-      {/* Attachment dialog */}
-      <Dialog open={!!attachDialog} onOpenChange={(open) => { if (!open) setAttachDialog(null); }}>
-        <DialogContent className="max-w-sm max-h-[80vh] flex flex-col">
-          <DialogHeader><DialogTitle className="flex items-center gap-2"><Paperclip className="w-4 h-4" /> Anexos</DialogTitle></DialogHeader>
-          {attachDialog && (
-            <div className="space-y-3 flex-1 overflow-y-auto">
-              {/* Area selector */}
-              <Select value={attachDialog.area} onValueChange={(v) => setAttachDialog({ ...attachDialog, area: v })}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {AREAS.map(a => <SelectItem key={a.key} value={a.key}>{getAreaLabel(a.key, a.label)}</SelectItem>)}
-                </SelectContent>
-              </Select>
+        {/* QR Code dialog */}
+        <Dialog open={!!qrDialog} onOpenChange={(open) => { if (!open) setQrDialog(null); }}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader><DialogTitle>QR Code</DialogTitle></DialogHeader>
+            {qrDialog && (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <QRCodeSVG value={qrDialog.qr_code_id || ""} size={180} level="H" />
+                <p className="text-sm font-bold">{qrDialog.full_name}</p>
+                <p className="text-xs text-muted-foreground">{qrDialog.cargo}</p>
+                <p className="text-xs font-mono text-muted-foreground">{qrDialog.qr_code_id}</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setQrDialog(null)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-              {/* Existing attachments */}
-              {getAttachments(attachDialog.userId, attachDialog.area).map((att: any) => (
-                <div key={att.id} className="flex items-center justify-between gap-2 bg-muted/30 rounded p-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
-                    <span className="text-xs truncate">{att.file_name}</span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => viewAttachment(att)}>
-                      <Eye className="w-3 h-3" />
-                    </Button>
-                    {canSeeFlags && (
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteAttachment(att)}>
-                        <Trash2 className="w-3 h-3" />
+        {/* Attachment dialog */}
+        <Dialog open={!!attachDialog} onOpenChange={(open) => { if (!open) setAttachDialog(null); }}>
+          <DialogContent className="max-w-[95vw] sm:max-w-sm max-h-[80vh] flex flex-col">
+            <DialogHeader><DialogTitle className="flex items-center gap-2"><Paperclip className="w-4 h-4" /> Anexos</DialogTitle></DialogHeader>
+            {attachDialog && (
+              <div className="space-y-3 flex-1 overflow-y-auto">
+                <Select value={attachDialog.area} onValueChange={(v) => setAttachDialog({ ...attachDialog, area: v })}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {AREAS.map(a => <SelectItem key={a.key} value={a.key}>{getAreaLabel(a.key, a.label)}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                {getAttachments(attachDialog.userId, attachDialog.area).map((att: any) => (
+                  <div key={att.id} className="flex items-center justify-between gap-2 bg-muted/30 rounded p-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="text-xs truncate">{att.file_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => viewAttachment(att)}>
+                        <Eye className="w-3 h-3" />
                       </Button>
-                    )}
+                      {canSeeFlags && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteAttachment(att)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {getAttachments(attachDialog.userId, attachDialog.area).length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-2">Nenhum anexo nesta área</p>
-              )}
+                {getAttachments(attachDialog.userId, attachDialog.area).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Nenhum anexo nesta área</p>
+                )}
 
-              {/* Upload button - only for editors */}
-              {canSeeFlags && (
-                <div className="pt-2">
-                  <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-muted/30 transition-colors">
-                    <Upload className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">{uploading ? "Enviando..." : "Enviar anexo (PDF, imagem)"}</span>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={handleAttachUpload} disabled={uploading} />
-                  </label>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setAttachDialog(null)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit dates dialog */}
-      <Dialog open={!!editDialog} onOpenChange={(open) => { if (!open) setEditDialog(null); }}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Datas de Treinamento</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Última Avaliação</label>
-              <Popover open={lastDateOpen} onOpenChange={setLastDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-sm h-9">
-                    <CalendarIcon className="w-3.5 h-3.5 mr-2" />
-                    {editDates.lastDate ? format(new Date(editDates.lastDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={parseDate(editDates.lastDate)} onSelect={(d) => { if (d) { setEditDates(p => ({ ...p, lastDate: format(d, "yyyy-MM-dd") })); setLastDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Próxima Avaliação</label>
-              <Popover open={nextDateOpen} onOpenChange={setNextDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-sm h-9">
-                    <CalendarIcon className="w-3.5 h-3.5 mr-2" />
-                    {editDates.nextDate ? format(new Date(editDates.nextDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={parseDate(editDates.nextDate)} onSelect={(d) => { if (d) { setEditDates(p => ({ ...p, nextDate: format(d, "yyyy-MM-dd") })); setNextDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <Button onClick={saveDates} className="w-full">Salvar</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Authorize Editors dialog (ADM only) */}
-      <Dialog open={editorDialog} onOpenChange={setEditorDialog}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5" /> Autorizar Editores
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">Selecione os usuários autorizados a editar a Matriz de Versatilidade.</p>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={editorSearch} onChange={(e) => setEditorSearch(e.target.value)} placeholder="Buscar usuário..." className="pl-9 h-8 text-xs" />
-          </div>
-          <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
-            {filteredEditorProfiles.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Checkbox
-                    checked={editorUserIds.has(p.id)}
-                    onCheckedChange={() => toggleEditor(p.id)}
-                    disabled={savingEditors}
-                    className="h-4 w-4 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{p.full_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.cargo || ""} • {p.employee_number}</p>
+                {canSeeFlags && (
+                  <div className="pt-2">
+                    <label className="flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer hover:bg-muted/30 transition-colors min-h-[44px]">
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{uploading ? "Enviando..." : "Enviar anexo (PDF, imagem)"}</span>
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={handleAttachUpload} disabled={uploading} />
+                    </label>
                   </div>
-                </div>
-                {editorUserIds.has(p.id) && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] shrink-0">Editor</Badge>
                 )}
               </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setEditorDialog(false)}>Fechar</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setAttachDialog(null)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit dates dialog */}
+        <Dialog open={!!editDialog} onOpenChange={(open) => { if (!open) setEditDialog(null); }}>
+          <DialogContent className="max-w-[95vw] sm:max-w-sm">
+            <DialogHeader><DialogTitle>Datas de Treinamento</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Última Avaliação</label>
+                <Popover open={lastDateOpen} onOpenChange={setLastDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-sm h-10">
+                      <CalendarIcon className="w-3.5 h-3.5 mr-2" />
+                      {editDates.lastDate ? format(new Date(editDates.lastDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={parseDate(editDates.lastDate)} onSelect={(d) => { if (d) { setEditDates(p => ({ ...p, lastDate: format(d, "yyyy-MM-dd") })); setLastDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Próxima Avaliação</label>
+                <Popover open={nextDateOpen} onOpenChange={setNextDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-sm h-10">
+                      <CalendarIcon className="w-3.5 h-3.5 mr-2" />
+                      {editDates.nextDate ? format(new Date(editDates.nextDate + "T12:00:00"), "dd/MM/yyyy") : "Selecione"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={parseDate(editDates.nextDate)} onSelect={(d) => { if (d) { setEditDates(p => ({ ...p, nextDate: format(d, "yyyy-MM-dd") })); setNextDateOpen(false); }}} locale={ptBR} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {/* CHANGE 4: inline error */}
+              {editDialog?.area === "inspecao_peca" && (!editDates.lastDate || !editDates.nextDate) && (
+                <p className="text-xs text-destructive">Não é possível definir como Apto sem datas de avaliação.</p>
+              )}
+              <Button onClick={saveDates} className="w-full min-h-[44px]">Salvar</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Authorize Editors dialog (ADM only) */}
+        <Dialog open={editorDialog} onOpenChange={setEditorDialog}>
+          <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" /> Autorizar Editores
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">Selecione os usuários autorizados a editar a Matriz de Versatilidade.</p>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input value={editorSearch} onChange={(e) => setEditorSearch(e.target.value)} placeholder="Buscar usuário..." className="pl-9 h-8 text-xs" />
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-1 min-h-0">
+              {filteredEditorProfiles.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50 min-h-[44px]">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox
+                      checked={editorUserIds.has(p.id)}
+                      onCheckedChange={() => toggleEditor(p.id)}
+                      disabled={savingEditors}
+                      className="h-5 w-5 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{p.full_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{p.cargo || ""} • {p.employee_number}</p>
+                    </div>
+                  </div>
+                  {editorUserIds.has(p.id) && (
+                    <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-300 text-[9px] shrink-0">Editor</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setEditorDialog(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* CHANGE 5: Training Schedule dialog */}
+        <Dialog open={trainingDialog} onOpenChange={setTrainingDialog}>
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5" /> Agenda de Treinamentos
+              </DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Inspetores com treinamentos vencidos ou a vencer (30 dias)</p>
+              <Button variant="outline" size="sm" onClick={exportTrainingPdf} disabled={exportingTraining} className="gap-1 text-xs min-h-[36px]">
+                {exportingTraining ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                PDF
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+              {Object.keys(trainingScheduleData).length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground text-sm">Nenhum treinamento pendente 🎉</p>
+                </div>
+              ) : (
+                Object.entries(trainingScheduleData).map(([key, group]) => (
+                  <div key={key} className="space-y-2">
+                    <h3 className={cn("text-sm font-semibold px-2 py-1 rounded", group.area.color, "text-white")}>
+                      {getAreaLabel(group.area.key, group.area.label)} ({group.inspectors.length})
+                    </h3>
+                    {/* Mobile cards */}
+                    <div className="sm:hidden space-y-1">
+                      {group.inspectors.map((ins: any) => (
+                        <div key={ins.id} className="bg-muted/30 rounded-lg p-3 space-y-1">
+                          <p className="text-sm font-medium">{ins.full_name}</p>
+                          <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground">
+                            <span>Últ: {fmtDate(ins.qual?.last_evaluation_date)}</span>
+                            <span>Próx: {fmtDate(ins.qual?.next_evaluation_date)}</span>
+                          </div>
+                          <Badge className={cn("text-[9px] px-1.5", getStatusClasses(ins.status))}>
+                            {getStatusLabel(ins.status)}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop table */}
+                    <table className="hidden sm:table w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left py-1 px-2 font-medium text-muted-foreground">Inspetor</th>
+                          <th className="text-center py-1 px-2 font-medium text-muted-foreground">Últ. Avaliação</th>
+                          <th className="text-center py-1 px-2 font-medium text-muted-foreground">Próx. Avaliação</th>
+                          <th className="text-center py-1 px-2 font-medium text-muted-foreground">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.inspectors.map((ins: any) => (
+                          <tr key={ins.id} className="border-b border-border/30">
+                            <td className="py-1.5 px-2 font-medium">{ins.full_name}</td>
+                            <td className="py-1.5 px-2 text-center text-muted-foreground">{fmtDate(ins.qual?.last_evaluation_date)}</td>
+                            <td className="py-1.5 px-2 text-center text-muted-foreground">{fmtDate(ins.qual?.next_evaluation_date)}</td>
+                            <td className="py-1.5 px-2 text-center">
+                              <Badge className={cn("text-[9px] px-1.5", getStatusClasses(ins.status))}>
+                                {getStatusLabel(ins.status)}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Hidden PDF-export content */}
+            <div ref={trainingRef} className="fixed left-[-9999px] top-0 bg-white p-6" style={{ width: 780 }}>
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-gray-300">
+                <img src={logo} alt="Hyundai Mobis" className="h-10 object-contain" />
+                <div>
+                  <h1 className="text-lg font-bold" style={{ color: "#000" }}>Agenda de Treinamentos</h1>
+                  <p className="text-xs" style={{ color: "#666" }}>Gerado em {format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+                </div>
+              </div>
+              {Object.entries(trainingScheduleData).map(([key, group]) => (
+                <div key={key} className="mb-4">
+                  <h2 className="text-sm font-bold mb-1 px-2 py-1 rounded" style={{ backgroundColor: "#1e40af", color: "#fff" }}>
+                    {getAreaLabel(group.area.key, group.area.label)}
+                  </h2>
+                  <table className="w-full text-xs border-collapse" style={{ color: "#000" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #ccc" }}>
+                        <th className="text-left py-1 px-2">Inspetor</th>
+                        <th className="text-center py-1 px-2">Últ. Avaliação</th>
+                        <th className="text-center py-1 px-2">Próx. Avaliação</th>
+                        <th className="text-center py-1 px-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.inspectors.map((ins: any) => (
+                        <tr key={ins.id} style={{ borderBottom: "1px solid #eee" }}>
+                          <td className="py-1 px-2">{ins.full_name}</td>
+                          <td className="py-1 px-2 text-center">{fmtDate(ins.qual?.last_evaluation_date)}</td>
+                          <td className="py-1 px-2 text-center">{fmtDate(ins.qual?.next_evaluation_date)}</td>
+                          <td className="py-1 px-2 text-center">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{
+                              backgroundColor: ins.status === "vencido" ? "#fee2e2" : "#fef3c7",
+                              color: ins.status === "vencido" ? "#b91c1c" : "#92400e",
+                            }}>
+                              {getStatusLabel(ins.status)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" size="sm" onClick={() => setTrainingDialog(false)}>Fechar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 };
 

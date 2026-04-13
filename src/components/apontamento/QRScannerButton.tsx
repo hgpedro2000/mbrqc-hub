@@ -239,22 +239,29 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
             </p>
 
             <div className="flex flex-col gap-2">
-              <Button type="button" onClick={handlePickImage} variant="secondary" className="w-full gap-2 min-h-[44px]">
+              <Button type="button" onClick={handlePickCamera} variant="secondary" className="w-full gap-2 min-h-[44px]">
                 {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 {isProcessingImage ? "Lendo foto..." : "Tirar foto da etiqueta"}
               </Button>
 
-              <Button type="button" onClick={handlePickImage} variant="outline" className="w-full gap-2 min-h-[44px]">
+              <Button type="button" onClick={handlePickGallery} variant="outline" className="w-full gap-2 min-h-[44px]">
                 <ImagePlus className="w-4 h-4" />
                 Escolher foto da galeria
               </Button>
             </div>
 
             <input
-              ref={fileInputRef}
+              ref={cameraInputRef}
               type="file"
               accept="image/*"
               capture="environment"
+              className="hidden"
+              onChange={handleImageSelected}
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
               className="hidden"
               onChange={handleImageSelected}
             />

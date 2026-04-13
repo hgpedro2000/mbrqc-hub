@@ -146,6 +146,81 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     }
   }, [createScanner, handleDecodedText, stopScanner]);
 
+  const loadImageElement = useCallback((file: File) => {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Falha ao carregar imagem"));
+      };
+      img.src = url;
+    });
+  }, []);
+
+  const canvasToFile = useCallback(async (canvas: HTMLCanvasElement, name: string) => {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 1));
+    if (!blob) throw new Error("Falha ao processar imagem");
+    return new File([blob], name, { type: "image/png" });
+  }, []);
+
+  const buildImageVariants = useCallback(async (file: File) => {
+    const img = await loadImageElement(file);
+    const variants: File[] = [file];
+
+    const recipes = [
+      { name: "full-contrast", cropX: 0, cropY: 0, cropW: 1, cropH: 1, mode: "contrast" as const },
+      { name: "center-contrast", cropX: 0.12, cropY: 0.12, cropW: 0.76, cropH: 0.76, mode: "contrast" as const },
+      { name: "lower-center-contrast", cropX: 0.18, cropY: 0.2, cropW: 0.64, cropH: 0.64, mode: "contrast" as const },
+      { name: "center-threshold", cropX: 0.12, cropY: 0.12, cropW: 0.76, cropH: 0.76, mode: "threshold" as const },
+      { name: "lower-center-threshold", cropX: 0.18, cropY: 0.2, cropW: 0.64, cropH: 0.64, mode: "threshold" as const },
+    ];
+
+    for (const recipe of recipes) {
+      const sx = Math.round(img.width * recipe.cropX);
+      const sy = Math.round(img.height * recipe.cropY);
+      const sw = Math.max(1, Math.round(img.width * recipe.cropW));
+      const sh = Math.max(1, Math.round(img.height * recipe.cropH));
+      const scale = Math.max(2, Math.min(3, 1800 / Math.max(sw, sh)));
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) continue;
+
+      canvas.width = Math.max(1, Math.round(sw * scale));
+      canvas.height = Math.max(1, Math.round(sh * scale));
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+
+        if (recipe.mode === "threshold") {
+          const value = gray > 150 ? 255 : 0;
+          data[i] = value;
+          data[i + 1] = value;
+          data[i + 2] = value;
+        } else {
+          const contrast = 1.9;
+          const value = Math.max(0, Math.min(255, (gray - 128) * contrast + 128));
+          data[i] = value;
+          data[i + 1] = value;
+          data[i + 2] = value;
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      variants.push(await canvasToFile(canvas, `${recipe.name}.png`));
+    }
+
+    return variants;
+  }, [canvasToFile, loadImageElement]);
+
   const handlePickCamera = useCallback(() => {
     cameraInputRef.current?.click();
   }, []);
@@ -166,20 +241,34 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     try {
       await stopScanner();
 
-      const scanner = createScanner();
-      scannerRef.current = scanner;
-      const decoded = await scanner.scanFile(file, true);
-      await scanner.clear();
-      scannerRef.current = null;
+      const variants = await buildImageVariants(file);
+      let decoded: string | null = null;
+
+      for (const variant of variants) {
+        const scanner = createScanner();
+        try {
+          decoded = await scanner.scanFile(variant, true);
+          await scanner.clear();
+          if (decoded) break;
+        } catch {
+          try {
+            await scanner.clear();
+          } catch {}
+        }
+      }
+
+      if (!decoded) {
+        throw new Error("decode_failed");
+      }
 
       setScannerOpen(false);
       handleDecodedText(decoded);
     } catch {
-      setCameraError("Não foi possível ler a etiqueta pela foto. Tente aproximar mais, melhorar a iluminação ou enquadrar só o código.");
+      setCameraError("Não foi possível ler a etiqueta pela foto. Tente aproximar mais, centralizar só o código e evitar reflexos na etiqueta.");
     } finally {
       setIsProcessingImage(false);
     }
-  }, [createScanner, handleDecodedText, stopScanner]);
+  }, [buildImageVariants, createScanner, handleDecodedText, stopScanner]);
 
   const handleSendReport = async () => {
     setSending(true);

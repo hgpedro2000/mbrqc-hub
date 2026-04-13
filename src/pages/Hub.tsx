@@ -174,6 +174,11 @@ const Hub = () => {
   };
 
   const isMobisBrasil = !impersonating ? profile?.empresa === "mobis_brasil" : impersonating?.empresa === "mobis_brasil";
+
+  const activeCargo = impersonating?.cargo || profile?.cargo || "";
+  const canRequestNewUser = ["lider", "assistente", "analista", "supervisor", "gerente"].some(
+    (r) => activeCargo.toLowerCase().includes(r)
+  );
   
   return (
     <div className="min-h-screen bg-background">
@@ -186,7 +191,7 @@ const Hub = () => {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
-              <ReportErrorButton moduleName="Hub" />
+              <ReportErrorButton moduleName="Hub" showNewUserRequest={canRequestNewUser} />
               {isMobisBrasil && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <QrCode className="w-4 h-4 md:mr-2" />

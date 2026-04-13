@@ -124,7 +124,10 @@ const ApontamentoForm = () => {
 
     // Auto-fill Projeto, Fornecedor, Part Name and Módulo from the part_numbers table
     try {
-      // Try exact match first
+      const pnNormalized = pn.replace(/-/g, "");
+      const pnWithHyphen = pn.includes("-") ? pn : null;
+
+      // Try exact match first (as-is)
       let { data: partData } = await supabase
         .from("part_numbers")
         .select("part_name, project, line_module, supplier_id, suppliers(name)")
@@ -133,17 +136,27 @@ const ApontamentoForm = () => {
         .limit(1)
         .maybeSingle();
 
-      // If no exact match, try partial match (PN without last 3 chars which are often color codes)
-      if (!partData && pn.length > 5) {
-        const pnBase = pn.slice(0, -3);
-        const { data: partialData } = await supabase
+      // Try without hyphens or with hyphens (normalize both directions)
+      if (!partData) {
+        const { data: allActive } = await supabase
           .from("part_numbers")
-          .select("part_name, project, line_module, supplier_id, suppliers(name)")
-          .like("part_number", `${pnBase}%`)
-          .eq("active", true)
-          .limit(1)
-          .maybeSingle();
-        partData = partialData;
+          .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+          .eq("active", true);
+        if (allActive) {
+          partData = allActive.find((p) => p.part_number.replace(/-/g, "") === pnNormalized) || null;
+        }
+      }
+
+      // Fallback: partial match (PN without last 3 chars — color codes)
+      if (!partData && pn.length > 5) {
+        const pnBase = pnNormalized.slice(0, -3);
+        const { data: allActive } = await supabase
+          .from("part_numbers")
+          .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+          .eq("active", true);
+        if (allActive) {
+          partData = allActive.find((p) => p.part_number.replace(/-/g, "").startsWith(pnBase)) || null;
+        }
       }
 
       if (partData) {

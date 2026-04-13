@@ -215,6 +215,7 @@ const ApontamentoForm = () => {
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
+      setTagNumber((existing as any).tag_number || "");
       const ti = (existing as any).tempo_inspecao || "";
       if (ti.includes(" - ")) {
         const parts = ti.split(" - ");

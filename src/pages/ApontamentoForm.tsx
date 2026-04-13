@@ -361,7 +361,7 @@ const ApontamentoForm = () => {
     if (!fornecedor) { errors.add("fornecedor"); msgs.push("Fornecedor"); }
     if (!partNumber) { errors.add("partNumber"); msgs.push("Part Number"); }
 
-    if (!isOem && !fase) { errors.add("fase"); msgs.push("Fase"); }
+    if (!isOem && !isIncoming && !fase) { errors.add("fase"); msgs.push("Fase"); }
     if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }
 
     if (isIncoming) {

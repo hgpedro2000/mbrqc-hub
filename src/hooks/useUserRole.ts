@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 export const useUserRole = () => {
   const { user } = useAuth();
+  const { impersonating } = useImpersonation();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // When impersonating, check the impersonated user's role instead
+  const targetUserId = impersonating?.id || user?.id;
+
   useEffect(() => {
-    if (!user) {
+    if (!targetUserId) {
       setIsAdmin(false);
       setLoading(false);
       return;
@@ -18,7 +23,7 @@ export const useUserRole = () => {
       const { data } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .eq("role", "admin")
         .maybeSingle();
 
@@ -27,7 +32,7 @@ export const useUserRole = () => {
     };
 
     checkRole();
-  }, [user]);
+  }, [targetUserId]);
 
   return { isAdmin, loading };
 };

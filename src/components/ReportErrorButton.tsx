@@ -4,8 +4,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +26,13 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
   resolvido: { label: "Resolvido", icon: CheckCircle, color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
 };
 
+const TURNOS = ["1T", "2T", "3T", "ADM"];
+const CARGOS = [
+  "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
+  "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
+  "Gerente de Qualidade", "Diretor de Qualidade",
+];
+
 const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
   const { user, profile } = useAuth();
   const [activeModule, setActiveModule] = useState(moduleName);
@@ -37,6 +46,15 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // New user request form state
+  const [newUserEmpresa, setNewUserEmpresa] = useState("mobis_brasil");
+  const [newUserEmpresaTerceira, setNewUserEmpresaTerceira] = useState("");
+  const [newUserFullName, setNewUserFullName] = useState("");
+  const [newUserTurno, setNewUserTurno] = useState("");
+  const [newUserCargo, setNewUserCargo] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [isNewUserMode, setIsNewUserMode] = useState(false);
 
   const { data: myTickets = [], refetch: refetchTickets } = useQuery({
     queryKey: ["my-error-reports", user?.id],
@@ -61,7 +79,6 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     const remaining = 4 - photos.length;
     const toAdd = files.slice(0, remaining);
     if (toAdd.length === 0) return;
-    // Compress first, then open annotation for first one
     const compressed = await Promise.all(toAdd.map(compressImage));
     setPendingFiles(compressed.slice(1));
     setAnnotatingFile(compressed[0]);
@@ -73,7 +90,6 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     reader.onload = (ev) => setPreviews((prev) => [...prev, ev.target?.result as string]);
     reader.readAsDataURL(annotatedFile);
     setAnnotatingFile(null);
-    // Process next pending file
     if (pendingFiles.length > 0) {
       const [next, ...rest] = pendingFiles;
       setPendingFiles(rest);
@@ -82,7 +98,6 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   };
 
   const handleAnnotationCancel = () => {
-    // Skip annotation, add original
     if (annotatingFile) {
       setPhotos((prev) => [...prev, annotatingFile]);
       const reader = new FileReader();
@@ -102,7 +117,62 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     setPreviews((prev) => prev.filter((_, i) => i !== idx));
   };
 
+  const resetNewUserForm = () => {
+    setNewUserEmpresa("mobis_brasil");
+    setNewUserEmpresaTerceira("");
+    setNewUserFullName("");
+    setNewUserTurno("");
+    setNewUserCargo("");
+    setNewUserEmail("");
+    setIsNewUserMode(false);
+    setDescription("");
+    setPhotos([]);
+    setPreviews([]);
+  };
+
   const handleSubmit = async () => {
+    if (isNewUserMode) {
+      // Validate new user form
+      if (!newUserFullName.trim()) { toast.error("Preencha o nome completo"); return; }
+      if (!newUserTurno) { toast.error("Selecione o turno"); return; }
+      if (!newUserCargo) { toast.error("Selecione o cargo"); return; }
+      if (newUserEmpresa === "empresa_terceira" && !newUserEmpresaTerceira) { toast.error("Selecione o tipo de empresa terceira"); return; }
+
+      // Build description from form fields
+      const empresaLabel = newUserEmpresa === "mobis_brasil" ? "Mobis Brasil" : `Empresa Terceira - ${newUserEmpresaTerceira}`;
+      const descLines = [
+        `Empresa: ${empresaLabel}`,
+        `Nome Completo: ${newUserFullName}`,
+        `Turno: ${newUserTurno}`,
+        `Cargo: ${newUserCargo}`,
+        newUserEmail ? `E-mail: ${newUserEmail}` : null,
+        `Consulta de Peças: Sim (automático)`,
+      ].filter(Boolean).join("\n");
+
+      setSending(true);
+      try {
+        const reportId = crypto.randomUUID();
+        const { error } = await supabase.from("error_reports").insert({
+          id: reportId,
+          user_id: user?.id,
+          user_name: profile?.full_name || "",
+          module: "Novo Usuário",
+          description: descLines,
+        } as any);
+        if (error) throw error;
+        toast.success("Solicitação de novo usuário enviada com sucesso!");
+        resetNewUserForm();
+        setReportOpen(false);
+        refetchTickets();
+      } catch (e: any) {
+        toast.error(e.message || "Erro ao enviar solicitação");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
+    // Standard error report
     if (!description.trim()) {
       toast.error("Descreva o erro encontrado");
       return;
@@ -140,6 +210,20 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     }
   };
 
+  const openNewUserForm = () => {
+    setMenuOpen(false);
+    setIsNewUserMode(true);
+    setActiveModule("Novo Usuário");
+    setReportOpen(true);
+  };
+
+  const openErrorForm = () => {
+    setMenuOpen(false);
+    setIsNewUserMode(false);
+    setActiveModule(moduleName);
+    setReportOpen(true);
+  };
+
   return (
     <>
       {/* Menu popup */}
@@ -158,7 +242,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
             <DialogTitle className="text-center">Help Desk</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
-            <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setActiveModule(moduleName); setReportOpen(true); }}>
+            <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={openErrorForm}>
               <AlertTriangle className="w-5 h-5 text-destructive" />
               <span className="text-sm font-medium">Reportar Erro</span>
             </Button>
@@ -170,7 +254,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               )}
             </Button>
             {showNewUserRequest && (
-              <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={() => { setMenuOpen(false); setActiveModule("Novo Usuário"); setReportOpen(true); }}>
+              <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={openNewUserForm}>
                 <UserPlus className="w-5 h-5 text-blue-600" />
                 <span className="text-sm font-medium">Solicitar Novo Usuário</span>
               </Button>
@@ -179,48 +263,125 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
         </DialogContent>
       </Dialog>
 
-      {/* Report form dialog */}
-      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent className="max-w-md">
+      {/* Report form / New user request dialog */}
+      <Dialog open={reportOpen} onOpenChange={(v) => { if (!v) resetNewUserForm(); setReportOpen(v); }}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              {activeModule === "Novo Usuário" ? (
+              {isNewUserMode ? (
                 <><UserPlus className="w-5 h-5 text-blue-600" />Solicitar Novo Usuário</>
               ) : (
                 <><AlertTriangle className="w-5 h-5 text-destructive" />Reportar Erro — {activeModule}</>
               )}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Descrição do Erro *</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva o erro que encontrou..." rows={4} />
-            </div>
-            <div className="space-y-2">
-              <Label>Capturas de Tela (máx. 4)</Label>
-              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
-              <div className="flex flex-wrap gap-2">
-                {previews.map((src, i) => (
-                  <div key={i} className="relative w-16 h-16 rounded-md overflow-hidden border">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
-                    <button onClick={() => removePhoto(i)} className="absolute top-0 right-0 bg-destructive text-white rounded-bl p-0.5">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {photos.length < 4 && (
-                  <button onClick={() => fileRef.current?.click()} className="w-16 h-16 rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center hover:border-primary/50 transition-colors gap-0.5">
-                    <ImagePlus className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-[8px] text-muted-foreground">Galeria</span>
-                  </button>
-                )}
+
+          {isNewUserMode ? (
+            <div className="space-y-4">
+              {/* Empresa */}
+              <div className="space-y-2">
+                <Label>Empresa *</Label>
+                <Select value={newUserEmpresa} onValueChange={(v) => { setNewUserEmpresa(v); setNewUserEmpresaTerceira(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mobis_brasil">Mobis Brasil</SelectItem>
+                    <SelectItem value="empresa_terceira">Empresa Terceira</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Tipo de Terceira */}
+              {newUserEmpresa === "empresa_terceira" && (
+                <div className="space-y-2">
+                  <Label>Tipo de Empresa Terceira *</Label>
+                  <Select value={newUserEmpresaTerceira} onValueChange={setNewUserEmpresaTerceira}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="IL AUTOMOTIVE">IL AUTOMOTIVE</SelectItem>
+                      <SelectItem value="TRIGO INSPEÇÕES">TRIGO INSPEÇÕES</SelectItem>
+                      <SelectItem value="Residente">Residente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Nome Completo */}
+              <div className="space-y-2">
+                <Label>Nome Completo *</Label>
+                <Input value={newUserFullName} onChange={(e) => setNewUserFullName(e.target.value)} placeholder="Nome completo do novo usuário" />
+              </div>
+
+              {/* Turno */}
+              <div className="space-y-2">
+                <Label>Turno *</Label>
+                <Select value={newUserTurno} onValueChange={setNewUserTurno}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o turno" /></SelectTrigger>
+                  <SelectContent>
+                    {TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Cargo */}
+              <div className="space-y-2">
+                <Label>Cargo *</Label>
+                <Select value={newUserCargo} onValueChange={setNewUserCargo}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
+                  <SelectContent>
+                    {CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* E-mail */}
+              <div className="space-y-2">
+                <Label>E-mail <span className="text-muted-foreground text-xs">(opcional)</span></Label>
+                <Input type="email" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} placeholder="email@exemplo.com" />
+              </div>
+
+              {/* Consulta de Peças auto */}
+              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 shrink-0" />
+                <span className="text-xs text-blue-800">Consulta de Peças será habilitada automaticamente</span>
+              </div>
+
+              <Button onClick={handleSubmit} disabled={sending} className="w-full">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Enviar Solicitação
+              </Button>
             </div>
-            <Button onClick={handleSubmit} disabled={sending} className="w-full">
-              {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-              Enviar Relatório
-            </Button>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Descrição do Erro *</Label>
+                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descreva o erro que encontrou..." rows={4} />
+              </div>
+              <div className="space-y-2">
+                <Label>Capturas de Tela (máx. 4)</Label>
+                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
+                <div className="flex flex-wrap gap-2">
+                  {previews.map((src, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-md overflow-hidden border">
+                      <img src={src} alt="" className="w-full h-full object-cover" />
+                      <button onClick={() => removePhoto(i)} className="absolute top-0 right-0 bg-destructive text-white rounded-bl p-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {photos.length < 4 && (
+                    <button onClick={() => fileRef.current?.click()} className="w-16 h-16 rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center hover:border-primary/50 transition-colors gap-0.5">
+                      <ImagePlus className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[8px] text-muted-foreground">Galeria</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+              <Button onClick={handleSubmit} disabled={sending} className="w-full">
+                {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Enviar Relatório
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -250,7 +411,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                       </Badge>
                     </div>
                     <p className="text-sm font-medium">{t.module}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{t.description}</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-4">{t.description}</p>
                     <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString("pt-BR")}</p>
                     {t.admin_notes && t.status === "resolvido" && (
                       <div className="bg-emerald-50 border border-emerald-200 rounded p-2 mt-1">

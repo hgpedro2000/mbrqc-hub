@@ -105,6 +105,8 @@ const ApontamentoForm = () => {
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
+  const [tagNumber, setTagNumber] = useState("");
+  const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
 
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({

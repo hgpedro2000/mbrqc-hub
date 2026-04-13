@@ -449,6 +449,24 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                   </div>
                 </div>
               )}
+
+              {/* TAG Number for incoming */}
+              {d?.tipo === "incoming" && (d?.quantidade_ng || 0) > 0 && (
+                <div data-pdf-section className="px-6">
+                  <div className="flex items-center gap-2 py-2">
+                    <span className="text-sm font-medium text-muted-foreground">TAG:</span>
+                    {(d as any).tag_number ? (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300">
+                        🏷️ {(d as any).tag_number}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
+                        Aguardando número de TAG
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}

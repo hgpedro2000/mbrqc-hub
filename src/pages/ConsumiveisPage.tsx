@@ -465,17 +465,16 @@ const InventarioRequisicoes = () => {
             <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : (
             <>
-              <div className="sm:hidden space-y-2">
+               <div className="sm:hidden space-y-2">
                 {items.map((i: any) => (
                   <div key={i.id} className={`border rounded-lg p-3 space-y-1 ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5 border-destructive/20" : ""}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm">{i.name}</p>
-                        <div className="flex items-center gap-1">
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }}><History className="w-3.5 h-3.5" /></Button>
-                          {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>}
-                          {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }}><History className="w-3.5 h-3.5" /></Button>
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>Unid: <strong>{i.unit}</strong></span>
@@ -496,7 +495,7 @@ const InventarioRequisicoes = () => {
                       <TableHead className="text-center">Unidade</TableHead>
                       <TableHead className="text-center">Estoque</TableHead>
                       <TableHead className="text-center">Mín.</TableHead>
-                      {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -506,18 +505,17 @@ const InventarioRequisicoes = () => {
                         <TableCell className="text-center text-sm">{i.unit}</TableCell>
                         <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
-                        {isAdmin && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
-                            </div>
-                          </TableCell>
-                        )}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }} title="Histórico"><History className="w-3.5 h-3.5" /></Button>
+                            {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>}
+                            {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                     {items.length === 0 && (
-                      <TableRow><TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>

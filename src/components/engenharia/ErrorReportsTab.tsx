@@ -11,9 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil } from "lucide-react";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+
+interface ErrorReportsTabProps {
+  onCreateUserFromRequest?: (data: any) => void;
+}
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pendente: { label: "Pendente", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
@@ -46,7 +50,7 @@ const moduleOptions = [
   { value: "Novo Usuário", label: "Novo Usuário" },
 ];
 
-const ErrorReportsTab = () => {
+const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {}) => {
   const qc = useQueryClient();
   const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
@@ -329,6 +333,21 @@ const ErrorReportsTab = () => {
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
                   Salvar
                 </Button>
+                {viewItem.module === "Novo Usuário" && onCreateUserFromRequest && (
+                  <Button variant="secondary" className="w-full mt-2 gap-2" onClick={() => {
+                    const desc = viewItem.description || "";
+                    const lines = desc.split("\n");
+                    const parsed: Record<string, string> = {};
+                    lines.forEach((l: string) => {
+                      const [key, ...val] = l.split(": ");
+                      if (key && val.length) parsed[key.trim()] = val.join(": ").trim();
+                    });
+                    onCreateUserFromRequest(parsed);
+                    setViewItem(null);
+                  }}>
+                    <UserPlus className="w-4 h-4" /> Criar Usuário a partir desta solicitação
+                  </Button>
+                )}
               </div>
             </div>
           )}

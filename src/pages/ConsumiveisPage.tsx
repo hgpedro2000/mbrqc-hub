@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -228,6 +228,14 @@ const InventarioRequisicoes = () => {
   const [editMinQty, setEditMinQty] = useState(0);
   const [editSaving, setEditSaving] = useState(false);
   const [insufficientDialog, setInsufficientDialog] = useState<{ itemName: string; stock: number; requested: number } | null>(null);
+  const [replenishOpen, setReplenishOpen] = useState(false);
+  const [replenishItem, setReplenishItem] = useState("");
+  const [replenishQty, setReplenishQty] = useState(0);
+  const [replenishType, setReplenishType] = useState("entrada");
+  const [replenishNotes, setReplenishNotes] = useState("");
+  const [replenishSaving, setReplenishSaving] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyItemId, setHistoryItemId] = useState("");
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],
@@ -248,6 +256,57 @@ const InventarioRequisicoes = () => {
   });
 
   const lowStockItems = useMemo(() => items.filter((i: any) => i.active && i.stock_qty <= i.min_qty && i.min_qty > 0), [items]);
+
+  const { data: stockHistory = [] } = useQuery({
+    queryKey: ["stock-history", historyItemId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("stock_history" as any).select("*").eq("item_id", historyItemId).order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      return data as any[];
+    },
+    enabled: !!historyItemId,
+  });
+
+  const activeProfile = (() => {
+    // Just for getting name
+    return null;
+  })();
+
+  const handleReplenish = async () => {
+    if (!replenishItem) { toast.error("Selecione um item"); return; }
+    if (replenishQty <= 0) { toast.error("Quantidade deve ser maior que 0"); return; }
+    setReplenishSaving(true);
+    try {
+      const item = items.find((i: any) => i.id === replenishItem);
+      if (!item) throw new Error("Item não encontrado");
+      const prevQty = (item as any).stock_qty;
+      const newQty = replenishType === "entrada" ? prevQty + replenishQty : Math.max(0, prevQty - replenishQty);
+      
+      const { error: updateErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", replenishItem);
+      if (updateErr) throw updateErr;
+      
+      const { error: histErr } = await supabase.from("stock_history" as any).insert({
+        item_id: replenishItem,
+        type: replenishType,
+        quantity: replenishQty,
+        previous_qty: prevQty,
+        new_qty: newQty,
+        notes: replenishNotes || null,
+        created_by_name: "Admin",
+      });
+      if (histErr) throw histErr;
+
+      toast.success(`Estoque atualizado: ${(item as any).name} (${prevQty} → ${newQty})`);
+      setReplenishOpen(false);
+      setReplenishItem("");
+      setReplenishQty(0);
+      setReplenishType("entrada");
+      setReplenishNotes("");
+      qc.invalidateQueries({ queryKey: ["consumable-items"] });
+      qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+      qc.invalidateQueries({ queryKey: ["stock-history"] });
+    } catch (e: any) { toast.error(e.message); } finally { setReplenishSaving(false); }
+  };
 
   const filteredRequests = useMemo(() => {
     let result = allRequests;
@@ -381,14 +440,19 @@ const InventarioRequisicoes = () => {
 
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
             <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
           </Button>
           {isAdmin && (
-            <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
-              <Plus className="w-4 h-4" /> Registrar Consumível
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
+                <RotateCcw className="w-4 h-4" /> Atualizar Estoque
+              </Button>
+              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
+                <Plus className="w-4 h-4" /> Registrar Consumível
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -401,17 +465,16 @@ const InventarioRequisicoes = () => {
             <div className="flex justify-center py-6"><Loader2 className="w-6 h-6 animate-spin" /></div>
           ) : (
             <>
-              <div className="sm:hidden space-y-2">
+               <div className="sm:hidden space-y-2">
                 {items.map((i: any) => (
                   <div key={i.id} className={`border rounded-lg p-3 space-y-1 ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "bg-destructive/5 border-destructive/20" : ""}`}>
                     <div className="flex items-center justify-between">
                       <p className="font-medium text-sm">{i.name}</p>
-                      {isAdmin && (
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }}><History className="w-3.5 h-3.5" /></Button>
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)}><Pencil className="w-3.5 h-3.5" /></Button>}
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)}><Trash2 className="w-3.5 h-3.5" /></Button>}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       <span>Unid: <strong>{i.unit}</strong></span>
@@ -432,7 +495,7 @@ const InventarioRequisicoes = () => {
                       <TableHead className="text-center">Unidade</TableHead>
                       <TableHead className="text-center">Estoque</TableHead>
                       <TableHead className="text-center">Mín.</TableHead>
-                      {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -442,18 +505,17 @@ const InventarioRequisicoes = () => {
                         <TableCell className="text-center text-sm">{i.unit}</TableCell>
                         <TableCell className={`text-center font-semibold ${i.stock_qty <= i.min_qty && i.min_qty > 0 ? "text-destructive" : ""}`}>{i.stock_qty}</TableCell>
                         <TableCell className="text-center text-muted-foreground">{i.min_qty}</TableCell>
-                        {isAdmin && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>
-                            </div>
-                          </TableCell>
-                        )}
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setHistoryItemId(i.id); setHistoryOpen(true); }} title="Histórico"><History className="w-3.5 h-3.5" /></Button>
+                            {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditItem(i)} title="Editar"><Pencil className="w-3.5 h-3.5" /></Button>}
+                            {isAdmin && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(i.id)} title="Excluir"><Trash2 className="w-3.5 h-3.5" /></Button>}
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                     {items.length === 0 && (
-                      <TableRow><TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum item cadastrado</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -652,6 +714,82 @@ const InventarioRequisicoes = () => {
           <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDeleteItem}>Excluir</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Replenish stock dialog */}
+      <Dialog open={replenishOpen} onOpenChange={setReplenishOpen}>
+        <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Atualizar Estoque</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Item *</Label>
+              <Select value={replenishItem} onValueChange={setReplenishItem}>
+                <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+                <SelectContent>
+                  {items.filter((i: any) => i.active).map((i: any) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name} (atual: {i.stock_qty} {i.unit})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Movimentação *</Label>
+              <Select value={replenishType} onValueChange={setReplenishType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="entrada">Entrada / Reposição</SelectItem>
+                  <SelectItem value="saida">Saída / Ajuste</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Quantidade *</Label>
+              <Input type="number" min={1} value={replenishQty || ""} onChange={(e) => setReplenishQty(Number(e.target.value))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Observação</Label>
+              <Input value={replenishNotes} onChange={(e) => setReplenishNotes(e.target.value)} placeholder="Motivo da movimentação" />
+            </div>
+            <Button onClick={handleReplenish} disabled={replenishSaving} className="w-full min-h-[44px]">
+              {replenishSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <RotateCcw className="w-4 h-4 mr-1" />}
+              Confirmar Movimentação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stock history dialog */}
+      <Dialog open={historyOpen} onOpenChange={(v) => { setHistoryOpen(v); if (!v) setHistoryItemId(""); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><History className="w-5 h-5" /> Histórico de Movimentação</DialogTitle></DialogHeader>
+          {historyItemId && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{items.find((i: any) => i.id === historyItemId)?.name || "Item"}</p>
+              {stockHistory.length === 0 ? (
+                <p className="text-center text-muted-foreground text-sm py-6">Nenhum registro encontrado</p>
+              ) : (
+                <div className="space-y-2">
+                  {stockHistory.map((h: any) => (
+                    <div key={h.id} className="border rounded-lg p-3 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className={h.type === "entrada" ? "border-emerald-500 text-emerald-600 bg-emerald-500/10" : h.type === "saida" ? "border-red-500 text-red-600 bg-red-500/10" : "border-blue-500 text-blue-600 bg-blue-500/10"}>
+                          {h.type === "entrada" ? "Entrada" : h.type === "saida" ? "Saída" : h.type === "reposicao" ? "Reposição" : h.type}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR")}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground">Qtd: <strong>{h.quantity}</strong></span>
+                        <span className="text-muted-foreground">({h.previous_qty} → {h.new_qty})</span>
+                      </div>
+                      {h.notes && <p className="text-xs text-muted-foreground">{h.notes}</p>}
+                      <p className="text-xs text-muted-foreground">Por: {h.created_by_name}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

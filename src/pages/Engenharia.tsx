@@ -189,7 +189,34 @@ const Engenharia = () => {
           </TabsContent>
 
           <TabsContent value="erros" className="form-section">
-            <ErrorReportsTab />
+            <ErrorReportsTab onCreateUserFromRequest={(parsed: any) => {
+              // Parse data from HelpDesk request and pre-fill user creation form
+              const empresaRaw = parsed["Empresa"] || "";
+              const isMobis = empresaRaw.includes("Mobis");
+              const empNumber = parsed["Número do Usuário"] || "";
+              const fullNameVal = parsed["Nome Completo"] || "";
+              const turnoVal = parsed["Turno"] || "";
+              const cargoVal = parsed["Cargo"] || "";
+              const emailVal = parsed["E-mail"] || "";
+              
+              // Switch to users tab and open create dialog with pre-filled data
+              // We store it in sessionStorage for the UsersTab to pick up
+              sessionStorage.setItem("prefill_new_user", JSON.stringify({
+                empresa: isMobis ? "mobis_brasil" : "empresa_terceira",
+                empresa_terceira: !isMobis ? empresaRaw.replace("Empresa Terceira - ", "") : "",
+                employee_number: empNumber,
+                full_name: fullNameVal,
+                turno: turnoVal,
+                cargo: cargoVal,
+                email: emailVal,
+              }));
+              
+              // Switch tab
+              const tabBtn = document.querySelector('[value="usuarios"]') as HTMLElement;
+              if (tabBtn) tabBtn.click();
+              
+              toast.info("Dados pré-preenchidos no formulário de Novo Usuário. Clique em 'Novo Usuário' para finalizar.");
+            }} />
           </TabsContent>
         </Tabs>
       </main>

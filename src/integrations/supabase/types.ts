@@ -1269,6 +1269,50 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_history: {
+        Row: {
+          created_at: string
+          created_by_name: string
+          id: string
+          item_id: string
+          new_qty: number
+          notes: string | null
+          previous_qty: number
+          quantity: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_name?: string
+          id?: string
+          item_id: string
+          new_qty?: number
+          notes?: string | null
+          previous_qty?: number
+          quantity?: number
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_name?: string
+          id?: string
+          item_id?: string
+          new_qty?: number
+          notes?: string | null
+          previous_qty?: number
+          quantity?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "consumable_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           active: boolean

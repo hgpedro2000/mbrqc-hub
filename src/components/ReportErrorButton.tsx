@@ -143,10 +143,8 @@ const ReportErrorButton = ({ moduleName }: Props) => {
       {/* Menu popup */}
       <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 text-xs relative">
-            <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-            <span className="hidden sm:inline">Reportar Erro</span>
-            <span className="sm:hidden">Erro</span>
+          <Button variant="outline" size="icon" className="text-destructive border-destructive/30 hover:bg-destructive/10 relative h-8 w-8">
+            <AlertTriangle className="w-4 h-4" />
             {hasNewResolved && (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
             )}

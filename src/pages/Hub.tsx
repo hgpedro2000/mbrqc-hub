@@ -182,7 +182,7 @@ const Hub = () => {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
               <img src={logo} alt="Hyundai Mobis" className="h-8 md:h-10 object-contain bg-white rounded-md px-2 py-1" />
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Quality Hub</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Quality Tools</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />

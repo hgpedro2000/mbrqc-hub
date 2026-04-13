@@ -527,7 +527,7 @@ const MatrizVersatilidade = () => {
 
         {/* Desktop table */}
         <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
-          <table className="w-full text-xs border-collapse min-w-[900px]">
+          <table className="w-full text-xs border-collapse min-w-[1100px]">
             <thead>
               <tr className="border-b-2 border-border">
                 <th className="py-2 px-1 w-8 sticky left-0 bg-background z-10">
@@ -539,7 +539,7 @@ const MatrizVersatilidade = () => {
                 <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground w-20">Cargo</th>
                 <th className="text-center py-2 px-1.5 font-semibold text-muted-foreground w-10">Turno</th>
                 {canSeeFlags && AREAS.map(a => (
-                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-16 rounded-t", a.color)}>
+                  <th key={a.key} className={cn("text-center py-2 px-1 font-semibold text-white w-20 rounded-t", a.color)}>
                     <span className="block text-[9px] leading-tight">{getAreaLabel(a.key, a.label)}</span>
                   </th>
                 ))}

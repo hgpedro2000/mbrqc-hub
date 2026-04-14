@@ -359,7 +359,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
               <ModulePermissionsTab />
             </DialogContent>
           </Dialog>
-          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+          {pendingRequests.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
+              <ClipboardList className="w-4 h-4" />
+              Solicitações ({pendingRequests.length})
+            </Button>
+          )}
+          <Dialog open={open} onOpenChange={(v) => { if (!v) { resetForm(); setActiveRequestId(null); } setOpen(v); }}>
             <DialogTrigger asChild>
               <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
@@ -419,6 +425,62 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
           </Dialog>
         </div>
       </div>
+
+      {/* Pending Requests Dialog */}
+      <Dialog open={pendingListOpen} onOpenChange={setPendingListOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Solicitações de Novo Usuário</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground mb-3">Clique em "Finalizar Cadastro" para pré-preencher o formulário com os dados da solicitação.</p>
+          <div className="space-y-2">
+            {pendingRequests.map((req: any) => {
+              const desc = req.description || "";
+              const lines = desc.split("\n");
+              const parsed: Record<string, string> = {};
+              lines.forEach((l: string) => {
+                const [key, ...val] = l.split(": ");
+                if (key && val.length) parsed[key.trim()] = val.join(": ").trim();
+              });
+              return (
+                <div key={req.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{req.user_name}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] shrink-0">#{req.numero || "—"}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {parsed["Nome Completo"] && <p><span className="font-medium">Nome:</span> {parsed["Nome Completo"]}</p>}
+                    {parsed["Número do Usuário"] && <p><span className="font-medium">Número:</span> {parsed["Número do Usuário"]}</p>}
+                    {parsed["Turno"] && <p><span className="font-medium">Turno:</span> {parsed["Turno"]}</p>}
+                    {parsed["Cargo"] && <p><span className="font-medium">Cargo:</span> {parsed["Cargo"]}</p>}
+                    {parsed["Empresa"] && <p><span className="font-medium">Empresa:</span> {parsed["Empresa"]}</p>}
+                  </div>
+                  <Button size="sm" className="w-full gap-1" onClick={() => {
+                    const empresaRaw = parsed["Empresa"] || "";
+                    const isMobis = empresaRaw.includes("Mobis");
+                    setEmpresa(isMobis ? "mobis_brasil" : "empresa_terceira");
+                    setEmpresaTerceira(!isMobis ? empresaRaw.replace("Empresa Terceira - ", "") : "");
+                    setEmployeeNumber(parsed["Número do Usuário"] || "");
+                    setFullName(parsed["Nome Completo"] || "");
+                    setTurno(parsed["Turno"] || "");
+                    setCargo(parsed["Cargo"] || "");
+                    setEmail(parsed["E-mail"] || "");
+                    setActiveRequestId(req.id);
+                    setPendingListOpen(false);
+                    setOpen(true);
+                  }}>
+                    <UserPlus className="w-3.5 h-3.5" /> Finalizar Cadastro
+                  </Button>
+                </div>
+              );
+            })}
+            {pendingRequests.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-4">Nenhuma solicitação pendente.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Search */}
       <div className="relative">

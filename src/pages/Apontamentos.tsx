@@ -20,6 +20,7 @@ import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialo
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
+import { TagBadge } from "@/components/apontamento/TagBadge";
 
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
@@ -345,18 +346,12 @@ const Apontamentos = () => {
                     ) : null}
 
                     {/* TAG badge */}
-                    {(item as any).tag_number && (
-                      <Badge className="bg-indigo-500/15 text-indigo-700 border-indigo-300 text-xs gap-1">
-                        <Tag className="w-3 h-3" />
-                        TAG: {(item as any).tag_number}
-                      </Badge>
-                    )}
-                    {(item.quantidade_ng || 0) > 0 && !(item as any).tag_number && (
-                      <Badge variant="outline" className="text-[10px] border-amber-300 text-amber-600 bg-amber-50 gap-1">
-                        <Tag className="w-3 h-3" />
-                        Aguardando número de TAG
-                      </Badge>
-                    )}
+                    <TagBadge
+                      apontamentoId={item.id}
+                      numeroTag={(item as any).numero_tag ?? null}
+                      quantidadeNg={item.quantidade_ng || 0}
+                      onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
+                    />
 
                     {/* Meta row */}
                     <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">

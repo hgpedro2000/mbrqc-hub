@@ -197,3 +197,11 @@
 .pdf-no-tracking {
   letter-spacing: 0 !important;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

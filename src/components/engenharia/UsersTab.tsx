@@ -324,7 +324,7 @@ const UsersTab = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h2 className="text-lg font-heading font-semibold">Usuários</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -477,8 +477,9 @@ const UsersTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
+        <div className="w-full overflow-hidden">
+          <div className="overflow-x-auto -mx-3 px-3">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
@@ -509,17 +510,17 @@ const UsersTab = () => {
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                   </TableCell>
-                  <TableCell className="font-mono text-xs sm:text-sm">{p.employee_number}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{p.full_name}</TableCell>
+                  <TableCell className="font-mono text-xs">{p.employee_number}</TableCell>
+                  <TableCell className="text-xs">{p.full_name}</TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                     <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
                       {getEmpresaLabel(p)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.turno || "—"}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.email || "—"}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.cargo || "—"}</TableCell>
-                  <TableCell className="capitalize text-xs sm:text-sm">{getRoleForUser(p.id)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs">{p.email || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs">{p.cargo || "—"}</TableCell>
+                  <TableCell className="capitalize text-xs">{getRoleForUser(p.id)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
                   </TableCell>
@@ -527,17 +528,17 @@ const UsersTab = () => {
                     {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-8 w-8 p-0">
-                        <Pencil className="w-4 h-4" />
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-8 w-8 p-0">
-                        {resettingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                      <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                        {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" title="Excluir" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
-                            {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                            {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -560,6 +561,7 @@ const UsersTab = () => {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

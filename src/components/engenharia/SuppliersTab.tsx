@@ -144,55 +144,88 @@ const SuppliersTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox checked={filtered.length > 0 && filtered.every((s) => selectedIds.has(s.id))} onCheckedChange={() => {
-                    const allIds = filtered.map((s) => s.id);
-                    setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds));
-                  }} />
-                </TableHead>
-                <TableHead>Código</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden sm:table-cell">Origem</TableHead>
-                <TableHead className="hidden sm:table-cell">Ativo</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((s: any) => (
-                <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
-                  <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} /></TableCell>
-                  <TableCell className="font-mono text-xs sm:text-sm">{s.code}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{s.name}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant="outline" className={
+        <>
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-2">
+            {filtered.map((s: any) => (
+              <div key={s.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${!s.active ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{s.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="font-mono text-xs text-muted-foreground">{s.code}</span>
+                    <Badge variant="outline" className={`text-[10px] ${
                       s.origem === "CKD" ? "border-purple-400 text-purple-600 bg-purple-500/10" :
                       s.origem === "CONSIGNADA" ? "border-orange-400 text-orange-600 bg-orange-500/10" :
                       "border-blue-400 text-blue-600 bg-blue-500/10"
-                    }>{s.origem || "LP"}</Badge>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell"><Switch checked={s.active} onCheckedChange={() => toggleActive(s.id, s.active)} /></TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}><Pencil className="w-4 h-4" /></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader><AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir "{s.name}"?</AlertDialogDescription></AlertDialogHeader>
-                          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+                    }`}>{s.origem || "LP"}</Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader><AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir "{s.name}"?</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhum fornecedor encontrado</p>}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox checked={filtered.length > 0 && filtered.every((s) => selectedIds.has(s.id))} onCheckedChange={() => {
+                      const allIds = filtered.map((s) => s.id);
+                      setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds));
+                    }} />
+                  </TableHead>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Origem</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum fornecedor encontrado</TableCell></TableRow>)}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((s: any) => (
+                  <TableRow key={s.id} className={!s.active ? "opacity-50" : ""}>
+                    <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} /></TableCell>
+                    <TableCell className="font-mono text-xs">{s.code}</TableCell>
+                    <TableCell className="text-xs">{s.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        s.origem === "CKD" ? "border-purple-400 text-purple-600 bg-purple-500/10" :
+                        s.origem === "CONSIGNADA" ? "border-orange-400 text-orange-600 bg-orange-500/10" :
+                        "border-blue-400 text-blue-600 bg-blue-500/10"
+                      }>{s.origem || "LP"}</Badge>
+                    </TableCell>
+                    <TableCell><Switch checked={s.active} onCheckedChange={() => toggleActive(s.id, s.active)} /></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(s)}><Pencil className="w-4 h-4" /></Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader><AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir "{s.name}"?</AlertDialogDescription></AlertDialogHeader>
+                            <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (<TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum fornecedor encontrado</TableCell></TableRow>)}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

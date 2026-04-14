@@ -135,47 +135,72 @@ const PartNumbersTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))} onCheckedChange={() => { const allIds = filtered.map((p: any) => p.id); setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds)); }} /></TableHead>
-                <TableHead>Fornecedor</TableHead>
-                <TableHead>Part Number</TableHead>
-                <TableHead className="hidden md:table-cell">Part Name</TableHead>
-                <TableHead className="hidden lg:table-cell">Projeto</TableHead>
-                <TableHead className="hidden lg:table-cell">Módulo</TableHead>
-                <TableHead className="hidden lg:table-cell">ALC</TableHead>
-                <TableHead className="hidden sm:table-cell">Ativo</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((p: any) => (
-                <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
-                  <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
-                  <TableCell className="text-xs sm:text-sm">{p.suppliers?.name || "—"}</TableCell>
-                  <TableCell className="font-mono text-xs sm:text-sm">{p.part_number}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.part_name}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.project || "—"}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.line_module || "—"}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm font-mono">{p.alc_code || "N/A"}</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Switch checked={p.active} onCheckedChange={() => toggleActive(p.id, p.active)} /></TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="w-4 h-4" /></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{p.part_number}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+        <>
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-2">
+            {filtered.map((p: any) => (
+              <div key={p.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${!p.active ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-sm font-medium">{p.part_number}</p>
+                  <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{p.suppliers?.name || "—"}</p>
+                  {p.project && <p className="text-[10px] text-muted-foreground mt-0.5">{p.project} {p.line_module ? `• ${p.line_module}` : ""}</p>}
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{p.part_number}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhum part number encontrado</p>}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))} onCheckedChange={() => { const allIds = filtered.map((p: any) => p.id); setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds)); }} /></TableHead>
+                  <TableHead>Fornecedor</TableHead>
+                  <TableHead>Part Number</TableHead>
+                  <TableHead className="hidden md:table-cell">Part Name</TableHead>
+                  <TableHead className="hidden lg:table-cell">Projeto</TableHead>
+                  <TableHead className="hidden lg:table-cell">Módulo</TableHead>
+                  <TableHead className="hidden lg:table-cell">ALC</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((p: any) => (
+                  <TableRow key={p.id} className={!p.active ? "opacity-50" : ""}>
+                    <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} /></TableCell>
+                    <TableCell className="text-xs">{p.suppliers?.name || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{p.part_number}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{p.part_name}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs">{p.project || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs">{p.line_module || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs font-mono">{p.alc_code || "N/A"}</TableCell>
+                    <TableCell><Switch checked={p.active} onCheckedChange={() => toggleActive(p.id, p.active)} /></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}><Pencil className="w-4 h-4" /></Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{p.part_number}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (<TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum part number encontrado</TableCell></TableRow>)}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

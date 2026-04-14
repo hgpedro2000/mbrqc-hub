@@ -112,39 +112,62 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10"><Checkbox checked={filtered.length > 0 && filtered.every((i: any) => selectedIds.has(i.id))} onCheckedChange={() => { const allIds = filtered.map((i: any) => i.id); setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds)); }} /></TableHead>
-                <TableHead>{codeLabel}</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="hidden sm:table-cell">Ativo</TableHead>
-                <TableHead className="w-20"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((item: any) => (
-                <TableRow key={item.id} className={!item.active ? "opacity-50" : ""}>
-                  <TableCell onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></TableCell>
-                  <TableCell className="font-mono text-xs sm:text-sm">{item.code}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{item.description}</TableCell>
-                  <TableCell className="hidden sm:table-cell"><Switch checked={item.active} onCheckedChange={() => toggleActive(item.id, item.active)} /></TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
-                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{item.code}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
+        <>
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-2">
+            {filtered.map((item: any) => (
+              <div key={item.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${!item.active ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-sm font-medium">{item.code}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button></AlertDialogTrigger>
+                    <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{item.code}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhum item encontrado</p>}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3 pl-4">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10 pl-3"><Checkbox checked={filtered.length > 0 && filtered.every((i: any) => selectedIds.has(i.id))} onCheckedChange={() => { const allIds = filtered.map((i: any) => i.id); setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds)); }} /></TableHead>
+                  <TableHead>{codeLabel}</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Ativo</TableHead>
+                  <TableHead className="w-20"></TableHead>
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (<TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item encontrado</TableCell></TableRow>)}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((item: any) => (
+                  <TableRow key={item.id} className={!item.active ? "opacity-50" : ""}>
+                    <TableCell className="pl-3" onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></TableCell>
+                    <TableCell className="font-mono text-xs">{item.code}</TableCell>
+                    <TableCell className="text-xs">{item.description}</TableCell>
+                    <TableCell><Switch checked={item.active} onCheckedChange={() => toggleActive(item.id, item.active)} /></TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button></AlertDialogTrigger>
+                          <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir?</AlertDialogTitle><AlertDialogDescription>Excluir "{item.code}"?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteMutation.mutate(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (<TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item encontrado</TableCell></TableRow>)}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

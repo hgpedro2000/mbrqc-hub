@@ -556,92 +556,142 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="w-full overflow-hidden">
-          <div className="overflow-x-auto -mx-3 px-3">
-          <Table className="min-w-[640px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
-                    onCheckedChange={() => {
-                      const allIds = filtered.map((p: any) => p.id);
-                      const allSelected = allIds.every((id) => selectedIds.has(id));
-                      setSelectedIds(allSelected ? new Set() : new Set(allIds));
-                    }}
-                  />
-                </TableHead>
-                <TableHead>Número</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead className="hidden md:table-cell">Empresa</TableHead>
-                <TableHead className="hidden md:table-cell">Turno</TableHead>
-                <TableHead className="hidden lg:table-cell">E-mail</TableHead>
-                <TableHead className="hidden md:table-cell">Cargo</TableHead>
-                <TableHead>Perfil</TableHead>
-                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                <TableHead className="hidden lg:table-cell">Último Login</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((p: any) => (
-                <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">{p.employee_number}</TableCell>
-                  <TableCell className="text-xs">{p.full_name}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">
-                    <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
+        <>
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-2">
+            {filtered.map((p: any) => (
+              <div key={p.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${p.status !== "active" ? "opacity-50" : ""}`}>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{p.full_name}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{p.employee_number}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <Badge variant="outline" className={`text-[10px] ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
                       {getEmpresaLabel(p)}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs">{p.email || "—"}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs">{p.cargo || "—"}</TableCell>
-                  <TableCell className="capitalize text-xs">{getRoleForUser(p.id)}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                    {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-0.5">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
-                        <Pencil className="w-3.5 h-3.5" />
+                    <span className="text-[10px] text-muted-foreground capitalize">{getRoleForUser(p.id)}</span>
+                    {p.turno && <span className="text-[10px] text-muted-foreground">{p.turno}</span>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
+                    {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                        {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
-                        {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
-                            {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
-                            <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                        <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="text-center text-muted-foreground py-8 text-sm">Nenhum usuário encontrado</p>
+            )}
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block w-full overflow-hidden">
+            <div className="overflow-x-auto -mx-3 px-3">
+            <Table className="min-w-[640px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
+                      onCheckedChange={() => {
+                        const allIds = filtered.map((p: any) => p.id);
+                        const allSelected = allIds.every((id) => selectedIds.has(id));
+                        setSelectedIds(allSelected ? new Set() : new Set(allIds));
+                      }}
+                    />
+                  </TableHead>
+                  <TableHead>Número</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead className="hidden md:table-cell">Empresa</TableHead>
+                  <TableHead className="hidden md:table-cell">Turno</TableHead>
+                  <TableHead className="hidden lg:table-cell">E-mail</TableHead>
+                  <TableHead className="hidden md:table-cell">Cargo</TableHead>
+                  <TableHead>Perfil</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="hidden lg:table-cell">Último Login</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((p: any) => (
+                  <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{p.employee_number}</TableCell>
+                    <TableCell className="text-xs">{p.full_name}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">
+                      <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
+                        {getEmpresaLabel(p)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs">{p.email || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{p.cargo || "—"}</TableCell>
+                    <TableCell className="capitalize text-xs">{getRoleForUser(p.id)}</TableCell>
+                    <TableCell>
+                      <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                          {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                              {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                              <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

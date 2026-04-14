@@ -86,7 +86,7 @@ export const PendingTagsAlert = () => {
             {pendingItems.length}
           </Badge>
         </span>
-        <span className="ml-2">TAGs Pendentes do Turno {profile?.turno}</span>
+        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${profile?.turno}`}</span>
       </button>
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>

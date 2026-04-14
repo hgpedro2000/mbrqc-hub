@@ -315,7 +315,7 @@ const ConsultaPecas = () => {
       const sy = Math.round(img.height * recipe.cropY);
       const sw = Math.max(1, Math.round(img.width * recipe.cropW));
       const sh = Math.max(1, Math.round(img.height * recipe.cropH));
-      const scale = Math.max(2, Math.min(3, 1800 / Math.max(sw, sh)));
+      const scale = Math.max(1, Math.min(2, 800 / Math.max(sw, sh)));
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) continue;

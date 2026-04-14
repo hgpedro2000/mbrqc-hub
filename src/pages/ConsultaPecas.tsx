@@ -535,6 +535,7 @@ const ConsultaPecas = () => {
             <p className="text-xs text-muted-foreground text-center">{filtered.length} peça(s) encontrada(s)</p>
           </div>
         )}
+        </div>
       </main>
 
       {/* Type Chooser Dialog */}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTagPermission } from "@/hooks/useTagPermission";
+import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 export const PendingTagsAlert = () => {
   const { user, profile } = useAuth();
   const { canInsertTag } = useTagPermission();
+  const { isAdmin } = useUserRole();
   const [pendingItems, setPendingItems] = useState<any[]>([]);
   const [listOpen, setListOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -19,20 +21,30 @@ export const PendingTagsAlert = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchPending = async () => {
-    if (!user || !profile?.turno) return;
-    const { data } = await supabase
+    if (!user) return;
+    // Admin sees all shifts; others see only their own shift
+    let query = supabase
       .from("apontamentos")
       .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel")
-      .eq("turno", profile.turno)
       .gt("quantidade_ng", 0)
       .is("numero_tag" as any, null)
       .order("data", { ascending: false });
+
+    if (!isAdmin && profile?.turno) {
+      query = query.eq("turno", profile.turno);
+    } else if (!isAdmin && !profile?.turno) {
+      // Non-admin without a shift — nothing to show
+      setPendingItems([]);
+      return;
+    }
+
+    const { data } = await query;
     setPendingItems(data || []);
   };
 
   useEffect(() => {
     if (canInsertTag) fetchPending();
-  }, [canInsertTag, user]);
+  }, [canInsertTag, user, isAdmin]);
 
   const handleSaveTag = async (id: string) => {
     if (!tagInput.trim()) { toast.error("Informe o número da TAG"); return; }
@@ -74,7 +86,7 @@ export const PendingTagsAlert = () => {
             {pendingItems.length}
           </Badge>
         </span>
-        <span className="ml-2">TAGs Pendentes do Turno {profile?.turno}</span>
+        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${profile?.turno}`}</span>
       </button>
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
@@ -82,7 +94,7 @@ export const PendingTagsAlert = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Tag className="w-4 h-4" />
-              Apontamentos Pendentes de TAG — Turno {profile?.turno}
+              Apontamentos Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${profile?.turno}`}
             </DialogTitle>
           </DialogHeader>
 

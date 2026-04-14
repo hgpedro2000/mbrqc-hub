@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.extract-label-data]
 verify_jwt = false
+
+[functions.tag-escalation]
+verify_jwt = false

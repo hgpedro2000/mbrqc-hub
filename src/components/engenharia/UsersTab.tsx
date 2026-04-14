@@ -152,6 +152,16 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
       toast.success("Usuário criado com sucesso!");
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
       qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+      // If created from a pending request, mark it as resolved
+      if (activeRequestId) {
+        await supabase.from("error_reports")
+          .update({ status: "resolvido", admin_notes: "Usuário criado com sucesso." } as any)
+          .eq("id", activeRequestId);
+        qc.invalidateQueries({ queryKey: ["error-reports"] });
+        qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+        onRequestResolved?.();
+        setActiveRequestId(null);
+      }
       resetForm();
     } catch (e: any) {
       toast.error(e.message);

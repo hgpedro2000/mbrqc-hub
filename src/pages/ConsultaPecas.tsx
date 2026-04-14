@@ -1,16 +1,74 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Package } from "lucide-react";
+import { ArrowLeft, Search, Package, QrCode, X, AlertTriangle, Camera, ImagePlus, Loader2, Pencil, Send, Barcode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import ReportErrorButton from "@/components/ReportErrorButton";
+
+const READER_ID = "qr-reader-consulta";
+
+const QR_FORMATS = [
+  Html5QrcodeSupportedFormats.QR_CODE,
+  Html5QrcodeSupportedFormats.DATA_MATRIX,
+  Html5QrcodeSupportedFormats.AZTEC,
+  Html5QrcodeSupportedFormats.PDF_417,
+];
+
+const BARCODE_FORMATS = [
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.UPC_A,
+  Html5QrcodeSupportedFormats.UPC_E,
+  Html5QrcodeSupportedFormats.ITF,
+  Html5QrcodeSupportedFormats.CODABAR,
+];
+
+const ALL_FORMATS = [...QR_FORMATS, ...BARCODE_FORMATS];
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Scanner state
+  const [typeChooserOpen, setTypeChooserOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [selectedScanType, setSelectedScanType] = useState<"qrcode" | "barcode" | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const hasScanned = useRef(false);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Incompatible dialog
+  const [incompatibleOpen, setIncompatibleOpen] = useState(false);
+  const [rawQR, setRawQR] = useState("");
+  const [sending, setSending] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
+
+  // Suffix picker
+  const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);
+  const [suffixOptions, setSuffixOptions] = useState<Array<{
+    part_number: string;
+    part_name: string;
+    project: string;
+    line_module: string;
+    supplier_name: string;
+  }>>([]);
+  const [selectedSuffixPn, setSelectedSuffixPn] = useState("");
 
   const { data: partNumbers = [], isLoading } = useQuery({
     queryKey: ["consulta-part-numbers"],
@@ -45,6 +103,320 @@ const ConsultaPecas = () => {
     }
   };
 
+  // ── Scanner helpers ──
+
+  const getFormats = useCallback(() => {
+    if (selectedScanType === "barcode") return BARCODE_FORMATS;
+    if (selectedScanType === "qrcode") return QR_FORMATS;
+    return ALL_FORMATS;
+  }, [selectedScanType]);
+
+  const createScanner = useCallback(() => {
+    return new Html5Qrcode(READER_ID, {
+      formatsToSupport: getFormats(),
+      verbose: false,
+    });
+  }, [getFormats]);
+
+  const stopScanner = useCallback(async () => {
+    const scanner = scannerRef.current;
+    scannerRef.current = null;
+    if (!scanner) return;
+    try { await scanner.stop(); } catch {}
+    try { await scanner.clear(); } catch {}
+  }, []);
+
+  const closeScanner = useCallback(() => {
+    void stopScanner();
+    setScannerOpen(false);
+    setCameraError(null);
+    setIsProcessingImage(false);
+  }, [stopScanner]);
+
+  const applyScannedPartNumber = useCallback(async (pn: string) => {
+    const pnNormalized = pn.replace(/-/g, "");
+
+    // Search for exact or normalized match
+    const exactMatch = partNumbers.find((p: any) =>
+      p.part_number === pn || p.part_number.replace(/-/g, "") === pnNormalized
+    );
+
+    if (exactMatch) {
+      setSearchTerm(exactMatch.part_number);
+      toast({ title: "Peça encontrada!", description: `PN: ${exactMatch.part_number}` });
+      return;
+    }
+
+    // Strategy 1: scanned PN is the base, DB has base+suffix
+    let matches = partNumbers.filter((p: any) => {
+      const norm = p.part_number.replace(/-/g, "");
+      return norm.length > pnNormalized.length && norm.startsWith(pnNormalized);
+    });
+
+    // Strategy 2: scanned PN has suffix, strip last 3 to find siblings
+    if (matches.length === 0 && pnNormalized.length > 3) {
+      const baseNormalized = pnNormalized.slice(0, -3);
+      matches = partNumbers.filter((p: any) => {
+        const norm = p.part_number.replace(/-/g, "");
+        return norm.startsWith(baseNormalized) && norm.length === baseNormalized.length + 3;
+      });
+    }
+
+    if (matches.length === 1) {
+      setSearchTerm(matches[0].part_number);
+      toast({ title: "Peça encontrada!", description: `PN: ${matches[0].part_number}` });
+    } else if (matches.length > 1) {
+      const options = matches.map((m: any) => ({
+        part_number: m.part_number,
+        part_name: m.part_name || "",
+        project: m.project || "",
+        line_module: m.line_module || "",
+        supplier_name: m.suppliers?.name || "",
+      }));
+      setSuffixOptions(options);
+      setSelectedSuffixPn("");
+      setSuffixPickerOpen(true);
+      toast({ title: "Múltiplas variantes encontradas", description: "Selecione o Part Number correto." });
+    } else {
+      // No match at all — just set search term
+      setSearchTerm(pn);
+      toast({ title: "Part Number não cadastrado", description: `Buscando por: ${pn}`, variant: "destructive" });
+    }
+  }, [partNumbers, toast]);
+
+  const handleDecodedText = useCallback((decoded: string) => {
+    const parsed = parseHyundaiQR(decoded);
+
+    if (parsed) {
+      void applyScannedPartNumber(parsed.partNumber);
+      return;
+    }
+
+    // For barcodes, the decoded text might be a part number directly
+    const cleanDecoded = decoded.trim();
+    if (cleanDecoded && !cleanDecoded.includes("\x1d") && cleanDecoded.length >= 5) {
+      void applyScannedPartNumber(cleanDecoded);
+      return;
+    }
+
+    setRawQR(decoded);
+    setReportSent(false);
+    setIncompatibleOpen(true);
+  }, [applyScannedPartNumber]);
+
+  const handleParsedLabel = useCallback((parsed: HyundaiQRData) => {
+    void applyScannedPartNumber(parsed.partNumber);
+  }, [applyScannedPartNumber]);
+
+  const handleScanTypeChosen = useCallback(async (type: "qrcode" | "barcode") => {
+    setSelectedScanType(type);
+    setTypeChooserOpen(false);
+    hasScanned.current = false;
+    setCameraError(null);
+    setScannerOpen(true);
+
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    if (!document.getElementById(READER_ID)) {
+      setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+      return;
+    }
+
+    const formats = type === "barcode" ? BARCODE_FORMATS : QR_FORMATS;
+
+    try {
+      const scanner = new Html5Qrcode(READER_ID, { formatsToSupport: formats, verbose: false });
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: { exact: "environment" } },
+        { fps: 25, qrbox: { width: 350, height: type === "barcode" ? 150 : 350 }, aspectRatio: type === "barcode" ? 2 : 1, disableFlip: true },
+        (decoded) => {
+          if (hasScanned.current) return;
+          hasScanned.current = true;
+          void stopScanner();
+          setScannerOpen(false);
+          handleDecodedText(decoded);
+        },
+        () => {}
+      );
+    } catch {
+      try {
+        const scanner = new Html5Qrcode(READER_ID, { formatsToSupport: formats, verbose: false });
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 25, qrbox: { width: 350, height: type === "barcode" ? 150 : 350 }, aspectRatio: type === "barcode" ? 2 : 1, disableFlip: true },
+          (decoded) => {
+            if (hasScanned.current) return;
+            hasScanned.current = true;
+            void stopScanner();
+            setScannerOpen(false);
+            handleDecodedText(decoded);
+          },
+          () => {}
+        );
+      } catch {
+        setCameraError("Não foi possível acessar a câmera. Use a opção de tirar foto.");
+      }
+    }
+  }, [handleDecodedText, stopScanner]);
+
+  // Image processing helpers (same as QRScannerButton)
+  const loadImageElement = useCallback((file: File) => {
+    return new Promise<HTMLImageElement>((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Falha ao carregar imagem")); };
+      img.src = url;
+    });
+  }, []);
+
+  const canvasToFile = useCallback(async (canvas: HTMLCanvasElement, name: string) => {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png", 1));
+    if (!blob) throw new Error("Falha ao processar imagem");
+    return new File([blob], name, { type: "image/png" });
+  }, []);
+
+  const fileToDataUrl = useCallback((file: Blob) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Falha ao converter imagem"));
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  const buildImageVariants = useCallback(async (file: File) => {
+    const img = await loadImageElement(file);
+    const variants: File[] = [file];
+    const recipes = [
+      { name: "full-contrast", cropX: 0, cropY: 0, cropW: 1, cropH: 1, mode: "contrast" as const },
+      { name: "center-contrast", cropX: 0.12, cropY: 0.12, cropW: 0.76, cropH: 0.76, mode: "contrast" as const },
+      { name: "center-threshold", cropX: 0.12, cropY: 0.12, cropW: 0.76, cropH: 0.76, mode: "threshold" as const },
+    ];
+    for (const recipe of recipes) {
+      const sx = Math.round(img.width * recipe.cropX);
+      const sy = Math.round(img.height * recipe.cropY);
+      const sw = Math.max(1, Math.round(img.width * recipe.cropW));
+      const sh = Math.max(1, Math.round(img.height * recipe.cropH));
+      const scale = Math.max(2, Math.min(3, 1800 / Math.max(sw, sh)));
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) continue;
+      canvas.width = Math.max(1, Math.round(sw * scale));
+      canvas.height = Math.max(1, Math.round(sh * scale));
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imageData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const gray = d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+        if (recipe.mode === "threshold") {
+          const value = gray > 150 ? 255 : 0;
+          d[i] = value; d[i + 1] = value; d[i + 2] = value;
+        } else {
+          const contrast = 1.9;
+          const value = Math.max(0, Math.min(255, (gray - 128) * contrast + 128));
+          d[i] = value; d[i + 1] = value; d[i + 2] = value;
+        }
+      }
+      ctx.putImageData(imageData, 0, 0);
+      variants.push(await canvasToFile(canvas, `${recipe.name}.png`));
+    }
+    return variants;
+  }, [canvasToFile, loadImageElement]);
+
+  const analyzePhotoLabel = useCallback(async (file: File, variants: File[]) => {
+    const images = await Promise.all([file, ...variants.slice(1, 3)].map(fileToDataUrl));
+    const { data, error } = await supabase.functions.invoke("extract-label-data", { body: { images } });
+    if (error) throw error;
+    if (!data?.partNumber) return null;
+    return {
+      vendorCode: "", partNumber: data.partNumber, supplierCode: "",
+      lotNumber: data.lotNumber || "", raw: data.visibleText || data.partNumber,
+    } satisfies HyundaiQRData;
+  }, [fileToDataUrl]);
+
+  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setCameraError(null);
+    setIsProcessingImage(true);
+
+    try {
+      await stopScanner();
+      const variants = await buildImageVariants(file);
+      let decoded: string | null = null;
+
+      const formats = getFormats();
+      for (const variant of variants) {
+        const scanner = new Html5Qrcode("qr-reader-consulta-tmp", { formatsToSupport: formats, verbose: false });
+        try {
+          decoded = await scanner.scanFile(variant, true);
+          await scanner.clear();
+          if (decoded) break;
+        } catch { try { await scanner.clear(); } catch {} }
+      }
+
+      // Also try ALL formats if specific type didn't work
+      if (!decoded) {
+        for (const variant of variants) {
+          const scanner = new Html5Qrcode("qr-reader-consulta-tmp", { formatsToSupport: ALL_FORMATS, verbose: false });
+          try {
+            decoded = await scanner.scanFile(variant, true);
+            await scanner.clear();
+            if (decoded) break;
+          } catch { try { await scanner.clear(); } catch {} }
+        }
+      }
+
+      if (!decoded) {
+        const aiParsed = await analyzePhotoLabel(file, variants);
+        if (aiParsed) {
+          setScannerOpen(false);
+          handleParsedLabel(aiParsed);
+          toast({ title: "Etiqueta identificada pela foto!" });
+          return;
+        }
+        throw new Error("decode_failed");
+      }
+
+      setScannerOpen(false);
+      handleDecodedText(decoded);
+    } catch {
+      setCameraError("Não foi possível ler a etiqueta pela foto. Tente enquadrar mais de perto.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  }, [analyzePhotoLabel, buildImageVariants, getFormats, handleDecodedText, handleParsedLabel, stopScanner, toast]);
+
+  const handleSendReport = async () => {
+    setSending(true);
+    try {
+      await supabase.from("error_reports").insert({
+        user_id: user?.id,
+        user_name: profile?.full_name || "",
+        module: "Leitura QR/Barcode — Consulta de Peças",
+        description: `Código incompatível detectado.\n\nConteúdo capturado:\n${rawQR}`,
+        photos: [],
+      } as any);
+      setReportSent(true);
+      toast({ title: "Relatório enviado ao HelpDesk!" });
+    } catch {
+      toast({ title: "Erro ao enviar", variant: "destructive" });
+    } finally { setSending(false); }
+  };
+
+  const applySuffixSelection = (option: typeof suffixOptions[0]) => {
+    setSearchTerm(option.part_number);
+    setSuffixPickerOpen(false);
+    toast({ title: "Peça selecionada!", description: `PN: ${option.part_number}` });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="gradient-header">
@@ -70,17 +442,30 @@ const ConsultaPecas = () => {
 
       <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 space-y-4">
         <div className="form-section">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por Part Number, nome, fornecedor, ALC Code..."
-              className="pl-10 h-12 text-base"
-              
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar por Part Number, nome, fornecedor..."
+                className="pl-10 h-12 text-base"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-12 w-12 shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10"
+              onClick={() => setTypeChooserOpen(true)}
+            >
+              <QrCode className="w-5 h-5" />
+            </Button>
           </div>
         </div>
+
+        {/* Hidden element for scanFile */}
+        <div id="qr-reader-consulta-tmp" className="hidden" />
 
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
@@ -117,6 +502,171 @@ const ConsultaPecas = () => {
           </div>
         )}
       </main>
+
+      {/* Type Chooser Dialog */}
+      <Dialog open={typeChooserOpen} onOpenChange={setTypeChooserOpen}>
+        <DialogContent className="max-w-[90vw] sm:max-w-xs p-4">
+          <DialogHeader>
+            <DialogTitle>Tipo de Leitura</DialogTitle>
+            <DialogDescription>Selecione o tipo de código para escanear:</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="w-full gap-3 min-h-[56px] text-left justify-start"
+              onClick={() => { setTypeChooserOpen(false); handleScanTypeChosen("qrcode"); }}
+            >
+              <QrCode className="w-6 h-6 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">QR Code / Data Matrix</p>
+                <p className="text-xs text-muted-foreground">Etiquetas Hyundai Mobis, QR Codes</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full gap-3 min-h-[56px] text-left justify-start"
+              onClick={() => { setTypeChooserOpen(false); handleScanTypeChosen("barcode"); }}
+            >
+              <Barcode className="w-6 h-6 shrink-0" />
+              <div>
+                <p className="font-semibold text-sm">Código de Barras</p>
+                <p className="text-xs text-muted-foreground">Code 128, Code 39, EAN, UPC</p>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Scanner Dialog */}
+      <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 pr-10">
+              {selectedScanType === "barcode" ? <Barcode className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
+              {selectedScanType === "barcode" ? "Escanear Código de Barras" : "Escanear QR Code"}
+            </DialogTitle>
+            <Button variant="ghost" size="icon" className="absolute right-3 top-3" onClick={closeScanner}>
+              <X className="w-4 h-4" />
+            </Button>
+          </DialogHeader>
+          <div className="space-y-3">
+            {cameraError && (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <AlertTriangle className="w-10 h-10 text-amber-500" />
+                <p className="text-sm text-muted-foreground">{cameraError}</p>
+              </div>
+            )}
+
+            <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
+
+            <p className="text-xs text-muted-foreground text-center">
+              {selectedScanType === "barcode"
+                ? "Aponte a câmera para o código de barras da peça."
+                : "Aponte a câmera para o QR Code / Data Matrix da etiqueta."}
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Button type="button" onClick={() => cameraInputRef.current?.click()} variant="secondary" className="w-full gap-2 min-h-[44px]">
+                {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                {isProcessingImage ? "Lendo foto..." : "Tirar foto da etiqueta"}
+              </Button>
+              <Button type="button" onClick={() => galleryInputRef.current?.click()} variant="outline" className="w-full gap-2 min-h-[44px]">
+                <ImagePlus className="w-4 h-4" />
+                Escolher foto da galeria
+              </Button>
+            </div>
+
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelected} />
+            <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelected} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Incompatible Dialog */}
+      <Dialog open={incompatibleOpen} onOpenChange={setIncompatibleOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Código Incompatível
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-1">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Este código não foi reconhecido.</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300">Reporte ao HelpDesk para análise.</p>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Conteúdo capturado</p>
+              <div className="bg-muted rounded-lg p-3 max-h-24 overflow-y-auto">
+                <code className="text-xs break-all">{rawQR || "—"}</code>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => setIncompatibleOpen(false)} className="w-full gap-2 min-h-[44px]">
+                <Pencil className="w-4 h-4" />
+                Buscar manualmente
+              </Button>
+              {!reportSent ? (
+                <Button variant="outline" onClick={handleSendReport} disabled={sending} className="w-full gap-2 min-h-[44px]">
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  Reportar ao HelpDesk
+                </Button>
+              ) : (
+                <p className="text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">✓ Relatório enviado</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suffix Picker Dialog */}
+      <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Selecionar Variante
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              O Part Number lido possui variantes de cor/sufixo. Selecione o correto:
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={selectedSuffixPn} onValueChange={setSelectedSuffixPn} className="space-y-2">
+            {suffixOptions.map((opt) => {
+              const suffix = opt.part_number.replace(/-/g, "").slice(-3);
+              return (
+                <label
+                  key={opt.part_number}
+                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                    selectedSuffixPn === opt.part_number ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <RadioGroupItem value={opt.part_number} className="mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-sm">{opt.part_number}</span>
+                      <Badge variant="outline" className="text-[10px]">{suffix}</Badge>
+                    </div>
+                    {opt.part_name && <p className="text-xs text-muted-foreground mt-0.5 truncate">{opt.part_name}</p>}
+                    {opt.supplier_name && <p className="text-xs text-muted-foreground truncate">{opt.supplier_name}</p>}
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <Button
+            onClick={() => {
+              const selected = suffixOptions.find((o) => o.part_number === selectedSuffixPn);
+              if (selected) applySuffixSelection(selected);
+            }}
+            disabled={!selectedSuffixPn}
+            className="w-full mt-2"
+          >
+            Confirmar
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

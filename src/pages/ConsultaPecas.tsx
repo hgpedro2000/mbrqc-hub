@@ -469,7 +469,7 @@ const ConsultaPecas = () => {
             </div>
           </div>
           <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Pesquise peças por Part Number, nome, fornecedor ou ALC Code.</p>
+          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Pesquise peças por Part Number, nome, fornecedor ou ALC Code.</p>
         </div>
       </header>
 

@@ -1,13 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
-import { X } from "lucide-react";
+import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X, Tag, Pencil, Loader2, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
 import { FileText, AlertTriangle, Camera, Package, ClipboardCheck, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 import { stripCode } from "@/lib/stripCode";
+import { useTagPermission } from "@/hooks/useTagPermission";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -51,16 +57,132 @@ const DataField = ({ label, value, fullWidth }: { label: string; value: string; 
   </div>
 );
 
+/* ── TagBadgeInline ── */
+interface TagBadgeInlineProps {
+  apontamentoId: string;
+  numeroTag: string | null;
+  quantidadeNg: number;
+  onTagSaved: () => void;
+  allowEdit: boolean;
+}
+
+const TagBadgeInline = ({ apontamentoId, numeroTag, quantidadeNg, onTagSaved, allowEdit }: TagBadgeInlineProps) => {
+  const { profile } = useAuth();
+  const { canInsertTag } = useTagPermission();
+  const [open, setOpen] = useState(false);
+  const [tagInput, setTagInput] = useState(numeroTag || "");
+  const [saving, setSaving] = useState(false);
+
+  if (quantidadeNg <= 0) return null;
+
+  const handleSave = async () => {
+    if (!tagInput.trim()) {
+      toast.error("Informe o número da TAG");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("apontamentos")
+        .update({
+          numero_tag: tagInput.trim(),
+          tag_inserted_at: new Date().toISOString(),
+          tag_inserted_by: profile?.full_name || "",
+        })
+        .eq("id", apontamentoId);
+      if (error) throw error;
+      toast.success("TAG salva!");
+      onTagSaved();
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar TAG");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const canEdit = canInsertTag || allowEdit;
+
+  if (numeroTag) {
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
+            <Tag className="w-3.5 h-3.5" />
+            {numeroTag}
+          </span>
+          {canEdit && (
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => { setTagInput(numeroTag); setOpen(true); }} title="Editar TAG">
+              <Pencil className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Tag className="w-4 h-4" /> Editar TAG</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Número da TAG *</Label>
+                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Ex: TAG-2026-001" onKeyDown={(e) => e.key === "Enter" && handleSave()} autoFocus />
+              </div>
+              <Button onClick={handleSave} disabled={saving} className="w-full">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+                Salvar TAG
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  // No tag set
+  return (
+    <>
+      <span
+        onClick={() => canInsertTag && setOpen(true)}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200 ${canInsertTag ? "cursor-pointer animate-pulse hover:bg-amber-100" : "cursor-default"}`}
+        title={canInsertTag ? "Clique para inserir TAG" : "Aguardando número de TAG"}
+      >
+        <Tag className="w-3 h-3" />
+        Aguardando número de TAG
+      </span>
+      {canInsertTag && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2"><Tag className="w-4 h-4" /> Inserir TAG</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label>Número da TAG *</Label>
+                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Ex: TAG-2026-001" onKeyDown={(e) => e.key === "Enter" && handleSave()} autoFocus />
+              </div>
+              <Button onClick={handleSave} disabled={saving} className="w-full">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+                Salvar TAG
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+};
+
 const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: item, isLoading } = useQuery({
     queryKey: ["apontamento-view", apontamentoId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("apontamentos")
-        .select("*")
+        .select("*, numero_tag, tag_inserted_at, tag_inserted_by")
         .eq("id", apontamentoId!)
         .single();
       if (error) throw error;
@@ -195,7 +317,6 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={ClipboardCheck} title="Detalhes" />
         <div className="bg-card rounded-lg border border-border p-4 space-y-4">
-          {/* If NG > 0 and has multiple failure modes, show ONLY the individual detail */}
           {hasNg && hasMultipleFailureModes ? (
             <div className="space-y-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Detalhamento por Modo de Falha</p>
@@ -211,7 +332,6 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
               ))}
             </div>
           ) : (
-            /* Normal single defect info - NO Severidade/Responsabilidade */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
               {d?.modo_falha && <DataField label="Modo de Falha" value={stripCode(d.modo_falha)} />}
               <DataField label="Descrição" value={fmt("", d?.descricao)} fullWidth={!d?.modo_falha} />
@@ -450,20 +570,18 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
 
-              {/* TAG Number for incoming */}
-              {d?.tipo === "incoming" && (d?.quantidade_ng || 0) > 0 && (
-                <div data-pdf-section className="px-6">
+              {/* TAG Number section */}
+              {(d?.quantidade_ng || 0) > 0 && (
+                <div data-pdf-section className="px-0 sm:px-2">
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>
-                    {(d as any).tag_number ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-700 border border-indigo-300">
-                        🏷️ {(d as any).tag_number}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-200">
-                        Aguardando número de TAG
-                      </span>
-                    )}
+                    <TagBadgeInline
+                      apontamentoId={d.id}
+                      numeroTag={d?.numero_tag ?? null}
+                      quantidadeNg={d?.quantidade_ng || 0}
+                      onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] })}
+                      allowEdit={true}
+                    />
                   </div>
                 </div>
               )}

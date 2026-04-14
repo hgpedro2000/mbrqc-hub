@@ -13,7 +13,7 @@ import CatalogTab from "@/components/engenharia/CatalogTab";
 import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import CapsuleTab from "@/components/engenharia/CapsuleTab";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import ReportErrorButton from "@/components/ReportErrorButton";
@@ -37,6 +37,21 @@ const Engenharia = () => {
         .eq("status", "pendente");
       if (error) return 0;
       return count || 0;
+    },
+  });
+
+  const queryClient = useQueryClient();
+
+  const { data: userRequests = [] } = useQuery({
+    queryKey: ["user-requests"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("error_reports")
+        .select("*")
+        .ilike("module", "%usuário%")
+        .neq("status", "resolvido")
+        .order("created_at", { ascending: false });
+      return data || [];
     },
   });
 
@@ -146,7 +161,10 @@ const Engenharia = () => {
           </div>
 
           <TabsContent value="usuarios" className="form-section">
-            <UsersTab />
+            <UsersTab
+              pendingRequests={userRequests}
+              onRequestResolved={() => queryClient.invalidateQueries({ queryKey: ["user-requests"] })}
+            />
           </TabsContent>
 
           <TabsContent value="fornecedores" className="form-section">

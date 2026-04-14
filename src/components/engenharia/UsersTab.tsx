@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -23,7 +23,12 @@ const CARGOS = [
   "Gerente de Qualidade", "Diretor de Qualidade",
 ];
 
-const UsersTab = () => {
+interface UsersTabProps {
+  pendingRequests?: any[];
+  onRequestResolved?: () => void;
+}
+
+const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(() => {
     const prefill = sessionStorage.getItem("prefill_new_user");
@@ -59,6 +64,8 @@ const UsersTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [pendingListOpen, setPendingListOpen] = useState(false);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   // Edit state
   const [editId, setEditId] = useState("");
@@ -145,6 +152,16 @@ const UsersTab = () => {
       toast.success("Usuário criado com sucesso!");
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
       qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+      // If created from a pending request, mark it as resolved
+      if (activeRequestId) {
+        await supabase.from("error_reports")
+          .update({ status: "resolvido", admin_notes: "Usuário criado com sucesso." } as any)
+          .eq("id", activeRequestId);
+        qc.invalidateQueries({ queryKey: ["error-reports"] });
+        qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+        onRequestResolved?.();
+        setActiveRequestId(null);
+      }
       resetForm();
     } catch (e: any) {
       toast.error(e.message);
@@ -324,7 +341,7 @@ const UsersTab = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0 w-full overflow-hidden">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <h2 className="text-lg font-heading font-semibold">Usuários</h2>
         <div className="flex flex-wrap items-center gap-2">
@@ -342,7 +359,13 @@ const UsersTab = () => {
               <ModulePermissionsTab />
             </DialogContent>
           </Dialog>
-          <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
+          {pendingRequests.length > 0 && (
+            <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
+              <ClipboardList className="w-4 h-4" />
+              Solicitações ({pendingRequests.length})
+            </Button>
+          )}
+          <Dialog open={open} onOpenChange={(v) => { if (!v) { resetForm(); setActiveRequestId(null); } setOpen(v); }}>
             <DialogTrigger asChild>
               <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
@@ -402,6 +425,62 @@ const UsersTab = () => {
           </Dialog>
         </div>
       </div>
+
+      {/* Pending Requests Dialog */}
+      <Dialog open={pendingListOpen} onOpenChange={setPendingListOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Solicitações de Novo Usuário</DialogTitle></DialogHeader>
+          <p className="text-xs text-muted-foreground mb-3">Clique em "Finalizar Cadastro" para pré-preencher o formulário com os dados da solicitação.</p>
+          <div className="space-y-2">
+            {pendingRequests.map((req: any) => {
+              const desc = req.description || "";
+              const lines = desc.split("\n");
+              const parsed: Record<string, string> = {};
+              lines.forEach((l: string) => {
+                const [key, ...val] = l.split(": ");
+                if (key && val.length) parsed[key.trim()] = val.join(": ").trim();
+              });
+              return (
+                <div key={req.id} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{req.user_name}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("pt-BR")}</p>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] shrink-0">#{req.numero || "—"}</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {parsed["Nome Completo"] && <p><span className="font-medium">Nome:</span> {parsed["Nome Completo"]}</p>}
+                    {parsed["Número do Usuário"] && <p><span className="font-medium">Número:</span> {parsed["Número do Usuário"]}</p>}
+                    {parsed["Turno"] && <p><span className="font-medium">Turno:</span> {parsed["Turno"]}</p>}
+                    {parsed["Cargo"] && <p><span className="font-medium">Cargo:</span> {parsed["Cargo"]}</p>}
+                    {parsed["Empresa"] && <p><span className="font-medium">Empresa:</span> {parsed["Empresa"]}</p>}
+                  </div>
+                  <Button size="sm" className="w-full gap-1" onClick={() => {
+                    const empresaRaw = parsed["Empresa"] || "";
+                    const isMobis = empresaRaw.includes("Mobis");
+                    setEmpresa(isMobis ? "mobis_brasil" : "empresa_terceira");
+                    setEmpresaTerceira(!isMobis ? empresaRaw.replace("Empresa Terceira - ", "") : "");
+                    setEmployeeNumber(parsed["Número do Usuário"] || "");
+                    setFullName(parsed["Nome Completo"] || "");
+                    setTurno(parsed["Turno"] || "");
+                    setCargo(parsed["Cargo"] || "");
+                    setEmail(parsed["E-mail"] || "");
+                    setActiveRequestId(req.id);
+                    setPendingListOpen(false);
+                    setOpen(true);
+                  }}>
+                    <UserPlus className="w-3.5 h-3.5" /> Finalizar Cadastro
+                  </Button>
+                </div>
+              );
+            })}
+            {pendingRequests.length === 0 && (
+              <p className="text-center text-sm text-muted-foreground py-4">Nenhuma solicitação pendente.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Search */}
       <div className="relative">
@@ -477,8 +556,9 @@ const UsersTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
+        <div className="w-full overflow-hidden">
+          <div className="overflow-x-auto -mx-3 px-3">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10">
@@ -509,17 +589,17 @@ const UsersTab = () => {
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                   </TableCell>
-                  <TableCell className="font-mono text-xs sm:text-sm">{p.employee_number}</TableCell>
-                  <TableCell className="text-xs sm:text-sm">{p.full_name}</TableCell>
+                  <TableCell className="font-mono text-xs">{p.employee_number}</TableCell>
+                  <TableCell className="text-xs">{p.full_name}</TableCell>
                   <TableCell className="hidden md:table-cell text-xs sm:text-sm">
                     <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
                       {getEmpresaLabel(p)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.turno || "—"}</TableCell>
-                  <TableCell className="hidden lg:table-cell text-xs sm:text-sm">{p.email || "—"}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs sm:text-sm">{p.cargo || "—"}</TableCell>
-                  <TableCell className="capitalize text-xs sm:text-sm">{getRoleForUser(p.id)}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs">{p.email || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-xs">{p.cargo || "—"}</TableCell>
+                  <TableCell className="capitalize text-xs">{getRoleForUser(p.id)}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
                   </TableCell>
@@ -527,17 +607,17 @@ const UsersTab = () => {
                     {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-8 w-8 p-0">
-                        <Pencil className="w-4 h-4" />
+                    <div className="flex items-center justify-end gap-0.5">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-8 w-8 p-0">
-                        {resettingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
+                      <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                        {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm" title="Excluir" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
-                            {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                            {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -560,6 +640,7 @@ const UsersTab = () => {
               )}
             </TableBody>
           </Table>
+          </div>
         </div>
       )}
     </div>

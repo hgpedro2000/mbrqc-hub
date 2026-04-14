@@ -44,7 +44,7 @@ export const PendingTagsAlert = () => {
 
   useEffect(() => {
     if (canInsertTag) fetchPending();
-  }, [canInsertTag, user]);
+  }, [canInsertTag, user, isAdmin]);
 
   const handleSaveTag = async (id: string) => {
     if (!tagInput.trim()) { toast.error("Informe o número da TAG"); return; }

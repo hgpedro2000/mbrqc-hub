@@ -187,6 +187,7 @@ export type Database = {
           lote_inspecionado: string | null
           modo_falha: string | null
           numero: string | null
+          numero_tag: string | null
           observacoes: string | null
           parada_linha: string | null
           parada_linha_tempo: string | null
@@ -206,6 +207,8 @@ export type Database = {
           setor: string | null
           severidade: string | null
           status: string
+          tag_inserted_at: string | null
+          tag_inserted_by: string | null
           tag_number: string | null
           tempo_inspecao: string | null
           tipo: string
@@ -234,6 +237,7 @@ export type Database = {
           lote_inspecionado?: string | null
           modo_falha?: string | null
           numero?: string | null
+          numero_tag?: string | null
           observacoes?: string | null
           parada_linha?: string | null
           parada_linha_tempo?: string | null
@@ -253,6 +257,8 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tag_inserted_at?: string | null
+          tag_inserted_by?: string | null
           tag_number?: string | null
           tempo_inspecao?: string | null
           tipo: string
@@ -281,6 +287,7 @@ export type Database = {
           lote_inspecionado?: string | null
           modo_falha?: string | null
           numero?: string | null
+          numero_tag?: string | null
           observacoes?: string | null
           parada_linha?: string | null
           parada_linha_tempo?: string | null
@@ -300,6 +307,8 @@ export type Database = {
           setor?: string | null
           severidade?: string | null
           status?: string
+          tag_inserted_at?: string | null
+          tag_inserted_by?: string | null
           tag_number?: string | null
           tempo_inspecao?: string | null
           tipo?: string

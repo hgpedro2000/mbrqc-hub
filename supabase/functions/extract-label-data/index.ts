@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
 
     const imageParts = images
       .filter((value) => typeof value === "string" && value.startsWith("data:image/"))
-      .slice(0, 3)
+      .slice(0, 2)
       .map((url) => ({ type: "image_url", image_url: { url } }));
 
     if (imageParts.length === 0) {

@@ -12,6 +12,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
+import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -233,6 +234,9 @@ const Hub = () => {
       </header>
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
+        <div className="mb-4">
+          <PendingTagsAlert />
+        </div>
         {orderedModules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">

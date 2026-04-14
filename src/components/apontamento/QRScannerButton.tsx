@@ -174,10 +174,23 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
 
   const fileToDataUrl = useCallback((file: Blob) => {
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("Falha ao converter imagem"));
-      reader.readAsDataURL(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const c = document.createElement("canvas");
+        c.width = width; c.height = height;
+        c.getContext("2d")!.drawImage(img, 0, 0, width, height);
+        resolve(c.toDataURL("image/jpeg", 0.6));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Falha ao converter imagem")); };
+      img.src = url;
     });
   }, []);
 
@@ -198,7 +211,7 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
       const sy = Math.round(img.height * recipe.cropY);
       const sw = Math.max(1, Math.round(img.width * recipe.cropW));
       const sh = Math.max(1, Math.round(img.height * recipe.cropH));
-      const scale = Math.max(2, Math.min(3, 1800 / Math.max(sw, sh)));
+      const scale = Math.max(1, Math.min(2, 800 / Math.max(sw, sh)));
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) continue;

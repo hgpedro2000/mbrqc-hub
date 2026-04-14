@@ -1204,6 +1204,43 @@ const ApontamentoForm = () => {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {/* Re-scan Confirmation Dialog */}
+      <Dialog open={showRescanConfirm} onOpenChange={setShowRescanConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Nova Leitura Detectada
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Já existe uma leitura carregada. O que deseja fazer?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border p-3 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Leitura atual</p>
+              <p className="font-mono text-sm font-semibold">{partNumber}</p>
+              {partName && <p className="text-xs text-muted-foreground">{partName}</p>}
+            </div>
+            {pendingQRData && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-1">
+                <p className="text-xs font-medium text-primary">Nova leitura</p>
+                <p className="font-mono text-sm font-semibold">{pendingQRData.partNumber}</p>
+                {pendingQRData.lotNumber && <p className="text-xs text-muted-foreground">Lote: {pendingQRData.lotNumber}</p>}
+              </div>
+            )}
+            <div className="flex flex-col gap-2 pt-2">
+              <Button onClick={confirmRescan} className="w-full">
+                Carregar nova leitura
+              </Button>
+              <Button onClick={cancelRescan} variant="outline" className="w-full">
+                Manter leitura atual
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

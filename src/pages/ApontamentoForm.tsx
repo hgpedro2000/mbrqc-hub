@@ -16,8 +16,9 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -109,10 +110,32 @@ const ApontamentoForm = () => {
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
   const [tagNumber, setTagNumber] = useState("");
 
+  // Suffix picker state
+  const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);
+  const [suffixOptions, setSuffixOptions] = useState<Array<{
+    part_number: string;
+    part_name: string;
+    project: string;
+    line_module: string;
+    supplier_name: string;
+  }>>([]);
+  const [pendingLot, setPendingLot] = useState("");
+  const [selectedSuffixPn, setSelectedSuffixPn] = useState("");
+
+  const applySuffixSelection = (option: typeof suffixOptions[number]) => {
+    setPartNumber(option.part_number);
+    if (option.part_name) setPartName(option.part_name);
+    if (option.project) setProjeto(option.project);
+    if (option.line_module) setModulo(option.line_module);
+    if (option.supplier_name) setFornecedor(option.supplier_name);
+    setSuffixPickerOpen(false);
+  };
+
   const handleQRScan = async (qrData: HyundaiQRData) => {
     const pn = qrData.partNumber;
     setPartNumber(pn);
     if (qrData.lotNumber) setLoteInspecionado(qrData.lotNumber);
+    setPendingLot(qrData.lotNumber || "");
     setValidationErrors((prev) => {
       const next = new Set(prev);
       next.delete("partNumber");
@@ -122,21 +145,19 @@ const ApontamentoForm = () => {
       return next;
     });
 
-    // Auto-fill Projeto, Fornecedor, Part Name and Módulo from the part_numbers table
     try {
       const pnNormalized = pn.replace(/-/g, "");
-      const pnWithHyphen = pn.includes("-") ? pn : null;
 
-      // Try exact match first (as-is)
+      // Try exact match first
       let { data: partData } = await supabase
         .from("part_numbers")
-        .select("part_name, project, line_module, supplier_id, suppliers(name)")
+        .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
         .eq("part_number", pn)
         .eq("active", true)
         .limit(1)
         .maybeSingle();
 
-      // Try without hyphens or with hyphens (normalize both directions)
+      // Try normalized exact match
       if (!partData) {
         const { data: allActive } = await supabase
           .from("part_numbers")
@@ -147,14 +168,54 @@ const ApontamentoForm = () => {
         }
       }
 
-      // Color suffix matters — no partial match fallback
-
       if (partData) {
+        // Exact match found — auto-fill
         if (partData.part_name) setPartName(partData.part_name);
         if (partData.project) setProjeto(partData.project);
         if (partData.line_module) setModulo(partData.line_module);
         const supplierName = (partData as any).suppliers?.name;
         if (supplierName) setFornecedor(supplierName);
+        return;
+      }
+
+      // No exact match — check if the base (without color suffix) has variants
+      // Color suffix = last 3 characters (e.g., YGN, NNA)
+      const baseNormalized = pnNormalized.length > 3 ? pnNormalized.slice(0, -3) : pnNormalized;
+
+      const { data: allActive } = await supabase
+        .from("part_numbers")
+        .select("part_name, project, line_module, part_number, suppliers(name)")
+        .eq("active", true);
+
+      if (allActive) {
+        const matches = allActive.filter((p) => {
+          const norm = p.part_number.replace(/-/g, "");
+          return norm.length > 3 && norm.slice(0, -3) === baseNormalized;
+        });
+
+        if (matches.length === 1) {
+          // Single variant — auto-fill with it
+          const m = matches[0];
+          setPartNumber(m.part_number);
+          if (m.part_name) setPartName(m.part_name);
+          if (m.project) setProjeto(m.project);
+          if (m.line_module) setModulo(m.line_module);
+          const supplierName = (m as any).suppliers?.name;
+          if (supplierName) setFornecedor(supplierName);
+        } else if (matches.length > 1) {
+          // Multiple variants — show picker
+          const options = matches.map((m) => ({
+            part_number: m.part_number,
+            part_name: m.part_name || "",
+            project: m.project || "",
+            line_module: m.line_module || "",
+            supplier_name: (m as any).suppliers?.name || "",
+          }));
+          setSuffixOptions(options);
+          setSelectedSuffixPn("");
+          setSuffixPickerOpen(true);
+          toast.warning("Part Number lido não encontrado exatamente. Selecione a variante correta.", { duration: 5000 });
+        }
       }
     } catch {
       // Silently fail — user can fill manually
@@ -1019,6 +1080,54 @@ const ApontamentoForm = () => {
             </div>
             <Button onClick={() => setShowCoInspetorDialog(false)} className="w-full">Confirmar</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suffix Picker Dialog */}
+      <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Selecionar Variante
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              O Part Number lido possui variantes de cor/sufixo. Selecione o correto:
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={selectedSuffixPn} onValueChange={setSelectedSuffixPn} className="space-y-2">
+            {suffixOptions.map((opt) => {
+              const suffix = opt.part_number.replace(/-/g, "").slice(-3);
+              return (
+                <label
+                  key={opt.part_number}
+                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                    selectedSuffixPn === opt.part_number ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <RadioGroupItem value={opt.part_number} className="mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-sm">{opt.part_number}</span>
+                      <Badge variant="outline" className="text-[10px]">{suffix}</Badge>
+                    </div>
+                    {opt.part_name && <p className="text-xs text-muted-foreground mt-0.5 truncate">{opt.part_name}</p>}
+                    {opt.supplier_name && <p className="text-xs text-muted-foreground truncate">{opt.supplier_name}</p>}
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <Button
+            onClick={() => {
+              const selected = suffixOptions.find((o) => o.part_number === selectedSuffixPn);
+              if (selected) applySuffixSelection(selected);
+            }}
+            disabled={!selectedSuffixPn}
+            className="w-full mt-2"
+          >
+            Confirmar
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

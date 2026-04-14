@@ -255,6 +255,47 @@ const ApontamentoForm = () => {
     }
   };
 
+  const handleQRScan = (qrData: HyundaiQRData) => {
+    if (partNumber && partNumber.trim() !== "") {
+      setPendingQRData(qrData);
+      setShowRescanConfirm(true);
+      return;
+    }
+    void applyQRScan(qrData);
+  };
+
+  const confirmRescan = () => {
+    if (pendingQRData) {
+      setPartNumber("");
+      setPartName("");
+      setProjeto("");
+      setFornecedor("");
+      setModulo("");
+      setLoteInspecionado("");
+      setDescricao("");
+      setModoFalha("");
+      setResponsabilidadeDefeito("");
+      setQuantidadeInspecionada(0);
+      setQuantidadeNg(0);
+      setQuantidadeOk(0);
+      setQuantidadeDetectado(0);
+      setDefeitosDetalhes([]);
+      setSegundoDefeitos([]);
+      setTemSegundoDefeito("nao");
+      setNgMultiploDecisao(null);
+      setTagNumber("");
+      void applyQRScan(pendingQRData);
+    }
+    setShowRescanConfirm(false);
+    setPendingQRData(null);
+  };
+
+  const cancelRescan = () => {
+    setShowRescanConfirm(false);
+    setPendingQRData(null);
+    toast.info("Leitura atual mantida.");
+  };
+
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["apontamento-edit", id],

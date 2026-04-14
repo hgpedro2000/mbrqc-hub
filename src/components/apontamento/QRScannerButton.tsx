@@ -42,11 +42,13 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const [reportSent, setReportSent] = useState(false);
 
   const handleParsedLabel = useCallback((parsed: HyundaiQRData, title = "Etiqueta lida!") => {
+    playBeep();
     onScan(parsed);
     toast({ title, description: `PN: ${parsed.partNumber}` });
   }, [onScan, toast]);
 
   const handleDecodedText = useCallback((decoded: string) => {
+    playBeep();
     const parsed = parseHyundaiQR(decoded);
 
     if (parsed) {

@@ -50,6 +50,7 @@ const QrScannerModal = ({ open, onClose, onScan, title = "Escanear QR Code" }: Q
           (decodedText) => {
             if (scannedRef.current) return;
             scannedRef.current = true;
+            playBeep();
 
             void (async () => {
               await cleanupScanner();

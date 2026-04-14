@@ -473,8 +473,8 @@ const ConsultaPecas = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 pb-12 flex flex-col" style={{ marginTop: "-1.5rem" }}>
-        <div className="sticky top-0 z-10 bg-background shadow-sm rounded-lg border border-border p-3 mb-4">
+      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 space-y-4">
+        <div className="form-section">
           <div className="flex gap-2 w-full">
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -500,7 +500,7 @@ const ConsultaPecas = () => {
         {/* Hidden element for scanFile */}
         <div id="qr-reader-consulta-tmp" className="hidden" />
 
-        <div className="flex-1 space-y-4">
+        <div className="space-y-4">
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (

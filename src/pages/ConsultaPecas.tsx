@@ -282,10 +282,23 @@ const ConsultaPecas = () => {
 
   const fileToDataUrl = useCallback((file: Blob) => {
     return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("Falha ao converter imagem"));
-      reader.readAsDataURL(file);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const c = document.createElement("canvas");
+        c.width = width; c.height = height;
+        c.getContext("2d")!.drawImage(img, 0, 0, width, height);
+        resolve(c.toDataURL("image/jpeg", 0.6));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Falha ao converter imagem")); };
+      img.src = url;
     });
   }, []);
 

@@ -40,19 +40,23 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
+  const handleParsedLabel = useCallback((parsed: HyundaiQRData, title = "Etiqueta lida!") => {
+    onScan(parsed);
+    toast({ title, description: `PN: ${parsed.partNumber}` });
+  }, [onScan, toast]);
+
   const handleDecodedText = useCallback((decoded: string) => {
     const parsed = parseHyundaiQR(decoded);
 
     if (parsed) {
-      onScan(parsed);
-      toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
+      handleParsedLabel(parsed);
       return;
     }
 
     setRawQR(decoded);
     setReportSent(false);
     setIncompatibleOpen(true);
-  }, [onScan, toast]);
+  }, [handleParsedLabel]);
 
   const stopScanner = useCallback(async () => {
     const scanner = scannerRef.current;
@@ -168,6 +172,15 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     return new File([blob], name, { type: "image/png" });
   }, []);
 
+  const fileToDataUrl = useCallback((file: Blob) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Falha ao converter imagem"));
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
   const buildImageVariants = useCallback(async (file: File) => {
     const img = await loadImageElement(file);
     const variants: File[] = [file];
@@ -221,6 +234,24 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
     return variants;
   }, [canvasToFile, loadImageElement]);
 
+  const analyzePhotoLabel = useCallback(async (file: File, variants: File[]) => {
+    const images = await Promise.all([file, ...variants.slice(1, 3)].map(fileToDataUrl));
+    const { data, error } = await supabase.functions.invoke("extract-label-data", {
+      body: { images },
+    });
+
+    if (error) throw error;
+    if (!data?.partNumber) return null;
+
+    return {
+      vendorCode: "",
+      partNumber: data.partNumber,
+      supplierCode: "",
+      lotNumber: data.lotNumber || "",
+      raw: data.visibleText || data.partNumber,
+    } satisfies HyundaiQRData;
+  }, [fileToDataUrl]);
+
   const handlePickCamera = useCallback(() => {
     cameraInputRef.current?.click();
   }, []);
@@ -258,17 +289,24 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
       }
 
       if (!decoded) {
+        const aiParsed = await analyzePhotoLabel(file, variants);
+        if (aiParsed) {
+          setScannerOpen(false);
+          handleParsedLabel(aiParsed, "Etiqueta identificada pela foto!");
+          return;
+        }
+
         throw new Error("decode_failed");
       }
 
       setScannerOpen(false);
       handleDecodedText(decoded);
     } catch {
-      setCameraError("Não foi possível ler a etiqueta pela foto. Tente aproximar mais, centralizar só o código e evitar reflexos na etiqueta.");
+      setCameraError("Não foi possível ler a etiqueta pela foto. Tente enquadrar mais de perto a etiqueta amarela e evitar reflexos fortes.");
     } finally {
       setIsProcessingImage(false);
     }
-  }, [buildImageVariants, createScanner, handleDecodedText, stopScanner]);
+  }, [analyzePhotoLabel, buildImageVariants, createScanner, handleDecodedText, handleParsedLabel, stopScanner]);
 
   const handleSendReport = async () => {
     setSending(true);

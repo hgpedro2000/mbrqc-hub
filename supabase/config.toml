@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.delete-user-admin]
 verify_jwt = false
+
+[functions.extract-label-data]
+verify_jwt = true

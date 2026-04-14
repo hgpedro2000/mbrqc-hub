@@ -122,6 +122,10 @@ const ApontamentoForm = () => {
   const [pendingLot, setPendingLot] = useState("");
   const [selectedSuffixPn, setSelectedSuffixPn] = useState("");
 
+  // Re-scan confirmation state
+  const [pendingQRData, setPendingQRData] = useState<HyundaiQRData | null>(null);
+  const [showRescanConfirm, setShowRescanConfirm] = useState(false);
+
   const applySuffixSelection = (option: typeof suffixOptions[number]) => {
     setPartNumber(option.part_number);
     if (option.part_name) setPartName(option.part_name);
@@ -131,7 +135,7 @@ const ApontamentoForm = () => {
     setSuffixPickerOpen(false);
   };
 
-  const handleQRScan = async (qrData: HyundaiQRData) => {
+  const applyQRScan = async (qrData: HyundaiQRData) => {
     const pn = qrData.partNumber;
     setPartNumber(pn);
     if (qrData.lotNumber) setLoteInspecionado(qrData.lotNumber);
@@ -249,6 +253,47 @@ const ApontamentoForm = () => {
     } catch {
       // Silently fail — user can fill manually
     }
+  };
+
+  const handleQRScan = (qrData: HyundaiQRData) => {
+    if (partNumber && partNumber.trim() !== "") {
+      setPendingQRData(qrData);
+      setShowRescanConfirm(true);
+      return;
+    }
+    void applyQRScan(qrData);
+  };
+
+  const confirmRescan = () => {
+    if (pendingQRData) {
+      setPartNumber("");
+      setPartName("");
+      setProjeto("");
+      setFornecedor("");
+      setModulo("");
+      setLoteInspecionado("");
+      setDescricao("");
+      setModoFalha("");
+      setResponsabilidadeDefeito("");
+      setQuantidadeInspecionada(0);
+      setQuantidadeNg(0);
+      setQuantidadeOk(0);
+      setQuantidadeDetectado(0);
+      setDefeitosDetalhes([]);
+      setSegundoDefeitos([]);
+      setTemSegundoDefeito("nao");
+      setNgMultiploDecisao(null);
+      setTagNumber("");
+      void applyQRScan(pendingQRData);
+    }
+    setShowRescanConfirm(false);
+    setPendingQRData(null);
+  };
+
+  const cancelRescan = () => {
+    setShowRescanConfirm(false);
+    setPendingQRData(null);
+    toast.info("Leitura atual mantida.");
   };
 
   // Load existing data
@@ -1157,6 +1202,43 @@ const ApontamentoForm = () => {
           >
             Confirmar
           </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Re-scan Confirmation Dialog */}
+      <Dialog open={showRescanConfirm} onOpenChange={setShowRescanConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Nova Leitura Detectada
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Já existe uma leitura carregada. O que deseja fazer?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-lg border p-3 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Leitura atual</p>
+              <p className="font-mono text-sm font-semibold">{partNumber}</p>
+              {partName && <p className="text-xs text-muted-foreground">{partName}</p>}
+            </div>
+            {pendingQRData && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-1">
+                <p className="text-xs font-medium text-primary">Nova leitura</p>
+                <p className="font-mono text-sm font-semibold">{pendingQRData.partNumber}</p>
+                {pendingQRData.lotNumber && <p className="text-xs text-muted-foreground">Lote: {pendingQRData.lotNumber}</p>}
+              </div>
+            )}
+            <div className="flex flex-col gap-2 pt-2">
+              <Button onClick={confirmRescan} className="w-full">
+                Carregar nova leitura
+              </Button>
+              <Button onClick={cancelRescan} variant="outline" className="w-full">
+                Manter leitura atual
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

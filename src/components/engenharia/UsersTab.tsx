@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -23,7 +23,12 @@ const CARGOS = [
   "Gerente de Qualidade", "Diretor de Qualidade",
 ];
 
-const UsersTab = () => {
+interface UsersTabProps {
+  pendingRequests?: any[];
+  onRequestResolved?: () => void;
+}
+
+const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) => {
   const qc = useQueryClient();
   const [open, setOpen] = useState(() => {
     const prefill = sessionStorage.getItem("prefill_new_user");
@@ -59,6 +64,8 @@ const UsersTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [pendingListOpen, setPendingListOpen] = useState(false);
+  const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
 
   // Edit state
   const [editId, setEditId] = useState("");

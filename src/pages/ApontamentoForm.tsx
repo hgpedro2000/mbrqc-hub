@@ -202,6 +202,26 @@ const ApontamentoForm = () => {
           });
         }
 
+        // Third try: fuzzy match — handle OCR misreads (B↔8, 0↔O, 1↔I, 5↔S)
+        if (matches.length === 0 && pnNormalized.length >= 6) {
+          const fuzzyNormalize = (s: string) =>
+            s.toUpperCase().replace(/8/g, "B").replace(/0/g, "O").replace(/1/g, "I").replace(/5/g, "S");
+          const fuzzyScanned = fuzzyNormalize(pnNormalized);
+          matches = allActive.filter((p) => {
+            const norm = p.part_number.replace(/-/g, "");
+            return fuzzyNormalize(norm) === fuzzyScanned;
+          });
+          // Also try fuzzy on base (without last 3 suffix chars)
+          if (matches.length === 0) {
+            const fuzzyBase = fuzzyScanned.slice(0, -3);
+            matches = allActive.filter((p) => {
+              const norm = p.part_number.replace(/-/g, "");
+              const fuzzyNorm = fuzzyNormalize(norm);
+              return fuzzyNorm.length >= fuzzyBase.length && fuzzyNorm.startsWith(fuzzyBase);
+            });
+          }
+        }
+
         if (matches.length === 1) {
           // Single variant — auto-fill with it
           const m = matches[0];

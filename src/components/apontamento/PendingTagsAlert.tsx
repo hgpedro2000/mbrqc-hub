@@ -94,7 +94,7 @@ export const PendingTagsAlert = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Tag className="w-4 h-4" />
-              Apontamentos Pendentes de TAG — Turno {profile?.turno}
+              Apontamentos Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${profile?.turno}`}
             </DialogTitle>
           </DialogHeader>
 

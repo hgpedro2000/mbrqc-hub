@@ -26,6 +26,72 @@ const typeLabels: Record<string, string> = {
   incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM",
 };
 
+/* ── Mobile card for Daily mode ── */
+const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
+    <div className="flex justify-between items-center mb-1">
+      {r.numero ? (
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+      ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
+      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+    </div>
+    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
+    <div className="flex gap-3 text-xs">
+      <span>Insp: {r.quantidade_inspecionada || 0}</span>
+      <span className={`font-bold ${(r.quantidade_ng || 0) > 0 ? "text-destructive" : ""}`}>NG: {r.quantidade_ng || 0}</span>
+      <span>OK: {r.quantidade_ok || 0}</span>
+    </div>
+    {(stripCode(r.modo_falha) || r.descricao) && (
+      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+    )}
+  </div>
+);
+
+/* ── Mobile card for NG mode ── */
+const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; photoUrl?: string; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void }) => (
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
+    <div className="flex justify-between items-center mb-1">
+      {r.numero ? (
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+      ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
+      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+    </div>
+    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
+    <div className="flex gap-3 text-xs mb-2">
+      <span>Insp: {r.quantidade_inspecionada || 0}</span>
+      <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
+      <span>OK: {r.quantidade_ok || 0}</span>
+    </div>
+    <div className="flex justify-between items-center">
+      <div>
+        {r.numero_tag ? (
+          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag}</Badge>
+        ) : (
+          <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
+        )}
+      </div>
+      {photoUrl ? (
+        <img
+          src={photoUrl}
+          alt="Foto NG"
+          className="w-16 h-16 object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+          style={{ aspectRatio: "1/1" }}
+          onClick={() => onPhotoClick(photoUrl)}
+        />
+      ) : (
+        <span className="text-muted-foreground text-[10px]">—</span>
+      )}
+    </div>
+    {(stripCode(r.modo_falha) || r.descricao) && (
+      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+    )}
+  </div>
+);
+
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
   const today = new Date().toISOString().split("T")[0];
   const [dateFrom, setDateFrom] = useState(today);
@@ -88,12 +154,18 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
     if (!contentRef.current) return;
     const el = contentRef.current;
     const exportBtns = el.querySelectorAll("[data-export-btn]");
+    const mobileCards = el.querySelectorAll("[data-mobile-cards]");
     exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
+    mobileCards.forEach((c) => (c as HTMLElement).style.display = "none");
+    const desktopTables = el.querySelectorAll("[data-desktop-table]");
+    desktopTables.forEach((t) => (t as HTMLElement).style.display = "block");
     try {
       const fileName = mode === "daily" ? `relatorio-diario-${dateFrom}.pdf` : `relatorio-ng-${today}.pdf`;
       await exportPdfFromRef(el, fileName, { orientation: "landscape", pageWidthMm: 297, windowWidth: 1200 });
     } finally {
       exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
+      mobileCards.forEach((c) => (c as HTMLElement).style.display = "");
+      desktopTables.forEach((t) => (t as HTMLElement).style.display = "");
     }
   };
 
@@ -116,6 +188,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
         </DialogClose>
 
         <div ref={contentRef} className="flex flex-col">
+          {/* Header */}
           <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
               <div className="flex items-center gap-4">
@@ -136,7 +209,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[130px] text-xs h-8 justify-start", !dateFrom && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateFrom && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1" />
                         {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De"}
                       </Button>
@@ -148,7 +221,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                   <span className="text-xs text-muted-foreground">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[130px] text-xs h-8 justify-start", !dateTo && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateTo && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1" />
                         {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até"}
                       </Button>
@@ -163,14 +236,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
             </div>
           </div>
 
+          {/* Summary cards */}
           <div className="px-4 md:px-6 py-3">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-3 bg-card rounded-lg border border-border"><p className="text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[10px] text-muted-foreground uppercase">Total Registros</p></div>
-              <div className="text-center p-3 bg-card rounded-lg border border-border"><p className="text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[10px] text-muted-foreground uppercase">Inspecionadas</p></div>
-              <div className="text-center p-3 bg-card rounded-lg border border-border"><p className="text-xl font-bold text-destructive">{totalNG}</p><p className="text-[10px] text-muted-foreground uppercase">Total NG</p></div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 w-full">
+              <div className="text-center p-3 bg-card rounded-lg border border-border w-full"><p className="text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[10px] text-muted-foreground uppercase">Total Registros</p></div>
+              <div className="text-center p-3 bg-card rounded-lg border border-border w-full"><p className="text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[10px] text-muted-foreground uppercase">Inspecionadas</p></div>
+              <div className="text-center p-3 bg-card rounded-lg border border-border w-full col-span-2 sm:col-span-1"><p className="text-xl font-bold text-destructive">{totalNG}</p><p className="text-[10px] text-muted-foreground uppercase">Total NG</p></div>
             </div>
           </div>
 
+          {/* Content by type */}
           <div className="px-4 md:px-6 pb-4 space-y-4">
             {Object.entries(byType).map(([tipo, records]) => (
               <div key={tipo}>
@@ -178,7 +253,20 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                   <Badge variant="secondary" className="text-xs">{typeLabels[tipo] || tipo}</Badge>
                   <span className="text-xs text-muted-foreground">({records.length} registros)</span>
                 </div>
-                <div className="overflow-x-auto rounded-lg border border-border">
+
+                {/* Mobile cards */}
+                <div className="block sm:hidden space-y-2" data-mobile-cards>
+                  {records.map((r) =>
+                    mode === "ng" ? (
+                      <NgMobileCard key={r.id} r={r} photoUrl={firstPhotoByItem[r.id]} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} />
+                    ) : (
+                      <DailyMobileCard key={r.id} r={r} onNumberClick={handleNumberClick} />
+                    )
+                  )}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden sm:block overflow-x-auto rounded-lg border border-border" data-desktop-table>
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-muted/50 border-b">
@@ -191,6 +279,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Insp.</th>
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">NG</th>
                         <th className="text-right px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">OK</th>
+                        {mode === "ng" && <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Tag</th>}
                         <th className="text-left px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
                         {mode === "ng" && <th className="text-center px-3 py-2 font-semibold text-muted-foreground whitespace-nowrap">Foto</th>}
                       </tr>
@@ -200,13 +289,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                         <tr key={r.id} className="border-b last:border-b-0 hover:bg-muted/20">
                           <td className="px-3 py-1.5 font-mono text-muted-foreground">
                             {r.numero ? (
-                              <button
-                                onClick={() => handleNumberClick(r.id)}
-                                className="text-primary hover:underline cursor-pointer font-semibold"
-                                data-export-btn
-                              >
-                                {r.numero}
-                              </button>
+                              <button onClick={() => handleNumberClick(r.id)} className="text-primary hover:underline cursor-pointer font-semibold" data-export-btn>{r.numero}</button>
                             ) : "—"}
                           </td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.turno || "—"}</td>
@@ -217,14 +300,24 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           <td className="px-3 py-1.5 text-right">{r.quantidade_inspecionada || 0}</td>
                           <td className={`px-3 py-1.5 text-right font-semibold ${(r.quantidade_ng || 0) > 0 ? "text-destructive" : ""}`}>{r.quantidade_ng || 0}</td>
                           <td className="px-3 py-1.5 text-right">{r.quantidade_ok || 0}</td>
+                          {mode === "ng" && (
+                            <td className="px-3 py-1.5 whitespace-nowrap">
+                              {r.numero_tag ? (
+                                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag}</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
+                              )}
+                            </td>
+                          )}
                           <td className="px-3 py-1.5 max-w-[200px] truncate">{stripCode(r.modo_falha) || r.descricao || "—"}</td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
                               {firstPhotoByItem[r.id] ? (
-                              <img
+                                <img
                                   src={firstPhotoByItem[r.id]}
                                   alt="Foto NG"
-                                  className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all aspect-square"
+                                  className="w-16 h-16 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                  style={{ aspectRatio: "1/1" }}
                                   onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
                                 />
                               ) : (

@@ -1082,6 +1082,54 @@ const ApontamentoForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Suffix Picker Dialog */}
+      <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Selecionar Variante
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              O Part Number lido possui variantes de cor/sufixo. Selecione o correto:
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={selectedSuffixPn} onValueChange={setSelectedSuffixPn} className="space-y-2">
+            {suffixOptions.map((opt) => {
+              const suffix = opt.part_number.replace(/-/g, "").slice(-3);
+              return (
+                <label
+                  key={opt.part_number}
+                  className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                    selectedSuffixPn === opt.part_number ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
+                  }`}
+                >
+                  <RadioGroupItem value={opt.part_number} className="mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-sm">{opt.part_number}</span>
+                      <Badge variant="outline" className="text-[10px]">{suffix}</Badge>
+                    </div>
+                    {opt.part_name && <p className="text-xs text-muted-foreground mt-0.5 truncate">{opt.part_name}</p>}
+                    {opt.supplier_name && <p className="text-xs text-muted-foreground truncate">{opt.supplier_name}</p>}
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <Button
+            onClick={() => {
+              const selected = suffixOptions.find((o) => o.part_number === selectedSuffixPn);
+              if (selected) applySuffixSelection(selected);
+            }}
+            disabled={!selectedSuffixPn}
+            className="w-full mt-2"
+          >
+            Confirmar
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

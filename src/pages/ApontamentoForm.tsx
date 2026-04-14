@@ -178,20 +178,29 @@ const ApontamentoForm = () => {
         return;
       }
 
-      // No exact match — check if the base (without color suffix) has variants
-      // Color suffix = last 3 characters (e.g., YGN, NNA)
-      const baseNormalized = pnNormalized.length > 3 ? pnNormalized.slice(0, -3) : pnNormalized;
-
+      // No exact match — check for variants
+      // Strategy 1: scanned PN is the BASE, DB has base+suffix (e.g., 84852R1520 → 84852R1520NNB)
+      // Strategy 2: scanned PN has a suffix, strip last 3 chars to find base variants
       const { data: allActive } = await supabase
         .from("part_numbers")
         .select("part_name, project, line_module, part_number, suppliers(name)")
         .eq("active", true);
 
       if (allActive) {
-        const matches = allActive.filter((p) => {
+        // First try: PN is the base — find entries that start with it and have a suffix
+        let matches = allActive.filter((p) => {
           const norm = p.part_number.replace(/-/g, "");
-          return norm.length > 3 && norm.slice(0, -3) === baseNormalized;
+          return norm.length > pnNormalized.length && norm.startsWith(pnNormalized);
         });
+
+        // Second try: PN might have a suffix — strip last 3 chars and find siblings
+        if (matches.length === 0 && pnNormalized.length > 3) {
+          const baseNormalized = pnNormalized.slice(0, -3);
+          matches = allActive.filter((p) => {
+            const norm = p.part_number.replace(/-/g, "");
+            return norm.length > 3 && norm.startsWith(baseNormalized) && norm.length === baseNormalized.length + 3;
+          });
+        }
 
         if (matches.length === 1) {
           // Single variant — auto-fill with it

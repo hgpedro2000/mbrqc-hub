@@ -122,6 +122,10 @@ const ApontamentoForm = () => {
   const [pendingLot, setPendingLot] = useState("");
   const [selectedSuffixPn, setSelectedSuffixPn] = useState("");
 
+  // Re-scan confirmation state
+  const [pendingQRData, setPendingQRData] = useState<HyundaiQRData | null>(null);
+  const [showRescanConfirm, setShowRescanConfirm] = useState(false);
+
   const applySuffixSelection = (option: typeof suffixOptions[number]) => {
     setPartNumber(option.part_number);
     if (option.part_name) setPartName(option.part_name);
@@ -131,7 +135,7 @@ const ApontamentoForm = () => {
     setSuffixPickerOpen(false);
   };
 
-  const handleQRScan = async (qrData: HyundaiQRData) => {
+  const applyQRScan = async (qrData: HyundaiQRData) => {
     const pn = qrData.partNumber;
     setPartNumber(pn);
     if (qrData.lotNumber) setLoteInspecionado(qrData.lotNumber);

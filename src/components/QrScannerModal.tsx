@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Html5Qrcode } from "html5-qrcode";
+import { playBeep } from "@/lib/beep";
 
 interface QrScannerModalProps {
   open: boolean;

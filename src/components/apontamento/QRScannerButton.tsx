@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, X, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";

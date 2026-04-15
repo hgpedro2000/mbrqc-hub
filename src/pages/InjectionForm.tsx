@@ -136,7 +136,7 @@ const InjectionForm = () => {
   const buildDraftPayload = useCallback(() => {
     const formData = formRef.current ? new FormData(formRef.current) : null;
     return {
-      nome: profile?.full_name || "", data: formData?.get("data") as string || new Date().toISOString().split("T")[0], fornecedor, projeto,
+      nome: profile?.full_name || "", data: formData?.get("data") as string || getLocalDateString(), fornecedor, projeto,
       part_number: partNumber, part_name: partName, modulo, qtd_tryout: Number(formData?.get("qtdTryout") || 1),
       materia_prima: (formData?.get("materiaPrima") as string) || "", injetora: (formData?.get("injetora") as string) || "",
       tonelagem: Number(formData?.get("tonelagem") || 0), cycle_time: Number(formData?.get("cycleTime") || 0),

@@ -39,7 +39,7 @@ const AlertaQualidadeForm = () => {
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
-    data_ocorrencia: new Date().toISOString().split("T")[0],
+    data_ocorrencia: getLocalDateString(),
     data_validade: "",
     turno: "Todos", descricao: "", responsabilidade: "",
     vin: "", observacoes: "", sequencia_bp: "", vin_bp: "",

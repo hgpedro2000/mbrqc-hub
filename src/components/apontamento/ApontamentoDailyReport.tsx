@@ -94,7 +94,7 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
 );
 
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter }: Props) => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
   const contentRef = useRef<HTMLDivElement>(null);

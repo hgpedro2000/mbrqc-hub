@@ -24,7 +24,7 @@ const ContencaoForm = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
-    data: new Date().toISOString().split("T")[0], setor: "", linha: "",
+    data: getLocalDateString(), setor: "", linha: "",
     part_number: "", part_name: "", fornecedor: "",
     quantidade_contida: 0, quantidade_aprovada: 0, quantidade_rejeitada: 0,
     motivo: "", acao_contencao: "", status: "aberta", observacoes: "",

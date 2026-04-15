@@ -69,7 +69,7 @@ const ApontamentoForm = () => {
 
   // Form state
   const [formTipo, setFormTipo] = useState<ApontamentoTipo>(tipo || "incoming");
-  const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState(getLocalDateString());
   const [turno, setTurno] = useState("");
   const [fase, setFase] = useState("");
   const [projeto, setProjeto] = useState("");
@@ -530,7 +530,7 @@ const ApontamentoForm = () => {
   const isProcesso = formTipo === "processo";
   const isOem = formTipo === "oem";
   const ngIsZero = isIncoming && quantidadeNg === 0;
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
 
   const calcDuration = (start: string, end: string): string => {
     if (!start || !end) return "0min";

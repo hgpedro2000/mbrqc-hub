@@ -26,7 +26,7 @@ const AuditoriaForm = () => {
   const [tipo, setTipo] = useState<string>("processo");
   const [titulo, setTitulo] = useState("");
   const [auditor, setAuditor] = useState(profile?.full_name || "");
-  const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState(getLocalDateString());
   const [setor, setSetor] = useState("");
   const [linha, setLinha] = useState("");
   const [fornecedor, setFornecedor] = useState("");

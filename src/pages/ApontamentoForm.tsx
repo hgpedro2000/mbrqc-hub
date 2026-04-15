@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag } from "lucide-react";
+import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag, ImagePlus } from "lucide-react";
 import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
 import { HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
@@ -404,7 +404,7 @@ const ApontamentoForm = () => {
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
-      setTagNumber((existing as any).tag_number || "");
+      setTagNumber((existing as any).numero_tag || (existing as any).tag_number || "");
       const ti = (existing as any).tempo_inspecao || "";
       if (ti.includes(" - ")) {
         const parts = ti.split(" - ");
@@ -628,7 +628,7 @@ const ApontamentoForm = () => {
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
         tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
-        tag_number: isIncoming ? (quantidadeNg > 0 ? (tagNumber || null) : null) : null,
+        numero_tag: isIncoming ? (quantidadeNg > 0 ? (tagNumber || null) : null) : null,
       } as any;
 
       let recordId = id;
@@ -1036,11 +1036,20 @@ const ApontamentoForm = () => {
               </div>
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
-              <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
-                <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
-                <span className="text-xs text-muted-foreground">Adicionar</span>
-                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-              </label>
+              <>
+                <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                  <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">Câmera</span>
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
+                </label>
+                {(existingPhotos.length + photoFiles.length) < 3 && (
+                  <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                    <ImagePlus className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground">Galeria</span>
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoChange} />
+                  </label>
+                )}
+              </>
             )}
           </div>
         </div>

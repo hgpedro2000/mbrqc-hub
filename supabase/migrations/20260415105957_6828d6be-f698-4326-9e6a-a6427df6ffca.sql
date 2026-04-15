@@ -1,0 +1,1 @@
+UPDATE public.apontamentos SET data = '2026-04-15' WHERE id = '37bebd9c-ccee-4fa9-8045-23b59c7649bb' AND data = '2026-04-14';

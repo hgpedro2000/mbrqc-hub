@@ -86,8 +86,32 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     enabled: !!targetUserId,
   });
 
-  const resolvedCount = myTickets.filter((t: any) => t.status === "resolvido").length;
-  const hasNewResolved = resolvedCount > 0;
+  // Track which resolved tickets the user has already seen
+  const seenKey = `hd-seen-resolved-${targetUserId}`;
+  const getSeenIds = useCallback((): string[] => {
+    try { return JSON.parse(localStorage.getItem(seenKey) || "[]"); } catch { return []; }
+  }, [seenKey]);
+
+  const [seenResolvedIds, setSeenResolvedIds] = useState<string[]>(() => getSeenIds());
+
+  // Visible tickets: non-resolved + resolved-not-yet-seen
+  const visibleTickets = myTickets.filter((t: any) => {
+    if (t.status !== "resolvido") return true;
+    return !seenResolvedIds.includes(t.id);
+  });
+
+  const newResolvedCount = myTickets.filter((t: any) => t.status === "resolvido" && !seenResolvedIds.includes(t.id)).length;
+  const hasNewResolved = newResolvedCount > 0;
+
+  // When user opens status dialog, mark current resolved tickets as seen
+  const markResolvedAsSeen = useCallback(() => {
+    const resolvedIds = myTickets.filter((t: any) => t.status === "resolvido").map((t: any) => t.id);
+    if (resolvedIds.length === 0) return;
+    const current = getSeenIds();
+    const merged = Array.from(new Set([...current, ...resolvedIds]));
+    localStorage.setItem(seenKey, JSON.stringify(merged));
+    setSeenResolvedIds(merged);
+  }, [myTickets, seenKey, getSeenIds]);
 
   const isResidente = newUserEmpresaTerceira === "Residente" || newUserEmpresaTerceira.startsWith("Residente - ");
   const residenteSupplier = newUserEmpresaTerceira.startsWith("Residente - ") ? newUserEmpresaTerceira.replace("Residente - ", "") : "";

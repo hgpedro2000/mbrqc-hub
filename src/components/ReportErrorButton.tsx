@@ -72,18 +72,18 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   });
 
   const { data: myTickets = [], refetch: refetchTickets } = useQuery({
-    queryKey: ["my-error-reports", user?.id],
+    queryKey: ["my-error-reports", targetUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!targetUserId) return [];
       const { data, error } = await supabase
         .from("error_reports")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   const resolvedCount = myTickets.filter((t: any) => t.status === "resolvido").length;
@@ -435,10 +435,10 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
 
       {/* Status dialog */}
       <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-primary" />
+              <Ticket className="w-5 h-5 text-primary shrink-0" />
               Meus Chamados
             </DialogTitle>
           </DialogHeader>
@@ -450,20 +450,20 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 const cfg = statusConfig[t.status] || statusConfig.pendente;
                 const Icon = cfg.icon;
                 return (
-                  <div key={t.id} className="border rounded-lg p-3 space-y-1">
-                    <div className="flex items-center justify-between">
+                  <div key={t.id} className="border rounded-lg p-3 space-y-1 overflow-hidden">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
                       <span className="text-xs font-mono text-muted-foreground">{t.numero || "—"}</span>
-                      <Badge variant="outline" className={`text-[10px] ${cfg.color}`}>
+                      <Badge variant="outline" className={`text-[10px] shrink-0 ${cfg.color}`}>
                         <Icon className="w-3 h-3 mr-1" />
                         {cfg.label}
                       </Badge>
                     </div>
-                    <p className="text-sm font-medium">{t.module}</p>
-                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-4">{t.description}</p>
+                    <p className="text-sm font-medium break-words">{t.module}</p>
+                    <p className="text-xs text-muted-foreground whitespace-pre-line break-words line-clamp-4">{t.description}</p>
                     <p className="text-[10px] text-muted-foreground">{new Date(t.created_at).toLocaleDateString("pt-BR")}</p>
                     {t.admin_notes && t.status === "resolvido" && (
                       <div className="bg-emerald-50 border border-emerald-200 rounded p-2 mt-1">
-                        <p className="text-xs text-emerald-800"><span className="font-semibold">Resposta:</span> {t.admin_notes}</p>
+                        <p className="text-xs text-emerald-800 break-words"><span className="font-semibold">Resposta:</span> {t.admin_notes}</p>
                       </div>
                     )}
                   </div>

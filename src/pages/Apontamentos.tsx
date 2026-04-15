@@ -318,6 +318,13 @@ const Apontamentos = () => {
                           {empresaByUserId[item.created_by]}
                         </Badge>
                       )}
+                      {/* Location badge */}
+                      {activeTab === "incoming" && (() => {
+                        const loc = getInspectionLocation(item);
+                        if (loc === "Sala do Audio") return <Badge className="bg-indigo-500/10 text-indigo-700 border-indigo-200 text-[9px] px-1.5">🔊 Sala do Áudio</Badge>;
+                        if (loc === "Área de Incoming") return <Badge className="bg-teal-500/10 text-teal-700 border-teal-200 text-[9px] px-1.5">📦 Incoming</Badge>;
+                        return null;
+                      })()}
                     </div>
 
                     {/* Part name */}

@@ -203,22 +203,24 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
       ) : (
         <>
           {/* Mobile card layout */}
-          <div className="sm:hidden space-y-2">
+          <div className="sm:hidden space-y-2 overflow-x-hidden">
             {filtered.map((r: any) => {
               const cfg = statusConfig[r.status] || statusConfig.pendente;
               return (
-                <div key={r.id} className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => openView(r)}>
-                  <div className="flex items-start justify-between gap-2">
+                <div key={r.id} className="border rounded-lg p-3 cursor-pointer hover:bg-muted/50 transition-colors overflow-hidden" onClick={() => openView(r)}>
+                  <div className="flex items-start gap-2">
                     <div className="flex items-start gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} className="mt-0.5" />
+                      <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleSelect(r.id)} className="mt-0.5 shrink-0" />
                       <div className="flex-1 min-w-0" onClick={() => openView(r)}>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs font-mono text-muted-foreground">#{r.numero || "—"}</span>
-                          <Badge variant="outline" className={`text-[10px] ${getModuleColor(r.module)}`}>{r.module}</Badge>
+                          <span className="text-xs font-mono text-muted-foreground shrink-0">#{r.numero || "—"}</span>
+                          <Badge variant="outline" className={`text-[10px] shrink-0 ${getModuleColor(r.module)}`}>{r.module}</Badge>
+                        </div>
+                        <div className="mt-1">
                           <Badge variant="outline" className={`text-[10px] ${cfg.color}`}>{cfg.label}</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">{r.user_name} • {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{r.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1 truncate">{r.user_name} • {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">{r.description}</p>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openView(r)}><Eye className="w-4 h-4" /></Button>
@@ -279,22 +281,22 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
 
       {/* Detail dialog */}
       <Dialog open={!!viewItem} onOpenChange={(v) => !v && setViewItem(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 pr-8">
               Chamado {viewItem?.numero || ""}
             </DialogTitle>
           </DialogHeader>
           {viewItem && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{viewItem.user_name}</p></div>
-                <div><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium"><Badge variant="outline" className={getModuleColor(viewItem.module)}>{viewItem.module}</Badge></p></div>
-                <div className="col-span-2"><span className="text-muted-foreground text-xs">Data</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleString("pt-BR")}</p></div>
+            <div className="space-y-4 overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="min-w-0"><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium truncate">{viewItem.user_name}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground text-xs">Módulo</span><p className="font-medium"><Badge variant="outline" className={`${getModuleColor(viewItem.module)} text-xs`}>{viewItem.module}</Badge></p></div>
+                <div className="col-span-1 sm:col-span-2"><span className="text-muted-foreground text-xs">Data</span><p className="font-medium">{new Date(viewItem.created_at).toLocaleString("pt-BR")}</p></div>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-muted-foreground text-xs">Descrição</span>
-                <p className="text-sm mt-1 whitespace-pre-wrap">{viewItem.description}</p>
+                <p className="text-sm mt-1 whitespace-pre-wrap break-words">{viewItem.description}</p>
               </div>
               {viewItem.photos && (viewItem.photos as string[]).length > 0 && (
                 <div>

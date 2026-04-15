@@ -73,7 +73,9 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
   };
 
   const isMobisBrasil = profile?.empresa === "mobis_brasil";
+  const isTerceiro = profile?.empresa === "empresa_terceira";
   if (requireMobis && !isMobisBrasil) return null;
+  if (isTerceiro) return null;
   if (!canInsertTag || pendingItems.length === 0) return null;
 
   return (

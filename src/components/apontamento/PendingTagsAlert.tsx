@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tag, AlertTriangle, Loader2, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 
 export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
   const { user, profile } = useAuth();
@@ -19,10 +20,10 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
 
   const fetchPending = async () => {
     if (!user) return;
-    // Admin sees all shifts; others see only their own shift
     let query = supabase
       .from("apontamentos")
       .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number")
@@ -34,7 +35,6 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
     if (!isAdmin && profile?.turno) {
       query = query.eq("turno", profile.turno);
     } else if (!isAdmin && !profile?.turno) {
-      // Non-admin without a shift — nothing to show
       setPendingItems([]);
       return;
     }
@@ -71,7 +71,6 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
     }
   };
 
-  // Filter by empresa if required
   const isMobisBrasil = profile?.empresa === "mobis_brasil";
   if (requireMobis && !isMobisBrasil) return null;
   if (!canInsertTag || pendingItems.length === 0) return null;
@@ -113,17 +112,25 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-xs font-mono text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">
+                        <button
+                          onClick={() => setViewTarget(item.id)}
+                          className="text-xs font-mono text-primary hover:underline bg-muted/30 px-1.5 py-0.5 rounded"
+                        >
                           #{item.numero}
-                        </span>
+                        </button>
                         <Badge variant="destructive" className="text-[10px]">
                           NG: {item.quantidade_ng}
                         </Badge>
                       </div>
                       <p className="text-sm font-semibold truncate">{item.part_number}</p>
-                      <p className="text-xs text-muted-foreground truncate">
+                      <p className="text-xs text-muted-foreground truncate">{item.part_name || "—"}</p>
+                      <p className="text-xs text-muted-foreground/70 truncate">
                         {item.fornecedor} • {item.responsavel}
                       </p>
+                      <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground mt-1">
+                        <span>{new Date(item.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                        {item.turno && <span>• Turno {item.turno}</span>}
+                      </div>
                     </div>
                     {editingId !== item.id && (
                       <Button
@@ -172,6 +179,13 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* View dialog for clicked record */}
+      <ApontamentoViewDialog
+        open={!!viewTarget}
+        onOpenChange={(open) => !open && setViewTarget(null)}
+        apontamentoId={viewTarget}
+      />
     </>
   );
 };

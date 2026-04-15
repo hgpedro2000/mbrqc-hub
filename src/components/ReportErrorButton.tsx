@@ -458,7 +458,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
       </Dialog>
 
       {/* Status dialog */}
-      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+      <Dialog open={statusOpen} onOpenChange={(v) => { if (!v) markResolvedAsSeen(); setStatusOpen(v); }}>
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -466,11 +466,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               Meus Chamados
             </DialogTitle>
           </DialogHeader>
-          {myTickets.length === 0 ? (
+          {visibleTickets.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum chamado aberto ainda.</p>
           ) : (
             <div className="space-y-2">
-              {myTickets.map((t: any) => {
+              {visibleTickets.map((t: any) => {
                 const cfg = statusConfig[t.status] || statusConfig.pendente;
                 const Icon = cfg.icon;
                 return (

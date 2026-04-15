@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";

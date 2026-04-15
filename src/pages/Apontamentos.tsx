@@ -637,7 +637,52 @@ const Apontamentos = () => {
       <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={items} mode="daily" onViewRecord={(id) => setViewTarget(id)} />
 
       {/* NG report */}
-      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} />
+      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} locationFilter={ngLocationFilter} />
+
+      {/* NG Location Dialog */}
+      <Dialog open={showNgLocationDialog} onOpenChange={setShowNgLocationDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-destructive" />Relatório de Peças NG</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o local para o relatório:</p>
+          <div className="grid grid-cols-1 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
+              onClick={() => {
+                setNgLocationFilter("Sala do Audio");
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-base">🔊 Sala do Áudio</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-emerald-400 hover:bg-emerald-50"
+              onClick={() => {
+                setNgLocationFilter("Área de Incoming");
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-base">📦 Área de Incoming</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-3 hover:border-muted-foreground/30"
+              onClick={() => {
+                setNgLocationFilter(null);
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-sm">Todos os Locais</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Photo lightbox */}
       {photoLightbox && (

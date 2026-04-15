@@ -7,6 +7,7 @@ interface ImpersonatedUser {
   turno: string | null;
   empresa: string | null;
   empresa_terceira: string | null;
+  cargo: string | null;
 }
 
 interface ImpersonationContextType {

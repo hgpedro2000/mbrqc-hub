@@ -174,6 +174,10 @@ const Apontamentos = () => {
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
+        // Location filter for incoming tab
+        if (activeTab === "incoming" && incomingLocationFilter) {
+          if (i.local_deteccao !== incomingLocationFilter) return false;
+        }
         if (!matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"])) return false;
         // Custom empresa filter
         const empresaFilter = filterValues["empresa"];
@@ -187,7 +191,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId]
+    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter]
   );
 
   const toggleSelect = useCallback((id: string) => {

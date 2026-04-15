@@ -38,6 +38,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   const { user, profile } = useAuth();
   const { impersonating } = useImpersonation();
   const targetUserId = impersonating?.id || user?.id;
+  const [activeModule, setActiveModule] = useState(moduleName);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);

@@ -557,7 +557,7 @@ const Apontamentos = () => {
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-4 h-auto">
               {TYPES.map((tipo) => {
                 const cfg = typeConfig[tipo];
@@ -571,6 +571,37 @@ const Apontamentos = () => {
                 );
               })}
             </TabsList>
+
+            {/* Location filter buttons for INCOMING tab */}
+            {activeTab === "incoming" && (
+              <div className="flex items-center gap-2 mt-3">
+                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Button
+                  variant={incomingLocationFilter === null ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter(null)}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={incomingLocationFilter === "Sala do Audio" ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter("Sala do Audio")}
+                >
+                  🔊 Sala do Áudio
+                </Button>
+                <Button
+                  variant={incomingLocationFilter === "Área de Incoming" ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter("Área de Incoming")}
+                >
+                  📦 Área de Incoming
+                </Button>
+              </div>
+            )}
 
             {TYPES.map((tipo) => (
               <TabsContent key={tipo} value={tipo} className="mt-4">

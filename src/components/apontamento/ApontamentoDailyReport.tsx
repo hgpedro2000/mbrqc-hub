@@ -131,7 +131,12 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const filtered = useMemo(() => {
     let list = items;
     if (locationFilter) {
-      list = list.filter((i) => i.local_deteccao === locationFilter);
+      list = list.filter((i) => {
+        const loc = i.local_deteccao === "Sala do Audio" || i.local_deteccao === "Área de Incoming"
+          ? i.local_deteccao
+          : (i.fase === "Sala do Audio" || i.fase === "Área de Incoming" ? i.fase : null);
+        return loc === locationFilter;
+      });
     }
     if (mode === "daily") {
       list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);

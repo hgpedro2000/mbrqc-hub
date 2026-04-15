@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, Send, X, CheckCircle2, Loader2, Plus, Trash2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -136,7 +137,7 @@ const InjectionForm = () => {
   const buildDraftPayload = useCallback(() => {
     const formData = formRef.current ? new FormData(formRef.current) : null;
     return {
-      nome: profile?.full_name || "", data: formData?.get("data") as string || new Date().toISOString().split("T")[0], fornecedor, projeto,
+      nome: profile?.full_name || "", data: formData?.get("data") as string || getLocalDateString(), fornecedor, projeto,
       part_number: partNumber, part_name: partName, modulo, qtd_tryout: Number(formData?.get("qtdTryout") || 1),
       materia_prima: (formData?.get("materiaPrima") as string) || "", injetora: (formData?.get("injetora") as string) || "",
       tonelagem: Number(formData?.get("tonelagem") || 0), cycle_time: Number(formData?.get("cycleTime") || 0),

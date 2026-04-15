@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ const AlertaQualidadeForm = () => {
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
-    data_ocorrencia: new Date().toISOString().split("T")[0],
+    data_ocorrencia: getLocalDateString(),
     data_validade: "",
     turno: "Todos", descricao: "", responsabilidade: "",
     vin: "", observacoes: "", sequencia_bp: "", vin_bp: "",

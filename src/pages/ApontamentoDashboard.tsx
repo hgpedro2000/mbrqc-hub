@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,7 +30,7 @@ const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const [activeType, setActiveType] = useState("incoming");
-  const today = new Date().toISOString().split("T")[0];
+  const today = getLocalDateString();
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);

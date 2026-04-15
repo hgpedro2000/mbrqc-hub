@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Camera, Send, X, Plus, Trash2, CheckCircle2, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -111,7 +112,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
   const buildPayload = () => {
     const itemsData = items.map((item) => ({ id: item.id, label: item.label }));
     const checkedData = Array.from(checkedItems);
-    return { nome, data: data || new Date().toISOString().split("T")[0], items: itemsData, checked_items: checkedData, comentarios: comments || null, projeto, fornecedor, part_number: partNumber, part_name: partName, modulo };
+    return { nome, data: data || getLocalDateString(), items: itemsData, checked_items: checkedData, comentarios: comments || null, projeto, fornecedor, part_number: partNumber, part_name: partName, modulo };
   };
 
   const saveDraft = useCallback(async () => {

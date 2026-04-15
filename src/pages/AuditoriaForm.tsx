@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,7 @@ const AuditoriaForm = () => {
   const [tipo, setTipo] = useState<string>("processo");
   const [titulo, setTitulo] = useState("");
   const [auditor, setAuditor] = useState(profile?.full_name || "");
-  const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState(getLocalDateString());
   const [setor, setSetor] = useState("");
   const [linha, setLinha] = useState("");
   const [fornecedor, setFornecedor] = useState("");

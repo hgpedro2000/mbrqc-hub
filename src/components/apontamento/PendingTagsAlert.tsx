@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useTagPermission } from "@/hooks/useTagPermission";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +15,7 @@ import { formatLocalDateString } from "@/lib/localDate";
 
 export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
   const { user, profile } = useAuth();
+  const { impersonating } = useImpersonation();
   const { canInsertTag } = useTagPermission();
   const { isAdmin } = useUserRole();
   const [pendingItems, setPendingItems] = useState<any[]>([]);
@@ -22,6 +24,7 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
+  const activeProfile = impersonating || profile;
 
   const fetchPending = async () => {
     if (!user) return;
@@ -33,9 +36,9 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
       .is("tag_number" as any, null)
       .order("data", { ascending: false });
 
-    if (!isAdmin && profile?.turno) {
-      query = query.eq("turno", profile.turno);
-    } else if (!isAdmin && !profile?.turno) {
+    if (!isAdmin && activeProfile?.turno) {
+      query = query.eq("turno", activeProfile.turno);
+    } else if (!isAdmin && !activeProfile?.turno) {
       setPendingItems([]);
       return;
     }
@@ -72,8 +75,8 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
     }
   };
 
-  const isMobisBrasil = profile?.empresa === "mobis_brasil";
-  const isTerceiro = profile?.empresa === "empresa_terceira";
+  const isMobisBrasil = activeProfile?.empresa === "mobis_brasil";
+  const isTerceiro = activeProfile?.empresa === "empresa_terceira" || !!activeProfile?.empresa_terceira;
   if (requireMobis && !isMobisBrasil) return null;
   if (isTerceiro) return null;
   if (!canInsertTag || pendingItems.length === 0) return null;
@@ -92,7 +95,7 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
             {pendingItems.length}
           </Badge>
         </span>
-        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${profile?.turno}`}</span>
+        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${activeProfile?.turno}`}</span>
       </button>
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
@@ -100,7 +103,7 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base break-words">
               <Tag className="w-4 h-4 shrink-0" />
-              <span className="break-words">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${profile?.turno}`}</span>
+              <span className="break-words">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${activeProfile?.turno}`}</span>
             </DialogTitle>
           </DialogHeader>
 

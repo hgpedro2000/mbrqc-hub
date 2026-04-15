@@ -397,7 +397,6 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
               ref={cameraInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               className="hidden"
               onChange={handleImageSelected}
             />

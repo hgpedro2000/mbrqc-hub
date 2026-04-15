@@ -18,6 +18,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
+import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
@@ -379,7 +380,7 @@ const Apontamentos = () => {
                     <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
                       <span>{item.responsavel}</span>
                       <span>•</span>
-                      <span>{new Date(item.data).toLocaleDateString("pt-BR")}</span>
+                      <span>{formatLocalDateString(item.data)}</span>
                       {item.turno && <><span>•</span><span>{item.turno}</span></>}
                       {item.tempo_inspecao && <><span>•</span><span>⏱ {item.tempo_inspecao}</span></>}
                       {item.co_inspetores && Array.isArray(item.co_inspetores) && (item.co_inspetores as string[]).length > 0 && (
@@ -452,7 +453,7 @@ const Apontamentos = () => {
                       <span className="text-muted-foreground">0</span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{new Date(item.data).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{formatLocalDateString(item.data)}</td>
                   <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
                   <td className="px-3 py-2 text-right">
                     <EditActions id={item.id} createdBy={item.created_by} status={item.status} />

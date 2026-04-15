@@ -295,7 +295,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               <Ticket className="w-5 h-5 text-primary" />
               <span className="text-sm font-medium">Status de Chamados</span>
               {hasNewResolved && (
-                <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{resolvedCount}</Badge>
+                <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
               )}
             </Button>
             {showNewUserRequest && (

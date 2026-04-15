@@ -48,9 +48,12 @@ const Apontamentos = () => {
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [dailyReportOpen, setDailyReportOpen] = useState(false);
   const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [ngLocationFilter, setNgLocationFilter] = useState<string | null>(null);
+  const [showNgLocationDialog, setShowNgLocationDialog] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
+  const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

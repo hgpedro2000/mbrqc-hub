@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -86,8 +86,32 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     enabled: !!targetUserId,
   });
 
-  const resolvedCount = myTickets.filter((t: any) => t.status === "resolvido").length;
-  const hasNewResolved = resolvedCount > 0;
+  // Track which resolved tickets the user has already seen
+  const seenKey = `hd-seen-resolved-${targetUserId}`;
+  const getSeenIds = useCallback((): string[] => {
+    try { return JSON.parse(localStorage.getItem(seenKey) || "[]"); } catch { return []; }
+  }, [seenKey]);
+
+  const [seenResolvedIds, setSeenResolvedIds] = useState<string[]>(() => getSeenIds());
+
+  // Visible tickets: non-resolved + resolved-not-yet-seen
+  const visibleTickets = myTickets.filter((t: any) => {
+    if (t.status !== "resolvido") return true;
+    return !seenResolvedIds.includes(t.id);
+  });
+
+  const newResolvedCount = myTickets.filter((t: any) => t.status === "resolvido" && !seenResolvedIds.includes(t.id)).length;
+  const hasNewResolved = newResolvedCount > 0;
+
+  // When user opens status dialog, mark current resolved tickets as seen
+  const markResolvedAsSeen = useCallback(() => {
+    const resolvedIds = myTickets.filter((t: any) => t.status === "resolvido").map((t: any) => t.id);
+    if (resolvedIds.length === 0) return;
+    const current = getSeenIds();
+    const merged = Array.from(new Set([...current, ...resolvedIds]));
+    localStorage.setItem(seenKey, JSON.stringify(merged));
+    setSeenResolvedIds(merged);
+  }, [myTickets, seenKey, getSeenIds]);
 
   const isResidente = newUserEmpresaTerceira === "Residente" || newUserEmpresaTerceira.startsWith("Residente - ");
   const residenteSupplier = newUserEmpresaTerceira.startsWith("Residente - ") ? newUserEmpresaTerceira.replace("Residente - ", "") : "";
@@ -271,7 +295,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               <Ticket className="w-5 h-5 text-primary" />
               <span className="text-sm font-medium">Status de Chamados</span>
               {hasNewResolved && (
-                <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{resolvedCount}</Badge>
+                <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
               )}
             </Button>
             {showNewUserRequest && (
@@ -434,7 +458,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
       </Dialog>
 
       {/* Status dialog */}
-      <Dialog open={statusOpen} onOpenChange={setStatusOpen}>
+      <Dialog open={statusOpen} onOpenChange={(v) => { if (!v) markResolvedAsSeen(); setStatusOpen(v); }}>
         <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[80vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -442,11 +466,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
               Meus Chamados
             </DialogTitle>
           </DialogHeader>
-          {myTickets.length === 0 ? (
+          {visibleTickets.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Nenhum chamado aberto ainda.</p>
           ) : (
             <div className="space-y-2">
-              {myTickets.map((t: any) => {
+              {visibleTickets.map((t: any) => {
                 const cfg = statusConfig[t.status] || statusConfig.pendente;
                 const Icon = cfg.icon;
                 return (

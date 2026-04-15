@@ -298,6 +298,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
               )}
             </Button>
+              <span className="text-sm font-medium">Status de Chamados</span>
+              {hasNewResolved && (
+                <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
+              )}
+            </Button>
             {showNewUserRequest && (
               <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={openNewUserForm}>
                 <UserPlus className="w-5 h-5 text-blue-600" />

@@ -20,6 +20,7 @@ interface Props {
   items: any[];
   mode: "daily" | "ng";
   onViewRecord?: (id: string) => void;
+  locationFilter?: string | null;
 }
 
 const typeLabels: Record<string, string> = {
@@ -92,7 +93,7 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
   </div>
 );
 
-const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord }: Props) => {
+const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter }: Props) => {
   const today = new Date().toISOString().split("T")[0];
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
@@ -129,6 +130,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
 
   const filtered = useMemo(() => {
     let list = items;
+    if (locationFilter) {
+      list = list.filter((i) => i.local_deteccao === locationFilter);
+    }
     if (mode === "daily") {
       list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);
     }
@@ -139,7 +143,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
       }
     }
     return list;
-  }, [items, dateFrom, dateTo, mode]);
+  }, [items, dateFrom, dateTo, mode, locationFilter]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};

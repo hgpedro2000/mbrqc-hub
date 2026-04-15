@@ -368,7 +368,10 @@ const ApontamentoForm = () => {
   useEffect(() => {
     if (!isEdit && tipo === "incoming") {
       const localParam = searchParams.get("local");
-      if (localParam) setFase(localParam);
+      if (localParam) {
+        setLocalDeteccao(localParam);
+        setFase(localParam);
+      }
     }
   }, [isEdit, tipo, searchParams]);
 

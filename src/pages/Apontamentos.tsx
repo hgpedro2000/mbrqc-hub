@@ -170,13 +170,21 @@ const Apontamentos = () => {
     return counts;
   }, [items]);
 
+  // Helper to get the inspection location from either local_deteccao or fase (retrocompat)
+  const getInspectionLocation = (item: any): string | null => {
+    if (item.local_deteccao === "Sala do Audio" || item.local_deteccao === "Área de Incoming") return item.local_deteccao;
+    if (item.fase === "Sala do Audio" || item.fase === "Área de Incoming") return item.fase;
+    return null;
+  };
+
   const filtered = useMemo(() =>
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
         // Location filter for incoming tab
         if (activeTab === "incoming" && incomingLocationFilter) {
-          if (i.local_deteccao !== incomingLocationFilter) return false;
+          const loc = getInspectionLocation(i);
+          if (loc !== incomingLocationFilter) return false;
         }
         if (!matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"])) return false;
         // Custom empresa filter
@@ -310,6 +318,13 @@ const Apontamentos = () => {
                           {empresaByUserId[item.created_by]}
                         </Badge>
                       )}
+                      {/* Location badge */}
+                      {activeTab === "incoming" && (() => {
+                        const loc = getInspectionLocation(item);
+                        if (loc === "Sala do Audio") return <Badge className="bg-indigo-500/10 text-indigo-700 border-indigo-200 text-[9px] px-1.5">🔊 Sala do Áudio</Badge>;
+                        if (loc === "Área de Incoming") return <Badge className="bg-teal-500/10 text-teal-700 border-teal-200 text-[9px] px-1.5">📦 Incoming</Badge>;
+                        return null;
+                      })()}
                     </div>
 
                     {/* Part name */}

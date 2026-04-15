@@ -10,3 +10,15 @@ export function getLocalDateString(date?: Date): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+export function formatLocalDateString(dateString?: string | null, locale = "pt-BR"): string {
+  if (!dateString) return "—";
+
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(dateString)
+    ? new Date(`${dateString}T12:00:00`)
+    : new Date(dateString);
+
+  if (Number.isNaN(parsed.getTime())) return "—";
+
+  return parsed.toLocaleDateString(locale);
+}

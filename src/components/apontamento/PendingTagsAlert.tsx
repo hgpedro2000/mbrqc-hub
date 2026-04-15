@@ -10,6 +10,7 @@ import { Tag, AlertTriangle, Loader2, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
+import { formatLocalDateString } from "@/lib/localDate";
 
 export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
   const { user, profile } = useAuth();
@@ -128,7 +129,7 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
                         {item.fornecedor} • {item.responsavel}
                       </p>
                       <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground mt-1">
-                        <span>{new Date(item.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                        <span>{formatLocalDateString(item.data)}</span>
                         {item.turno && <span>• Turno {item.turno}</span>}
                       </div>
                     </div>

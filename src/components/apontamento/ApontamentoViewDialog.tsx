@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { ApontamentoExportButtons } from "./ApontamentoExportButtons";
 import { FileText, AlertTriangle, Camera, Package, ClipboardCheck, Clock } from "lucide-react";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
+import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import { useTagPermission } from "@/hooks/useTagPermission";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,7 +38,7 @@ const typeBadgeClass: Record<string, string> = {
 
 function fmt(key: string, value: any): string {
   if (value === null || value === undefined || value === "") return "—";
-  if (key === "data") return new Date(value).toLocaleDateString("pt-BR");
+  if (key === "data") return formatLocalDateString(value);
   return String(value);
 }
 

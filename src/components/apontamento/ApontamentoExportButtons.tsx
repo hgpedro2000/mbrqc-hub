@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import React from "react";
 import jsPDF from "jspdf";
+import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 
 interface Props {
@@ -21,7 +22,7 @@ const typeLabels: Record<string, string> = {
 
 function fmt(key: string, value: any): string {
   if (value === null || value === undefined || value === "") return "–";
-  if (key === "data") return new Date(value).toLocaleDateString("pt-BR");
+  if (key === "data") return formatLocalDateString(value);
   return String(value);
 }
 

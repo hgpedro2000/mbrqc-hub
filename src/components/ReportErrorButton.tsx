@@ -36,7 +36,8 @@ const CARGOS = [
 
 const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
   const { user, profile } = useAuth();
-  const [activeModule, setActiveModule] = useState(moduleName);
+  const { impersonating } = useImpersonation();
+  const targetUserId = impersonating?.id || user?.id;
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);

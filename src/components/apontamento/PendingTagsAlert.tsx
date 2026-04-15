@@ -10,7 +10,7 @@ import { Tag, AlertTriangle, Loader2, CheckCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-export const PendingTagsAlert = () => {
+export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
   const { user, profile } = useAuth();
   const { canInsertTag } = useTagPermission();
   const { isAdmin } = useUserRole();
@@ -70,6 +70,9 @@ export const PendingTagsAlert = () => {
     }
   };
 
+  // Filter by empresa if required
+  const isMobisBrasil = profile?.empresa === "mobis_brasil";
+  if (requireMobis && !isMobisBrasil) return null;
   if (!canInsertTag || pendingItems.length === 0) return null;
 
   return (
@@ -92,9 +95,9 @@ export const PendingTagsAlert = () => {
       <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base">
-              <Tag className="w-4 h-4" />
-              Apontamentos Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${profile?.turno}`}
+            <DialogTitle className="flex items-center gap-2 text-base break-words">
+              <Tag className="w-4 h-4 shrink-0" />
+              <span className="break-words">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${profile?.turno}`}</span>
             </DialogTitle>
           </DialogHeader>
 
@@ -105,10 +108,10 @@ export const PendingTagsAlert = () => {
               </p>
             ) : (
               pendingItems.map((item) => (
-                <div key={item.id} className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
+                <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                     <div className="space-y-0.5 min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-xs font-mono text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded">
                           #{item.numero}
                         </span>
@@ -125,7 +128,7 @@ export const PendingTagsAlert = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="shrink-0 text-xs"
+                        className="shrink-0 text-xs w-full sm:w-auto"
                         onClick={() => { setEditingId(item.id); setTagInput(""); }}
                       >
                         <Tag className="w-3 h-3 mr-1" />

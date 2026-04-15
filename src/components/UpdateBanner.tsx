@@ -9,12 +9,13 @@ const UpdateBanner = () => {
   if (!updateAvailable && !criticalUpdate) return null;
 
   const handleRefresh = () => {
-    window.location.reload();
+    // Navigate to root to avoid 404 on stale routes
+    window.location.href = '/';
   };
 
   const handleLogoutAndRefresh = async () => {
     await supabase.auth.signOut();
-    window.location.reload();
+    window.location.href = '/';
   };
 
   return (

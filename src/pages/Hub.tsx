@@ -235,7 +235,7 @@ const Hub = () => {
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
         <div className="mb-4">
-          <PendingTagsAlert />
+          <PendingTagsAlert requireMobis />
         </div>
         {orderedModules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">

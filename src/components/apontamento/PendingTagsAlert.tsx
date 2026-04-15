@@ -25,9 +25,10 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
     // Admin sees all shifts; others see only their own shift
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number")
       .gt("quantidade_ng", 0)
       .is("numero_tag" as any, null)
+      .is("tag_number" as any, null)
       .order("data", { ascending: false });
 
     if (!isAdmin && profile?.turno) {

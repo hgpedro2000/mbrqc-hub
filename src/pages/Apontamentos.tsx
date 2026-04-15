@@ -348,7 +348,7 @@ const Apontamentos = () => {
                     {/* TAG badge */}
                     <TagBadge
                       apontamentoId={item.id}
-                      numeroTag={(item as any).numero_tag ?? null}
+                      numeroTag={(item as any).numero_tag || (item as any).tag_number || null}
                       quantidadeNg={item.quantidade_ng || 0}
                       onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
                     />

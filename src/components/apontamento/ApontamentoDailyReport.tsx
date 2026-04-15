@@ -68,8 +68,8 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
     </div>
     <div className="flex justify-between items-center">
       <div>
-        {r.numero_tag ? (
-          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag}</Badge>
+        {(r.numero_tag || r.tag_number) ? (
+          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
         ) : (
           <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
         )}
@@ -302,8 +302,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord 
                           <td className="px-3 py-1.5 text-right">{r.quantidade_ok || 0}</td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 whitespace-nowrap">
-                              {r.numero_tag ? (
-                                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag}</Badge>
+                              {(r.numero_tag || r.tag_number) ? (
+                                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
                               ) : (
                                 <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
                               )}

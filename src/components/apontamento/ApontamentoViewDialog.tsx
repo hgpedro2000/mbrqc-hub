@@ -577,7 +577,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>
                     <TagBadgeInline
                       apontamentoId={d.id}
-                      numeroTag={d?.numero_tag ?? null}
+                      numeroTag={d?.numero_tag || (d as any)?.tag_number || null}
                       quantidadeNg={d?.quantidade_ng || 0}
                       onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] })}
                       allowEdit={true}

@@ -48,9 +48,12 @@ const Apontamentos = () => {
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [dailyReportOpen, setDailyReportOpen] = useState(false);
   const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [ngLocationFilter, setNgLocationFilter] = useState<string | null>(null);
+  const [showNgLocationDialog, setShowNgLocationDialog] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
+  const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -171,6 +174,10 @@ const Apontamentos = () => {
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
+        // Location filter for incoming tab
+        if (activeTab === "incoming" && incomingLocationFilter) {
+          if (i.local_deteccao !== incomingLocationFilter) return false;
+        }
         if (!matchesSearch(i, ["numero", "responsavel", "part_number", "part_name", "descricao", "fornecedor", "projeto"])) return false;
         // Custom empresa filter
         const empresaFilter = filterValues["empresa"];
@@ -184,7 +191,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId]
+    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter]
   );
 
   const toggleSelect = useCallback((id: string) => {
@@ -465,7 +472,7 @@ const Apontamentos = () => {
               <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
                 <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setNgReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
+              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
                 <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">NG</span>
               </Button>
               <ReportErrorButton moduleName="Apontamentos" />
@@ -550,7 +557,7 @@ const Apontamentos = () => {
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); }} className="mt-4">
+          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
             <TabsList className="grid w-full grid-cols-4 h-auto">
               {TYPES.map((tipo) => {
                 const cfg = typeConfig[tipo];
@@ -564,6 +571,37 @@ const Apontamentos = () => {
                 );
               })}
             </TabsList>
+
+            {/* Location filter buttons for INCOMING tab */}
+            {activeTab === "incoming" && (
+              <div className="flex items-center gap-2 mt-3">
+                <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                <Button
+                  variant={incomingLocationFilter === null ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter(null)}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={incomingLocationFilter === "Sala do Audio" ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter("Sala do Audio")}
+                >
+                  🔊 Sala do Áudio
+                </Button>
+                <Button
+                  variant={incomingLocationFilter === "Área de Incoming" ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8"
+                  onClick={() => setIncomingLocationFilter("Área de Incoming")}
+                >
+                  📦 Área de Incoming
+                </Button>
+              </div>
+            )}
 
             {TYPES.map((tipo) => (
               <TabsContent key={tipo} value={tipo} className="mt-4">
@@ -599,7 +637,52 @@ const Apontamentos = () => {
       <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={items} mode="daily" onViewRecord={(id) => setViewTarget(id)} />
 
       {/* NG report */}
-      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} />
+      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} locationFilter={ngLocationFilter} />
+
+      {/* NG Location Dialog */}
+      <Dialog open={showNgLocationDialog} onOpenChange={setShowNgLocationDialog}>
+        <DialogContent className="max-w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-destructive" />Relatório de Peças NG</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o local para o relatório:</p>
+          <div className="grid grid-cols-1 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
+              onClick={() => {
+                setNgLocationFilter("Sala do Audio");
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-base">🔊 Sala do Áudio</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-emerald-400 hover:bg-emerald-50"
+              onClick={() => {
+                setNgLocationFilter("Área de Incoming");
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-base">📦 Área de Incoming</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-3 hover:border-muted-foreground/30"
+              onClick={() => {
+                setNgLocationFilter(null);
+                setShowNgLocationDialog(false);
+                setNgReportOpen(true);
+              }}
+            >
+              <span className="font-semibold text-sm">Todos os Locais</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Photo lightbox */}
       {photoLightbox && (

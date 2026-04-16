@@ -822,8 +822,45 @@ const ApontamentoDashboard = () => {
 
       {/* Main grid */}
       <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
+        {/* Origem KPI — only for incoming */}
+        {activeType === "incoming" && (
+          <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
+            <SectionHeader>Origem</SectionHeader>
+            <div className="flex gap-0">
+              <button
+                onClick={() => setResponsibilityFilter(responsibilityFilter === "part" ? null : "part")}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === "part" ? "bg-blue-600/20 ring-1 ring-blue-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Part</p>
+                <p className="text-lg font-bold text-blue-400">{origemData.part}</p>
+              </button>
+              <button
+                onClick={() => setResponsibilityFilter(responsibilityFilter === "sorting" ? null : "sorting")}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] border-x border-[hsl(220,10%,25%)] ${responsibilityFilter === "sorting" ? "bg-orange-600/20 ring-1 ring-orange-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Sorting</p>
+                <p className="text-lg font-bold text-orange-400">{origemData.sorting}</p>
+              </button>
+              <button
+                onClick={() => setResponsibilityFilter(null)}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === null ? "bg-[hsl(220,10%,22%)] ring-1 ring-[hsl(0,0%,50%)]" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-[hsl(0,0%,70%)] font-semibold uppercase tracking-wider">Total</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.total}</p>
+              </button>
+            </div>
+            {responsibilityFilter && (
+              <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
+                <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro: {responsibilityFilter === "part" ? "Part" : "Sorting"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* LEFT: General Quality Status table */}
-        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
+        <div className={`${activeType === "incoming" ? "lg:col-span-9 lg:row-start-2 lg:col-start-1" : "lg:col-span-3"} border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg`}>
           <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
           {supplierFilter && (
             <div className="px-2 pt-2">

@@ -68,7 +68,38 @@ const ApontamentoDashboard = () => {
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (responsibilityFilter) {
+      list = list.filter((i) => {
+        const resp = i.responsabilidade_defeito;
+        const loc = (i as any).local_deteccao || (i as any).fase;
+        const displayResp = resp
+          ? resp.replace(/^\d+\s*-\s*/, "").trim()
+          : loc === "Sala do Audio" ? "Part" : "Sorting";
+        return displayResp.toLowerCase().includes(responsibilityFilter.toLowerCase());
+      });
+    }
     return list;
+  }, [items, activeType, dateFrom, dateTo, supplierFilter, responsibilityFilter]);
+
+  // Origem data (Part vs Sorting counts) — computed from date-filtered items (before responsibility filter)
+  const origemData = useMemo(() => {
+    let list = items.filter((i) => i.tipo === activeType);
+    if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
+    if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    let partCount = 0;
+    let sortingCount = 0;
+    list.forEach((i) => {
+      const resp = i.responsabilidade_defeito;
+      const loc = (i as any).local_deteccao || (i as any).fase;
+      const displayResp = resp
+        ? resp.replace(/^\d+\s*-\s*/, "").trim()
+        : loc === "Sala do Audio" ? "Part" : "Sorting";
+      if (displayResp.toLowerCase().includes("part")) partCount++;
+      else if (displayResp.toLowerCase().includes("sorting")) sortingCount++;
+      else sortingCount++; // default to sorting
+    });
+    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
   }, [items, activeType, dateFrom, dateTo, supplierFilter]);
 
   const total = filtered.length;

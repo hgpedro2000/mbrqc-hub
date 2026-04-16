@@ -736,6 +736,27 @@ const ApontamentoForm = () => {
               onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); setProjeto(d.project); setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; }); }}
             />
           </div>
+
+          {/* RESPONSABILIDADE - Incoming only */}
+          {isIncoming && (
+            <div className="mt-3 sm:mt-4">
+              <div className="space-y-1.5">
+                <Label>Responsabilidade</Label>
+                {activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira ? (
+                  <Input value="Sorting" readOnly className="bg-muted" />
+                ) : (
+                  <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      {responsibilities.map((r: any) => (
+                        <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CO-INSPEÇÃO - Incoming only, Mobis Brasil only */}

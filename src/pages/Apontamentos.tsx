@@ -313,6 +313,22 @@ const Apontamentos = () => {
                         if (o === "CONSIGNADA") return <Badge className="bg-orange-500/10 text-orange-700 border-orange-200 text-[9px] px-1.5">CONSIG.</Badge>;
                         return <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[9px] px-1.5">LP</Badge>;
                       })()}
+                      {/* Responsabilidade badge */}
+                      {activeTab === "incoming" && (() => {
+                        const resp = item.responsabilidade_defeito;
+                        const loc = getInspectionLocation(item);
+                        const displayResp = resp
+                          ? resp.replace(/^\d+\s*-\s*/, "").trim()
+                          : loc === "Sala do Audio" ? "Part" : "Sorting";
+                        const isPartR = displayResp.toLowerCase().includes("part");
+                        const isSortingR = displayResp.toLowerCase().includes("sorting");
+                        const cls = isPartR
+                          ? "bg-blue-600/10 text-blue-600 border-blue-400"
+                          : isSortingR
+                          ? "bg-orange-600/10 text-orange-600 border-orange-400"
+                          : "bg-violet-600/10 text-violet-600 border-violet-400";
+                        return <Badge className={`text-[9px] px-1.5 ${cls}`}>{displayResp}</Badge>;
+                      })()}
                       {/* Empresa badge */}
                       {item.created_by && empresaByUserId[item.created_by] && (
                         <Badge variant="outline" className={`text-[9px] px-1.5 ${empresaByUserId[item.created_by] === "Mobis Brasil" ? "border-sky-300 text-sky-700 bg-sky-50" : "border-amber-300 text-amber-700 bg-amber-50"}`}>

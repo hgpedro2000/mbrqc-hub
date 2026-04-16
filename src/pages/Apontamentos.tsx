@@ -23,6 +23,7 @@ import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Input } from "@/components/ui/input";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
@@ -40,7 +41,8 @@ const Apontamentos = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
-  const { enabledModules } = useEnabledModules();
+  const { impersonating } = useImpersonation();
+  const { enabledModules } = useEnabledModules(impersonating?.id);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();

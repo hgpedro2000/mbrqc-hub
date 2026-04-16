@@ -475,10 +475,10 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 const cfg = statusConfig[t.status] || statusConfig.pendente;
                 const Icon = cfg.icon;
                 return (
-                  <div key={t.id} className="border rounded-lg p-3 space-y-1 overflow-hidden">
-                    <div className="flex flex-wrap items-center justify-between gap-1">
+                  <div key={t.id} className="border rounded-lg p-3 space-y-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-xs font-mono text-muted-foreground">{t.numero || "—"}</span>
-                      <Badge variant="outline" className={`text-[10px] shrink-0 ${cfg.color}`}>
+                      <Badge variant="outline" className={`text-[10px] shrink-0 px-2 py-0.5 ${cfg.color}`}>
                         <Icon className="w-3 h-3 mr-1" />
                         {cfg.label}
                       </Badge>

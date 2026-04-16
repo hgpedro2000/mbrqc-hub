@@ -365,6 +365,13 @@ const ApontamentoForm = () => {
     }
   }, [activeProfile, isEdit]);
 
+  // Auto-set responsabilidade for terceira users on incoming
+  useEffect(() => {
+    if (!isEdit && tipo === "incoming" && (activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira)) {
+      setResponsabilidadeDefeito("Sorting");
+    }
+  }, [activeProfile, isEdit, tipo]);
+
   // Auto-fill Local de Inspeção from URL param for incoming
   useEffect(() => {
     if (!isEdit && tipo === "incoming") {

@@ -41,7 +41,8 @@ const Apontamentos = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
-  const { enabledModules } = useEnabledModules();
+  const { impersonating } = useImpersonation();
+  const { enabledModules } = useEnabledModules(impersonating?.id);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();

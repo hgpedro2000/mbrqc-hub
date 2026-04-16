@@ -820,11 +820,10 @@ const ApontamentoDashboard = () => {
         </Tabs>
       </div>
 
-      {/* Main grid */}
-      <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
-        {/* Origem KPI — only for incoming */}
-        {activeType === "incoming" && (
-          <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
+      {/* Origem KPI — only for incoming */}
+      {activeType === "incoming" && (
+        <div className="px-2 md:px-4 pt-2">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
             <div className="flex gap-0">
               <button
@@ -857,10 +856,13 @@ const ApontamentoDashboard = () => {
               </div>
             )}
           </div>
-        )}
+        </div>
+      )}
 
+      {/* Main grid */}
+      <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">
         {/* LEFT: General Quality Status table */}
-        <div className={`${activeType === "incoming" ? "lg:col-span-9 lg:row-start-2 lg:col-start-1" : "lg:col-span-3"} border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg`}>
+        <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
           {supplierFilter && (
             <div className="px-2 pt-2">

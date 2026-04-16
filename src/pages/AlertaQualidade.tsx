@@ -468,6 +468,29 @@ const AlertaQualidade = () => {
 
       <QrScannerModal open={!!scanAlertaId} onClose={() => setScanAlertaId(null)} onScan={handleQrScan} title="Registrar Ciência via QR" />
 
+      {/* Training expiry warning */}
+      <Dialog open={!!trainingWarning} onOpenChange={(o) => { if (!o) setTrainingWarning(null); }}>
+        <DialogContent className={`max-w-sm border-2 ${trainingWarning?.type === "vencido" ? "border-destructive" : "border-amber-500"}`}>
+          <div className={`flex flex-col items-center gap-3 py-4 ${trainingWarning?.type === "vencido" ? "bg-destructive/10" : "bg-amber-50"} -m-6 p-6 rounded-lg`}>
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${trainingWarning?.type === "vencido" ? "bg-destructive/20" : "bg-amber-200"}`}>
+              <AlertTriangle className={`w-10 h-10 ${trainingWarning?.type === "vencido" ? "text-destructive" : "text-amber-700"}`} />
+            </div>
+            <h3 className={`text-lg font-bold ${trainingWarning?.type === "vencido" ? "text-destructive" : "text-amber-800"}`}>
+              {trainingWarning?.type === "vencido" ? "⚠️ Treinamento Vencido" : "⚠️ Treinamento a Vencer"}
+            </h3>
+            <p className="text-sm text-center text-foreground">
+              <strong>{trainingWarning?.name}</strong>{" "}
+              {trainingWarning?.type === "vencido"
+                ? `está com treinamento vencido desde ${trainingWarning.date}. Regularize antes de prosseguir.`
+                : `tem treinamento vencendo em ${trainingWarning?.date}. Programe a renovação.`}
+            </p>
+            <Button onClick={() => setTrainingWarning(null)} className={trainingWarning?.type === "vencido" ? "bg-destructive hover:bg-destructive/90" : "bg-amber-600 hover:bg-amber-700"}>
+              Entendido
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Success popup */}
       <Dialog open={!!successPopup} onOpenChange={(o) => { if (!o) setSuccessPopup(null); }}>
         <DialogContent className="max-w-xs text-center">

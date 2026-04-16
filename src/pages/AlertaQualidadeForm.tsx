@@ -18,6 +18,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import { compressImage } from "@/lib/compressImage";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
@@ -32,11 +34,16 @@ const AlertaQualidadeForm = () => {
   const [ngPreview, setNgPreview] = useState("");
   const [okPreview, setOkPreview] = useState("");
   const [linhaPecaOpen, setLinhaPecaOpen] = useState(false);
-  const [linhaPecaMode, setLinhaPecaMode] = useState<"menu" | "linha" | "peca">("menu");
+  const [linhaPecaStep, setLinhaPecaStep] = useState<"menu" | "fornecedor" | "peca">("menu");
   const [linhaPecaSearch, setLinhaPecaSearch] = useState("");
+  const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
   const [ocorrenciaOpen, setOcorrenciaOpen] = useState(false);
   const [validadeOpen, setValidadeOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+
+  // Image annotation editor state
+  const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
+  const [annotatingType, setAnnotatingType] = useState<"ng" | "ok">("ng");
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
@@ -90,19 +97,38 @@ const AlertaQualidadeForm = () => {
     },
   });
 
+  // Fetch suppliers filtered by selected project
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["suppliers-alerta", form.modelo],
+    queryFn: async () => {
+      if (!form.modelo) return [];
+      const { data: partData } = await supabase.from("part_numbers").select("supplier_id").eq("active", true).eq("project", form.modelo);
+      const supplierIds = [...new Set((partData || []).map(p => p.supplier_id))];
+      if (supplierIds.length === 0) return [];
+      const { data } = await supabase.from("suppliers").select("id, name, code").eq("active", true).in("id", supplierIds);
+      return (data || []).sort((a, b) => a.name.localeCompare(b.name));
+    },
+    enabled: !!form.modelo,
+  });
+
+  // Fetch part numbers filtered by selected supplier + project
+  const { data: partNumbers = [] } = useQuery({
+    queryKey: ["parts-alerta", form.modelo, selectedSupplier],
+    queryFn: async () => {
+      if (!form.modelo || !selectedSupplier) return [];
+      const supplier = suppliers.find(s => s.name === selectedSupplier);
+      if (!supplier) return [];
+      const { data } = await supabase.from("part_numbers").select("part_number, part_name").eq("active", true).eq("project", form.modelo).eq("supplier_id", supplier.id);
+      return (data || []).sort((a, b) => a.part_name.localeCompare(b.part_name));
+    },
+    enabled: !!form.modelo && !!selectedSupplier,
+  });
+
   const { data: linhas } = useQuery({
     queryKey: ["linhas-alerta"],
     queryFn: async () => {
       const { data } = await supabase.from("part_numbers").select("line_module").eq("active", true);
       return [...new Set((data || []).map(d => d.line_module).filter(Boolean))].sort();
-    },
-  });
-
-  const { data: pecas } = useQuery({
-    queryKey: ["pecas-alerta"],
-    queryFn: async () => {
-      const { data } = await supabase.from("part_numbers").select("part_name").eq("active", true);
-      return [...new Set((data || []).map(d => d.part_name).filter(Boolean))].sort();
     },
   });
 
@@ -116,10 +142,36 @@ const AlertaQualidadeForm = () => {
 
   const set = (field: string, value: string) => setForm((p) => ({ ...p, [field]: value }));
 
-  const handleFile = (file: File | null, type: "ng" | "ok") => {
+  const handleFileSelected = async (file: File | null, type: "ng" | "ok") => {
     if (!file) return;
-    if (type === "ng") { setNgFile(file); setNgPreview(URL.createObjectURL(file)); }
-    else { setOkFile(file); setOkPreview(URL.createObjectURL(file)); }
+    const compressed = await compressImage(file);
+    setAnnotatingFile(compressed);
+    setAnnotatingType(type);
+  };
+
+  const handleAnnotationConfirm = (annotatedFile: File) => {
+    if (annotatingType === "ng") {
+      setNgFile(annotatedFile);
+      setNgPreview(URL.createObjectURL(annotatedFile));
+    } else {
+      setOkFile(annotatedFile);
+      setOkPreview(URL.createObjectURL(annotatedFile));
+    }
+    setAnnotatingFile(null);
+  };
+
+  const handleAnnotationCancel = () => {
+    // Use image without annotation
+    if (annotatingFile) {
+      if (annotatingType === "ng") {
+        setNgFile(annotatingFile);
+        setNgPreview(URL.createObjectURL(annotatingFile));
+      } else {
+        setOkFile(annotatingFile);
+        setOkPreview(URL.createObjectURL(annotatingFile));
+      }
+    }
+    setAnnotatingFile(null);
   };
 
   const uploadPhoto = async (file: File, prefix: string) => {
@@ -198,8 +250,9 @@ const AlertaQualidadeForm = () => {
     return format(new Date(s + "T12:00:00"), "dd/MM/yyyy");
   };
 
+  const filteredSuppliers = suppliers.filter(s => s.name.toLowerCase().includes(linhaPecaSearch.toLowerCase()) || s.code.toLowerCase().includes(linhaPecaSearch.toLowerCase()));
+  const filteredParts = partNumbers.filter(p => p.part_name.toLowerCase().includes(linhaPecaSearch.toLowerCase()) || p.part_number.toLowerCase().includes(linhaPecaSearch.toLowerCase()));
   const filteredLinhas = (linhas || []).filter(l => l.toLowerCase().includes(linhaPecaSearch.toLowerCase()));
-  const filteredPecas = (pecas || []).filter(p => p.toLowerCase().includes(linhaPecaSearch.toLowerCase()));
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,7 +295,7 @@ const AlertaQualidadeForm = () => {
 
           <div className="space-y-1">
             {reqLabel("Linha/Peça")}
-            <Button variant="outline" className={cn("w-full text-sm h-9 justify-start font-normal truncate", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaMode("menu"); setLinhaPecaSearch(""); setLinhaPecaOpen(true); }}>
+            <Button variant="outline" className={cn("w-full text-sm h-9 justify-start font-normal truncate", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); setSelectedSupplier(null); setLinhaPecaOpen(true); }}>
               {form.linha_peca || "Selecione"}
             </Button>
           </div>
@@ -296,7 +349,7 @@ const AlertaQualidadeForm = () => {
           </div>
         </div>
 
-        {/* Row 2: Descrição + Responsabilidade/VIN - same 7-col grid */}
+        {/* Row 2: Descrição + Responsabilidade/VIN */}
         <div className="grid grid-cols-1 lg:grid-cols-7 gap-2 sm:gap-3">
           <div className="lg:col-span-5 space-y-1">
             {reqLabel("Descrição")}
@@ -319,7 +372,7 @@ const AlertaQualidadeForm = () => {
           </div>
         </div>
 
-        {/* Fotos NG / OK - obrigatórias */}
+        {/* Fotos NG / OK */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -331,7 +384,7 @@ const AlertaQualidadeForm = () => {
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
             </div>
-            <input ref={ngInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] || null, "ng")} />
+            <input ref={ngInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelected(e.target.files?.[0] || null, "ng")} />
           </div>
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -343,7 +396,7 @@ const AlertaQualidadeForm = () => {
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
             </div>
-            <input ref={okInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] || null, "ok")} />
+            <input ref={okInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelected(e.target.files?.[0] || null, "ok")} />
           </div>
         </div>
 
@@ -382,54 +435,110 @@ const AlertaQualidadeForm = () => {
         </div>
       </main>
 
-      {/* Dialog Linha/Peça - Redesigned */}
+      {/* Dialog Linha/Peça - Supplier → Part Number flow */}
       <Dialog open={linhaPecaOpen} onOpenChange={setLinhaPecaOpen}>
-        <DialogContent className="max-w-sm sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-sm sm:max-w-md p-0 max-h-[90dvh] flex flex-col">
+          <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
             <DialogTitle>Selecionar Linha ou Peça</DialogTitle>
           </DialogHeader>
 
-          {linhaPecaMode === "menu" ? (
-            <div className="flex flex-col gap-3">
-              <Button variant="outline" className="h-auto py-4 text-left flex flex-col items-start w-full" onClick={() => setLinhaPecaMode("linha")}>
-                <span className="font-bold text-[#1a5276]">LINHA (Módulo)</span>
-                <span className="text-xs text-muted-foreground">Selecionar da tabela de Módulos</span>
-              </Button>
-              <Button variant="outline" className="h-auto py-4 text-left flex flex-col items-start w-full" onClick={() => setLinhaPecaMode("peca")}>
-                <span className="font-bold text-[#1a5276]">PEÇA (Part Name)</span>
-                <span className="text-xs text-muted-foreground">Selecionar da tabela de Part Numbers</span>
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => { setLinhaPecaMode("menu"); setLinhaPecaSearch(""); }} className="px-2">
-                  <ArrowLeft className="w-4 h-4" />
+          <div className="flex-1 overflow-hidden flex flex-col px-4 pb-4">
+            {linhaPecaStep === "menu" ? (
+              <div className="flex flex-col gap-3">
+                <Button variant="outline" className="h-auto py-4 text-left flex flex-col items-start w-full" onClick={() => { setLinhaPecaStep("fornecedor"); setLinhaPecaSearch(""); }}>
+                  <span className="font-bold text-[#1a5276]">PEÇA (por Fornecedor)</span>
+                  <span className="text-xs text-muted-foreground">Selecione Fornecedor → Part Number</span>
                 </Button>
-                <span className="font-bold text-sm text-[#1a5276]">
-                  {linhaPecaMode === "linha" ? "LINHA (Módulo)" : "PEÇA (Part Name)"}
-                </span>
+                <Button variant="outline" className="h-auto py-4 text-left flex flex-col items-start w-full" onClick={() => {
+                  // Direct line selection (legacy)
+                  setLinhaPecaStep("peca");
+                  setSelectedSupplier(null);
+                  setLinhaPecaSearch("");
+                }}>
+                  <span className="font-bold text-[#1a5276]">LINHA (Módulo)</span>
+                  <span className="text-xs text-muted-foreground">Selecionar da tabela de Módulos</span>
+                </Button>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input value={linhaPecaSearch} onChange={(e) => setLinhaPecaSearch(e.target.value)} placeholder="Buscar..." className="pl-9 h-9" autoFocus />
-              </div>
-              <ScrollArea className="h-[250px]">
-                <div className="space-y-0.5">
-                  {(linhaPecaMode === "linha" ? filteredLinhas : filteredPecas).map(item => (
-                    <Button key={item} variant="ghost" size="sm" className="w-full justify-start text-sm h-9 font-normal" onClick={() => { set("linha_peca", item); setLinhaPecaOpen(false); }}>
-                      {item}
-                    </Button>
-                  ))}
-                  {(linhaPecaMode === "linha" ? filteredLinhas : filteredPecas).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Nenhum resultado</p>
-                  )}
+            ) : linhaPecaStep === "fornecedor" ? (
+              <div className="flex flex-col flex-1 min-h-0 gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); }} className="px-2">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="font-bold text-sm text-[#1a5276]">Selecione o Fornecedor</span>
                 </div>
-              </ScrollArea>
-            </div>
-          )}
+                {!form.modelo && (
+                  <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1.5">Selecione o Modelo do Carro primeiro</p>
+                )}
+                <div className="relative shrink-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input value={linhaPecaSearch} onChange={(e) => setLinhaPecaSearch(e.target.value)} placeholder="Buscar fornecedor..." className="pl-9 h-9" autoFocus />
+                </div>
+                <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: "calc(90dvh - 220px)" }}>
+                  <div className="space-y-0.5">
+                    {filteredSuppliers.map(s => (
+                      <Button key={s.id} variant="ghost" size="sm" className="w-full justify-start text-sm h-10 font-normal" onClick={() => { setSelectedSupplier(s.name); setLinhaPecaStep("peca"); setLinhaPecaSearch(""); }}>
+                        <span className="font-semibold mr-2 text-muted-foreground">{s.code}</span> {s.name}
+                      </Button>
+                    ))}
+                    {filteredSuppliers.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum fornecedor encontrado</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            ) : (
+              <div className="flex flex-col flex-1 min-h-0 gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    if (selectedSupplier) { setLinhaPecaStep("fornecedor"); }
+                    else { setLinhaPecaStep("menu"); }
+                    setLinhaPecaSearch("");
+                  }} className="px-2">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="font-bold text-sm text-[#1a5276]">
+                    {selectedSupplier ? `${selectedSupplier} — Part Numbers` : "LINHA (Módulo)"}
+                  </span>
+                </div>
+                <div className="relative shrink-0">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input value={linhaPecaSearch} onChange={(e) => setLinhaPecaSearch(e.target.value)} placeholder="Buscar..." className="pl-9 h-9" autoFocus />
+                </div>
+                <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: "calc(90dvh - 220px)" }}>
+                  <div className="space-y-0.5">
+                    {selectedSupplier ? (
+                      filteredParts.map(p => (
+                        <Button key={p.part_number} variant="ghost" size="sm" className="w-full justify-start text-sm h-auto py-2 font-normal flex flex-col items-start" onClick={() => { set("linha_peca", p.part_name); setLinhaPecaOpen(false); }}>
+                          <span className="font-semibold text-foreground">{p.part_number}</span>
+                          <span className="text-xs text-muted-foreground">{p.part_name}</span>
+                        </Button>
+                      ))
+                    ) : (
+                      filteredLinhas.map(item => (
+                        <Button key={item} variant="ghost" size="sm" className="w-full justify-start text-sm h-9 font-normal" onClick={() => { set("linha_peca", item); setLinhaPecaOpen(false); }}>
+                          {item}
+                        </Button>
+                      ))
+                    )}
+                    {((selectedSupplier && filteredParts.length === 0) || (!selectedSupplier && filteredLinhas.length === 0)) && (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum resultado</p>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Annotation Editor */}
+      <ImageAnnotationEditor
+        open={!!annotatingFile}
+        imageFile={annotatingFile}
+        onConfirm={handleAnnotationConfirm}
+        onCancel={handleAnnotationCancel}
+      />
     </div>
   );
 };

@@ -590,20 +590,28 @@ const Apontamentos = () => {
           </div>
 
           {/* Date filter + Filtros — single symmetric row */}
-          <div className="flex items-center gap-1.5 mb-2">
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-[10px] text-muted-foreground shrink-0">De</span>
             <Input
               type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
               className="h-8 text-xs w-[110px] shrink-0"
             />
-            {dateFilter && (
-              <Button variant="ghost" size="sm" className="h-8 px-1.5 text-xs text-muted-foreground shrink-0" onClick={() => setDateFilter("")}>
+            <span className="text-[10px] text-muted-foreground shrink-0">Até</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-8 text-xs w-[110px] shrink-0"
+            />
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" className="h-8 px-1.5 text-xs text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }}>
                 <X className="w-3 h-3" />
               </Button>
             )}
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => { const t = new Date().toISOString().split("T")[0]; setDateFrom(t); setDateTo(t); }}>
               Hoje
             </Button>
             <div className="flex-1" />

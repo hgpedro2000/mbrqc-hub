@@ -384,7 +384,7 @@ const Hub = () => {
             <SortableContext items={orderedModules.map((m) => m.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {orderedModules.map((mod, i) => (
-                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} />
+                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} badgeCount={badgeByModule[mod.id]} />
                 ))}
               </div>
             </SortableContext>

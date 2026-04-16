@@ -129,7 +129,7 @@ const AlertaQualidadeView = () => {
 
   const fieldRow = (label: string, value: string, color: "red" | "blue" = "blue") => (
     <div className="space-y-0.5 min-w-0">
-      <span className={`text-[10px] font-bold uppercase block ${color === "red" ? "text-[#c0392b]" : "text-[#1a5276]"}`}>{label}</span>
+      <span className={`text-[10px] font-bold uppercase block text-center ${color === "red" ? "text-[#c0392b]" : "text-[#1a5276]"}`}>{label}</span>
       <p className="text-sm bg-muted/20 rounded px-2 py-2 break-words text-center flex items-center justify-center min-h-[36px]" style={{ color: "#0000FF" }}>{value || "—"}</p>
     </div>
   );
@@ -164,25 +164,32 @@ const AlertaQualidadeView = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 max-w-4xl space-y-4" ref={contentRef}>
+        {/* Export-only header */}
         <div className="bg-[#c0392b] text-white rounded-lg p-3 text-center" style={{ display: "none" }} id="export-header">
           <h2 className="text-lg font-bold">ALERTA DE QUALIDADE {formatSeq(a.sequencial)}</h2>
         </div>
 
-        {/* Fields grid - labels with red color for key fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 form-section">
-          {fieldRow("Modelo", a.modelo, "red")}
-          {fieldRow("Modo de Falha", a.modo_falha, "red")}
-          {fieldRow("Linha/Peça", a.linha_peca, "red")}
-          {fieldRow("Local Detectado", a.local_detectado, "red")}
-          {fieldRow("Data Ocorrência", a.data_ocorrencia ? new Date(a.data_ocorrencia + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
-          {fieldRow("Data Validade", a.data_validade ? new Date(a.data_validade + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
-          {fieldRow("Turno", a.turno, "red")}
-          {fieldRow("Responsabilidade", a.responsabilidade, "red")}
+        {/* Fields grid — 4 columns symmetrical */}
+        <div className="form-section">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            {fieldRow("Modelo", a.modelo, "red")}
+            {fieldRow("Modo de Falha", a.modo_falha, "red")}
+            {fieldRow("Linha/Peça", a.linha_peca, "red")}
+            {fieldRow("Local Detectado", a.local_detectado, "red")}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-2">
+            {fieldRow("Data Ocorrência", a.data_ocorrencia ? new Date(a.data_ocorrencia + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
+            {fieldRow("Data Validade", a.data_validade ? new Date(a.data_validade + "T00:00:00").toLocaleDateString("pt-BR") : "", "red")}
+            {fieldRow("Turno", a.turno, "red")}
+            {fieldRow("Responsabilidade", a.responsabilidade, "red")}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3 form-section">
-          <div className="md:col-span-2">{fieldRow("Descrição", a.descricao, "red")}</div>
-          <div>{fieldRow("VIN", a.vin, "red")}</div>
+        <div className="form-section">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div className="sm:col-span-3">{fieldRow("Descrição", a.descricao, "red")}</div>
+            <div>{fieldRow("VIN", a.vin, "red")}</div>
+          </div>
         </div>
 
         {/* Photos */}

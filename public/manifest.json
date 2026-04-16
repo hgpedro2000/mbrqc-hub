@@ -1,6 +1,6 @@
 {
-  "name": "MBR-QC - Quality Control Hub",
-  "short_name": "MBRQC",
+  "name": "MBR - Quality Tools",
+  "short_name": "MBR",
   "start_url": "https://www.mbrqc.com.br/",
   "display": "standalone",
   "orientation": "portrait",

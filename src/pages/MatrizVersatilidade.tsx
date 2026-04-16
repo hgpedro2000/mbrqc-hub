@@ -161,6 +161,24 @@ const MatrizVersatilidade = () => {
     },
   });
 
+  // Auto-disable flags missing dates (run once after qualifications load)
+  useEffect(() => {
+    const sanitizeOrphanFlags = async () => {
+      if (!canEdit || qualifications.length === 0) return;
+      const orphans = qualifications.filter(
+        (q: any) => q.habilitado && (!q.last_evaluation_date || !q.next_evaluation_date)
+      );
+      if (orphans.length === 0) return;
+      await supabase
+        .from("inspector_qualifications")
+        .update({ habilitado: false } as any)
+        .in("id", orphans.map((q: any) => q.id));
+      qc.invalidateQueries({ queryKey: ["inspector-qualifications"] });
+    };
+    sanitizeOrphanFlags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qualifications.length, canEdit]);
+
   useEffect(() => {
     const populateQualifications = async () => {
       if (!canEdit || inspectors.length === 0) return;

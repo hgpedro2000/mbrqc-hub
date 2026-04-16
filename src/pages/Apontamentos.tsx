@@ -583,29 +583,49 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              variant={filtersExpanded ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              {filtersExpanded ? "Ocultar Filtros" : "Filtros"}
-            </Button>
-            {Object.keys(filterValues).length > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
-                Limpar
+          {/* Date filter */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="h-8 text-xs w-[140px]"
+              />
+              {dateFilter && (
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setDateFilter("")}>
+                  <X className="w-3 h-3 mr-1" /> Todos
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+                Hoje
               </Button>
-            )}
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant={filtersExpanded ? "default" : "outline"}
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+              >
+                <Filter className="w-3.5 h-3.5" />
+                {filtersExpanded ? "Ocultar" : "Filtros"}
+              </Button>
+              {Object.keys(filterValues).length > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                  Limpar
+                </Button>
+              )}
+            </div>
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
-            <TabsList className="grid w-full grid-cols-4 h-auto">
-              {TYPES.map((tipo) => {
+            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleTypes.length}, 1fr)` }}>
+              {visibleTypes.map((tipo) => {
                 const cfg = typeConfig[tipo];
                 const Icon = cfg.icon;
                 return (

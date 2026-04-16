@@ -44,7 +44,7 @@ const allModules = [
   { id: "matriz-versatilidade", titleKey: "modules.matrizVersatilidade.title", descriptionKey: "modules.matrizVersatilidade.description", icon: Users, path: "/matriz-versatilidade", color: "from-pink-500/15 to-fuchsia-500/5", iconBg: "bg-pink-500/10 text-pink-600" },
 ];
 
-const SortableModuleCard = ({ mod, index, t, navigate }: { mod: typeof allModules[0]; index: number; t: any; navigate: any }) => {
+const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -62,6 +62,11 @@ const SortableModuleCard = ({ mod, index, t, navigate }: { mod: typeof allModule
       onClick={() => navigate(mod.path)}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
+      {badgeCount && badgeCount > 0 && (
+        <Badge className="absolute top-3 right-3 z-10 h-5 min-w-5 px-1.5 text-[10px] bg-destructive text-destructive-foreground border-0 font-bold">
+          {badgeCount > 99 ? "99+" : badgeCount}
+        </Badge>
+      )}
       <div className="relative">
         <div className="flex items-start justify-between">
           <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-3 md:mb-4`}>
@@ -108,6 +113,135 @@ const Hub = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Pending counts for module badges
+  const activeProfileForBadges = impersonating || profile;
+  const isMobisForBadges = activeProfileForBadges?.empresa === "mobis_brasil";
+  const cargoLower = (activeProfileForBadges?.cargo || "").toLowerCase();
+  const isQualityRole = ["lider", "assistente", "analista", "supervisor", "gerente"].some((r) => cargoLower.includes(r));
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ["my-roles-hub", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+  const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
+
+  // Apontamentos: pending TAGs (existing logic shown via PendingTagsAlert; but expose count for badge)
+  const { data: apontamentosBadge = 0 } = useQuery({
+    queryKey: ["badge-apontamentos", user?.id, isAdmin, activeProfileForBadges?.turno],
+    queryFn: async () => {
+      if (!isMobisForBadges) return 0;
+      let q = supabase.from("apontamentos").select("id", { count: "exact", head: true })
+        .gt("quantidade_ng", 0).is("numero_tag" as any, null).is("tag_number" as any, null);
+      if (!isAdmin && activeProfileForBadges?.turno) q = q.eq("turno", activeProfileForBadges.turno);
+      else if (!isAdmin) return 0;
+      const { count } = await q;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+  });
+
+  // Alerta de Qualidade: pending ciência for current user + alerts em andamento (admin/lider only see counts)
+  const { data: alertaBadge = 0 } = useQuery({
+    queryKey: ["badge-alerta", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      // Pending ciência for the user (alerts targeting their qualified areas)
+      const { data: quals } = await supabase.from("inspector_qualifications")
+        .select("area").eq("user_id", user.id).eq("habilitado", true);
+      const myAreas = (quals || []).map((q: any) => q.area);
+      const { data: parts } = await supabase.from("part_numbers").select("part_name, line_module").eq("active", true);
+      const partMap = new Map((parts || []).map((p: any) => [p.part_name, p.line_module]));
+      const lineAreaMap: Record<string, string> = {
+        "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem", "Incoming": "incoming",
+        "Pintura": "pintura", "Injeção": "injecao", "Sala do Áudio": "sala_audio", "Inspeção de Peça": "inspecao_peca",
+      };
+      const { data: allAlertas } = await supabase.from("alertas").select("id, linha_peca").eq("status", "ativo");
+      const { data: myCiencias } = await supabase.from("ciencias").select("alerta_id").eq("inspetor_id", user.id);
+      const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
+      const userPending = (allAlertas || []).filter((a: any) => {
+        if (cienIds.has(a.id)) return false;
+        if (myAreas.length === 0) return false;
+        let areaKey = lineAreaMap[a.linha_peca || ""];
+        if (!areaKey) {
+          const lm = partMap.get(a.linha_peca || "");
+          if (lm) areaKey = lineAreaMap[lm];
+        }
+        return areaKey && myAreas.includes(areaKey);
+      }).length;
+
+      // Leaders/quality roles also see incomplete alerts (any pending ciência)
+      let leaderPending = 0;
+      if (isLider || isQualityRole) {
+        const { data: allCiencias } = await supabase.from("ciencias").select("alerta_id");
+        const cienByAlerta = new Map<string, number>();
+        (allCiencias || []).forEach((c: any) => cienByAlerta.set(c.alerta_id, (cienByAlerta.get(c.alerta_id) || 0) + 1));
+        const { data: qualsAll } = await supabase.from("inspector_qualifications").select("user_id, area").eq("habilitado", true);
+        const qualsByArea = new Map<string, Set<string>>();
+        (qualsAll || []).forEach((q: any) => {
+          if (!qualsByArea.has(q.area)) qualsByArea.set(q.area, new Set());
+          qualsByArea.get(q.area)!.add(q.user_id);
+        });
+        leaderPending = (allAlertas || []).filter((a: any) => {
+          let areaKey = lineAreaMap[a.linha_peca || ""];
+          if (!areaKey) {
+            const lm = partMap.get(a.linha_peca || "");
+            if (lm) areaKey = lineAreaMap[lm];
+          }
+          if (!areaKey) return false;
+          const total = qualsByArea.get(areaKey)?.size || 0;
+          const done = cienByAlerta.get(a.id) || 0;
+          return total > 0 && done < total;
+        }).length;
+      }
+      return Math.max(userPending, leaderPending);
+    },
+    enabled: !!user?.id,
+  });
+
+  // Consumíveis: low stock + pending requests (admin/lider only)
+  const { data: consumiveisBadge = 0 } = useQuery({
+    queryKey: ["badge-consumiveis", user?.id, isAdmin, isLider],
+    queryFn: async () => {
+      if (!isAdmin && !isLider) return 0;
+      const { data: items } = await supabase.from("consumable_items").select("stock_qty, min_qty").eq("active", true);
+      const lowStock = (items || []).filter((i: any) => (i.stock_qty ?? 0) < (i.min_qty ?? 0)).length;
+      const { count: pendingReq } = await supabase.from("consumable_requests")
+        .select("id", { count: "exact", head: true }).eq("status", "aguardando");
+      return lowStock + (pendingReq || 0);
+    },
+    enabled: !!user?.id,
+  });
+
+  // Matriz: inspectors with training expired or expiring within 30 days
+  const { data: matrizBadge = 0 } = useQuery({
+    queryKey: ["badge-matriz", user?.id],
+    queryFn: async () => {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+      const { data } = await supabase.from("inspector_qualifications")
+        .select("user_id, next_evaluation_date").eq("habilitado", true).not("next_evaluation_date", "is", null);
+      const userIds = new Set<string>();
+      (data || []).forEach((q: any) => {
+        const d = new Date(q.next_evaluation_date + "T12:00:00");
+        if (d <= in30) userIds.add(q.user_id);
+      });
+      return userIds.size;
+    },
+    enabled: !!user?.id,
+  });
+
+  const badgeByModule: Record<string, number> = {
+    "apontamentos": apontamentosBadge,
+    "alerta-qualidade": alertaBadge,
+    "consumiveis": consumiveisBadge,
+    "matriz-versatilidade": matrizBadge,
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -250,7 +384,7 @@ const Hub = () => {
             <SortableContext items={orderedModules.map((m) => m.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {orderedModules.map((mod, i) => (
-                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} />
+                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} badgeCount={badgeByModule[mod.id]} />
                 ))}
               </div>
             </SortableContext>

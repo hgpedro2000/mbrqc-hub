@@ -161,6 +161,24 @@ const MatrizVersatilidade = () => {
     },
   });
 
+  // Auto-disable flags missing dates (run once after qualifications load)
+  useEffect(() => {
+    const sanitizeOrphanFlags = async () => {
+      if (!canEdit || qualifications.length === 0) return;
+      const orphans = qualifications.filter(
+        (q: any) => q.habilitado && (!q.last_evaluation_date || !q.next_evaluation_date)
+      );
+      if (orphans.length === 0) return;
+      await supabase
+        .from("inspector_qualifications")
+        .update({ habilitado: false } as any)
+        .in("id", orphans.map((q: any) => q.id));
+      qc.invalidateQueries({ queryKey: ["inspector-qualifications"] });
+    };
+    sanitizeOrphanFlags();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qualifications.length, canEdit]);
+
   useEffect(() => {
     const populateQualifications = async () => {
       if (!canEdit || inspectors.length === 0) return;
@@ -244,12 +262,12 @@ const MatrizVersatilidade = () => {
 
     // Validate: don't allow saving without both dates
     if (!editDates.lastDate || !editDates.nextDate) {
-      toast.error("Preencha ambas as datas de avaliação.");
+      toast.error("Preencha a data da última e próxima avaliação antes de salvar o flag.");
       return;
     }
 
     const existing = getQual(userId, area);
-    const updateData = { last_evaluation_date: editDates.lastDate || null, next_evaluation_date: editDates.nextDate || null };
+    const updateData = { last_evaluation_date: editDates.lastDate, next_evaluation_date: editDates.nextDate };
     if (existing) {
       await supabase.from("inspector_qualifications").update(updateData as any).eq("id", existing.id);
     } else {
@@ -265,19 +283,17 @@ const MatrizVersatilidade = () => {
     const existing = getQual(userId, area);
     const willBeEnabled = !existing?.habilitado;
 
-    // If DISABLING (unflagging), allow it regardless of dates
+    // If DISABLING, allow it regardless of dates
     if (!willBeEnabled) {
       await toggleHabilitado(userId, area);
       return;
     }
 
-    // If enabling inspecao_peca, check dates
-    if (willBeEnabled && area === "inspecao_peca") {
-      if (!existing?.last_evaluation_date || !existing?.next_evaluation_date) {
-        openEditDates(userId, area);
-        toast.info("Preencha as datas de avaliação para habilitar Noções de Qualidade.");
-        return;
-      }
+    // Enabling requires both dates filled (any area)
+    if (!existing?.last_evaluation_date || !existing?.next_evaluation_date) {
+      openEditDates(userId, area);
+      toast.error("Preencha a data da última e próxima avaliação antes de salvar o flag.");
+      return;
     }
 
     await toggleHabilitado(userId, area);

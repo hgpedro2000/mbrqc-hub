@@ -34,6 +34,7 @@ const ApontamentoDashboard = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
+  const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -67,7 +68,38 @@ const ApontamentoDashboard = () => {
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (responsibilityFilter) {
+      list = list.filter((i) => {
+        const resp = i.responsabilidade_defeito;
+        const loc = (i as any).local_deteccao || (i as any).fase;
+        const displayResp = resp
+          ? resp.replace(/^\d+\s*-\s*/, "").trim()
+          : loc === "Sala do Audio" ? "Part" : "Sorting";
+        return displayResp.toLowerCase().includes(responsibilityFilter.toLowerCase());
+      });
+    }
     return list;
+  }, [items, activeType, dateFrom, dateTo, supplierFilter, responsibilityFilter]);
+
+  // Origem data (Part vs Sorting counts) — computed from date-filtered items (before responsibility filter)
+  const origemData = useMemo(() => {
+    let list = items.filter((i) => i.tipo === activeType);
+    if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
+    if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    let partCount = 0;
+    let sortingCount = 0;
+    list.forEach((i) => {
+      const resp = i.responsabilidade_defeito;
+      const loc = (i as any).local_deteccao || (i as any).fase;
+      const displayResp = resp
+        ? resp.replace(/^\d+\s*-\s*/, "").trim()
+        : loc === "Sala do Audio" ? "Part" : "Sorting";
+      if (displayResp.toLowerCase().includes("part")) partCount++;
+      else if (displayResp.toLowerCase().includes("sorting")) sortingCount++;
+      else sortingCount++; // default to sorting
+    });
+    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
   }, [items, activeType, dateFrom, dateTo, supplierFilter]);
 
   const total = filtered.length;
@@ -787,6 +819,45 @@ const ApontamentoDashboard = () => {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Origem KPI — only for incoming */}
+      {activeType === "incoming" && (
+        <div className="px-2 md:px-4 pt-2">
+          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
+            <SectionHeader>Origem</SectionHeader>
+            <div className="flex gap-0">
+              <button
+                onClick={() => setResponsibilityFilter(responsibilityFilter === "part" ? null : "part")}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === "part" ? "bg-blue-600/20 ring-1 ring-blue-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Part</p>
+                <p className="text-lg font-bold text-blue-400">{origemData.part}</p>
+              </button>
+              <button
+                onClick={() => setResponsibilityFilter(responsibilityFilter === "sorting" ? null : "sorting")}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] border-x border-[hsl(220,10%,25%)] ${responsibilityFilter === "sorting" ? "bg-orange-600/20 ring-1 ring-orange-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Sorting</p>
+                <p className="text-lg font-bold text-orange-400">{origemData.sorting}</p>
+              </button>
+              <button
+                onClick={() => setResponsibilityFilter(null)}
+                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === null ? "bg-[hsl(220,10%,22%)] ring-1 ring-[hsl(0,0%,50%)]" : "hover:bg-[hsl(220,15%,18%)]"}`}
+              >
+                <p className="text-[10px] text-[hsl(0,0%,70%)] font-semibold uppercase tracking-wider">Total</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.total}</p>
+              </button>
+            </div>
+            {responsibilityFilter && (
+              <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
+                <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro: {responsibilityFilter === "part" ? "Part" : "Sorting"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Main grid */}
       <main className="p-2 md:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-x-hidden">

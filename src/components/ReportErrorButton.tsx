@@ -22,9 +22,10 @@ interface Props {
 }
 
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
-  pendente: { label: "Pendente", icon: Clock, color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
-  em_andamento: { label: "Em Andamento", icon: Loader2, color: "border-blue-500 text-blue-600 bg-blue-500/10" },
+  pendente: { label: "Aberto", icon: Clock, color: "border-blue-500 text-blue-600 bg-blue-500/10" },
+  em_andamento: { label: "Em Andamento", icon: Loader2, color: "border-amber-500 text-amber-600 bg-amber-500/10" },
   resolvido: { label: "Resolvido", icon: CheckCircle, color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
+  cancelado: { label: "Cancelado", icon: X, color: "border-red-500 text-red-600 bg-red-500/10" },
 };
 
 const TURNOS = ["1T", "2T", "3T", "ADM"];

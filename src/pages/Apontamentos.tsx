@@ -22,7 +22,8 @@ import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
-
+import { useEnabledModules } from "@/hooks/useModulePermissions";
+import { Input } from "@/components/ui/input";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 

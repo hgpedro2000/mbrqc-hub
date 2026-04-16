@@ -195,8 +195,9 @@ const Apontamentos = () => {
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
-        // Date filter
-        if (dateFilter && i.data !== dateFilter) return false;
+        // Date range filter
+        if (dateFrom && i.data < dateFrom) return false;
+        if (dateTo && i.data > dateTo) return false;
         // Location filter for incoming tab
         if (activeTab === "incoming" && incomingLocationFilter) {
           const loc = getInspectionLocation(i);
@@ -215,7 +216,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFilter]
+    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
   );
 
   const toggleSelect = useCallback((id: string) => {

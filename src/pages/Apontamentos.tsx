@@ -563,7 +563,8 @@ const Apontamentos = () => {
 
         {/* Records section */}
         <div>
-          <div className="flex items-center justify-between mb-4">
+          {/* Header row: title + view toggle */}
+          <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-heading font-bold text-foreground">Registros</h2>
             <div className="flex items-center gap-2">
               {isAdmin && selectedIds.size > 0 && (
@@ -583,41 +584,37 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          {/* Date filter */}
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <div className="flex items-center gap-1.5">
-              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
-              <Input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="h-8 text-xs w-[140px]"
-              />
-              {dateFilter && (
-                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setDateFilter("")}>
-                  <X className="w-3 h-3 mr-1" /> Todos
-                </Button>
-              )}
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
-                Hoje
+          {/* Date filter + Filtros — single symmetric row */}
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="h-8 text-xs flex-1 min-w-0"
+            />
+            {dateFilter && (
+              <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-muted-foreground shrink-0" onClick={() => setDateFilter("")}>
+                <X className="w-3 h-3 mr-1" /> Todos
               </Button>
-            </div>
-            <div className="flex items-center gap-2 ml-auto">
-              <Button
-                variant={filtersExpanded ? "default" : "outline"}
-                size="sm"
-                className="gap-1.5 text-xs"
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
+            )}
+            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs shrink-0" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+              Hoje
+            </Button>
+            <Button
+              variant={filtersExpanded ? "default" : "outline"}
+              size="sm"
+              className="gap-1.5 text-xs h-8 shrink-0"
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
               >
                 <Filter className="w-3.5 h-3.5" />
                 {filtersExpanded ? "Ocultar" : "Filtros"}
               </Button>
               {Object.keys(filterValues).length > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 shrink-0" onClick={clearFilters}>
                   Limpar
                 </Button>
               )}
-            </div>
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

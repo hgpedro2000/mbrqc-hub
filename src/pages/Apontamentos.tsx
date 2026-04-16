@@ -611,11 +611,10 @@ const Apontamentos = () => {
                 {filtersExpanded ? "Ocultar" : "Filtros"}
               </Button>
               {Object.keys(filterValues).length > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 shrink-0" onClick={clearFilters}>
                   Limpar
                 </Button>
               )}
-            </div>
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

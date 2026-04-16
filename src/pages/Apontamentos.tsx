@@ -534,8 +534,8 @@ const Apontamentos = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-8" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
-          {TYPES.map((tipo, i) => {
+        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleTypes.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-4"}`}>
+          {visibleTypes.map((tipo, i) => {
             const cfg = typeConfig[tipo];
             const Icon = cfg.icon;
             return (

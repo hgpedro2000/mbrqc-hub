@@ -585,36 +585,37 @@ const Apontamentos = () => {
           </div>
 
           {/* Date filter + Filtros — single symmetric row */}
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-1.5 mb-2">
             <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
             <Input
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="h-8 text-xs flex-1 min-w-0"
+              className="h-8 text-xs w-[110px] shrink-0"
             />
             {dateFilter && (
-              <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs text-muted-foreground shrink-0" onClick={() => setDateFilter("")}>
-                <X className="w-3 h-3 mr-1" /> Todos
+              <Button variant="ghost" size="sm" className="h-8 px-1.5 text-xs text-muted-foreground shrink-0" onClick={() => setDateFilter("")}>
+                <X className="w-3 h-3" />
               </Button>
             )}
-            <Button variant="ghost" size="sm" className="h-8 px-2.5 text-xs shrink-0" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
               Hoje
             </Button>
+            <div className="flex-1" />
             <Button
               variant={filtersExpanded ? "default" : "outline"}
               size="sm"
-              className="gap-1.5 text-xs h-8 shrink-0"
+              className="gap-1 text-xs h-8 px-2.5 shrink-0"
               onClick={() => setFiltersExpanded(!filtersExpanded)}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                {filtersExpanded ? "Ocultar" : "Filtros"}
+            >
+              <Filter className="w-3.5 h-3.5" />
+              Filtros
+            </Button>
+            {Object.keys(filterValues).length > 0 && (
+              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 px-1.5 shrink-0" onClick={clearFilters}>
+                <X className="w-3 h-3" />
               </Button>
-              {Object.keys(filterValues).length > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 shrink-0" onClick={clearFilters}>
-                  Limpar
-                </Button>
-              )}
+            )}
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

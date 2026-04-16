@@ -70,11 +70,14 @@ const AlertaQualidade = () => {
   // Can SCAN QR: any leader role (regardless of cargo)
   const canScanQr = isLider;
 
+  // Can VIEW ALL alerts: admin, lider role, or quality management cargos
+  const canViewAll = isAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+
   useEffect(() => {
-    if (!isLider && isInspetor) {
+    if (!canViewAll && isInspetor) {
       navigate("/alerta-qualidade/feed", { replace: true });
     }
-  }, [isLider, isInspetor, navigate]);
+  }, [canViewAll, isInspetor, navigate]);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-lista-mestra"],
@@ -163,15 +166,15 @@ const AlertaQualidade = () => {
 
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
-  // Visibility: admin/lider see all; others only see alerts for their qualified areas
+  // Visibility: admin/lider/quality cargos see all; inspetores only see alerts for their qualified areas
   const filteredByVisibility = useMemo(() => {
-    if (isAdmin || isLider) return alertas;
+    if (canViewAll) return alertas;
     if (!user?.id) return [];
     return alertas.filter((a: any) => {
       const qualifiedInspectors = getQualifiedInspectors(a.linha_peca);
       return qualifiedInspectors.includes(user.id);
     });
-  }, [alertas, isAdmin, isLider, user?.id, qualifications, partNumbers]);
+  }, [alertas, canViewAll, user?.id, qualifications, partNumbers]);
 
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return filteredByVisibility;

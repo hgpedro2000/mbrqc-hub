@@ -74,10 +74,10 @@ const AlertaQualidade = () => {
   const canViewAll = isAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
 
   useEffect(() => {
-    if (!isLider && isInspetor) {
+    if (!canViewAll && isInspetor) {
       navigate("/alerta-qualidade/feed", { replace: true });
     }
-  }, [isLider, isInspetor, navigate]);
+  }, [canViewAll, isInspetor, navigate]);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-lista-mestra"],

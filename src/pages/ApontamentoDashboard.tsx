@@ -34,6 +34,7 @@ const ApontamentoDashboard = () => {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
+  const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

@@ -59,7 +59,9 @@ const Apontamentos = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split("T")[0]);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [dateFrom, setDateFrom] = useState<string>(todayStr);
+  const [dateTo, setDateTo] = useState<string>(todayStr);
 
   // Which apontamento sub-types the user can see
   const visibleTypes = useMemo(() => {
@@ -193,8 +195,9 @@ const Apontamentos = () => {
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
-        // Date filter
-        if (dateFilter && i.data !== dateFilter) return false;
+        // Date range filter
+        if (dateFrom && i.data < dateFrom) return false;
+        if (dateTo && i.data > dateTo) return false;
         // Location filter for incoming tab
         if (activeTab === "incoming" && incomingLocationFilter) {
           const loc = getInspectionLocation(i);
@@ -213,7 +216,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFilter]
+    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
   );
 
   const toggleSelect = useCallback((id: string) => {
@@ -587,20 +590,28 @@ const Apontamentos = () => {
           </div>
 
           {/* Date filter + Filtros — single symmetric row */}
-          <div className="flex items-center gap-1.5 mb-2">
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
             <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+            <span className="text-[10px] text-muted-foreground shrink-0">De</span>
             <Input
               type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
               className="h-8 text-xs w-[110px] shrink-0"
             />
-            {dateFilter && (
-              <Button variant="ghost" size="sm" className="h-8 px-1.5 text-xs text-muted-foreground shrink-0" onClick={() => setDateFilter("")}>
+            <span className="text-[10px] text-muted-foreground shrink-0">Até</span>
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="h-8 text-xs w-[110px] shrink-0"
+            />
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" className="h-8 px-1.5 text-xs text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }}>
                 <X className="w-3 h-3" />
               </Button>
             )}
-            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+            <Button variant="ghost" size="sm" className="h-8 px-2 text-xs shrink-0" onClick={() => { const t = new Date().toISOString().split("T")[0]; setDateFrom(t); setDateTo(t); }}>
               Hoje
             </Button>
             <div className="flex-1" />

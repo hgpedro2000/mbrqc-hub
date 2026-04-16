@@ -832,6 +832,7 @@ const ApontamentoDashboard = () => {
               >
                 <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Part</p>
                 <p className="text-lg font-bold text-blue-400">{origemData.part}</p>
+                <p className="text-[11px] text-blue-400/60">{origemData.total > 0 ? ((origemData.part / origemData.total) * 100).toFixed(1) : "0"}%</p>
               </button>
               <button
                 onClick={() => setResponsibilityFilter(responsibilityFilter === "sorting" ? null : "sorting")}
@@ -839,6 +840,7 @@ const ApontamentoDashboard = () => {
               >
                 <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Sorting</p>
                 <p className="text-lg font-bold text-orange-400">{origemData.sorting}</p>
+                <p className="text-[11px] text-orange-400/60">{origemData.total > 0 ? ((origemData.sorting / origemData.total) * 100).toFixed(1) : "0"}%</p>
               </button>
               <button
                 onClick={() => setResponsibilityFilter(null)}
@@ -846,6 +848,7 @@ const ApontamentoDashboard = () => {
               >
                 <p className="text-[10px] text-[hsl(0,0%,70%)] font-semibold uppercase tracking-wider">Total</p>
                 <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.total}</p>
+                <p className="text-[11px] text-[hsl(0,0%,50%)]">100%</p>
               </button>
             </div>
             {responsibilityFilter && (

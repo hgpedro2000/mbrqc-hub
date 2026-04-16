@@ -59,7 +59,9 @@ const Apontamentos = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
-  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split("T")[0]);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [dateFrom, setDateFrom] = useState<string>(todayStr);
+  const [dateTo, setDateTo] = useState<string>(todayStr);
 
   // Which apontamento sub-types the user can see
   const visibleTypes = useMemo(() => {

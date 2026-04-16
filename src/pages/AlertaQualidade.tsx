@@ -48,6 +48,7 @@ const AlertaQualidade = () => {
   const [deleting, setDeleting] = useState(false);
   const [statusEditAlert, setStatusEditAlert] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
+  const [trainingWarning, setTrainingWarning] = useState<{ name: string; date: string; type: "vencido" | "vencendo" } | null>(null);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", user?.id],
@@ -189,6 +190,37 @@ const AlertaQualidade = () => {
       const { data: inspetor, error: findErr } = await supabase
         .from("profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
       if (findErr || !inspetor) { toast.error("QR Code não reconhecido."); return; }
+
+      // Check training status across this inspector's qualifications
+      const { data: quals } = await supabase
+        .from("inspector_qualifications")
+        .select("next_evaluation_date")
+        .eq("user_id", inspetor.id)
+        .eq("habilitado", true);
+      if (quals && quals.length > 0) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
+        let worst: { date: Date; type: "vencido" | "vencendo" } | null = null;
+        for (const q of quals as any[]) {
+          if (!q.next_evaluation_date) continue;
+          const d = new Date(q.next_evaluation_date + "T12:00:00");
+          if (d < today) {
+            if (!worst || worst.type !== "vencido" || d < worst.date) worst = { date: d, type: "vencido" };
+          } else if (d <= in30 && (!worst || worst.type === "vencendo" && d < worst.date)) {
+            if (!worst) worst = { date: d, type: "vencendo" };
+          }
+        }
+        if (worst) {
+          setScanAlertaId(null);
+          setTrainingWarning({
+            name: inspetor.full_name,
+            date: worst.date.toLocaleDateString("pt-BR"),
+            type: worst.type,
+          });
+          return;
+        }
+      }
+
       const { data: existing } = await supabase.from("ciencias").select("id").eq("alerta_id", scanAlertaId).eq("inspetor_id", inspetor.id).maybeSingle();
       if (existing) { toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`); setScanAlertaId(null); return; }
       const { error: insertErr } = await supabase.from("ciencias").insert({

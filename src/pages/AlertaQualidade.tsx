@@ -325,7 +325,7 @@ const AlertaQualidade = () => {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <Progress value={prog.pct} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{prog.pending}p / {prog.count}c</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{prog.total}p / {prog.count}c</span>
                     </div>
                     <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
                       {canEdit(a) && (
@@ -399,7 +399,7 @@ const AlertaQualidade = () => {
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex flex-col items-center gap-1 min-w-[90px]">
                             <Progress value={prog.pct} className="h-2 w-full" />
-                            <span className="text-[10px] text-muted-foreground">{prog.pending}p / {prog.count}c</span>
+                            <span className="text-[10px] text-muted-foreground">{prog.total}p / {prog.count}c</span>
                           </div>
                         </td>
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>

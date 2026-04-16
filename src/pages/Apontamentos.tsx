@@ -443,53 +443,56 @@ const Apontamentos = () => {
       );
     }
     return (
-      <div className="form-section p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
+      <div className="grid gap-3">
+        {filtered.map((item) => {
+          const hasNg = (item.quantidade_ng || 0) > 0;
+          const photoUrl = firstPhotoByItem[item.id];
+          return (
+            <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer p-3" onClick={() => setViewTarget(item.id)}>
+              <div className="flex items-start gap-3">
                 {isAdmin && (
-                  <th className="w-10 px-3 py-2.5">
-                    <Checkbox checked={filtered.length > 0 && filtered.every((i) => selectedIds.has(i.id))} onCheckedChange={() => toggleSelectAll(filtered)} />
-                  </th>
+                  <div className="pt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                  </div>
                 )}
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Nº</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Part Number</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Fornecedor</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">NG</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Data</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Status</th>
-                <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => (
-                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
-                  {isAdmin && (
-                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
-                    </td>
+                {/* Photo thumbnail */}
+                {photoUrl && (
+                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(photoUrl); }}>
+                    <img src={photoUrl} alt="Foto" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {item.numero && <span className="text-xs font-mono text-muted-foreground">#{item.numero}</span>}
+                    <span className="font-semibold text-sm truncate">{item.part_number || item.responsavel}</span>
+                    <StatusBadge status={item.status} />
+                    {activeTab === "incoming" && (() => {
+                      const resp = item.responsabilidade_defeito;
+                      const loc = getInspectionLocation(item);
+                      const displayResp = resp ? resp.replace(/^\d+\s*-\s*/, "").trim() : loc === "Sala do Audio" ? "Part" : "Sorting";
+                      const isPartR = displayResp.toLowerCase().includes("part");
+                      const isSortingR = displayResp.toLowerCase().includes("sorting");
+                      const cls = isPartR ? "bg-blue-600/10 text-blue-600 border-blue-400" : isSortingR ? "bg-orange-600/10 text-orange-600 border-orange-400" : "bg-violet-600/10 text-violet-600 border-violet-400";
+                      return <Badge className={`text-[9px] px-1.5 ${cls}`}>{displayResp}</Badge>;
+                    })()}
+                  </div>
+                  {item.part_name && <p className="text-xs text-muted-foreground truncate">{item.part_name}</p>}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {item.fornecedor && <span>{item.fornecedor}</span>}
+                    {hasNg && <span className="text-destructive font-semibold">NG: {item.quantidade_ng}</span>}
+                    {!hasNg && <span className="text-emerald-600">OK</span>}
+                    <span>{formatLocalDateString(item.data)}</span>
+                    {item.turno && <span>{item.turno}</span>}
+                  </div>
+                  {hasNg && item.modo_falha && (
+                    <p className="text-xs text-destructive truncate">{stripCode(item.modo_falha)}</p>
                   )}
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{item.numero ? `#${item.numero}` : "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground">{item.part_number || item.responsavel}</td>
-                  <td className="px-3 py-2 text-muted-foreground hidden md:table-cell">{item.fornecedor || "—"}</td>
-                  <td className="px-3 py-2 text-center hidden sm:table-cell">
-                    {(item.quantidade_ng || 0) > 0 ? (
-                      <span className="text-destructive font-semibold">{item.quantidade_ng}</span>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{formatLocalDateString(item.data)}</td>
-                  <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
-                  <td className="px-3 py-2 text-right">
-                    <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </div>
+                <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };

@@ -44,7 +44,7 @@ const allModules = [
   { id: "matriz-versatilidade", titleKey: "modules.matrizVersatilidade.title", descriptionKey: "modules.matrizVersatilidade.description", icon: Users, path: "/matriz-versatilidade", color: "from-pink-500/15 to-fuchsia-500/5", iconBg: "bg-pink-500/10 text-pink-600" },
 ];
 
-const SortableModuleCard = ({ mod, index, t, navigate }: { mod: typeof allModules[0]; index: number; t: any; navigate: any }) => {
+const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -62,6 +62,11 @@ const SortableModuleCard = ({ mod, index, t, navigate }: { mod: typeof allModule
       onClick={() => navigate(mod.path)}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
+      {badgeCount && badgeCount > 0 && (
+        <Badge className="absolute top-3 right-3 z-10 h-5 min-w-5 px-1.5 text-[10px] bg-destructive text-destructive-foreground border-0 font-bold">
+          {badgeCount > 99 ? "99+" : badgeCount}
+        </Badge>
+      )}
       <div className="relative">
         <div className="flex items-start justify-between">
           <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-3 md:mb-4`}>

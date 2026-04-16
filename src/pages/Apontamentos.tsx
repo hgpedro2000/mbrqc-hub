@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +22,8 @@ import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
-
+import { useEnabledModules } from "@/hooks/useModulePermissions";
+import { Input } from "@/components/ui/input";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 
@@ -39,6 +40,7 @@ const Apontamentos = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
+  const { enabledModules } = useEnabledModules();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
@@ -55,6 +57,13 @@ const Apontamentos = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split("T")[0]);
+
+  // Which apontamento sub-types the user can see
+  const visibleTypes = useMemo(() => {
+    if (isAdmin) return [...TYPES];
+    return TYPES.filter((t) => enabledModules.includes(`apontamentos_${t}` as any));
+  }, [isAdmin, enabledModules]);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
@@ -182,6 +191,8 @@ const Apontamentos = () => {
     items
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
+        // Date filter
+        if (dateFilter && i.data !== dateFilter) return false;
         // Location filter for incoming tab
         if (activeTab === "incoming" && incomingLocationFilter) {
           const loc = getInspectionLocation(i);
@@ -200,7 +211,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter]
+    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFilter]
   );
 
   const toggleSelect = useCallback((id: string) => {
@@ -432,53 +443,56 @@ const Apontamentos = () => {
       );
     }
     return (
-      <div className="form-section p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
+      <div className="grid gap-3">
+        {filtered.map((item) => {
+          const hasNg = (item.quantidade_ng || 0) > 0;
+          const photoUrl = firstPhotoByItem[item.id];
+          return (
+            <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer p-3" onClick={() => setViewTarget(item.id)}>
+              <div className="flex items-start gap-3">
                 {isAdmin && (
-                  <th className="w-10 px-3 py-2.5">
-                    <Checkbox checked={filtered.length > 0 && filtered.every((i) => selectedIds.has(i.id))} onCheckedChange={() => toggleSelectAll(filtered)} />
-                  </th>
+                  <div className="pt-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
+                  </div>
                 )}
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Nº</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Part Number</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden md:table-cell">Fornecedor</th>
-                <th className="text-center px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">NG</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Data</th>
-                <th className="text-left px-3 py-2.5 font-medium text-muted-foreground">Status</th>
-                <th className="text-right px-3 py-2.5 font-medium text-muted-foreground">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((item) => (
-                <tr key={item.id} className="border-b last:border-b-0 hover:bg-muted/10 transition-colors cursor-pointer" onClick={() => setViewTarget(item.id)}>
-                  {isAdmin && (
-                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} />
-                    </td>
+                {/* Photo thumbnail */}
+                {photoUrl && (
+                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(photoUrl); }}>
+                    <img src={photoUrl} alt="Foto" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {item.numero && <span className="text-xs font-mono text-muted-foreground">#{item.numero}</span>}
+                    <span className="font-semibold text-sm truncate">{item.part_number || item.responsavel}</span>
+                    <StatusBadge status={item.status} />
+                    {activeTab === "incoming" && (() => {
+                      const resp = item.responsabilidade_defeito;
+                      const loc = getInspectionLocation(item);
+                      const displayResp = resp ? resp.replace(/^\d+\s*-\s*/, "").trim() : loc === "Sala do Audio" ? "Part" : "Sorting";
+                      const isPartR = displayResp.toLowerCase().includes("part");
+                      const isSortingR = displayResp.toLowerCase().includes("sorting");
+                      const cls = isPartR ? "bg-blue-600/10 text-blue-600 border-blue-400" : isSortingR ? "bg-orange-600/10 text-orange-600 border-orange-400" : "bg-violet-600/10 text-violet-600 border-violet-400";
+                      return <Badge className={`text-[9px] px-1.5 ${cls}`}>{displayResp}</Badge>;
+                    })()}
+                  </div>
+                  {item.part_name && <p className="text-xs text-muted-foreground truncate">{item.part_name}</p>}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    {item.fornecedor && <span>{item.fornecedor}</span>}
+                    {hasNg && <span className="text-destructive font-semibold">NG: {item.quantidade_ng}</span>}
+                    {!hasNg && <span className="text-emerald-600">OK</span>}
+                    <span>{formatLocalDateString(item.data)}</span>
+                    {item.turno && <span>{item.turno}</span>}
+                  </div>
+                  {hasNg && item.modo_falha && (
+                    <p className="text-xs text-destructive truncate">{stripCode(item.modo_falha)}</p>
                   )}
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{item.numero ? `#${item.numero}` : "—"}</td>
-                  <td className="px-3 py-2 font-semibold text-foreground">{item.part_number || item.responsavel}</td>
-                  <td className="px-3 py-2 text-muted-foreground hidden md:table-cell">{item.fornecedor || "—"}</td>
-                  <td className="px-3 py-2 text-center hidden sm:table-cell">
-                    {(item.quantidade_ng || 0) > 0 ? (
-                      <span className="text-destructive font-semibold">{item.quantidade_ng}</span>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{formatLocalDateString(item.data)}</td>
-                  <td className="px-3 py-2"><StatusBadge status={item.status} /></td>
-                  <td className="px-3 py-2 text-right">
-                    <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                </div>
+                <EditActions id={item.id} createdBy={item.created_by} status={item.status} />
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -520,8 +534,8 @@ const Apontamentos = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-8" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-2 md:grid-cols-4">
-          {TYPES.map((tipo, i) => {
+        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleTypes.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-4"}`}>
+          {visibleTypes.map((tipo, i) => {
             const cfg = typeConfig[tipo];
             const Icon = cfg.icon;
             return (
@@ -569,29 +583,49 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              variant={filtersExpanded ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              <Filter className="w-3.5 h-3.5" />
-              {filtersExpanded ? "Ocultar Filtros" : "Filtros"}
-            </Button>
-            {Object.keys(filterValues).length > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
-                Limpar
+          {/* Date filter */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="h-8 text-xs w-[140px]"
+              />
+              {dateFilter && (
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground" onClick={() => setDateFilter("")}>
+                  <X className="w-3 h-3 mr-1" /> Todos
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setDateFilter(new Date().toISOString().split("T")[0])}>
+                Hoje
               </Button>
-            )}
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant={filtersExpanded ? "default" : "outline"}
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+              >
+                <Filter className="w-3.5 h-3.5" />
+                {filtersExpanded ? "Ocultar" : "Filtros"}
+              </Button>
+              {Object.keys(filterValues).length > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-7" onClick={clearFilters}>
+                  Limpar
+                </Button>
+              )}
+            </div>
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
           <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
-            <TabsList className="grid w-full grid-cols-4 h-auto">
-              {TYPES.map((tipo) => {
+            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleTypes.length}, 1fr)` }}>
+              {visibleTypes.map((tipo) => {
                 const cfg = typeConfig[tipo];
                 const Icon = cfg.icon;
                 return (

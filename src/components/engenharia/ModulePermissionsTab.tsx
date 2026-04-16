@@ -15,6 +15,10 @@ const MODULE_ABBREVIATIONS: Record<string, string> = {
   "Auditorias": "Audit.",
   "Contenção": "Conten.",
   "Apontamentos": "Apont.",
+  "  ↳ Incoming": "Incoming",
+  "  ↳ Peça": "Peça",
+  "  ↳ Processo": "Processo",
+  "  ↳ OEM": "OEM",
   "Alerta de Qualidade": "Alerta Q.",
   "Consumíveis": "Consum.",
   "  ↳ Requisitar Item": "Req. Item",
@@ -68,10 +72,11 @@ const ModulePermissionsTab = () => {
     setSaving(key);
     try {
       const existing = permissions.find((p: any) => p.user_id === userId && p.module === moduleId);
+      const newEnabled = existing ? !existing.enabled : true;
       if (existing) {
         const { error } = await supabase
           .from("user_module_permissions")
-          .update({ enabled: !existing.enabled })
+          .update({ enabled: newEnabled })
           .eq("id", existing.id);
         if (error) throw error;
       } else {
@@ -79,6 +84,15 @@ const ModulePermissionsTab = () => {
           .from("user_module_permissions")
           .insert({ user_id: userId, module: moduleId, enabled: true });
         if (error) throw error;
+      }
+      // Auto-enable apontamentos_incoming when enabling apontamentos
+      if (moduleId === "apontamentos" && newEnabled) {
+        const existingIncoming = permissions.find((p: any) => p.user_id === userId && p.module === "apontamentos_incoming");
+        if (!existingIncoming) {
+          await supabase.from("user_module_permissions").insert({ user_id: userId, module: "apontamentos_incoming", enabled: true });
+        } else if (!existingIncoming.enabled) {
+          await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingIncoming.id);
+        }
       }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
       toast.success("Permissão atualizada");

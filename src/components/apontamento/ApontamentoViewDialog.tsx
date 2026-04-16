@@ -361,6 +361,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
+          <DataField label="Responsabilidade" value={d?.responsabilidade_defeito ? stripCode(d.responsabilidade_defeito) : "—"} />
           {!hasMultipleFailureModes && d?.modo_falha && (
             <DataField label="Modo de Falha" value={stripCode(d.modo_falha)} />
           )}

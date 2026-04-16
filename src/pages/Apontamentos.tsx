@@ -40,6 +40,7 @@ const Apontamentos = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
+  const { enabledModules } = useEnabledModules();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
@@ -56,6 +57,13 @@ const Apontamentos = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
+  const [dateFilter, setDateFilter] = useState<string>(new Date().toISOString().split("T")[0]);
+
+  // Which apontamento sub-types the user can see
+  const visibleTypes = useMemo(() => {
+    if (isAdmin) return [...TYPES];
+    return TYPES.filter((t) => enabledModules.includes(`apontamentos_${t}` as any));
+  }, [isAdmin, enabledModules]);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

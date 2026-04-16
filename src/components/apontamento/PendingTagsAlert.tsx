@@ -30,7 +30,7 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase")
       .gt("quantidade_ng", 0)
       .is("numero_tag" as any, null)
       .is("tag_number" as any, null)
@@ -127,6 +127,22 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
                         <Badge variant="destructive" className="text-[10px]">
                           NG: {item.quantidade_ng}
                         </Badge>
+                        {(() => {
+                          const resp = item.responsabilidade_defeito;
+                          const loc = item.local_deteccao || item.fase;
+                          const displayResp = resp
+                            ? resp.replace(/^\d+\s*-\s*/, "").trim()
+                            : loc === "Sala do Audio" ? "Part" : loc === "Área de Incoming" ? "Sorting" : null;
+                          if (!displayResp) return <Badge className="text-[10px] bg-gray-500/10 text-gray-500 border-gray-300">Sem resp.</Badge>;
+                          const isPartResp = displayResp.toLowerCase().includes("part");
+                          const isSortingResp = displayResp.toLowerCase().includes("sorting");
+                          const badgeClass = isPartResp
+                            ? "bg-blue-500/10 text-blue-700 border-blue-300"
+                            : isSortingResp
+                            ? "bg-orange-500/10 text-orange-700 border-orange-300"
+                            : "bg-violet-500/10 text-violet-700 border-violet-300";
+                          return <Badge className={`text-[10px] ${badgeClass}`}>{displayResp}</Badge>;
+                        })()}
                       </div>
                       <p className="text-sm font-semibold truncate">{item.part_number}</p>
                       <p className="text-xs text-muted-foreground truncate">{item.part_name || "—"}</p>

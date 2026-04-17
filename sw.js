@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mbrqc-v2';
+const CACHE_NAME = 'mbr-quality-tools-v3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

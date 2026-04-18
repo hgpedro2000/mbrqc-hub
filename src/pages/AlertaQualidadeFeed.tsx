@@ -95,11 +95,14 @@ const AlertaQualidadeFeed = () => {
         inspetor_id: user.id,
         metodo: "app_proprio",
         registrado_por_id: user.id,
+        termo_aceito: TERMO_CIENCIA,
+        versao_termo: TERMO_VERSAO,
       } as any);
       if (error) throw error;
       toast.success("Ciência registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["alertas-feed"] });
       setConfirmDialog(null);
+      setAceito(false);
     } catch (e: any) {
       toast.error(e.message);
     } finally {

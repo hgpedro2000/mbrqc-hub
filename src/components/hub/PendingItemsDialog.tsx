@@ -46,7 +46,7 @@ export const PendingItemsDialog = ({
   onOpenChange: (v: boolean) => void;
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { isAdmin } = useUserRole();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -59,28 +59,63 @@ export const PendingItemsDialog = ({
       try {
         if (kind === "alerta-qualidade") {
           if (!user?.id) return;
-          const { data: quals } = await supabase.from("inspector_qualifications")
-            .select("area").eq("user_id", user.id).eq("habilitado", true);
-          const myAreas = (quals || []).map((q: any) => q.area);
+          // Determine if user is leader/quality role -> sees all alerts with pending ciência
+          const cargoLower = (profile?.cargo || "").toLowerCase();
+          const isQualityRole = CARGOS_QUALIDADE.some((r) => cargoLower.includes(r));
+          const { data: rolesData } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+          const isLider = isAdmin || (rolesData || []).some((r: any) => r.role === "lider");
+          const seesAll = isLider || isQualityRole;
+
           const { data: parts } = await supabase.from("part_numbers")
             .select("part_name, line_module").eq("active", true);
           const partMap = new Map((parts || []).map((p: any) => [p.part_name, p.line_module]));
           const { data: allAlertas } = await supabase.from("alertas")
             .select("id, sequencial, modelo, linha_peca, modo_falha, turno, data_ocorrencia, created_at")
             .eq("status", "ativo").order("created_at", { ascending: false });
-          const { data: myCiencias } = await supabase.from("ciencias")
-            .select("alerta_id").eq("inspetor_id", user.id);
-          const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
-          const filtered = (allAlertas || []).filter((a: any) => {
-            if (cienIds.has(a.id)) return false;
-            if (myAreas.length === 0) return false;
-            let areaKey = lineAreaMap[a.linha_peca || ""];
-            if (!areaKey) {
-              const lm = partMap.get(a.linha_peca || "");
-              if (lm) areaKey = lineAreaMap[lm];
-            }
-            return areaKey && myAreas.includes(areaKey);
-          });
+
+          let filtered: any[] = [];
+          if (seesAll) {
+            // Leader/quality view: show alerts where ciência is incomplete (any qualified inspector still pending)
+            const { data: allCiencias } = await supabase.from("ciencias").select("alerta_id");
+            const cienByAlerta = new Map<string, number>();
+            (allCiencias || []).forEach((c: any) => cienByAlerta.set(c.alerta_id, (cienByAlerta.get(c.alerta_id) || 0) + 1));
+            const { data: qualsAll } = await supabase.from("inspector_qualifications")
+              .select("user_id, area").eq("habilitado", true);
+            const qualsByArea = new Map<string, Set<string>>();
+            (qualsAll || []).forEach((q: any) => {
+              if (!qualsByArea.has(q.area)) qualsByArea.set(q.area, new Set());
+              qualsByArea.get(q.area)!.add(q.user_id);
+            });
+            filtered = (allAlertas || []).filter((a: any) => {
+              let areaKey = lineAreaMap[a.linha_peca || ""];
+              if (!areaKey) {
+                const lm = partMap.get(a.linha_peca || "");
+                if (lm) areaKey = lineAreaMap[lm];
+              }
+              if (!areaKey) return false;
+              const total = qualsByArea.get(areaKey)?.size || 0;
+              const done = cienByAlerta.get(a.id) || 0;
+              return total > 0 && done < total;
+            });
+          } else {
+            // Regular inspector: only alerts in their qualified areas not yet acknowledged by them
+            const { data: quals } = await supabase.from("inspector_qualifications")
+              .select("area").eq("user_id", user.id).eq("habilitado", true);
+            const myAreas = (quals || []).map((q: any) => q.area);
+            const { data: myCiencias } = await supabase.from("ciencias")
+              .select("alerta_id").eq("inspetor_id", user.id);
+            const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
+            filtered = (allAlertas || []).filter((a: any) => {
+              if (cienIds.has(a.id)) return false;
+              if (myAreas.length === 0) return false;
+              let areaKey = lineAreaMap[a.linha_peca || ""];
+              if (!areaKey) {
+                const lm = partMap.get(a.linha_peca || "");
+                if (lm) areaKey = lineAreaMap[lm];
+              }
+              return areaKey && myAreas.includes(areaKey);
+            });
+          }
           if (!cancelled) setItems(filtered);
         } else if (kind === "consumiveis") {
           const { data: lowStock } = await supabase.from("consumable_items")

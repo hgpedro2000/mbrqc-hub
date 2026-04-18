@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -36,8 +37,12 @@ const CARGOS_CRIAR_ALERTA = [
 const AlertaQualidade = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { impersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
+  // When impersonating, treat all checks as if the impersonated user were logged in
+  const effectiveUserId = impersonating?.id || user?.id;
+  const effectiveCargo = impersonating?.cargo ?? profile?.cargo ?? "";
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
@@ -51,33 +56,36 @@ const AlertaQualidade = () => {
   const [trainingWarning, setTrainingWarning] = useState<{ name: string; date: string; type: "vencido" | "vencendo" } | null>(null);
 
   const { data: roles = [] } = useQuery({
-    queryKey: ["my-roles-alerta", user?.id],
+    queryKey: ["my-roles-alerta", effectiveUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      if (!effectiveUserId) return [];
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", effectiveUserId);
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveUserId,
   });
 
-  const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
-  const isInspetor = roles.some((r: any) => r.role === "inspetor");
+  // While impersonating, ignore the real admin role
+  const effectiveIsAdmin = impersonating ? roles.some((r: any) => r.role === "admin") : isAdmin;
+  const isLider = effectiveIsAdmin || roles.some((r: any) => r.role === "lider");
+  const isInspetor = roles.some((r: any) => r.role === "inspetor") || /inspetor/i.test(effectiveCargo);
 
   // Can CREATE alerts: admin OR has a quality cargo
-  const canCreateAlert = isAdmin || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+  const canCreateAlert = effectiveIsAdmin || CARGOS_CRIAR_ALERTA.includes(effectiveCargo);
 
   // Can SCAN QR: any leader role (regardless of cargo)
   const canScanQr = isLider;
 
   // Can VIEW ALL alerts: admin, lider role, or quality management cargos
-  const canViewAll = isAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+  const canViewAll = effectiveIsAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(effectiveCargo);
 
   useEffect(() => {
-    if (!canViewAll && isInspetor) {
+    // Inspectors (or anyone without view-all permission) go to the personal feed
+    if (!canViewAll) {
       navigate("/alerta-qualidade/feed", { replace: true });
     }
-  }, [canViewAll, isInspetor, navigate]);
+  }, [canViewAll, navigate]);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-lista-mestra"],

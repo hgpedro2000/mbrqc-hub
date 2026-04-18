@@ -92,6 +92,7 @@ const AlertaQualidadeFeed = () => {
       if (error) throw error;
       toast.success("Ciência registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["alertas-feed"] });
+      setConfirmDialog(null);
     } catch (e: any) {
       toast.error(e.message);
     } finally {

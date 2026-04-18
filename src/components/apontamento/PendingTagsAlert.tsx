@@ -13,13 +13,28 @@ import { Badge } from "@/components/ui/badge";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import { formatLocalDateString } from "@/lib/localDate";
 
-export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
+export const PendingTagsAlert = ({
+  requireMobis = false,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+}: {
+  requireMobis?: boolean;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) => {
   const { user, profile } = useAuth();
   const { impersonating } = useImpersonation();
   const { canInsertTag } = useTagPermission();
   const { isAdmin } = useUserRole();
   const [pendingItems, setPendingItems] = useState<any[]>([]);
-  const [listOpen, setListOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const listOpen = openProp !== undefined ? openProp : internalOpen;
+  const setListOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -79,24 +94,27 @@ export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: bool
   const isTerceiro = activeProfile?.empresa === "empresa_terceira" || !!activeProfile?.empresa_terceira;
   if (requireMobis && !isMobisBrasil) return null;
   if (isTerceiro) return null;
-  if (!canInsertTag || pendingItems.length === 0) return null;
+  if (!canInsertTag) return null;
+  if (pendingItems.length === 0 && !hideTrigger) return null;
 
   return (
     <>
-      <button
-        onClick={() => setListOpen(true)}
-        className="relative flex items-center gap-2 px-3 py-2 rounded-xl
-          bg-amber-50 border border-amber-300 text-amber-700
-          hover:bg-amber-100 transition-colors text-sm font-semibold w-full sm:w-auto"
-      >
-        <span className="relative">
-          <AlertTriangle className="w-4 h-4" />
-          <Badge className="absolute -top-2 -right-3 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white border-0">
-            {pendingItems.length}
-          </Badge>
-        </span>
-        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${activeProfile?.turno}`}</span>
-      </button>
+      {!hideTrigger && (
+        <button
+          onClick={() => setListOpen(true)}
+          className="relative flex items-center gap-2 px-3 py-2 rounded-xl
+            bg-amber-50 border border-amber-300 text-amber-700
+            hover:bg-amber-100 transition-colors text-sm font-semibold w-full sm:w-auto"
+        >
+          <span className="relative">
+            <AlertTriangle className="w-4 h-4" />
+            <Badge className="absolute -top-2 -right-3 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white border-0">
+              {pendingItems.length}
+            </Badge>
+          </span>
+          <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${activeProfile?.turno}`}</span>
+        </button>
+      )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

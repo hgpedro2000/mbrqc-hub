@@ -13,6 +13,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
+import { PendingItemsDialog } from "@/components/hub/PendingItemsDialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +52,7 @@ const moduleBadgeLabel: Record<string, string> = {
   "matriz-versatilidade": "Treinamentos",
 };
 
-const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number }) => {
+const SortableModuleCard = ({ mod, index, t, navigate, badgeCount, onBadgeClick }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number; onBadgeClick?: () => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -91,7 +92,7 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: type
         <div className={`flex items-center gap-2 ${showBadge ? "justify-between" : "justify-end"} flex-wrap`}>
           {showBadge && (
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(mod.path); }}
+              onClick={(e) => { e.stopPropagation(); onBadgeClick?.(); }}
               className="relative inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl
                 bg-amber-50 border border-amber-300 text-amber-700
                 hover:bg-amber-100 transition-colors text-[11px] md:text-xs font-semibold max-w-full"
@@ -120,6 +121,7 @@ const Hub = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const [openDialog, setOpenDialog] = useState<string | null>(null);
 
   const { data: savedOrder } = useQuery({
     queryKey: ["user-module-order", user?.id],
@@ -389,9 +391,6 @@ const Hub = () => {
       </header>
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
-        <div className="mb-4">
-          <PendingTagsAlert requireMobis />
-        </div>
         {orderedModules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -405,13 +404,44 @@ const Hub = () => {
             <SortableContext items={orderedModules.map((m) => m.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {orderedModules.map((mod, i) => (
-                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} badgeCount={badgeByModule[mod.id]} />
+                  <SortableModuleCard
+                    key={mod.id}
+                    mod={mod}
+                    index={i}
+                    t={t}
+                    navigate={navigate}
+                    badgeCount={badgeByModule[mod.id]}
+                    onBadgeClick={() => setOpenDialog(mod.id)}
+                  />
                 ))}
               </div>
             </SortableContext>
           </DndContext>
         )}
       </main>
+
+      {/* Pending dialogs */}
+      <PendingTagsAlert
+        requireMobis
+        hideTrigger
+        open={openDialog === "apontamentos"}
+        onOpenChange={(v) => setOpenDialog(v ? "apontamentos" : null)}
+      />
+      <PendingItemsDialog
+        kind="alerta-qualidade"
+        open={openDialog === "alerta-qualidade"}
+        onOpenChange={(v) => setOpenDialog(v ? "alerta-qualidade" : null)}
+      />
+      <PendingItemsDialog
+        kind="consumiveis"
+        open={openDialog === "consumiveis"}
+        onOpenChange={(v) => setOpenDialog(v ? "consumiveis" : null)}
+      />
+      <PendingItemsDialog
+        kind="matriz-versatilidade"
+        open={openDialog === "matriz-versatilidade"}
+        onOpenChange={(v) => setOpenDialog(v ? "matriz-versatilidade" : null)}
+      />
     </div>
   );
 };

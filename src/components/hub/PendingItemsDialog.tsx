@@ -118,39 +118,77 @@ export const PendingItemsDialog = ({
           }
           if (!cancelled) setItems(filtered);
         } else if (kind === "consumiveis") {
-          const { data: lowStock } = await supabase.from("consumable_items")
-            .select("id, name, stock_qty, min_qty, unit").eq("active", true);
-          const low = (lowStock || []).filter((i: any) => (i.stock_qty ?? 0) < (i.min_qty ?? 0));
-          const { data: pending } = await supabase.from("consumable_requests")
-            .select("id, numero, item_name, quantity, user_name, turno, created_at")
-            .eq("status", "aguardando").order("created_at", { ascending: false });
-          const merged = [
-            ...low.map((i: any) => ({ _kind: "stock", ...i })),
-            ...(pending || []).map((r: any) => ({ _kind: "request", ...r })),
-          ];
-          if (!cancelled) setItems(merged);
+          if (!user?.id) return;
+          // Determine if user is consumables manager / admin / lider
+          const cargoLowerC = (profile?.cargo || "").toLowerCase();
+          const isQualityRoleC = CARGOS_QUALIDADE.some((r) => cargoLowerC.includes(r));
+          const { data: rolesDataC } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+          const isLiderC = isAdmin || (rolesDataC || []).some((r: any) => r.role === "lider");
+          const { data: perm } = await supabase.from("user_module_permissions")
+            .select("enabled").eq("user_id", user.id).eq("module", "consumiveis_inventario").maybeSingle();
+          const isManager = !!perm?.enabled;
+          const seesAll = isAdmin || isLiderC || isManager || isQualityRoleC;
+
+          if (seesAll) {
+            const { data: lowStock } = await supabase.from("consumable_items")
+              .select("id, name, stock_qty, min_qty, unit").eq("active", true);
+            const low = (lowStock || []).filter((i: any) => (i.stock_qty ?? 0) < (i.min_qty ?? 0));
+            const { data: pending } = await supabase.from("consumable_requests")
+              .select("id, numero, item_name, quantity, user_name, turno, status, created_at")
+              .eq("status", "aguardando").order("created_at", { ascending: false });
+            const merged = [
+              ...low.map((i: any) => ({ _kind: "stock", ...i })),
+              ...(pending || []).map((r: any) => ({ _kind: "request", ...r })),
+            ];
+            if (!cancelled) setItems(merged);
+          } else {
+            // Regular user: only own active requests with status
+            const { data: own } = await supabase.from("consumable_requests")
+              .select("id, numero, item_name, quantity, status, turno, admin_notes, created_at")
+              .eq("user_id", user.id)
+              .in("status", ["aguardando", "em_andamento", "separando"])
+              .order("created_at", { ascending: false });
+            const items = (own || []).map((r: any) => ({ _kind: "own", ...r }));
+            if (!cancelled) setItems(items);
+          }
         } else if (kind === "matriz-versatilidade") {
+          if (!user?.id) return;
+          const cargoLowerM = (profile?.cargo || "").toLowerCase();
+          const isQualityRoleM = CARGOS_QUALIDADE.some((r) => cargoLowerM.includes(r));
+          const { data: rolesDataM } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+          const isLiderM = isAdmin || (rolesDataM || []).some((r: any) => r.role === "lider");
+          const seesAll = isAdmin || isLiderM || isQualityRoleM;
+
           const today = new Date(); today.setHours(0,0,0,0);
           const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
-          const { data: quals } = await supabase.from("inspector_qualifications")
+          let q = supabase.from("inspector_qualifications")
             .select("user_id, area, next_evaluation_date")
             .eq("habilitado", true).not("next_evaluation_date", "is", null);
-          const expired = (quals || []).filter((q: any) => {
-            const d = new Date(q.next_evaluation_date + "T12:00:00");
+          if (!seesAll) q = q.eq("user_id", user.id);
+          const { data: quals } = await q;
+          const expired = (quals || []).filter((qq: any) => {
+            const d = new Date(qq.next_evaluation_date + "T12:00:00");
             return d <= in30;
           });
-          const userIds = Array.from(new Set(expired.map((q: any) => q.user_id)));
+          const userIds = Array.from(new Set(expired.map((qq: any) => qq.user_id)));
           let profilesMap = new Map<string, string>();
           if (userIds.length) {
             const { data: profs } = await supabase.from("profiles")
               .select("id, full_name").in("id", userIds);
             profilesMap = new Map((profs || []).map((p: any) => [p.id, p.full_name]));
           }
-          const enriched = expired.map((q: any) => ({
-            ...q,
-            full_name: profilesMap.get(q.user_id) || "—",
-            isExpired: new Date(q.next_evaluation_date + "T12:00:00") < today,
+          const enriched = expired.map((qq: any) => ({
+            ...qq,
+            full_name: profilesMap.get(qq.user_id) || "—",
+            isExpired: new Date(qq.next_evaluation_date + "T12:00:00") < today,
           }));
+          // Sort: vencidos first (most overdue first), then a vencer (closest first)
+          enriched.sort((a: any, b: any) => {
+            if (a.isExpired !== b.isExpired) return a.isExpired ? -1 : 1;
+            const da = new Date(a.next_evaluation_date + "T12:00:00").getTime();
+            const db = new Date(b.next_evaluation_date + "T12:00:00").getTime();
+            return da - db;
+          });
           if (!cancelled) setItems(enriched);
         }
       } finally {

@@ -52,7 +52,7 @@ const moduleBadgeLabel: Record<string, string> = {
   "matriz-versatilidade": "Treinamentos",
 };
 
-const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number }) => {
+const SortableModuleCard = ({ mod, index, t, navigate, badgeCount, onBadgeClick }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number; onBadgeClick?: () => void }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -92,7 +92,7 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: type
         <div className={`flex items-center gap-2 ${showBadge ? "justify-between" : "justify-end"} flex-wrap`}>
           {showBadge && (
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(mod.path); }}
+              onClick={(e) => { e.stopPropagation(); onBadgeClick?.(); }}
               className="relative inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl
                 bg-amber-50 border border-amber-300 text-amber-700
                 hover:bg-amber-100 transition-colors text-[11px] md:text-xs font-semibold max-w-full"

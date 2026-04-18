@@ -236,45 +236,100 @@ export const PendingItemsDialog = ({
                 </div>
               ))}
 
-              {kind === "consumiveis" && items.map((i: any, idx: number) => (
-                <div key={`${i._kind}-${i.id}-${idx}`} className="border rounded-lg p-3 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+              {kind === "consumiveis" && items.map((i: any, idx: number) => {
+                const statusLabel: Record<string, string> = {
+                  aguardando: "Aguardando",
+                  em_andamento: "Em Andamento",
+                  separando: "Separando",
+                };
+                const statusColor: Record<string, string> = {
+                  aguardando: "bg-amber-500/10 text-amber-700 border-amber-300",
+                  em_andamento: "bg-blue-500/10 text-blue-700 border-blue-300",
+                  separando: "bg-violet-500/10 text-violet-700 border-violet-300",
+                };
+                return (
+                  <div key={`${i._kind}-${i.id}-${idx}`} className="border rounded-lg p-3 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {i._kind === "stock" ? (
+                        <Badge className="text-[10px] bg-red-500/10 text-red-700 border-red-300">Estoque Baixo</Badge>
+                      ) : (
+                        <Badge className={`text-[10px] ${statusColor[i.status] || "bg-amber-500/10 text-amber-700 border-amber-300"}`}>
+                          {statusLabel[i.status] || "Aguardando"}
+                        </Badge>
+                      )}
+                      {i.numero && <Badge variant="outline" className="text-[10px] font-mono">{i.numero}</Badge>}
+                    </div>
+                    <p className="text-sm font-semibold truncate">{i.name || i.item_name}</p>
                     {i._kind === "stock" ? (
-                      <Badge className="text-[10px] bg-red-500/10 text-red-700 border-red-300">Estoque Baixo</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Estoque: <strong>{i.stock_qty} {i.unit}</strong> • Mínimo: {i.min_qty} {i.unit}
+                      </p>
+                    ) : i._kind === "own" ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Qtd: <strong>{i.quantity}</strong> {i.turno ? `• Turno ${i.turno}` : ""}
+                        </p>
+                        {i.admin_notes && (
+                          <p className="text-[10px] text-muted-foreground/80 italic">Obs: {i.admin_notes}</p>
+                        )}
+                      </>
                     ) : (
-                      <Badge className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-300">Aguardando</Badge>
+                      <p className="text-xs text-muted-foreground">
+                        Qtd: <strong>{i.quantity}</strong> • Solicitante: {i.user_name} {i.turno ? `• ${i.turno}` : ""}
+                      </p>
                     )}
-                    {i.numero && <Badge variant="outline" className="text-[10px] font-mono">{i.numero}</Badge>}
                   </div>
-                  <p className="text-sm font-semibold truncate">{i.name || i.item_name}</p>
-                  {i._kind === "stock" ? (
-                    <p className="text-xs text-muted-foreground">
-                      Estoque: <strong>{i.stock_qty} {i.unit}</strong> • Mínimo: {i.min_qty} {i.unit}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Qtd: <strong>{i.quantity}</strong> • Solicitante: {i.user_name} {i.turno ? `• ${i.turno}` : ""}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
-              {kind === "matriz-versatilidade" && items.map((q: any) => (
-                <div key={`${q.user_id}-${q.area}`} className="border rounded-lg p-3 space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {q.isExpired ? (
-                      <Badge className="text-[10px] bg-red-500/10 text-red-700 border-red-300">Vencido</Badge>
-                    ) : (
-                      <Badge className="text-[10px] bg-amber-500/10 text-amber-700 border-amber-300">A Vencer</Badge>
+              {kind === "matriz-versatilidade" && (() => {
+                const vencidos = items.filter((q: any) => q.isExpired);
+                const aVencer = items.filter((q: any) => !q.isExpired);
+                return (
+                  <>
+                    {vencidos.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="h-px flex-1 bg-red-300/50" />
+                          <span className="text-[11px] font-bold uppercase text-red-700 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-300">
+                            Vencidos ({vencidos.length})
+                          </span>
+                          <div className="h-px flex-1 bg-red-300/50" />
+                        </div>
+                        {vencidos.map((q: any) => (
+                          <div key={`v-${q.user_id}-${q.area}`} className="border border-red-200 rounded-lg p-3 space-y-1 bg-red-500/5">
+                            <Badge variant="outline" className="text-[10px] uppercase">{q.area}</Badge>
+                            <p className="text-sm font-semibold truncate">{q.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Próxima avaliação: <strong className="text-red-700">{formatLocalDateString(q.next_evaluation_date)}</strong>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    <Badge variant="outline" className="text-[10px] uppercase">{q.area}</Badge>
-                  </div>
-                  <p className="text-sm font-semibold truncate">{q.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Próxima avaliação: <strong>{formatLocalDateString(q.next_evaluation_date)}</strong>
-                  </p>
-                </div>
-              ))}
+                    {aVencer.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 pt-1">
+                          <div className="h-px flex-1 bg-amber-300/50" />
+                          <span className="text-[11px] font-bold uppercase text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-300">
+                            A Vencer ({aVencer.length})
+                          </span>
+                          <div className="h-px flex-1 bg-amber-300/50" />
+                        </div>
+                        {aVencer.map((q: any) => (
+                          <div key={`a-${q.user_id}-${q.area}`} className="border border-amber-200 rounded-lg p-3 space-y-1 bg-amber-500/5">
+                            <Badge variant="outline" className="text-[10px] uppercase">{q.area}</Badge>
+                            <p className="text-sm font-semibold truncate">{q.full_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Próxima avaliação: <strong className="text-amber-700">{formatLocalDateString(q.next_evaluation_date)}</strong>
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </>
           )}
         </div>

@@ -17,6 +17,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+
+const TERMO_CIENCIA =
+  "Declaro que li, compreendi e estou ciente do conteúdo deste alerta de qualidade, comprometendo-me a aplicar as orientações nele descritas em minhas atividades.";
+const TERMO_VERSAO = "v1-2026-04-18";
 
 const lineAreaMap: Record<string, string> = {
   "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",

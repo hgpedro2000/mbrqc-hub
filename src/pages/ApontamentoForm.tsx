@@ -66,6 +66,8 @@ const ApontamentoForm = () => {
   const [saving, setSaving] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
+  const [annotationQueue, setAnnotationQueue] = useState<File[]>([]);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);

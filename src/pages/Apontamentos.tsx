@@ -18,7 +18,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
-import { formatLocalDateString } from "@/lib/localDate";
+import { formatLocalDateString, getLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";

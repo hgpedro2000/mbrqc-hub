@@ -44,6 +44,13 @@ const allModules = [
   { id: "matriz-versatilidade", titleKey: "modules.matrizVersatilidade.title", descriptionKey: "modules.matrizVersatilidade.description", icon: Users, path: "/matriz-versatilidade", color: "from-pink-500/15 to-fuchsia-500/5", iconBg: "bg-pink-500/10 text-pink-600" },
 ];
 
+const moduleBadgeLabel: Record<string, string> = {
+  "apontamentos": "TAGs Pendentes",
+  "alerta-qualidade": "Alertas Pendentes",
+  "consumiveis": "Itens Pendentes",
+  "matriz-versatilidade": "Treinamentos",
+};
+
 const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: typeof allModules[0]; index: number; t: any; navigate: any; badgeCount?: number }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mod.id });
   const style = {
@@ -52,6 +59,9 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: type
     zIndex: isDragging ? 50 : undefined,
     opacity: isDragging ? 0.8 : 1,
   };
+
+  const showBadge = !!badgeCount && badgeCount > 0;
+  const badgeLabel = moduleBadgeLabel[mod.id] || "Pendentes";
 
   return (
     <div
@@ -62,11 +72,6 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: type
       onClick={() => navigate(mod.path)}
     >
       <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} pointer-events-none`} />
-      {badgeCount && badgeCount > 0 && (
-        <Badge className="absolute top-3 right-3 z-10 h-5 min-w-5 px-1.5 text-[10px] bg-destructive text-destructive-foreground border-0 font-bold">
-          {badgeCount > 99 ? "99+" : badgeCount}
-        </Badge>
-      )}
       <div className="relative">
         <div className="flex items-start justify-between">
           <div className={`w-10 h-10 md:w-14 md:h-14 rounded-xl ${mod.iconBg} flex items-center justify-center mb-3 md:mb-4`}>
@@ -83,8 +88,24 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount }: { mod: type
         </div>
         <h2 className="text-lg md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{t(mod.titleKey)}</h2>
         <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4">{t(mod.descriptionKey)}</p>
-        <div className="flex items-center justify-end">
-          <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
+        <div className={`flex items-center gap-2 ${showBadge ? "justify-between" : "justify-end"} flex-wrap`}>
+          {showBadge && (
+            <button
+              onClick={(e) => { e.stopPropagation(); navigate(mod.path); }}
+              className="relative inline-flex items-center gap-2 px-2.5 py-1.5 rounded-xl
+                bg-amber-50 border border-amber-300 text-amber-700
+                hover:bg-amber-100 transition-colors text-[11px] md:text-xs font-semibold max-w-full"
+            >
+              <span className="relative shrink-0">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <Badge className="absolute -top-2 -right-2.5 h-4 min-w-4 px-1 text-[9px] bg-amber-500 text-white border-0">
+                  {badgeCount! > 99 ? "99+" : badgeCount}
+                </Badge>
+              </span>
+              <span className="ml-1.5 truncate">{badgeLabel}</span>
+            </button>
+          )}
+          <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground shrink-0" />
         </div>
       </div>
     </div>

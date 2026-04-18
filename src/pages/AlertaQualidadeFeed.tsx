@@ -186,31 +186,46 @@ const AlertaQualidadeFeed = () => {
         )}
       </main>
 
-      <AlertDialog open={!!confirmDialog} onOpenChange={(o) => !o && setConfirmDialog(null)}>
+      <AlertDialog open={!!confirmDialog} onOpenChange={(o) => { if (!o) { setConfirmDialog(null); setAceito(false); } }}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-base">
               <ShieldCheck className="w-5 h-5 text-emerald-600" />
               Confirmar Ciência do Alerta
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2 pt-2 text-sm">
-              {confirmDialog && (
-                <span className="block font-mono text-xs font-bold text-[#c0392b]">
-                  AQ-{String(confirmDialog.seq).padStart(5, "0")} • {confirmDialog.titulo}
-                </span>
-              )}
-              <span className="block pt-1">
-                Ao clicar em <strong>Confirmar</strong>, eu declaro que <strong>li, compreendi e estou ciente</strong> do
-                conteúdo deste alerta de qualidade, comprometendo-me a aplicar as orientações nele descritas.
-              </span>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 pt-2 text-sm">
+                {confirmDialog && (
+                  <div className="font-mono text-xs font-bold text-[#c0392b]">
+                    AQ-{String(confirmDialog.seq).padStart(5, "0")} • {confirmDialog.titulo}
+                  </div>
+                )}
+                <div className="rounded-md border bg-muted/40 p-3 text-foreground/90 text-[13px] leading-relaxed">
+                  {TERMO_CIENCIA}
+                </div>
+                <div className="flex items-start gap-2 pt-1">
+                  <Checkbox
+                    id="aceite-termo"
+                    checked={aceito}
+                    onCheckedChange={(v) => setAceito(v === true)}
+                    className="mt-0.5"
+                  />
+                  <Label htmlFor="aceite-termo" className="text-sm font-medium cursor-pointer leading-snug">
+                    Li e compreendi o alerta
+                  </Label>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
             <AlertDialogCancel className="m-0">Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => confirmDialog && handleConfirm(confirmDialog.id)}
-              disabled={!!confirming}
-              className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDialog && aceito) handleConfirm(confirmDialog.id);
+              }}
+              disabled={!!confirming || !aceito}
+              className="bg-emerald-600 hover:bg-emerald-700 gap-2 disabled:opacity-50"
             >
               {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
               Confirmar

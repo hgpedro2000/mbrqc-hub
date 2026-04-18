@@ -1314,6 +1314,14 @@ const ApontamentoForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Annotation Editor */}
+      <ImageAnnotationEditor
+        open={!!annotatingFile}
+        imageFile={annotatingFile}
+        onConfirm={handleAnnotationConfirm}
+        onCancel={handleAnnotationCancel}
+      />
     </div>
   );
 };

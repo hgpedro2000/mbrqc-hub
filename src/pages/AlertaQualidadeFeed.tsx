@@ -2,11 +2,21 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const lineAreaMap: Record<string, string> = {
   "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",

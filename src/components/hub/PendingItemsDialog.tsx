@@ -9,6 +9,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { AlertTriangle, Package, GraduationCap, ArrowRight } from "lucide-react";
 import { formatLocalDateString } from "@/lib/localDate";
 
+const CARGOS_QUALIDADE = ["lider", "assistente", "analista", "supervisor", "gerente", "diretor"];
+
 type Kind = "alerta-qualidade" | "consumiveis" | "matriz-versatilidade";
 
 const titleMap: Record<Kind, string> = {

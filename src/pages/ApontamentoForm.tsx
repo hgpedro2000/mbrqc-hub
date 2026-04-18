@@ -17,9 +17,11 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { compressImage } from "@/lib/compressImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -64,6 +66,8 @@ const ApontamentoForm = () => {
   const [saving, setSaving] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
+  const [annotationQueue, setAnnotationQueue] = useState<File[]>([]);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
@@ -455,17 +459,45 @@ const ApontamentoForm = () => {
     }
   }, [quantidadeNg]);
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = "";
     const totalPhotos = photoFiles.length + existingPhotos.length;
     const maxNew = 4 - totalPhotos;
     if (files.length > maxNew) { toast.error(`Máximo 4 fotos. Você pode adicionar mais ${maxNew}.`); return; }
-    setPhotoFiles((prev) => [...prev, ...files]);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => setPhotoPreviews((prev) => [...prev, e.target?.result as string]);
-      reader.readAsDataURL(file);
-    });
+    if (files.length === 0) return;
+    // Compress and queue for annotation one-by-one
+    const compressed = await Promise.all(files.map((f) => compressImage(f)));
+    setAnnotatingFile(compressed[0]);
+    setAnnotationQueue(compressed.slice(1));
+  };
+
+  const addAnnotatedPhoto = (file: File) => {
+    setPhotoFiles((prev) => [...prev, file]);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreviews((prev) => [...prev, ev.target?.result as string]);
+    reader.readAsDataURL(file);
+  };
+
+  const handleAnnotationConfirm = (annotatedFile: File) => {
+    addAnnotatedPhoto(annotatedFile);
+    if (annotationQueue.length > 0) {
+      setAnnotatingFile(annotationQueue[0]);
+      setAnnotationQueue((q) => q.slice(1));
+    } else {
+      setAnnotatingFile(null);
+    }
+  };
+
+  const handleAnnotationCancel = () => {
+    // Use original (compressed) image without annotation
+    if (annotatingFile) addAnnotatedPhoto(annotatingFile);
+    if (annotationQueue.length > 0) {
+      setAnnotatingFile(annotationQueue[0]);
+      setAnnotationQueue((q) => q.slice(1));
+    } else {
+      setAnnotatingFile(null);
+    }
   };
 
   const removeNewPhoto = (index: number) => {
@@ -1282,6 +1314,14 @@ const ApontamentoForm = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Image Annotation Editor */}
+      <ImageAnnotationEditor
+        open={!!annotatingFile}
+        imageFile={annotatingFile}
+        onConfirm={handleAnnotationConfirm}
+        onCancel={handleAnnotationCancel}
+      />
     </div>
   );
 };

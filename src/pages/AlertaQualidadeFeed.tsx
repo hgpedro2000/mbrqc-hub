@@ -92,20 +92,21 @@ const AlertaQualidadeFeed = () => {
   });
 
   const handleConfirm = async (alertaId: string) => {
-    if (!user?.id) return;
+    if (!targetUserId) return;
     setConfirming(alertaId);
     try {
       const { error } = await supabase.from("ciencias").insert({
         alerta_id: alertaId,
-        inspetor_id: user.id,
+        inspetor_id: targetUserId,
         metodo: "app_proprio",
-        registrado_por_id: user.id,
+        registrado_por_id: user?.id || targetUserId,
         termo_aceito: TERMO_CIENCIA,
         versao_termo: TERMO_VERSAO,
       } as any);
       if (error) throw error;
       toast.success("Ciência registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["alertas-feed"] });
+      qc.invalidateQueries({ queryKey: ["badge-alerta"] });
       setConfirmDialog(null);
       setAceito(false);
     } catch (e: any) {

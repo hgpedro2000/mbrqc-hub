@@ -121,6 +121,7 @@ const Hub = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const [openDialog, setOpenDialog] = useState<string | null>(null);
 
   const { data: savedOrder } = useQuery({
     queryKey: ["user-module-order", user?.id],

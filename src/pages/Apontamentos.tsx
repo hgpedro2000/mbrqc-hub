@@ -18,7 +18,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
-import { formatLocalDateString } from "@/lib/localDate";
+import { formatLocalDateString, getLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
@@ -59,7 +59,7 @@ const Apontamentos = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = getLocalDateString();
   const [dateFrom, setDateFrom] = useState<string>(todayStr);
   const [dateTo, setDateTo] = useState<string>(todayStr);
 
@@ -644,7 +644,7 @@ const Apontamentos = () => {
               variant="outline"
               size="sm"
               className="h-8 px-3 text-xs gap-1.5"
-              onClick={() => { const t = new Date().toISOString().split("T")[0]; setDateFrom(t); setDateTo(t); }}
+              onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
             >
               <Calendar className="w-3.5 h-3.5" />
               Hoje

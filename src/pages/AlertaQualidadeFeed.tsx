@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -33,21 +34,25 @@ const lineAreaMap: Record<string, string> = {
 const AlertaQualidadeFeed = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { impersonating } = useImpersonation();
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
   const [aceito, setAceito] = useState(false);
 
+  // When impersonating, view as the impersonated user
+  const targetUserId = impersonating?.id || user?.id;
+
   const { data: alertas = [], isLoading } = useQuery({
-    queryKey: ["alertas-feed", user?.id],
+    queryKey: ["alertas-feed", targetUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!targetUserId) return [];
 
       // Get inspector's qualified areas
       const { data: quals } = await supabase
         .from("inspector_qualifications")
         .select("area")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .eq("habilitado", true);
       const myAreas = (quals || []).map((q: any) => q.area);
 
@@ -63,7 +68,7 @@ const AlertaQualidadeFeed = () => {
       if (aErr) throw aErr;
 
       // Get ciencias for this user
-      const { data: myCiencias, error: cErr } = await supabase.from("ciencias").select("alerta_id").eq("inspetor_id", user.id);
+      const { data: myCiencias, error: cErr } = await supabase.from("ciencias").select("alerta_id").eq("inspetor_id", targetUserId);
       if (cErr) throw cErr;
       const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
 
@@ -83,24 +88,25 @@ const AlertaQualidadeFeed = () => {
         return myAreas.includes(areaKey);
       });
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   const handleConfirm = async (alertaId: string) => {
-    if (!user?.id) return;
+    if (!targetUserId) return;
     setConfirming(alertaId);
     try {
       const { error } = await supabase.from("ciencias").insert({
         alerta_id: alertaId,
-        inspetor_id: user.id,
+        inspetor_id: targetUserId,
         metodo: "app_proprio",
-        registrado_por_id: user.id,
+        registrado_por_id: user?.id || targetUserId,
         termo_aceito: TERMO_CIENCIA,
         versao_termo: TERMO_VERSAO,
       } as any);
       if (error) throw error;
       toast.success("Ciência registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["alertas-feed"] });
+      qc.invalidateQueries({ queryKey: ["badge-alerta"] });
       setConfirmDialog(null);
       setAceito(false);
     } catch (e: any) {

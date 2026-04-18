@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import QrScannerModal from "@/components/QrScannerModal";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -36,8 +37,12 @@ const CARGOS_CRIAR_ALERTA = [
 const AlertaQualidade = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { impersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
+  // When impersonating, treat all checks as if the impersonated user were logged in
+  const effectiveUserId = impersonating?.id || user?.id;
+  const effectiveCargo = impersonating?.cargo ?? profile?.cargo ?? "";
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
@@ -51,33 +56,36 @@ const AlertaQualidade = () => {
   const [trainingWarning, setTrainingWarning] = useState<{ name: string; date: string; type: "vencido" | "vencendo" } | null>(null);
 
   const { data: roles = [] } = useQuery({
-    queryKey: ["my-roles-alerta", user?.id],
+    queryKey: ["my-roles-alerta", effectiveUserId],
     queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      if (!effectiveUserId) return [];
+      const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", effectiveUserId);
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!effectiveUserId,
   });
 
-  const isLider = isAdmin || roles.some((r: any) => r.role === "lider");
-  const isInspetor = roles.some((r: any) => r.role === "inspetor");
+  // While impersonating, ignore the real admin role
+  const effectiveIsAdmin = impersonating ? roles.some((r: any) => r.role === "admin") : isAdmin;
+  const isLider = effectiveIsAdmin || roles.some((r: any) => r.role === "lider");
+  const isInspetor = roles.some((r: any) => r.role === "inspetor") || /inspetor/i.test(effectiveCargo);
 
   // Can CREATE alerts: admin OR has a quality cargo
-  const canCreateAlert = isAdmin || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+  const canCreateAlert = effectiveIsAdmin || CARGOS_CRIAR_ALERTA.includes(effectiveCargo);
 
   // Can SCAN QR: any leader role (regardless of cargo)
   const canScanQr = isLider;
 
   // Can VIEW ALL alerts: admin, lider role, or quality management cargos
-  const canViewAll = isAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(profile?.cargo || "");
+  const canViewAll = effectiveIsAdmin || isLider || CARGOS_CRIAR_ALERTA.includes(effectiveCargo);
 
   useEffect(() => {
-    if (!canViewAll && isInspetor) {
+    // Inspectors (or anyone without view-all permission) go to the personal feed
+    if (!canViewAll) {
       navigate("/alerta-qualidade/feed", { replace: true });
     }
-  }, [canViewAll, isInspetor, navigate]);
+  }, [canViewAll, navigate]);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-lista-mestra"],
@@ -169,12 +177,12 @@ const AlertaQualidade = () => {
   // Visibility: admin/lider/quality cargos see all; inspetores only see alerts for their qualified areas
   const filteredByVisibility = useMemo(() => {
     if (canViewAll) return alertas;
-    if (!user?.id) return [];
+    if (!effectiveUserId) return [];
     return alertas.filter((a: any) => {
       const qualifiedInspectors = getQualifiedInspectors(a.linha_peca);
-      return qualifiedInspectors.includes(user.id);
+      return qualifiedInspectors.includes(effectiveUserId);
     });
-  }, [alertas, canViewAll, user?.id, qualifications, partNumbers]);
+  }, [alertas, canViewAll, effectiveUserId, qualifications, partNumbers]);
 
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return filteredByVisibility;
@@ -279,8 +287,8 @@ const AlertaQualidade = () => {
     }
   };
 
-  // Edit: only admin or who created the alert
-  const canEdit = (alerta: any) => isAdmin || alerta.criado_por_id === user?.id;
+  // Edit: only admin or who created the alert (respects impersonation)
+  const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
   const statusOptions = [
     { value: "Em andamento", label: "Em andamento" },
@@ -347,7 +355,7 @@ const AlertaQualidade = () => {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
-                      {isAdmin ? (
+                      {effectiveIsAdmin ? (
                         <button onClick={(e) => { e.stopPropagation(); setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                           <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer`}>{displayStatus}</Badge>
                         </button>
@@ -378,7 +386,7 @@ const AlertaQualidade = () => {
                       <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
                         <Download className="w-3 h-3" />
                       </Button>
-                      {isAdmin && (
+                      {effectiveIsAdmin && (
                         <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive border-destructive/30" onClick={() => setDeleteAlertaId(a.id)}>
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -425,7 +433,7 @@ const AlertaQualidade = () => {
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                         </td>
                         <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                          {isAdmin ? (
+                          {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                               <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
                             </button>
@@ -454,7 +462,7 @@ const AlertaQualidade = () => {
                             <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
                               <Download className="w-3.5 h-3.5" />
                             </Button>
-                            {isAdmin && (
+                            {effectiveIsAdmin && (
                               <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>

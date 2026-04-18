@@ -35,6 +35,7 @@ const ApontamentoDashboard = () => {
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
+  const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],

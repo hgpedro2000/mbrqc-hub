@@ -13,6 +13,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
+import { PendingItemsDialog } from "@/components/hub/PendingItemsDialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

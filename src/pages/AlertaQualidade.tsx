@@ -189,50 +189,52 @@ const AlertaQualidade = () => {
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;
+    const alertaId = scanAlertaId;
     try {
       const { data: inspetor, error: findErr } = await supabase
         .from("profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
       if (findErr || !inspetor) { toast.error("QR Code não reconhecido."); return; }
 
-      // Check training status across this inspector's qualifications
+      // Check training status (informational only — does NOT block ciência)
       const { data: quals } = await supabase
         .from("inspector_qualifications")
         .select("next_evaluation_date")
         .eq("user_id", inspetor.id)
         .eq("habilitado", true);
+      let worst: { date: Date; type: "vencido" | "vencendo" } | null = null;
       if (quals && quals.length > 0) {
         const today = new Date(); today.setHours(0,0,0,0);
         const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
-        let worst: { date: Date; type: "vencido" | "vencendo" } | null = null;
         for (const q of quals as any[]) {
           if (!q.next_evaluation_date) continue;
           const d = new Date(q.next_evaluation_date + "T12:00:00");
           if (d < today) {
             if (!worst || worst.type !== "vencido" || d < worst.date) worst = { date: d, type: "vencido" };
-          } else if (d <= in30 && (!worst || worst.type === "vencendo" && d < worst.date)) {
+          } else if (d <= in30) {
             if (!worst) worst = { date: d, type: "vencendo" };
+            else if (worst.type === "vencendo" && d < worst.date) worst = { date: d, type: "vencendo" };
           }
-        }
-        if (worst) {
-          setScanAlertaId(null);
-          setTrainingWarning({
-            name: inspetor.full_name,
-            date: worst.date.toLocaleDateString("pt-BR"),
-            type: worst.type,
-          });
-          return;
         }
       }
 
-      const { data: existing } = await supabase.from("ciencias").select("id").eq("alerta_id", scanAlertaId).eq("inspetor_id", inspetor.id).maybeSingle();
-      if (existing) { toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`); setScanAlertaId(null); return; }
+      const { data: existing } = await supabase.from("ciencias").select("id").eq("alerta_id", alertaId).eq("inspetor_id", inspetor.id).maybeSingle();
+      if (existing) {
+        toast.info(`${inspetor.full_name} já havia dado ciência neste alerta.`);
+        setScanAlertaId(null);
+        if (worst) setTrainingWarning({ name: inspetor.full_name, date: worst.date.toLocaleDateString("pt-BR"), type: worst.type });
+        return;
+      }
       const { error: insertErr } = await supabase.from("ciencias").insert({
-        alerta_id: scanAlertaId, inspetor_id: inspetor.id, metodo: "qr_lider", registrado_por_id: user?.id,
+        alerta_id: alertaId, inspetor_id: inspetor.id, metodo: "qr_lider", registrado_por_id: user?.id,
       } as any);
       if (insertErr) throw insertErr;
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
       setScanAlertaId(null);
+      // Always confirm success; if training is overdue/expiring, also show informational popup
       setSuccessPopup({ name: inspetor.full_name });
+      if (worst) {
+        setTrainingWarning({ name: inspetor.full_name, date: worst.date.toLocaleDateString("pt-BR"), type: worst.type });
+      }
     } catch (e: any) { toast.error(e.message); }
   };
 

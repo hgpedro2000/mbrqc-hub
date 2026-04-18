@@ -158,7 +158,7 @@ export const PendingItemsDialog = ({
       }
     })();
     return () => { cancelled = true; };
-  }, [open, kind, user?.id]);
+  }, [open, kind, user?.id, isAdmin, profile?.cargo]);
 
   const Icon = iconMap[kind];
   const title = titleMap[kind];

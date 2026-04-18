@@ -221,7 +221,12 @@ export const PendingItemsDialog = ({
           ) : (
             <>
               {kind === "alerta-qualidade" && items.map((a: any) => (
-                <div key={a.id} className="border rounded-lg p-3 space-y-1">
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => { onOpenChange(false); navigate(`/alerta-qualidade/view/${a.id}`); }}
+                  className="w-full text-left border rounded-lg p-3 space-y-1 hover:bg-accent/50 hover:border-primary/40 active:scale-[0.99] transition-all cursor-pointer"
+                >
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="outline" className="text-[10px] font-mono">
                       AQ-{String(a.sequencial).padStart(5, "0")}
@@ -233,7 +238,7 @@ export const PendingItemsDialog = ({
                   {a.data_ocorrencia && (
                     <p className="text-[10px] text-muted-foreground/70">{formatLocalDateString(a.data_ocorrencia)}</p>
                   )}
-                </div>
+                </button>
               ))}
 
               {kind === "consumiveis" && items.map((i: any, idx: number) => {

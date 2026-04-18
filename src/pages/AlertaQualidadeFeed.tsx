@@ -2,7 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Eye, X } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -39,6 +40,7 @@ const AlertaQualidadeFeed = () => {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
   const [aceito, setAceito] = useState(false);
+  const [photoPopup, setPhotoPopup] = useState<string | null>(null);
 
   // When impersonating, view as the impersonated user
   const targetUserId = impersonating?.id || user?.id;
@@ -150,31 +152,51 @@ const AlertaQualidadeFeed = () => {
         ) : (
           alertas.map((a: any) => (
             <div key={a.id} className="form-section space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <span className="text-xs font-mono font-bold text-[#c0392b]">#{a.sequencial}</span>
-                  <h3 className="font-heading font-semibold text-foreground">{a.modo_falha || a.descricao}</h3>
-                  {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/alerta-qualidade/view/${a.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter") navigate(`/alerta-qualidade/view/${a.id}`); }}
+                className="space-y-3 cursor-pointer hover:opacity-90 active:opacity-75 transition-opacity rounded-md -m-1 p-1"
+                title="Ver detalhes do alerta"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs font-mono font-bold text-[#c0392b]">#{a.sequencial}</span>
+                    <h3 className="font-heading font-semibold text-foreground">{a.modo_falha || a.descricao}</h3>
+                    {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
+                  </div>
+                  <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
                 </div>
-              </div>
-              {a.descricao && <p className="text-sm text-muted-foreground">{a.descricao}</p>}
-              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                {a.data_ocorrencia && <span>Ocorrência: {new Date(a.data_ocorrencia).toLocaleDateString("pt-BR")}</span>}
-                {a.data_validade && <span>Validade: {new Date(a.data_validade).toLocaleDateString("pt-BR")}</span>}
-                {a.turno && <span>Turno: {a.turno}</span>}
+                {a.descricao && <p className="text-sm text-muted-foreground">{a.descricao}</p>}
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  {a.data_ocorrencia && <span>Ocorrência: {new Date(a.data_ocorrencia).toLocaleDateString("pt-BR")}</span>}
+                  {a.data_validade && <span>Validade: {new Date(a.data_validade).toLocaleDateString("pt-BR")}</span>}
+                  {a.turno && <span>Turno: {a.turno}</span>}
+                </div>
               </div>
               {(a.foto_ng_url || a.foto_ok_url) && (
                 <div className="grid grid-cols-2 gap-2">
                   {a.foto_ng_url && (
                     <div>
                       <span className="text-[10px] font-bold text-[#c0392b]">NG</span>
-                      <img src={a.foto_ng_url} alt="NG" className="rounded border border-[#c0392b] w-full h-24 object-cover" />
+                      <img
+                        src={a.foto_ng_url}
+                        alt="NG"
+                        onClick={(e) => { e.stopPropagation(); setPhotoPopup(a.foto_ng_url); }}
+                        className="rounded border border-[#c0392b] w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                      />
                     </div>
                   )}
                   {a.foto_ok_url && (
                     <div>
                       <span className="text-[10px] font-bold text-[#1e8449]">OK</span>
-                      <img src={a.foto_ok_url} alt="OK" className="rounded border border-[#1e8449] w-full h-24 object-cover" />
+                      <img
+                        src={a.foto_ok_url}
+                        alt="OK"
+                        onClick={(e) => { e.stopPropagation(); setPhotoPopup(a.foto_ok_url); }}
+                        className="rounded border border-[#1e8449] w-full h-24 object-cover cursor-zoom-in hover:opacity-90 transition-opacity"
+                      />
                     </div>
                   )}
                 </div>

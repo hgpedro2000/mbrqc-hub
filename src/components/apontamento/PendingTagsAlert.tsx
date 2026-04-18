@@ -13,13 +13,28 @@ import { Badge } from "@/components/ui/badge";
 import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 import { formatLocalDateString } from "@/lib/localDate";
 
-export const PendingTagsAlert = ({ requireMobis = false }: { requireMobis?: boolean }) => {
+export const PendingTagsAlert = ({
+  requireMobis = false,
+  hideTrigger = false,
+  open: openProp,
+  onOpenChange,
+}: {
+  requireMobis?: boolean;
+  hideTrigger?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) => {
   const { user, profile } = useAuth();
   const { impersonating } = useImpersonation();
   const { canInsertTag } = useTagPermission();
   const { isAdmin } = useUserRole();
   const [pendingItems, setPendingItems] = useState<any[]>([]);
-  const [listOpen, setListOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const listOpen = openProp !== undefined ? openProp : internalOpen;
+  const setListOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);

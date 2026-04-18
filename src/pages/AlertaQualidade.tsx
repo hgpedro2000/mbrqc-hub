@@ -325,6 +325,14 @@ const AlertaQualidade = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-9" />
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/alerta-qualidade/feed")}
+            className="gap-2 shrink-0"
+            title="Dar ciência diretamente pelo app"
+          >
+            <CheckCircle2 className="w-4 h-4" /> Meus Pendentes
+          </Button>
           {canCreateAlert && (
             <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
               <Plus className="w-4 h-4" /> Novo Alerta

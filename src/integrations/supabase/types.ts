@@ -585,6 +585,8 @@ export type Database = {
           inspetor_id: string
           metodo: string
           registrado_por_id: string | null
+          termo_aceito: string | null
+          versao_termo: string | null
         }
         Insert: {
           alerta_id: string
@@ -593,6 +595,8 @@ export type Database = {
           inspetor_id: string
           metodo?: string
           registrado_por_id?: string | null
+          termo_aceito?: string | null
+          versao_termo?: string | null
         }
         Update: {
           alerta_id?: string
@@ -601,6 +605,8 @@ export type Database = {
           inspetor_id?: string
           metodo?: string
           registrado_por_id?: string | null
+          termo_aceito?: string | null
+          versao_termo?: string | null
         }
         Relationships: [
           {

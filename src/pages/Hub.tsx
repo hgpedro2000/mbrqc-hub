@@ -230,24 +230,24 @@ const Hub = () => {
     enabled: !!targetUserId,
   });
 
-  // Detect if user is consumables manager (has inventory permission)
+  // Detect if user is consumables manager (has inventory permission) — respects impersonation
   const { data: isConsumivelManager = false } = useQuery({
-    queryKey: ["is-consumivel-manager", user?.id],
+    queryKey: ["is-consumivel-manager", targetUserId],
     queryFn: async () => {
-      if (!user?.id) return false;
+      if (!targetUserId) return false;
       const { data } = await supabase.from("user_module_permissions")
-        .select("enabled").eq("user_id", user.id).eq("module", "consumiveis_inventario").maybeSingle();
+        .select("enabled").eq("user_id", targetUserId).eq("module", "consumiveis_inventario").maybeSingle();
       return !!data?.enabled;
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   // Consumíveis: user sees own requests' status; admin/lider/manager sees all pending + low stock
   const { data: consumiveisBadge = 0 } = useQuery({
-    queryKey: ["badge-consumiveis", user?.id, isAdmin, isLider, isConsumivelManager],
+    queryKey: ["badge-consumiveis", targetUserId, effectiveIsAdmin, isLider, isConsumivelManager],
     queryFn: async () => {
-      if (!user?.id) return 0;
-      const seesAll = isAdmin || isLider || isConsumivelManager;
+      if (!targetUserId) return 0;
+      const seesAll = effectiveIsAdmin || isLider || isConsumivelManager;
       if (seesAll) {
         const { data: items } = await supabase.from("consumable_items").select("stock_qty, min_qty").eq("active", true);
         const lowStock = (items || []).filter((i: any) => (i.stock_qty ?? 0) < (i.min_qty ?? 0)).length;
@@ -258,25 +258,25 @@ const Hub = () => {
       // Regular user: only own pending/in-progress requests
       const { count } = await supabase.from("consumable_requests")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .in("status", ["aguardando", "em_andamento", "separando"]);
       return count || 0;
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   // Matriz: leadership/quality see all expired+expiring; regular user sees only own
   const isQualityRoleForBadges = isQualityRole; // already computed above
   const { data: matrizBadge = 0 } = useQuery({
-    queryKey: ["badge-matriz", user?.id, isAdmin, isLider, isQualityRoleForBadges],
+    queryKey: ["badge-matriz", targetUserId, effectiveIsAdmin, isLider, isQualityRoleForBadges],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!targetUserId) return 0;
       const today = new Date(); today.setHours(0,0,0,0);
       const in30 = new Date(today); in30.setDate(in30.getDate() + 30);
-      const seesAll = isAdmin || isLider || isQualityRoleForBadges;
+      const seesAll = effectiveIsAdmin || isLider || isQualityRoleForBadges;
       let q = supabase.from("inspector_qualifications")
         .select("user_id, next_evaluation_date").eq("habilitado", true).not("next_evaluation_date", "is", null);
-      if (!seesAll) q = q.eq("user_id", user.id);
+      if (!seesAll) q = q.eq("user_id", targetUserId);
       const { data } = await q;
       const userIds = new Set<string>();
       (data || []).forEach((r: any) => {
@@ -285,7 +285,7 @@ const Hub = () => {
       });
       return userIds.size;
     },
-    enabled: !!user?.id,
+    enabled: !!targetUserId,
   });
 
   const badgeByModule: Record<string, number> = {

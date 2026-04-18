@@ -224,7 +224,7 @@ export const PendingItemsDialog = ({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() => { onOpenChange(false); navigate(`/alerta-qualidade/view/${a.id}`); }}
+                  onClick={() => { onOpenChange(false); navigate(`/alerta-qualidade/ver/${a.id}`); }}
                   className="w-full text-left border rounded-lg p-3 space-y-1 hover:bg-accent/50 hover:border-primary/40 active:scale-[0.99] transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-2 flex-wrap">

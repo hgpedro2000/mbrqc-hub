@@ -155,8 +155,8 @@ const AlertaQualidadeFeed = () => {
               <div
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(`/alerta-qualidade/view/${a.id}`)}
-                onKeyDown={(e) => { if (e.key === "Enter") navigate(`/alerta-qualidade/view/${a.id}`); }}
+                onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter") navigate(`/alerta-qualidade/ver/${a.id}`); }}
                 className="space-y-3 cursor-pointer hover:opacity-90 active:opacity-75 transition-opacity rounded-md -m-1 p-1"
                 title="Ver detalhes do alerta"
               >

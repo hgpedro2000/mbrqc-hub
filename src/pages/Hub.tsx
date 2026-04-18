@@ -390,9 +390,6 @@ const Hub = () => {
       </header>
 
       <main className="container mx-auto px-4 -mt-6 pb-12">
-        <div className="mb-4">
-          <PendingTagsAlert requireMobis />
-        </div>
         {orderedModules.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -406,13 +403,44 @@ const Hub = () => {
             <SortableContext items={orderedModules.map((m) => m.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {orderedModules.map((mod, i) => (
-                  <SortableModuleCard key={mod.id} mod={mod} index={i} t={t} navigate={navigate} badgeCount={badgeByModule[mod.id]} />
+                  <SortableModuleCard
+                    key={mod.id}
+                    mod={mod}
+                    index={i}
+                    t={t}
+                    navigate={navigate}
+                    badgeCount={badgeByModule[mod.id]}
+                    onBadgeClick={() => setOpenDialog(mod.id)}
+                  />
                 ))}
               </div>
             </SortableContext>
           </DndContext>
         )}
       </main>
+
+      {/* Pending dialogs */}
+      <PendingTagsAlert
+        requireMobis
+        hideTrigger
+        open={openDialog === "apontamentos"}
+        onOpenChange={(v) => setOpenDialog(v ? "apontamentos" : null)}
+      />
+      <PendingItemsDialog
+        kind="alerta-qualidade"
+        open={openDialog === "alerta-qualidade"}
+        onOpenChange={(v) => setOpenDialog(v ? "alerta-qualidade" : null)}
+      />
+      <PendingItemsDialog
+        kind="consumiveis"
+        open={openDialog === "consumiveis"}
+        onOpenChange={(v) => setOpenDialog(v ? "consumiveis" : null)}
+      />
+      <PendingItemsDialog
+        kind="matriz-versatilidade"
+        open={openDialog === "matriz-versatilidade"}
+        onOpenChange={(v) => setOpenDialog(v ? "matriz-versatilidade" : null)}
+      />
     </div>
   );
 };

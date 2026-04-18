@@ -355,7 +355,7 @@ const AlertaQualidade = () => {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
-                      {isAdmin ? (
+                      {effectiveIsAdmin ? (
                         <button onClick={(e) => { e.stopPropagation(); setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                           <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer`}>{displayStatus}</Badge>
                         </button>
@@ -386,7 +386,7 @@ const AlertaQualidade = () => {
                       <Button variant="outline" size="sm" className="h-7 w-7 p-0" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
                         <Download className="w-3 h-3" />
                       </Button>
-                      {isAdmin && (
+                      {effectiveIsAdmin && (
                         <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive border-destructive/30" onClick={() => setDeleteAlertaId(a.id)}>
                           <Trash2 className="w-3 h-3" />
                         </Button>
@@ -433,7 +433,7 @@ const AlertaQualidade = () => {
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                         </td>
                         <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
-                          {isAdmin ? (
+                          {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                               <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
                             </button>
@@ -462,7 +462,7 @@ const AlertaQualidade = () => {
                             <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
                               <Download className="w-3.5 h-3.5" />
                             </Button>
-                            {isAdmin && (
+                            {effectiveIsAdmin && (
                               <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>

@@ -29,6 +29,7 @@ const AlertaQualidadeFeed = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-feed", user?.id],

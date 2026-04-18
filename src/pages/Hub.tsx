@@ -266,6 +266,34 @@ const Hub = () => {
     "matriz-versatilidade": matrizBadge,
   };
 
+  // Realtime: refresh badge counts when underlying tables change
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel("hub-badges-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "apontamentos" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-apontamentos"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-alerta"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "ciencias" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-alerta"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "consumable_items" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-consumiveis"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "consumable_requests" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-consumiveis"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "inspector_qualifications" }, () => {
+        qc.invalidateQueries({ queryKey: ["badge-matriz"] });
+        qc.invalidateQueries({ queryKey: ["badge-alerta"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id, qc]);
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return t("greeting.morning");

@@ -17,9 +17,11 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { compressImage } from "@/lib/compressImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 

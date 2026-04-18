@@ -177,12 +177,12 @@ const AlertaQualidade = () => {
   // Visibility: admin/lider/quality cargos see all; inspetores only see alerts for their qualified areas
   const filteredByVisibility = useMemo(() => {
     if (canViewAll) return alertas;
-    if (!user?.id) return [];
+    if (!effectiveUserId) return [];
     return alertas.filter((a: any) => {
       const qualifiedInspectors = getQualifiedInspectors(a.linha_peca);
-      return qualifiedInspectors.includes(user.id);
+      return qualifiedInspectors.includes(effectiveUserId);
     });
-  }, [alertas, canViewAll, user?.id, qualifications, partNumbers]);
+  }, [alertas, canViewAll, effectiveUserId, qualifications, partNumbers]);
 
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return filteredByVisibility;
@@ -287,8 +287,8 @@ const AlertaQualidade = () => {
     }
   };
 
-  // Edit: only admin or who created the alert
-  const canEdit = (alerta: any) => isAdmin || alerta.criado_por_id === user?.id;
+  // Edit: only admin or who created the alert (respects impersonation)
+  const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
   const statusOptions = [
     { value: "Em andamento", label: "Em andamento" },

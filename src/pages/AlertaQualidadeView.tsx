@@ -266,6 +266,65 @@ const AlertaQualidadeView = () => {
             })}
             {inspetores.length === 0 && <p className="text-center text-muted-foreground py-4 text-sm">Nenhum inspetor habilitado para esta área</p>}
           </div>
+
+          {/* Detailed audit log of ciências */}
+          {ciencias.length > 0 && (
+            <div className="mt-5 pt-4 border-t border-border">
+              <h3 className="text-sm font-heading font-bold mb-3">Registros de Ciência ({ciencias.length})</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="py-2 pr-2 font-semibold text-muted-foreground">Inspetor</th>
+                      <th className="py-2 px-2 font-semibold text-muted-foreground">Data/Hora</th>
+                      <th className="py-2 px-2 font-semibold text-muted-foreground">Método</th>
+                      <th className="py-2 pl-2 font-semibold text-muted-foreground">Termo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...ciencias]
+                      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .map((c: any) => {
+                        const dt = new Date(c.created_at);
+                        const isQr = c.metodo === "qr_lider";
+                        return (
+                          <tr key={c.id} className="border-b border-border/50 align-top">
+                            <td className="py-2 pr-2">
+                              <p className="font-medium text-foreground">{c.profiles?.full_name || "—"}</p>
+                              {c.profiles?.cargo && <p className="text-[10px] text-muted-foreground">{c.profiles.cargo}</p>}
+                            </td>
+                            <td className="py-2 px-2 whitespace-nowrap">
+                              {dt.toLocaleDateString("pt-BR")}<br />
+                              <span className="text-[10px] text-muted-foreground">{dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                            </td>
+                            <td className="py-2 px-2">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] ${isQr ? "border-blue-500 text-blue-600 bg-blue-500/10" : "border-emerald-500 text-emerald-600 bg-emerald-500/10"}`}
+                              >
+                                {isQr ? "QR Líder" : "App Próprio"}
+                              </Badge>
+                            </td>
+                            <td className="py-2 pl-2">
+                              {c.versao_termo ? (
+                                <span
+                                  className="font-mono text-[10px] text-muted-foreground"
+                                  title={c.termo_aceito || ""}
+                                >
+                                  {c.versao_termo}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground italic">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 

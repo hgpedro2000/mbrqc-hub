@@ -261,6 +261,22 @@ const AlertaQualidadeFeed = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!photoPopup} onOpenChange={(o) => { if (!o) setPhotoPopup(null); }}>
+        <DialogContent className="max-w-3xl p-0 bg-black/95 border-0">
+          <button
+            type="button"
+            onClick={() => setPhotoPopup(null)}
+            className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black/80 text-white rounded-full p-2"
+            aria-label="Fechar"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {photoPopup && (
+            <img src={photoPopup} alt="Foto ampliada" className="w-full h-auto max-h-[85vh] object-contain rounded" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

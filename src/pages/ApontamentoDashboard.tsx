@@ -868,13 +868,21 @@ const ApontamentoDashboard = () => {
         {/* LEFT: General Quality Status table */}
         <div className="lg:col-span-3 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>General Quality {TYPE_LABELS[activeType]} Status</SectionHeader>
-          {supplierFilter && (
-            <div className="px-2 pt-2">
+          <div className="px-2 pt-2 flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPPM((v) => !v)}
+              className={`text-[10px] h-6 gap-1 ${showPPM ? 'bg-[hsl(210,70%,60%)]/30 border-[hsl(210,70%,60%)]/60 text-[hsl(210,70%,75%)]' : 'bg-[hsl(220,10%,20%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,70%)]'}`}
+            >
+              PPM {showPPM ? '✓' : ''}
+            </Button>
+            {supplierFilter && (
               <Button variant="outline" size="sm" onClick={() => setSupplierFilter(null)} className="text-[10px] h-6 bg-[hsl(210,70%,60%)]/20 border-[hsl(210,70%,60%)]/40 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/30 gap-1">
                 ✕ Filtro: {supplierFilter}
               </Button>
-            </div>
-          )}
+            )}
+          </div>
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -887,22 +895,34 @@ const ApontamentoDashboard = () => {
                     <span className="flex-1">NG</span>
                   </div>
                 </th>
+                {showPPM && (
+                  <th className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)] font-medium">PPM</th>
+                )}
               </tr>
             </thead>
             <tbody>
-              {supplierData.map((s, i) => (
-                <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
-                  <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
-                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
-                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
-                  <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
-                </tr>
-              ))}
+              {supplierData.map((s, i) => {
+                const ppm = s.ok > 0 ? Math.round((s.ng / s.ok) * 1_000_000) : 0;
+                return (
+                  <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
+                    <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
+                    <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
+                    <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
+                    <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
+                    {showPPM && (
+                      <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR')}</td>
+                    )}
+                  </tr>
+                );
+              })}
               <tr className="bg-[hsl(220,10%,20%)] font-bold">
                 <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.qtyPN, 0)}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
+                {showPPM && (
+                  <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? Math.round((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR') : 0}</td>
+                )}
               </tr>
             </tbody>
           </table>

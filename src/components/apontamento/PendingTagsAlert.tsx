@@ -94,24 +94,27 @@ export const PendingTagsAlert = ({
   const isTerceiro = activeProfile?.empresa === "empresa_terceira" || !!activeProfile?.empresa_terceira;
   if (requireMobis && !isMobisBrasil) return null;
   if (isTerceiro) return null;
-  if (!canInsertTag || pendingItems.length === 0) return null;
+  if (!canInsertTag) return null;
+  if (pendingItems.length === 0 && !hideTrigger) return null;
 
   return (
     <>
-      <button
-        onClick={() => setListOpen(true)}
-        className="relative flex items-center gap-2 px-3 py-2 rounded-xl
-          bg-amber-50 border border-amber-300 text-amber-700
-          hover:bg-amber-100 transition-colors text-sm font-semibold w-full sm:w-auto"
-      >
-        <span className="relative">
-          <AlertTriangle className="w-4 h-4" />
-          <Badge className="absolute -top-2 -right-3 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white border-0">
-            {pendingItems.length}
-          </Badge>
-        </span>
-        <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${activeProfile?.turno}`}</span>
-      </button>
+      {!hideTrigger && (
+        <button
+          onClick={() => setListOpen(true)}
+          className="relative flex items-center gap-2 px-3 py-2 rounded-xl
+            bg-amber-50 border border-amber-300 text-amber-700
+            hover:bg-amber-100 transition-colors text-sm font-semibold w-full sm:w-auto"
+        >
+          <span className="relative">
+            <AlertTriangle className="w-4 h-4" />
+            <Badge className="absolute -top-2 -right-3 h-4 min-w-4 px-1 text-[10px] bg-amber-500 text-white border-0">
+              {pendingItems.length}
+            </Badge>
+          </span>
+          <span className="ml-2">TAGs Pendentes {isAdmin ? "— Todos os Turnos" : `do Turno ${activeProfile?.turno}`}</span>
+        </button>
+      )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

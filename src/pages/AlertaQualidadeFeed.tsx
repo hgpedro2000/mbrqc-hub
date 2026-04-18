@@ -2,11 +2,21 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const lineAreaMap: Record<string, string> = {
   "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",
@@ -19,6 +29,7 @@ const AlertaQualidadeFeed = () => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
 
   const { data: alertas = [], isLoading } = useQuery({
     queryKey: ["alertas-feed", user?.id],
@@ -81,6 +92,7 @@ const AlertaQualidadeFeed = () => {
       if (error) throw error;
       toast.success("Ciência registrada com sucesso!");
       qc.invalidateQueries({ queryKey: ["alertas-feed"] });
+      setConfirmDialog(null);
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -151,14 +163,51 @@ const AlertaQualidadeFeed = () => {
                   )}
                 </div>
               )}
-              <Button onClick={() => handleConfirm(a.id)} disabled={confirming === a.id} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <Button
+                onClick={() => setConfirmDialog({ id: a.id, seq: a.sequencial, titulo: a.modo_falha || a.descricao || "Alerta" })}
+                disabled={confirming === a.id}
+                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+              >
                 {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Confirmar Ciência
+                Ciente
               </Button>
             </div>
           ))
         )}
       </main>
+
+      <AlertDialog open={!!confirmDialog} onOpenChange={(o) => !o && setConfirmDialog(null)}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-base">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              Confirmar Ciência do Alerta
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2 pt-2 text-sm">
+              {confirmDialog && (
+                <span className="block font-mono text-xs font-bold text-[#c0392b]">
+                  AQ-{String(confirmDialog.seq).padStart(5, "0")} • {confirmDialog.titulo}
+                </span>
+              )}
+              <span className="block pt-1">
+                Ao clicar em <strong>Confirmar</strong>, eu declaro que <strong>li, compreendi e estou ciente</strong> do
+                conteúdo deste alerta de qualidade, comprometendo-me a aplicar as orientações nele descritas.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+            <AlertDialogCancel className="m-0">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDialog && handleConfirm(confirmDialog.id)}
+              disabled={!!confirming}
+              className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+            >
+              {confirming ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

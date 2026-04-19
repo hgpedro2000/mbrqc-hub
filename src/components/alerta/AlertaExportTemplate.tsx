@@ -6,20 +6,47 @@ interface Props {
   innerRef?: React.RefObject<HTMLDivElement>;
 }
 
-const fmtDate = (d: string | null | undefined) =>
-  d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+/** Robust date parser supporting ISO (YYYY-MM-DD[THH:mm...]) and DD/MM/YYYY */
+function parseDateSafe(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+  const s = String(value).trim();
+  if (!s) return null;
+
+  // ISO date-only
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const d = new Date(+iso[1], +iso[2] - 1, +iso[3], 12, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // DD/MM/YYYY or DD-MM-YYYY
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    let y = +dmy[3]; if (y < 100) y += 2000;
+    const d = new Date(y, +dmy[2] - 1, +dmy[1], 12, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // ISO with time / fallback
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+const fmtDate = (d: string | null | undefined) => {
+  const dt = parseDateSafe(d);
+  return dt ? dt.toLocaleDateString("pt-BR") : "—";
+};
 
 const fmtDateTime = (d: string | null | undefined) => {
-  if (!d) return "—";
-  const dt = new Date(d);
+  const dt = parseDateSafe(d);
+  if (!dt) return "—";
   return `${dt.toLocaleDateString("pt-BR")} – ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 };
 
 const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
-// A4 portrait @ ~96dpi
-const PAGE_W = 794;
-const PAGE_H = 1123;
+// A4 LANDSCAPE @ ~96dpi
+export const PAGE_W = 1123;
+export const PAGE_H = 794;
 
 const RED = "#8B0000";
 const BLUE = "#1F4E79";
@@ -27,11 +54,7 @@ const GREEN = "#1e8449";
 const BORDER = "#9ca3af";
 
 /**
- * A4 portrait template — Page 1 (Alerta).
- * Replicates NEW_TEMPLATE-ALERTA layout: red header bar with AQ-XXXXX,
- * Mobis logo + 2-row fields grid, DESCRIÇÃO row, NG/OK photos,
- * OBSERVAÇÕES + BRAKE POINT split footer, EMITIDO POR strip,
- * and right-side vertical "ALERTA DE QUALIDADE" red band.
+ * A4 LANDSCAPE template — Page 1 (Alerta).
  */
 export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
   const a = alerta || {};
@@ -122,26 +145,27 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "10px 12px",
+            padding: "8px 12px",
             fontWeight: 800,
-            fontSize: 22,
+            fontSize: 20,
             textAlign: "center",
             letterSpacing: 1,
+            flex: "0 0 auto",
           }}
         >
           {formatSeq(a.sequencial || 0)}
         </div>
 
         {/* Outer table */}
-        <div style={{ padding: 10, flex: "0 0 auto" }}>
+        <div style={{ padding: "8px 10px 6px", flex: "0 0 auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "16.8%" }} />
-              <col style={{ width: "16.8%" }} />
-              <col style={{ width: "16.8%" }} />
-              <col style={{ width: "16.8%" }} />
-              <col style={{ width: "16.8%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "17.6%" }} />
+              <col style={{ width: "17.6%" }} />
+              <col style={{ width: "17.6%" }} />
+              <col style={{ width: "17.6%" }} />
+              <col style={{ width: "17.6%" }} />
             </colgroup>
             <tbody>
               {/* Row 1 — logo + 5 fields */}
@@ -151,7 +175,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     src={logoMobis}
                     alt="Hyundai Mobis"
                     crossOrigin="anonymous"
-                    style={{ maxWidth: "100%", maxHeight: 70, objectFit: "contain", display: "inline-block" }}
+                    style={{ maxWidth: "100%", maxHeight: 56, objectFit: "contain", display: "inline-block" }}
                   />
                 </td>
                 <td style={tdStyle}>
@@ -214,8 +238,8 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 >
                   DESCRIÇÃO
                 </td>
-                <td colSpan={5} style={{ ...tdStyle, padding: "8px 10px" }}>
-                  <span style={{ color: BLUE, fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>
+                <td colSpan={5} style={{ ...tdStyle, padding: "6px 10px" }}>
+                  <span style={{ color: BLUE, fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>
                     {a.descricao || "—"}
                   </span>
                 </td>
@@ -326,8 +350,8 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
         <div style={{ padding: "8px 10px 0", flex: "0 0 auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
             <colgroup>
-              <col style={{ width: "16%" }} />
-              <col style={{ width: "44%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "48%" }} />
               <col style={{ width: "16%" }} />
               <col style={{ width: "12%" }} />
               <col style={{ width: "12%" }} />
@@ -335,7 +359,6 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <tbody>
               <tr>
                 <td
-                  rowSpan={2}
                   style={{
                     ...tdStyle,
                     border: `2px solid ${RED}`,
@@ -345,28 +368,25 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     fontSize: 11,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "8px 10px",
+                    padding: "6px 10px",
                   }}
                 >
                   OBSERVAÇÕES
                 </td>
                 <td
-                  rowSpan={2}
                   style={{
                     ...tdStyle,
                     border: `2px solid ${RED}`,
                     color: BLUE,
                     fontSize: 11,
                     fontWeight: 500,
-                    padding: "8px 10px",
-                    minHeight: 60,
+                    padding: "6px 10px",
                     whiteSpace: "pre-wrap",
                   }}
                 >
                   {a.observacoes || ""}
                 </td>
                 <td
-                  rowSpan={2}
                   style={{
                     ...tdStyle,
                     border: `2px solid ${RED}`,
@@ -376,7 +396,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     fontSize: 11,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "8px 10px",
+                    padding: "6px 10px",
                   }}
                 >
                   BRAKE POINT
@@ -390,9 +410,6 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                   <span style={{ ...cellValue, fontSize: 12 }}>{a.vin_bp || "—"}</span>
                 </td>
               </tr>
-              <tr>
-                <td colSpan={2} style={{ ...tdStyle, border: `2px solid ${RED}`, padding: 0 }} />
-              </tr>
             </tbody>
           </table>
         </div>
@@ -402,12 +419,12 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "8px 14px",
+            padding: "6px 14px",
             textAlign: "center",
             fontWeight: 700,
             fontSize: 12,
             letterSpacing: 0.4,
-            margin: "8px 10px 10px",
+            margin: "6px 10px 8px",
             flex: "0 0 auto",
           }}
         >
@@ -437,9 +454,9 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
 
   const cell: React.CSSProperties = {
     border: `1px solid ${BORDER}`,
-    padding: "5px 8px",
-    fontSize: 10,
-    verticalAlign: "top",
+    padding: "6px 10px",
+    fontSize: 11,
+    verticalAlign: "middle",
     color: "#000",
   };
   const headerCell: React.CSSProperties = {
@@ -447,7 +464,7 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
     background: RED,
     color: "#fff",
     fontWeight: 700,
-    fontSize: 10,
+    fontSize: 11,
     textTransform: "none",
     letterSpacing: 0.2,
     textAlign: "left",
@@ -458,6 +475,7 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
   );
 
   const issuedAt = a.created_at || a.data_ocorrencia;
+  const insList = inspetores || [];
 
   return (
     <div
@@ -517,22 +535,24 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
           style={{
             background: RED,
             color: "#fff",
-            padding: "10px 12px",
+            padding: "8px 12px",
             fontWeight: 800,
-            fontSize: 22,
+            fontSize: 20,
             textAlign: "center",
             letterSpacing: 1,
+            flex: "0 0 auto",
           }}
         >
           {formatSeq(a.sequencial || 0)}
         </div>
 
-        <div style={{ padding: "14px 14px 10px" }}>
-          <h2 style={{ fontSize: 14, fontWeight: 800, margin: "0 0 8px", color: "#000" }}>
+        {/* TABLE 1 - Status */}
+        <div style={{ padding: "12px 14px 6px", flex: "1 1 50%", display: "flex", flexDirection: "column", minHeight: 0 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 800, margin: "0 0 6px", color: "#000" }}>
             Status de Ciência dos Inspetores
           </h2>
 
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", height: "100%" }}>
             <colgroup>
               <col style={{ width: "26%" }} />
               <col style={{ width: "24%" }} />
@@ -550,7 +570,7 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
               </tr>
             </thead>
             <tbody>
-              {(inspetores || []).map((ins: any) => {
+              {insList.map((ins: any) => {
                 const c = (ciencias || []).find((x: any) => x.inspetor_id === ins.id);
                 const dt = c ? new Date(c.created_at) : null;
                 return (
@@ -569,7 +589,7 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
                   </tr>
                 );
               })}
-              {(!inspetores || inspetores.length === 0) && (
+              {insList.length === 0 && (
                 <tr>
                   <td style={{ ...cell, textAlign: "center" }} colSpan={5}>
                     Nenhum inspetor habilitado
@@ -580,11 +600,12 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
           </table>
         </div>
 
-        <div style={{ padding: "10px 14px 0", flex: 1, minHeight: 0, overflow: "hidden" }}>
+        {/* TABLE 2 - Records */}
+        <div style={{ padding: "6px 14px 0", flex: "1 1 50%", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <h3 style={{ fontSize: 13, fontWeight: 800, margin: "0 0 6px", color: "#000" }}>
             Registros de Ciência ({sortedCiencias.length})
           </h3>
-          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed", height: "100%" }}>
             <colgroup>
               <col style={{ width: "32%" }} />
               <col style={{ width: "24%" }} />
@@ -609,7 +630,7 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
                       {dt.toLocaleDateString("pt-BR")} {dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </td>
                     <td style={cell}>{c.metodo === "qr_lider" ? "QR Líder" : "App Próprio"}</td>
-                    <td style={{ ...cell, fontFamily: "monospace", fontSize: 9 }}>{c.versao_termo || "—"}</td>
+                    <td style={{ ...cell, fontFamily: "monospace", fontSize: 10 }}>{c.versao_termo || "—"}</td>
                   </tr>
                 );
               })}
@@ -629,14 +650,14 @@ export const AlertaSignaturesTemplate: React.FC<SigProps> = ({
           style={{
             background: RED,
             color: "#fff",
-            padding: "10px 14px",
+            padding: "8px 14px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             fontSize: 11,
             fontWeight: 700,
             letterSpacing: 0.4,
-            margin: "10px",
+            margin: "8px 10px",
             flex: "0 0 auto",
           }}
         >

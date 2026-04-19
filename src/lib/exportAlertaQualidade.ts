@@ -9,24 +9,46 @@ const GREEN = "1e8449";
 const WHITE = "FFFFFF";
 const BORDER = "9ca3af";
 
-// A4 portrait pixel canvas at ~96 dpi (matches AlertaExportTemplate)
-const PAGE_W_PX = 794;
-const PAGE_H_PX = 1123;
+// A4 LANDSCAPE pixel canvas at ~96 dpi (matches AlertaExportTemplate)
+const PAGE_W_PX = 1123;
+const PAGE_H_PX = 794;
 
-// A4 portrait mm
-const PAGE_W_MM = 210;
-const PAGE_H_MM = 297;
+// A4 LANDSCAPE mm
+const PAGE_W_MM = 297;
+const PAGE_H_MM = 210;
 
-// A4 portrait inches (for pptx)
-const PAGE_W_IN = 8.27;
-const PAGE_H_IN = 11.69;
+// A4 LANDSCAPE inches (for pptx)
+const PAGE_W_IN = 11.69;
+const PAGE_H_IN = 8.27;
 
-const fmtDate = (d: string | null | undefined) =>
-  d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+/** Robust date parser */
+function parseDateSafe(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) {
+    const d = new Date(+iso[1], +iso[2] - 1, +iso[3], 12, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const dmy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (dmy) {
+    let y = +dmy[3]; if (y < 100) y += 2000;
+    const d = new Date(y, +dmy[2] - 1, +dmy[1], 12, 0, 0);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+const fmtDate = (d: string | null | undefined) => {
+  const dt = parseDateSafe(d);
+  return dt ? dt.toLocaleDateString("pt-BR") : "—";
+};
 
 const fmtDateTime = (d: string | null | undefined) => {
-  if (!d) return "—";
-  const dt = new Date(d);
+  const dt = parseDateSafe(d);
+  if (!dt) return "—";
   return `${dt.toLocaleDateString("pt-BR")} – ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
 };
 
@@ -48,7 +70,7 @@ async function captureTemplate(el: HTMLElement) {
   await new Promise((r) => setTimeout(r, 250));
 
   return html2canvas(el, {
-    scale: 2,
+    scale: 1.5,
     backgroundColor: "#ffffff",
     useCORS: true,
     allowTaint: true,
@@ -61,7 +83,7 @@ async function captureTemplate(el: HTMLElement) {
 
 export async function exportAlertaJpg(el: HTMLElement, alerta: any, page2El?: HTMLElement | null) {
   const canvas = await captureTemplate(el);
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
   const a = document.createElement("a");
   a.href = dataUrl;
   a.download = `${buildFileBaseName(alerta)}.jpg`;
@@ -71,7 +93,7 @@ export async function exportAlertaJpg(el: HTMLElement, alerta: any, page2El?: HT
 
   if (page2El) {
     const canvas2 = await captureTemplate(page2El);
-    const dataUrl2 = canvas2.toDataURL("image/jpeg", 0.95);
+    const dataUrl2 = canvas2.toDataURL("image/jpeg", 0.9);
     const a2 = document.createElement("a");
     a2.href = dataUrl2;
     a2.download = `${buildFileBaseName(alerta)}_assinaturas.jpg`;
@@ -83,18 +105,57 @@ export async function exportAlertaJpg(el: HTMLElement, alerta: any, page2El?: HT
 
 export async function exportAlertaPdf(el: HTMLElement, alerta: any, page2El?: HTMLElement | null) {
   const canvas = await captureTemplate(el);
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  pdf.addImage(imgData, "PNG", 0, 0, PAGE_W_MM, PAGE_H_MM);
+  // JPEG with 0.82 quality keeps the file < 2MB while preserving readability
+  const imgData = canvas.toDataURL("image/jpeg", 0.82);
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+  pdf.addImage(imgData, "JPEG", 0, 0, PAGE_W_MM, PAGE_H_MM, undefined, "FAST");
 
   if (page2El) {
     const canvas2 = await captureTemplate(page2El);
-    const imgData2 = canvas2.toDataURL("image/png");
-    pdf.addPage("a4", "portrait");
-    pdf.addImage(imgData2, "PNG", 0, 0, PAGE_W_MM, PAGE_H_MM);
+    const imgData2 = canvas2.toDataURL("image/jpeg", 0.85);
+    pdf.addPage("a4", "landscape");
+    pdf.addImage(imgData2, "JPEG", 0, 0, PAGE_W_MM, PAGE_H_MM, undefined, "FAST");
   }
 
   pdf.save(`${buildFileBaseName(alerta)}.pdf`);
+}
+
+/** Compress a remote image to a base64 JPEG with max width MAX_W. */
+async function urlToCompressedBase64(url: string, maxW = 1200, quality = 0.82): Promise<string | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(blob);
+    });
+    if (!dataUrl) return null;
+
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.crossOrigin = "anonymous";
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = dataUrl;
+    });
+
+    const ratio = Math.min(1, maxW / img.width);
+    const w = Math.round(img.width * ratio);
+    const h = Math.round(img.height * ratio);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return dataUrl;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    return canvas.toDataURL("image/jpeg", quality);
+  } catch {
+    return null;
+  }
 }
 
 async function urlToBase64(url: string): Promise<string | null> {
@@ -121,7 +182,7 @@ function drawRedBand(slide: any) {
   });
   slide.addText("ALERTA DE QUALIDADE", {
     x: PAGE_W_IN - bandW, y: 0, w: bandW, h: PAGE_H_IN,
-    color: WHITE, fontSize: 16, bold: true,
+    color: WHITE, fontSize: 14, bold: true,
     align: "center", valign: "middle",
     rotate: 270, fontFace: "Arial", charSpacing: 6,
   });
@@ -131,7 +192,7 @@ function drawRedBand(slide: any) {
 /** Top red header bar with sequencial */
 function drawHeader(slide: any, bandW: number, alerta: any) {
   slide.addText(formatSeq(alerta.sequencial || 0), {
-    x: 0, y: 0, w: PAGE_W_IN - bandW, h: 0.45,
+    x: 0, y: 0, w: PAGE_W_IN - bandW, h: 0.4,
     fill: { color: RED }, color: WHITE,
     bold: true, fontSize: 18, align: "center", valign: "middle",
     fontFace: "Arial",
@@ -141,8 +202,8 @@ function drawHeader(slide: any, bandW: number, alerta: any) {
 export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], ciencias: any[] = []) {
   const a = alerta || {};
   const pptx = new PptxGenJS();
-  pptx.defineLayout({ name: "A4P", width: PAGE_W_IN, height: PAGE_H_IN });
-  pptx.layout = "A4P";
+  pptx.defineLayout({ name: "A4L", width: PAGE_W_IN, height: PAGE_H_IN });
+  pptx.layout = "A4L";
 
   const issuedAt = a.created_at || a.data_ocorrencia;
 
@@ -155,8 +216,6 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   const left = 0.12;
   const contentW = PAGE_W_IN - bandW - left - left;
 
-  // Logo + fields table
-  // Build cells with label (red) + value (blue)
   const cellOpts = (label: string, value: string) => ({
     text: [
       { text: label + "\n", options: { bold: true, color: RED, fontSize: 7 } },
@@ -165,21 +224,11 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
     options: { fill: { color: WHITE }, valign: "top" as const, margin: 3 },
   });
 
-  // Load logo as base64
   const logoB64 = await urlToBase64(logoMobis);
 
   const tableRows: any[] = [
     [
-      {
-        text: "",
-        options: {
-          fill: { color: WHITE },
-          rowspan: 2,
-          valign: "middle" as const,
-          align: "center" as const,
-          margin: 2,
-        },
-      },
+      { text: "", options: { fill: { color: WHITE }, rowspan: 2, valign: "middle" as const, align: "center" as const, margin: 2 } },
       cellOpts("MODELO DO CARRO", a.modelo),
       cellOpts("MODO DE FALHA", a.modo_falha),
       cellOpts("LINHA/PEÇA", a.linha_peca),
@@ -194,35 +243,22 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
       cellOpts("RESPONSÁVEL", a.responsabilidade),
     ],
     [
-      {
-        text: "DESCRIÇÃO",
-        options: {
-          fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
-          valign: "middle" as const, align: "left" as const, margin: 6,
-        },
-      },
-      {
-        text: a.descricao || "—",
-        options: {
-          fill: { color: WHITE }, color: BLUE, bold: true, fontSize: 13,
-          valign: "middle" as const, align: "left" as const,
-          colspan: 5, margin: 6,
-        } as any,
-      },
+      { text: "DESCRIÇÃO", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 11, valign: "middle" as const, align: "left" as const, margin: 6 } },
+      { text: a.descricao || "—", options: { fill: { color: WHITE }, color: BLUE, bold: true, fontSize: 13, valign: "middle" as const, align: "left" as const, colspan: 5, margin: 6 } as any },
     ],
   ];
 
   const colW = [
-    contentW * 0.16,
-    contentW * 0.168,
-    contentW * 0.168,
-    contentW * 0.168,
-    contentW * 0.168,
-    contentW * 0.168,
+    contentW * 0.12,
+    contentW * 0.176,
+    contentW * 0.176,
+    contentW * 0.176,
+    contentW * 0.176,
+    contentW * 0.176,
   ];
 
-  const tableY = 0.55;
-  const tableRowH = [0.55, 0.55, 0.55];
+  const tableY = 0.5;
+  const tableRowH = [0.4, 0.4, 0.45];
 
   slide.addTable(tableRows, {
     x: left, y: tableY, w: contentW,
@@ -232,26 +268,25 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
     fontFace: "Arial",
   });
 
-  // Logo overlay (since pptxgenjs tables don't support cell images directly)
   if (logoB64) {
     slide.addImage({
       data: logoB64,
-      x: left + 0.06, y: tableY + 0.1, w: colW[0] - 0.12, h: tableRowH[0] + tableRowH[1] - 0.2,
-      sizing: { type: "contain", w: colW[0] - 0.12, h: tableRowH[0] + tableRowH[1] - 0.2 },
+      x: left + 0.05, y: tableY + 0.06, w: colW[0] - 0.1, h: tableRowH[0] + tableRowH[1] - 0.12,
+      sizing: { type: "contain", w: colW[0] - 0.1, h: tableRowH[0] + tableRowH[1] - 0.12 },
     });
   }
 
-  // Photos NG/OK
-  const photosTop = tableY + tableRowH[0] + tableRowH[1] + tableRowH[2] + 0.1;
-  const photosBottom = PAGE_H_IN - 1.55; // leave room for obs/brake + emitido
+  // Photos NG/OK — fill remaining space until the obs/footer band
+  const photosTop = tableY + tableRowH[0] + tableRowH[1] + tableRowH[2] + 0.08;
+  const photosBottom = PAGE_H_IN - 1.15; // room for obs (0.7) + emitido strip (0.3) + margin
   const photoH = photosBottom - photosTop;
   const photoW = (contentW - 0.15) / 2;
   const ngX = left;
   const okX = left + photoW + 0.15;
 
   const [ngB64, okB64] = await Promise.all([
-    a.foto_ng_url ? urlToBase64(a.foto_ng_url) : Promise.resolve(null),
-    a.foto_ok_url ? urlToBase64(a.foto_ok_url) : Promise.resolve(null),
+    a.foto_ng_url ? urlToCompressedBase64(a.foto_ng_url, 1200, 0.82) : Promise.resolve(null),
+    a.foto_ok_url ? urlToCompressedBase64(a.foto_ok_url, 1200, 0.82) : Promise.resolve(null),
   ]);
 
   // NG frame
@@ -291,65 +326,41 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   });
 
   // OBSERVAÇÕES + BRAKE POINT split
-  const obsTop = photosBottom + 0.1;
-  const obsH = 0.85;
-  const obsCols = [contentW * 0.16, contentW * 0.44, contentW * 0.16, contentW * 0.12, contentW * 0.12];
+  const obsTop = photosBottom + 0.08;
+  const obsH = 0.65;
+  const obsCols = [contentW * 0.12, contentW * 0.48, contentW * 0.16, contentW * 0.12, contentW * 0.12];
   const obsRows = [
     [
-      {
-        text: "OBSERVAÇÕES",
-        options: {
-          fill: { color: RED }, color: WHITE, bold: true, fontSize: 10,
-          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
-        } as any,
-      },
-      {
-        text: a.observacoes || "",
-        options: {
-          fill: { color: WHITE }, color: BLUE, fontSize: 10,
-          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
-        } as any,
-      },
-      {
-        text: "BRAKE POINT",
-        options: {
-          fill: { color: RED }, color: WHITE, bold: true, fontSize: 10,
-          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
-        } as any,
-      },
-      {
-        text: [
+      { text: "OBSERVAÇÕES", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: a.observacoes || "", options: { fill: { color: WHITE }, color: BLUE, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: "BRAKE POINT", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: [
           { text: "SEQ\n", options: { bold: true, color: RED, fontSize: 8 } },
           { text: a.sequencia_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
         ],
         options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
       },
-      {
-        text: [
+      { text: [
           { text: "VIN\n", options: { bold: true, color: RED, fontSize: 8 } },
           { text: a.vin_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
         ],
         options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
       },
     ],
-    [
-      { text: "", options: { fill: { color: WHITE } } },
-      { text: "", options: { fill: { color: WHITE } } },
-    ],
   ];
 
   slide.addTable(obsRows as any, {
     x: left, y: obsTop, w: contentW,
     colW: obsCols,
-    rowH: [obsH / 2, obsH / 2],
+    rowH: [obsH],
     border: { type: "solid", pt: 1.5, color: RED },
     fontFace: "Arial",
   });
 
   // EMITIDO POR strip
-  const stripY = obsTop + obsH + 0.12;
+  const stripY = obsTop + obsH + 0.08;
   slide.addText(`EMITIDO POR: ${a.emitido_por || "—"}    EM: ${fmtDateTime(issuedAt)}`, {
-    x: left, y: stripY, w: contentW, h: 0.35,
+    x: left, y: stripY, w: contentW, h: 0.3,
     fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
     align: "center", valign: "middle", fontFace: "Arial",
   });
@@ -360,91 +371,115 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   drawRedBand(slide2);
   drawHeader(slide2, bandW, a);
 
+  // Layout: distribute available height (~6.7") into 2 tables that fill the page
+  const titleH = 0.32;
+  const headerRowH = 0.32;
+  const dataRowH = 0.34;
+  const footerH = 0.4;
+  const topY = 0.55;
+  const availableH = PAGE_H_IN - topY - footerH - 0.25;
+
+  // Table 1
+  const insRowsCount = Math.max(1, (inspetores || []).length);
+  const cieRowsCount = Math.max(1, (ciencias || []).length);
+
+  // Allocate space proportionally between the two tables (with min)
+  const block1Min = titleH + headerRowH + dataRowH;
+  const block2Min = titleH + headerRowH + dataRowH;
+  const desired1 = titleH + headerRowH + dataRowH * insRowsCount;
+  const desired2 = titleH + headerRowH + dataRowH * cieRowsCount;
+  const totalDesired = desired1 + desired2 + 0.2;
+  const scale = totalDesired > availableH ? availableH / totalDesired : 1;
+  const block1H = Math.max(block1Min, desired1 * scale);
+  const block2H = Math.max(block2Min, availableH - block1H - 0.2);
+
+  // ---- Table 1: Status
   slide2.addText("Status de Ciência dos Inspetores", {
-    x: left, y: 0.65, w: contentW, h: 0.3,
+    x: left, y: topY, w: contentW, h: titleH,
     color: "000000", bold: true, fontSize: 13, fontFace: "Arial",
   });
 
   const insHeader = ["Nome", "Cargo", "Status", "Data/Hora", "Método"].map((t) => ({
     text: t,
-    options: { bold: true, color: WHITE, fill: { color: RED }, fontSize: 9, align: "left" as const, margin: 3 },
+    options: { bold: true, color: WHITE, fill: { color: RED }, fontSize: 10, align: "left" as const, margin: 4, valign: "middle" as const },
   }));
   const insRows = (inspetores || []).map((ins: any) => {
     const c = (ciencias || []).find((x: any) => x.inspetor_id === ins.id);
     const dt = c ? new Date(c.created_at) : null;
     return [
-      { text: ins.full_name || "—", options: { fontSize: 9, margin: 3 } },
-      { text: ins.cargo || "—", options: { fontSize: 9, margin: 3 } },
-      {
-        text: c ? "Ciente ✓" : "Pendente",
-        options: { fontSize: 9, bold: true, color: c ? BLUE : "d35400", margin: 3 },
-      },
-      {
-        text: dt ? `${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "—",
-        options: { fontSize: 9, margin: 3 },
-      },
-      { text: c ? (c.metodo === "qr_lider" ? "QR Líder" : "App Próprio") : "—", options: { fontSize: 9, margin: 3 } },
+      { text: ins.full_name || "—", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: ins.cargo || "—", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: c ? "Ciente ✓" : "Pendente", options: { fontSize: 10, bold: true, color: c ? BLUE : "d35400", margin: 4, valign: "middle" as const } },
+      { text: dt ? `${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "—", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: c ? (c.metodo === "qr_lider" ? "QR Líder" : "App Próprio") : "—", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
     ];
   });
   if (insRows.length === 0) {
-    insRows.push([{ text: "Nenhum inspetor habilitado", options: { fontSize: 9, italic: true, align: "center" as const, colspan: 5, margin: 3 } as any }] as any);
+    insRows.push([{ text: "Nenhum inspetor habilitado", options: { fontSize: 10, italic: true, align: "center" as const, colspan: 5, margin: 4 } as any }] as any);
   }
 
-  const insTableY = 1.0;
+  const tbl1Y = topY + titleH;
+  const tbl1AvailH = block1H - titleH;
+  const tbl1RowH = Math.max(0.26, (tbl1AvailH - headerRowH) / Math.max(1, insRows.length));
+
   slide2.addTable([insHeader as any, ...(insRows as any)], {
-    x: left, y: insTableY, w: contentW,
+    x: left, y: tbl1Y, w: contentW,
     colW: [contentW * 0.26, contentW * 0.24, contentW * 0.14, contentW * 0.20, contentW * 0.16],
+    rowH: [headerRowH, ...insRows.map(() => tbl1RowH)],
     border: { type: "solid", pt: 0.75, color: BORDER },
     fontFace: "Arial",
     autoPage: false,
   });
 
-  // Ciencias log
+  // ---- Table 2: Records
   const sortedCiencias = [...(ciencias || [])].sort(
     (x: any, y: any) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime()
   );
 
-  const cieTitleY = insTableY + Math.max(0.5, 0.32 * (insRows.length + 1)) + 0.3;
+  const block2Y = topY + block1H + 0.2;
   slide2.addText(`Registros de Ciência (${sortedCiencias.length})`, {
-    x: left, y: cieTitleY, w: contentW, h: 0.3,
+    x: left, y: block2Y, w: contentW, h: titleH,
     color: "000000", bold: true, fontSize: 12, fontFace: "Arial",
   });
 
   const cieHeader = ["Inspetor", "Data/Hora", "Método", "Termo"].map((t) => ({
     text: t,
-    options: { bold: true, color: WHITE, fill: { color: RED }, fontSize: 9, align: "left" as const, margin: 3 },
+    options: { bold: true, color: WHITE, fill: { color: RED }, fontSize: 10, align: "left" as const, margin: 4, valign: "middle" as const },
   }));
   const cieRows = sortedCiencias.map((c: any) => {
     const dt = new Date(c.created_at);
     return [
-      { text: c.profiles?.full_name || "—", options: { fontSize: 9, margin: 3 } },
-      { text: `${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, options: { fontSize: 9, margin: 3 } },
-      { text: c.metodo === "qr_lider" ? "QR Líder" : "App Próprio", options: { fontSize: 9, margin: 3 } },
-      { text: c.versao_termo || "—", options: { fontSize: 9, fontFace: "Courier New", margin: 3 } },
+      { text: c.profiles?.full_name || "—", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: `${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`, options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: c.metodo === "qr_lider" ? "QR Líder" : "App Próprio", options: { fontSize: 10, margin: 4, valign: "middle" as const } },
+      { text: c.versao_termo || "—", options: { fontSize: 10, fontFace: "Courier New", margin: 4, valign: "middle" as const } },
     ];
   });
   if (cieRows.length === 0) {
-    cieRows.push([{ text: "Nenhuma ciência registrada", options: { fontSize: 9, italic: true, align: "center" as const, colspan: 4, margin: 3 } as any }] as any);
+    cieRows.push([{ text: "Nenhuma ciência registrada", options: { fontSize: 10, italic: true, align: "center" as const, colspan: 4, margin: 4 } as any }] as any);
   }
 
+  const tbl2Y = block2Y + titleH;
+  const tbl2AvailH = block2H - titleH;
+  const tbl2RowH = Math.max(0.26, (tbl2AvailH - headerRowH) / Math.max(1, cieRows.length));
+
   slide2.addTable([cieHeader as any, ...(cieRows as any)], {
-    x: left, y: cieTitleY + 0.35, w: contentW,
+    x: left, y: tbl2Y, w: contentW,
     colW: [contentW * 0.32, contentW * 0.24, contentW * 0.20, contentW * 0.24],
+    rowH: [headerRowH, ...cieRows.map(() => tbl2RowH)],
     border: { type: "solid", pt: 0.75, color: BORDER },
     fontFace: "Arial",
     autoPage: false,
   });
 
   // Footer
-  const footerY = PAGE_H_IN - 0.55;
+  const footerY = PAGE_H_IN - footerH - 0.1;
   slide2.addText(
-    [
-      { text: `EMITIDO POR: ${a.emitido_por || "—"}    DATA: ${fmtDate(issuedAt)}`, options: { color: WHITE, bold: true, fontSize: 11 } },
-      { text: `        ${formatSeq(a.sequencial || 0)}`, options: { color: WHITE, bold: true, fontSize: 11 } },
-    ] as any,
+    `EMITIDO POR: ${a.emitido_por || "—"}    DATA: ${fmtDate(issuedAt)}        ${formatSeq(a.sequencial || 0)}`,
     {
-      x: left, y: footerY, w: contentW, h: 0.4,
-      fill: { color: RED }, align: "center", valign: "middle", fontFace: "Arial",
+      x: left, y: footerY, w: contentW, h: footerH,
+      fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
+      align: "center", valign: "middle", fontFace: "Arial",
     }
   );
 

@@ -186,16 +186,38 @@ const AlertaQualidade = () => {
     });
   }, [alertas, canViewAll, effectiveUserId, qualifications, partNumbers]);
 
+  const isExpired = (validade: string | null) => {
+    if (!validade) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const v = new Date(validade + "T12:00:00");
+    return v < today;
+  };
+
+  const byTab = useMemo(() => {
+    return filteredByVisibility.filter((a: any) => {
+      const expired = isExpired(a.data_validade);
+      return archiveTab === "arquivados" ? expired : !expired;
+    });
+  }, [filteredByVisibility, archiveTab]);
+
+  const tabCounts = useMemo(() => {
+    let v = 0, ar = 0;
+    for (const a of filteredByVisibility as any[]) {
+      if (isExpired(a.data_validade)) ar++; else v++;
+    }
+    return { vigentes: v, arquivados: ar };
+  }, [filteredByVisibility]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return filteredByVisibility;
+    if (!searchTerm.trim()) return byTab;
     const term = searchTerm.toLowerCase();
-    return filteredByVisibility.filter((a: any) =>
+    return byTab.filter((a: any) =>
       formatSeq(a.sequencial).toLowerCase().includes(term) ||
       a.descricao?.toLowerCase().includes(term) ||
       a.modo_falha?.toLowerCase().includes(term) ||
       a.modelo?.toLowerCase().includes(term)
     );
-  }, [filteredByVisibility, searchTerm]);
+  }, [byTab, searchTerm]);
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;

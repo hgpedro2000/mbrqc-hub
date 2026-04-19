@@ -155,25 +155,58 @@ const AlertaQualidadeFeed = () => {
           <div className="flex items-center gap-2 mt-3">
             <AlertTriangle className="w-6 h-6" />
             <div>
-              <h1 className="text-lg sm:text-xl font-heading font-bold">Alertas Pendentes</h1>
-              <p className="text-primary-foreground/70 text-xs">Confirme ciência dos alertas ativos</p>
+              <h1 className="text-lg sm:text-xl font-heading font-bold">Meus Alertas</h1>
+              <p className="text-primary-foreground/70 text-xs">Pendentes, vigentes e arquivados</p>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl space-y-4">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="pendentes" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Pendentes</span>
+              <span className="text-[10px] opacity-70">({counts.pendentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="vigentes" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Vigentes</span>
+              <span className="text-[10px] opacity-70">({counts.vigentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="arquivados" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Arquivados</span>
+              <span className="text-[10px] opacity-70">({counts.arquivados})</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
-        ) : alertas.length === 0 ? (
+        ) : visibleAlertas.length === 0 ? (
           <div className="form-section text-center py-12">
-            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-            <p className="text-foreground font-semibold">Tudo em dia!</p>
-            <p className="text-muted-foreground text-sm">Nenhum alerta pendente de ciência</p>
+            {tab === "pendentes" ? (
+              <>
+                <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Tudo em dia!</p>
+                <p className="text-muted-foreground text-sm">Nenhum alerta pendente de ciência</p>
+              </>
+            ) : tab === "vigentes" ? (
+              <>
+                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Nenhum alerta vigente</p>
+                <p className="text-muted-foreground text-sm">Você ainda não deu ciência em alertas dentro do prazo</p>
+              </>
+            ) : (
+              <>
+                <Archive className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Nenhum alerta arquivado</p>
+                <p className="text-muted-foreground text-sm">Alertas com prazo vencido aparecerão aqui</p>
+              </>
+            )}
           </div>
         ) : (
-          alertas.map((a: any) => (
-            <div key={a.id} className="form-section space-y-3">
+          visibleAlertas.map((a: any) => (
+            <div key={a.id} className={`form-section space-y-3 ${a._expired ? "opacity-80" : ""}`}>
               <div
                 role="button"
                 tabIndex={0}
@@ -188,7 +221,19 @@ const AlertaQualidadeFeed = () => {
                     <h3 className="font-heading font-semibold text-foreground">{a.modo_falha || a.descricao}</h3>
                     {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
                   </div>
-                  <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Eye className="w-4 h-4 text-muted-foreground mt-1" />
+                    {a._expired && (
+                      <span className="text-[9px] font-bold uppercase rounded-full px-2 py-0.5 bg-muted text-muted-foreground border border-border">
+                        Arquivado
+                      </span>
+                    )}
+                    {!a._expired && a._acknowledged && (
+                      <span className="text-[9px] font-bold uppercase rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/40">
+                        Ciente
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {a.descricao && <p className="text-sm text-muted-foreground">{a.descricao}</p>}
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -223,14 +268,16 @@ const AlertaQualidadeFeed = () => {
                   )}
                 </div>
               )}
-              <Button
-                onClick={() => setConfirmDialog({ id: a.id, seq: a.sequencial, titulo: a.modo_falha || a.descricao || "Alerta" })}
-                disabled={confirming === a.id}
-                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Ciente
-              </Button>
+              {!a._acknowledged && !a._expired && (
+                <Button
+                  onClick={() => setConfirmDialog({ id: a.id, seq: a.sequencial, titulo: a.modo_falha || a.descricao || "Alerta" })}
+                  disabled={confirming === a.id}
+                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  Ciente
+                </Button>
+              )}
             </div>
           ))
         )}

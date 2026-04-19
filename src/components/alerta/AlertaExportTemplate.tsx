@@ -170,12 +170,12 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <tbody>
               {/* Row 1 — logo + 5 fields */}
               <tr>
-                <td rowSpan={2} style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle", padding: 6 }}>
+                <td rowSpan={2} style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle", padding: 8 }}>
                   <img
                     src={logoMobis}
                     alt="Hyundai Mobis"
                     crossOrigin="anonymous"
-                    style={{ maxWidth: "100%", maxHeight: 56, objectFit: "contain", display: "inline-block" }}
+                    style={{ maxWidth: "100%", maxHeight: 90, objectFit: "contain", display: "inline-block" }}
                   />
                 </td>
                 <td style={tdStyle}>

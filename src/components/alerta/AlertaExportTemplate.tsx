@@ -61,25 +61,25 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
 
   const cellLabel: React.CSSProperties = {
     color: RED,
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: 0.3,
     display: "block",
-    marginBottom: 2,
+    marginBottom: 3,
     lineHeight: 1.1,
   };
   const cellValue: React.CSSProperties = {
     color: BLUE,
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: 600,
     wordBreak: "break-word",
-    lineHeight: 1.15,
+    lineHeight: 1.2,
     display: "block",
   };
   const tdStyle: React.CSSProperties = {
     border: `1px solid ${BORDER}`,
-    padding: "5px 8px",
+    padding: "8px 10px",
     verticalAlign: "top",
     background: "#fff",
   };
@@ -145,9 +145,9 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "8px 12px",
+            padding: "10px 14px",
             fontWeight: 800,
-            fontSize: 20,
+            fontSize: 26,
             textAlign: "center",
             letterSpacing: 1,
             flex: "0 0 auto",
@@ -170,12 +170,12 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <tbody>
               {/* Row 1 — logo + 5 fields */}
               <tr>
-                <td rowSpan={2} style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle", padding: 6 }}>
+                <td rowSpan={2} style={{ ...tdStyle, textAlign: "center", verticalAlign: "middle", padding: 8 }}>
                   <img
                     src={logoMobis}
                     alt="Hyundai Mobis"
                     crossOrigin="anonymous"
-                    style={{ maxWidth: "100%", maxHeight: 56, objectFit: "contain", display: "inline-block" }}
+                    style={{ maxWidth: "100%", maxHeight: 90, objectFit: "contain", display: "inline-block" }}
                   />
                 </td>
                 <td style={tdStyle}>
@@ -230,7 +230,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 12,
+                    fontSize: 14,
                     textAlign: "left",
                     verticalAlign: "middle",
                     letterSpacing: 0.3,
@@ -238,8 +238,8 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 >
                   DESCRIÇÃO
                 </td>
-                <td colSpan={5} style={{ ...tdStyle, padding: "6px 10px" }}>
-                  <span style={{ color: BLUE, fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>
+                <td colSpan={5} style={{ ...tdStyle, padding: "8px 12px" }}>
+                  <span style={{ color: BLUE, fontSize: 17, fontWeight: 600, lineHeight: 1.25 }}>
                     {a.descricao || "—"}
                   </span>
                 </td>
@@ -263,13 +263,13 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <div
               style={{
                 position: "absolute",
-                top: 6,
-                left: 6,
+                top: 8,
+                left: 8,
                 background: RED,
                 color: "#fff",
                 fontWeight: 800,
-                fontSize: 14,
-                padding: "4px 14px",
+                fontSize: 18,
+                padding: "6px 18px",
                 zIndex: 2,
                 borderRadius: 2,
               }}
@@ -278,7 +278,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             </div>
             <div
               style={{
-                border: `5px solid ${RED}`,
+                border: `7px solid ${RED}`,
                 width: "100%",
                 flex: "1 1 auto",
                 display: "flex",
@@ -287,6 +287,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 background: "#f8f8f8",
                 overflow: "hidden",
                 minHeight: 0,
+                boxSizing: "border-box",
               }}
             >
               {a.foto_ng_url ? (
@@ -306,13 +307,13 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <div
               style={{
                 position: "absolute",
-                top: 6,
-                left: 6,
+                top: 8,
+                left: 8,
                 background: GREEN,
                 color: "#fff",
                 fontWeight: 800,
-                fontSize: 14,
-                padding: "4px 14px",
+                fontSize: 18,
+                padding: "6px 18px",
                 zIndex: 2,
                 borderRadius: 2,
               }}
@@ -321,7 +322,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             </div>
             <div
               style={{
-                border: `5px solid ${GREEN}`,
+                border: `7px solid ${GREEN}`,
                 width: "100%",
                 flex: "1 1 auto",
                 display: "flex",
@@ -330,6 +331,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 background: "#f8f8f8",
                 overflow: "hidden",
                 minHeight: 0,
+                boxSizing: "border-box",
               }}
             >
               {a.foto_ok_url ? (
@@ -365,10 +367,10 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 11,
+                    fontSize: 13,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                   }}
                 >
                   OBSERVAÇÕES
@@ -378,9 +380,9 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     ...tdStyle,
                     border: `2px solid ${RED}`,
                     color: BLUE,
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 500,
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                     whiteSpace: "pre-wrap",
                   }}
                 >
@@ -393,21 +395,21 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 11,
+                    fontSize: 13,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                   }}
                 >
                   BRAKE POINT
                 </td>
-                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "5px 8px" }}>
-                  <span style={{ ...cellLabel, fontSize: 10 }}>SEQ</span>
-                  <span style={{ ...cellValue, fontSize: 12 }}>{a.sequencia_bp || "—"}</span>
+                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "6px 10px" }}>
+                  <span style={{ ...cellLabel, fontSize: 11 }}>SEQ</span>
+                  <span style={{ ...cellValue, fontSize: 14 }}>{a.sequencia_bp || "—"}</span>
                 </td>
-                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "5px 8px" }}>
-                  <span style={{ ...cellLabel, fontSize: 10 }}>VIN</span>
-                  <span style={{ ...cellValue, fontSize: 12 }}>{a.vin_bp || "—"}</span>
+                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "6px 10px" }}>
+                  <span style={{ ...cellLabel, fontSize: 11 }}>VIN</span>
+                  <span style={{ ...cellValue, fontSize: 14 }}>{a.vin_bp || "—"}</span>
                 </td>
               </tr>
             </tbody>
@@ -419,12 +421,12 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "6px 14px",
+            padding: "8px 16px",
             textAlign: "center",
             fontWeight: 700,
-            fontSize: 12,
+            fontSize: 14,
             letterSpacing: 0.4,
-            margin: "6px 10px 8px",
+            margin: "8px 10px 10px",
             flex: "0 0 auto",
           }}
         >

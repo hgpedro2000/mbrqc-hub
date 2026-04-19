@@ -192,9 +192,9 @@ function drawRedBand(slide: any) {
 /** Top red header bar with sequencial */
 function drawHeader(slide: any, bandW: number, alerta: any) {
   slide.addText(formatSeq(alerta.sequencial || 0), {
-    x: 0, y: 0, w: PAGE_W_IN - bandW, h: 0.4,
+    x: 0, y: 0, w: PAGE_W_IN - bandW, h: 0.5,
     fill: { color: RED }, color: WHITE,
-    bold: true, fontSize: 18, align: "center", valign: "middle",
+    bold: true, fontSize: 24, align: "center", valign: "middle",
     fontFace: "Arial",
   });
 }

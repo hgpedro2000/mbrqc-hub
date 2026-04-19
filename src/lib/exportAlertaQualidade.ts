@@ -1,26 +1,34 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import PptxGenJS from "pptxgenjs";
+import logoMobis from "@/assets/hyundai-mobis-logo.png";
 
-const RED = "9b1b1b";
-const GREEN = "1e7e34";
+const RED = "8B0000";
+const BLUE = "1F4E79";
+const GREEN = "1e8449";
 const WHITE = "FFFFFF";
 const BORDER = "9ca3af";
 
-// A4 landscape pixel canvas at ~96 dpi
-const PAGE_W_PX = 1123;
-const PAGE_H_PX = 794;
+// A4 portrait pixel canvas at ~96 dpi (matches AlertaExportTemplate)
+const PAGE_W_PX = 794;
+const PAGE_H_PX = 1123;
 
-// A4 landscape mm
-const PAGE_W_MM = 297;
-const PAGE_H_MM = 210;
+// A4 portrait mm
+const PAGE_W_MM = 210;
+const PAGE_H_MM = 297;
 
-// A4 landscape inches (for pptx)
-const PAGE_W_IN = 11.69;
-const PAGE_H_IN = 8.27;
+// A4 portrait inches (for pptx)
+const PAGE_W_IN = 8.27;
+const PAGE_H_IN = 11.69;
 
 const fmtDate = (d: string | null | undefined) =>
   d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—";
+
+const fmtDateTime = (d: string | null | undefined) => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  return `${dt.toLocaleDateString("pt-BR")} – ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+};
 
 const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
@@ -52,7 +60,6 @@ async function captureTemplate(el: HTMLElement) {
 }
 
 export async function exportAlertaJpg(el: HTMLElement, alerta: any, page2El?: HTMLElement | null) {
-  // Always export the main page as JPG. If page2El exists, also export it as a 2nd jpg.
   const canvas = await captureTemplate(el);
   const dataUrl = canvas.toDataURL("image/jpeg", 0.95);
   const a = document.createElement("a");
@@ -77,13 +84,13 @@ export async function exportAlertaJpg(el: HTMLElement, alerta: any, page2El?: HT
 export async function exportAlertaPdf(el: HTMLElement, alerta: any, page2El?: HTMLElement | null) {
   const canvas = await captureTemplate(el);
   const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   pdf.addImage(imgData, "PNG", 0, 0, PAGE_W_MM, PAGE_H_MM);
 
   if (page2El) {
     const canvas2 = await captureTemplate(page2El);
     const imgData2 = canvas2.toDataURL("image/png");
-    pdf.addPage("a4", "landscape");
+    pdf.addPage("a4", "portrait");
     pdf.addImage(imgData2, "PNG", 0, 0, PAGE_W_MM, PAGE_H_MM);
   }
 
@@ -105,57 +112,28 @@ async function urlToBase64(url: string): Promise<string | null> {
   }
 }
 
-/** Build red band + vertical text on a slide */
+/** Right vertical red band */
 function drawRedBand(slide: any) {
-  const bandW = 0.45;
+  const bandW = 0.32;
   slide.addShape("rect", {
-    x: PAGE_W_IN - bandW,
-    y: 0,
-    w: bandW,
-    h: PAGE_H_IN,
-    fill: { color: RED },
-    line: { color: RED },
+    x: PAGE_W_IN - bandW, y: 0, w: bandW, h: PAGE_H_IN,
+    fill: { color: RED }, line: { color: RED },
   });
   slide.addText("ALERTA DE QUALIDADE", {
-    x: PAGE_W_IN - bandW,
-    y: 0,
-    w: bandW,
-    h: PAGE_H_IN,
-    color: WHITE,
-    fontSize: 22,
-    bold: true,
-    align: "center",
-    valign: "middle",
-    rotate: 270,
-    fontFace: "Arial",
-    charSpacing: 4,
+    x: PAGE_W_IN - bandW, y: 0, w: bandW, h: PAGE_H_IN,
+    color: WHITE, fontSize: 16, bold: true,
+    align: "center", valign: "middle",
+    rotate: 270, fontFace: "Arial", charSpacing: 6,
   });
   return bandW;
 }
 
-/** Footer red bar on a slide */
-function drawFooter(slide: any, bandW: number, alerta: any) {
-  const footerH = 0.4;
-  slide.addShape("rect", {
-    x: 0,
-    y: PAGE_H_IN - footerH,
-    w: PAGE_W_IN - bandW,
-    h: footerH,
-    fill: { color: RED },
-    line: { color: RED },
-  });
-  const footerText =
-    `BRAKE POINT     SEQUÊNCIA: ${alerta.sequencia_bp || "—"}     VIN: ${alerta.vin_bp || alerta.vin || "—"}     EMITIDO POR: ${alerta.emitido_por || "—"}     DATA: ${fmtDate(alerta.data_ocorrencia)}`;
-  slide.addText(footerText, {
-    x: 0.2,
-    y: PAGE_H_IN - footerH,
-    w: PAGE_W_IN - bandW - 0.4,
-    h: footerH,
-    color: WHITE,
-    bold: true,
-    fontSize: 10,
-    align: "center",
-    valign: "middle",
+/** Top red header bar with sequencial */
+function drawHeader(slide: any, bandW: number, alerta: any) {
+  slide.addText(formatSeq(alerta.sequencial || 0), {
+    x: 0, y: 0, w: PAGE_W_IN - bandW, h: 0.45,
+    fill: { color: RED }, color: WHITE,
+    bold: true, fontSize: 18, align: "center", valign: "middle",
     fontFace: "Arial",
   });
 }
@@ -163,84 +141,113 @@ function drawFooter(slide: any, bandW: number, alerta: any) {
 export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], ciencias: any[] = []) {
   const a = alerta || {};
   const pptx = new PptxGenJS();
-  pptx.defineLayout({ name: "A4L", width: PAGE_W_IN, height: PAGE_H_IN });
-  pptx.layout = "A4L";
+  pptx.defineLayout({ name: "A4P", width: PAGE_W_IN, height: PAGE_H_IN });
+  pptx.layout = "A4P";
 
-  // ----------- PAGE 1 -----------
+  const issuedAt = a.created_at || a.data_ocorrencia;
+
+  // ============= PAGE 1 =============
   const slide = pptx.addSlide();
   slide.background = { color: WHITE };
-
   const bandW = drawRedBand(slide);
-  const left = 0.25;
-  const contentW = PAGE_W_IN - bandW - left - 0.1;
+  drawHeader(slide, bandW, a);
 
-  // Title bar (sequencial)
-  slide.addText(formatSeq(a.sequencial || 0), {
-    x: left,
-    y: 0.2,
-    w: contentW,
-    h: 0.35,
-    fill: { color: RED },
-    color: WHITE,
-    bold: true,
-    fontSize: 14,
-    align: "center",
-    valign: "middle",
-    fontFace: "Arial",
+  const left = 0.12;
+  const contentW = PAGE_W_IN - bandW - left - left;
+
+  // Logo + fields table
+  // Build cells with label (red) + value (blue)
+  const cellOpts = (label: string, value: string) => ({
+    text: [
+      { text: label + "\n", options: { bold: true, color: RED, fontSize: 7 } },
+      { text: value || "—", options: { color: BLUE, fontSize: 9, bold: true } },
+    ],
+    options: { fill: { color: WHITE }, valign: "top" as const, margin: 3 },
   });
 
-  // Fields table
-  const row1 = [
-    { label: "MODELO DO CARRO", value: a.modelo || "—" },
-    { label: "DESCRIÇÃO", value: a.descricao || "—" },
-    { label: "MODO DE FALHA", value: a.modo_falha || "—" },
-    { label: "LINHA/PEÇA", value: a.linha_peca || "—" },
-    { label: "ETIQUETA FORA SPEC", value: a.etiqueta_fora_spec || "—" },
+  // Load logo as base64
+  const logoB64 = await urlToBase64(logoMobis);
+
+  const tableRows: any[] = [
+    [
+      {
+        text: "",
+        options: {
+          fill: { color: WHITE },
+          rowspan: 2,
+          valign: "middle" as const,
+          align: "center" as const,
+          margin: 2,
+        },
+      },
+      cellOpts("MODELO DO CARRO", a.modelo),
+      cellOpts("MODO DE FALHA", a.modo_falha),
+      cellOpts("LINHA/PEÇA", a.linha_peca),
+      cellOpts("DATA OCORRÊNCIA", fmtDate(a.data_ocorrencia)),
+      cellOpts("DOCUMENTO N°", a.etiqueta_fora_spec || a.documento || "—"),
+    ],
+    [
+      cellOpts("LOCAL DETECTADO", a.local_detectado),
+      cellOpts("VIN", a.vin),
+      cellOpts("TURNO", a.turno),
+      cellOpts("DATA VALIDADE", fmtDate(a.data_validade)),
+      cellOpts("RESPONSÁVEL", a.responsabilidade),
+    ],
+    [
+      {
+        text: "DESCRIÇÃO",
+        options: {
+          fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
+          valign: "middle" as const, align: "left" as const, margin: 6,
+        },
+      },
+      {
+        text: a.descricao || "—",
+        options: {
+          fill: { color: WHITE }, color: BLUE, bold: true, fontSize: 13,
+          valign: "middle" as const, align: "left" as const,
+          colspan: 5, margin: 6,
+        } as any,
+      },
+    ],
   ];
-  const row2 = [
-    { label: "LOCAL DETECTADO", value: a.local_detectado || "—" },
-    { label: "RESPONSÁVEL", value: a.responsabilidade || "—" },
-    { label: "VIN", value: a.vin || "—" },
-    { label: "DATA OCORRÊNCIA", value: fmtDate(a.data_ocorrencia) },
-    { label: "DATA VALIDADE", value: fmtDate(a.data_validade) },
-    { label: "TURNO", value: a.turno || "—" },
+
+  const colW = [
+    contentW * 0.16,
+    contentW * 0.168,
+    contentW * 0.168,
+    contentW * 0.168,
+    contentW * 0.168,
+    contentW * 0.168,
   ];
-  const padded1 = [...row1, { label: "", value: "" }];
-  const tableRows = [
-    padded1.map((c) => ({
-      text: [
-        { text: c.label + "\n", options: { bold: true, color: RED, fontSize: 8 } },
-        { text: c.value, options: { color: "000000", fontSize: 10 } },
-      ],
-      options: { fill: { color: WHITE }, valign: "top" as const, margin: 3 },
-    })),
-    row2.map((c) => ({
-      text: [
-        { text: c.label + "\n", options: { bold: true, color: RED, fontSize: 8 } },
-        { text: c.value, options: { color: "000000", fontSize: 10 } },
-      ],
-      options: { fill: { color: WHITE }, valign: "top" as const, margin: 3 },
-    })),
-  ];
-  slide.addTable(tableRows as any, {
-    x: left,
-    y: 0.6,
-    w: contentW,
-    colW: Array(6).fill(contentW / 6),
-    rowH: 0.5,
+
+  const tableY = 0.55;
+  const tableRowH = [0.55, 0.55, 0.55];
+
+  slide.addTable(tableRows, {
+    x: left, y: tableY, w: contentW,
+    colW,
+    rowH: tableRowH,
     border: { type: "solid", pt: 0.75, color: BORDER },
     fontFace: "Arial",
   });
 
-  // Photos — fill remaining height up to footer
-  const photosTop = 1.7;
-  const footerH = 0.4;
-  const obsH = 0.5;
-  const photosBottom = PAGE_H_IN - footerH - obsH - 0.1;
+  // Logo overlay (since pptxgenjs tables don't support cell images directly)
+  if (logoB64) {
+    slide.addImage({
+      data: logoB64,
+      x: left + 0.06, y: tableY + 0.1, w: colW[0] - 0.12, h: tableRowH[0] + tableRowH[1] - 0.2,
+      sizing: { type: "contain", w: colW[0] - 0.12, h: tableRowH[0] + tableRowH[1] - 0.2 },
+    });
+  }
+
+  // Photos NG/OK
+  const photosTop = tableY + tableRowH[0] + tableRowH[1] + tableRowH[2] + 0.1;
+  const photosBottom = PAGE_H_IN - 1.55; // leave room for obs/brake + emitido
   const photoH = photosBottom - photosTop;
-  const photoW = (contentW - 0.2) / 2;
+  const photoW = (contentW - 0.15) / 2;
   const ngX = left;
-  const okX = left + photoW + 0.2;
+  const okX = left + photoW + 0.15;
 
   const [ngB64, okB64] = await Promise.all([
     a.foto_ng_url ? urlToBase64(a.foto_ng_url) : Promise.resolve(null),
@@ -250,73 +257,114 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   // NG frame
   slide.addShape("rect", {
     x: ngX, y: photosTop, w: photoW, h: photoH,
-    fill: { color: "F8F8F8" }, line: { color: RED, width: 3 },
+    fill: { color: "F8F8F8" }, line: { color: RED, width: 4 },
   });
   if (ngB64) {
     slide.addImage({
       data: ngB64,
-      x: ngX + 0.05, y: photosTop + 0.05, w: photoW - 0.1, h: photoH - 0.1,
-      sizing: { type: "cover", w: photoW - 0.1, h: photoH - 0.1 },
+      x: ngX + 0.06, y: photosTop + 0.06, w: photoW - 0.12, h: photoH - 0.12,
+      sizing: { type: "cover", w: photoW - 0.12, h: photoH - 0.12 },
     });
   }
   slide.addText("NG", {
-    x: ngX + 0.08, y: photosTop + 0.08, w: 0.5, h: 0.28,
-    fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
+    x: ngX + 0.08, y: photosTop + 0.08, w: 0.55, h: 0.3,
+    fill: { color: RED }, color: WHITE, bold: true, fontSize: 12,
     align: "center", valign: "middle", fontFace: "Arial",
   });
 
   // OK frame
   slide.addShape("rect", {
     x: okX, y: photosTop, w: photoW, h: photoH,
-    fill: { color: "F8F8F8" }, line: { color: GREEN, width: 3 },
+    fill: { color: "F8F8F8" }, line: { color: GREEN, width: 4 },
   });
   if (okB64) {
     slide.addImage({
       data: okB64,
-      x: okX + 0.05, y: photosTop + 0.05, w: photoW - 0.1, h: photoH - 0.1,
-      sizing: { type: "cover", w: photoW - 0.1, h: photoH - 0.1 },
+      x: okX + 0.06, y: photosTop + 0.06, w: photoW - 0.12, h: photoH - 0.12,
+      sizing: { type: "cover", w: photoW - 0.12, h: photoH - 0.12 },
     });
   }
   slide.addText("OK", {
-    x: okX + 0.08, y: photosTop + 0.08, w: 0.5, h: 0.28,
-    fill: { color: GREEN }, color: WHITE, bold: true, fontSize: 11,
+    x: okX + 0.08, y: photosTop + 0.08, w: 0.55, h: 0.3,
+    fill: { color: GREEN }, color: WHITE, bold: true, fontSize: 12,
     align: "center", valign: "middle", fontFace: "Arial",
   });
 
-  // Observações
-  slide.addText(
+  // OBSERVAÇÕES + BRAKE POINT split
+  const obsTop = photosBottom + 0.1;
+  const obsH = 0.85;
+  const obsCols = [contentW * 0.16, contentW * 0.44, contentW * 0.16, contentW * 0.12, contentW * 0.12];
+  const obsRows = [
     [
-      { text: "Observações: ", options: { color: RED, bold: true, fontSize: 10, underline: { color: RED, style: "sng" } as any } },
-      { text: a.observacoes || "—", options: { color: "000000", fontSize: 10 } },
-    ] as any,
-    {
-      x: left, y: photosBottom + 0.08,
-      w: contentW, h: obsH,
-      valign: "top", fontFace: "Arial",
-    }
-  );
+      {
+        text: "OBSERVAÇÕES",
+        options: {
+          fill: { color: RED }, color: WHITE, bold: true, fontSize: 10,
+          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
+        } as any,
+      },
+      {
+        text: a.observacoes || "",
+        options: {
+          fill: { color: WHITE }, color: BLUE, fontSize: 10,
+          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
+        } as any,
+      },
+      {
+        text: "BRAKE POINT",
+        options: {
+          fill: { color: RED }, color: WHITE, bold: true, fontSize: 10,
+          valign: "top" as const, align: "left" as const, margin: 6, rowspan: 2,
+        } as any,
+      },
+      {
+        text: [
+          { text: "SEQ\n", options: { bold: true, color: RED, fontSize: 8 } },
+          { text: a.sequencia_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
+        ],
+        options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
+      },
+      {
+        text: [
+          { text: "VIN\n", options: { bold: true, color: RED, fontSize: 8 } },
+          { text: a.vin_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
+        ],
+        options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
+      },
+    ],
+    [
+      { text: "", options: { fill: { color: WHITE } } },
+      { text: "", options: { fill: { color: WHITE } } },
+    ],
+  ];
 
-  drawFooter(slide, bandW, a);
+  slide.addTable(obsRows as any, {
+    x: left, y: obsTop, w: contentW,
+    colW: obsCols,
+    rowH: [obsH / 2, obsH / 2],
+    border: { type: "solid", pt: 1.5, color: RED },
+    fontFace: "Arial",
+  });
 
-  // ----------- PAGE 2 — Signatures -----------
+  // EMITIDO POR strip
+  const stripY = obsTop + obsH + 0.12;
+  slide.addText(`EMITIDO POR: ${a.emitido_por || "—"}    EM: ${fmtDateTime(issuedAt)}`, {
+    x: left, y: stripY, w: contentW, h: 0.35,
+    fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
+    align: "center", valign: "middle", fontFace: "Arial",
+  });
+
+  // ============= PAGE 2 — Signatures =============
   const slide2 = pptx.addSlide();
   slide2.background = { color: WHITE };
   drawRedBand(slide2);
+  drawHeader(slide2, bandW, a);
 
-  // Title bar
-  slide2.addText(`${formatSeq(a.sequencial || 0)} — Status de Ciência`, {
-    x: left, y: 0.2, w: contentW, h: 0.35,
-    fill: { color: RED }, color: WHITE, bold: true, fontSize: 14,
-    align: "center", valign: "middle", fontFace: "Arial",
-  });
-
-  // H2
   slide2.addText("Status de Ciência dos Inspetores", {
     x: left, y: 0.65, w: contentW, h: 0.3,
     color: "000000", bold: true, fontSize: 13, fontFace: "Arial",
   });
 
-  // Inspector status table
   const insHeader = ["Nome", "Cargo", "Status", "Data/Hora", "Método"].map((t) => ({
     text: t,
     options: { bold: true, color: WHITE, fill: { color: RED }, fontSize: 9, align: "left" as const, margin: 3 },
@@ -329,7 +377,7 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
       { text: ins.cargo || "—", options: { fontSize: 9, margin: 3 } },
       {
         text: c ? "Ciente ✓" : "Pendente",
-        options: { fontSize: 9, bold: true, color: c ? GREEN : RED, margin: 3 },
+        options: { fontSize: 9, bold: true, color: c ? BLUE : "d35400", margin: 3 },
       },
       {
         text: dt ? `${dt.toLocaleDateString("pt-BR")} ${dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "—",
@@ -342,11 +390,10 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
     insRows.push([{ text: "Nenhum inspetor habilitado", options: { fontSize: 9, italic: true, align: "center" as const, colspan: 5, margin: 3 } as any }] as any);
   }
 
-  const insTableY = 1.05;
-  const insTableH = 3.2;
+  const insTableY = 1.0;
   slide2.addTable([insHeader as any, ...(insRows as any)], {
     x: left, y: insTableY, w: contentW,
-    colW: [contentW * 0.32, contentW * 0.23, contentW * 0.12, contentW * 0.20, contentW * 0.13],
+    colW: [contentW * 0.26, contentW * 0.24, contentW * 0.14, contentW * 0.20, contentW * 0.16],
     border: { type: "solid", pt: 0.75, color: BORDER },
     fontFace: "Arial",
     autoPage: false,
@@ -357,8 +404,9 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
     (x: any, y: any) => new Date(y.created_at).getTime() - new Date(x.created_at).getTime()
   );
 
+  const cieTitleY = insTableY + Math.max(0.5, 0.32 * (insRows.length + 1)) + 0.3;
   slide2.addText(`Registros de Ciência (${sortedCiencias.length})`, {
-    x: left, y: insTableY + insTableH + 0.05, w: contentW, h: 0.3,
+    x: left, y: cieTitleY, w: contentW, h: 0.3,
     color: "000000", bold: true, fontSize: 12, fontFace: "Arial",
   });
 
@@ -380,14 +428,25 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   }
 
   slide2.addTable([cieHeader as any, ...(cieRows as any)], {
-    x: left, y: insTableY + insTableH + 0.4, w: contentW,
-    colW: [contentW * 0.38, contentW * 0.22, contentW * 0.20, contentW * 0.20],
+    x: left, y: cieTitleY + 0.35, w: contentW,
+    colW: [contentW * 0.32, contentW * 0.24, contentW * 0.20, contentW * 0.24],
     border: { type: "solid", pt: 0.75, color: BORDER },
     fontFace: "Arial",
     autoPage: false,
   });
 
-  drawFooter(slide2, bandW, a);
+  // Footer
+  const footerY = PAGE_H_IN - 0.55;
+  slide2.addText(
+    [
+      { text: `EMITIDO POR: ${a.emitido_por || "—"}    DATA: ${fmtDate(issuedAt)}`, options: { color: WHITE, bold: true, fontSize: 11 } },
+      { text: `        ${formatSeq(a.sequencial || 0)}`, options: { color: WHITE, bold: true, fontSize: 11 } },
+    ] as any,
+    {
+      x: left, y: footerY, w: contentW, h: 0.4,
+      fill: { color: RED }, align: "center", valign: "middle", fontFace: "Arial",
+    }
+  );
 
   await pptx.writeFile({ fileName: `${buildFileBaseName(alerta)}.pptx` });
 }

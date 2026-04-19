@@ -218,10 +218,10 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
 
   const cellOpts = (label: string, value: string) => ({
     text: [
-      { text: label + "\n", options: { bold: true, color: RED, fontSize: 7 } },
-      { text: value || "—", options: { color: BLUE, fontSize: 9, bold: true } },
+      { text: label + "\n", options: { bold: true, color: RED, fontSize: 9 } },
+      { text: value || "—", options: { color: BLUE, fontSize: 12, bold: true } },
     ],
-    options: { fill: { color: WHITE }, valign: "top" as const, margin: 3 },
+    options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
   });
 
   const logoB64 = await urlToBase64(logoMobis);
@@ -243,8 +243,8 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
       cellOpts("RESPONSÁVEL", a.responsabilidade),
     ],
     [
-      { text: "DESCRIÇÃO", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 11, valign: "middle" as const, align: "left" as const, margin: 6 } },
-      { text: a.descricao || "—", options: { fill: { color: WHITE }, color: BLUE, bold: true, fontSize: 13, valign: "middle" as const, align: "left" as const, colspan: 5, margin: 6 } as any },
+      { text: "DESCRIÇÃO", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 13, valign: "middle" as const, align: "left" as const, margin: 6 } },
+      { text: a.descricao || "—", options: { fill: { color: WHITE }, color: BLUE, bold: true, fontSize: 15, valign: "middle" as const, align: "left" as const, colspan: 5, margin: 6 } as any },
     ],
   ];
 
@@ -257,8 +257,8 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
     contentW * 0.176,
   ];
 
-  const tableY = 0.5;
-  const tableRowH = [0.4, 0.4, 0.45];
+  const tableY = 0.55;
+  const tableRowH = [0.5, 0.5, 0.55];
 
   slide.addTable(tableRows, {
     x: left, y: tableY, w: contentW,

@@ -263,13 +263,13 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <div
               style={{
                 position: "absolute",
-                top: 6,
-                left: 6,
+                top: 8,
+                left: 8,
                 background: RED,
                 color: "#fff",
                 fontWeight: 800,
-                fontSize: 14,
-                padding: "4px 14px",
+                fontSize: 18,
+                padding: "6px 18px",
                 zIndex: 2,
                 borderRadius: 2,
               }}
@@ -278,7 +278,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             </div>
             <div
               style={{
-                border: `5px solid ${RED}`,
+                border: `7px solid ${RED}`,
                 width: "100%",
                 flex: "1 1 auto",
                 display: "flex",
@@ -287,6 +287,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 background: "#f8f8f8",
                 overflow: "hidden",
                 minHeight: 0,
+                boxSizing: "border-box",
               }}
             >
               {a.foto_ng_url ? (
@@ -306,13 +307,13 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             <div
               style={{
                 position: "absolute",
-                top: 6,
-                left: 6,
+                top: 8,
+                left: 8,
                 background: GREEN,
                 color: "#fff",
                 fontWeight: 800,
-                fontSize: 14,
-                padding: "4px 14px",
+                fontSize: 18,
+                padding: "6px 18px",
                 zIndex: 2,
                 borderRadius: 2,
               }}
@@ -321,7 +322,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
             </div>
             <div
               style={{
-                border: `5px solid ${GREEN}`,
+                border: `7px solid ${GREEN}`,
                 width: "100%",
                 flex: "1 1 auto",
                 display: "flex",
@@ -330,6 +331,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 background: "#f8f8f8",
                 overflow: "hidden",
                 minHeight: 0,
+                boxSizing: "border-box",
               }}
             >
               {a.foto_ok_url ? (

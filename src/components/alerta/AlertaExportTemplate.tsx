@@ -145,9 +145,9 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "8px 12px",
+            padding: "10px 14px",
             fontWeight: 800,
-            fontSize: 20,
+            fontSize: 26,
             textAlign: "center",
             letterSpacing: 1,
             flex: "0 0 auto",

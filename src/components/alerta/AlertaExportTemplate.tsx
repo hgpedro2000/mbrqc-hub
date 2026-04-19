@@ -61,25 +61,25 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
 
   const cellLabel: React.CSSProperties = {
     color: RED,
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: 0.3,
     display: "block",
-    marginBottom: 2,
+    marginBottom: 3,
     lineHeight: 1.1,
   };
   const cellValue: React.CSSProperties = {
     color: BLUE,
-    fontSize: 11,
+    fontSize: 15,
     fontWeight: 600,
     wordBreak: "break-word",
-    lineHeight: 1.15,
+    lineHeight: 1.2,
     display: "block",
   };
   const tdStyle: React.CSSProperties = {
     border: `1px solid ${BORDER}`,
-    padding: "5px 8px",
+    padding: "8px 10px",
     verticalAlign: "top",
     background: "#fff",
   };

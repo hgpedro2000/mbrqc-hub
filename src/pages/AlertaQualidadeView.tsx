@@ -328,32 +328,31 @@ const AlertaQualidadeView = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Export dialog */}
+      {/* Export dialog — JPG / PDF / PPTX */}
       <Dialog open={exportDialog} onOpenChange={setExportDialog}>
         <DialogContent className="max-w-xs">
           <DialogHeader>
             <DialogTitle>Exportar Alerta</DialogTitle>
           </DialogHeader>
-          <div className="flex items-center gap-2 py-2">
-            <Checkbox
-              id="include-ciencias-view"
-              checked={includeCiencias}
-              onCheckedChange={(c) => setIncludeCiencias(!!c)}
-            />
-            <Label htmlFor="include-ciencias-view" className="text-sm cursor-pointer">
-              Incluir lista de ciências
-            </Label>
-          </div>
-          <DialogFooter className="flex gap-2 sm:gap-2">
+          <p className="text-xs text-muted-foreground py-1">
+            Documento profissional A4 (retrato) com layout oficial do Alerta de Qualidade.
+          </p>
+          <DialogFooter className="grid grid-cols-3 gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("jpg")} disabled={exporting}>
               JPG
             </Button>
             <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pdf")} disabled={exporting}>
               PDF
             </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pptx")} disabled={exporting}>
+              PPTX
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden A4 template for PDF/JPG export */}
+      <AlertaExportTemplate alerta={alerta} innerRef={exportTemplateRef} />
     </div>
   );
 };

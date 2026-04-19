@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { AlertaExportTemplate } from "@/components/alerta/AlertaExportTemplate";
+import { AlertaExportTemplate, AlertaSignaturesTemplate } from "@/components/alerta/AlertaExportTemplate";
 import { exportAlertaJpg, exportAlertaPdf, exportAlertaPptx } from "@/lib/exportAlertaQualidade";
 
 const AlertaQualidadeView = () => {
@@ -23,6 +23,7 @@ const AlertaQualidadeView = () => {
   const contentRef = useRef<HTMLDivElement>(null);
   const cienciasRef = useRef<HTMLDivElement>(null);
   const exportTemplateRef = useRef<HTMLDivElement>(null);
+  const exportSignaturesRef = useRef<HTMLDivElement>(null);
 
   const { data: alerta, isLoading } = useQuery({
     queryKey: ["alerta-view", id],
@@ -92,13 +93,14 @@ const AlertaQualidadeView = () => {
     if (!alerta) return;
     setExporting(true);
     try {
+      const page2 = includeCiencias ? exportSignaturesRef.current : null;
       if (format === "pptx") {
-        await exportAlertaPptx(alerta);
+        await exportAlertaPptx(alerta, includeCiencias ? inspetores : [], includeCiencias ? ciencias : []);
       } else {
         const el = exportTemplateRef.current;
         if (!el) return;
-        if (format === "jpg") await exportAlertaJpg(el, alerta);
-        else await exportAlertaPdf(el, alerta);
+        if (format === "jpg") await exportAlertaJpg(el, alerta, page2);
+        else await exportAlertaPdf(el, alerta, page2);
       }
     } catch (e) {
       console.error("Export error:", e);
@@ -351,8 +353,9 @@ const AlertaQualidadeView = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Hidden A4 template for PDF/JPG export */}
+      {/* Hidden A4 templates for PDF/JPG export */}
       <AlertaExportTemplate alerta={alerta} innerRef={exportTemplateRef} />
+      <AlertaSignaturesTemplate alerta={alerta} inspetores={inspetores} ciencias={ciencias} innerRef={exportSignaturesRef} />
     </div>
   );
 };

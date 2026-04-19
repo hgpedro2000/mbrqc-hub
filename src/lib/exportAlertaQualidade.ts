@@ -292,59 +292,59 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   // NG frame
   slide.addShape("rect", {
     x: ngX, y: photosTop, w: photoW, h: photoH,
-    fill: { color: "F8F8F8" }, line: { color: RED, width: 4 },
+    fill: { color: "F8F8F8" }, line: { color: RED, width: 6 },
   });
   if (ngB64) {
     slide.addImage({
       data: ngB64,
-      x: ngX + 0.06, y: photosTop + 0.06, w: photoW - 0.12, h: photoH - 0.12,
-      sizing: { type: "cover", w: photoW - 0.12, h: photoH - 0.12 },
+      x: ngX + 0.08, y: photosTop + 0.08, w: photoW - 0.16, h: photoH - 0.16,
+      sizing: { type: "cover", w: photoW - 0.16, h: photoH - 0.16 },
     });
   }
   slide.addText("NG", {
-    x: ngX + 0.08, y: photosTop + 0.08, w: 0.55, h: 0.3,
-    fill: { color: RED }, color: WHITE, bold: true, fontSize: 12,
+    x: ngX + 0.1, y: photosTop + 0.1, w: 0.7, h: 0.38,
+    fill: { color: RED }, color: WHITE, bold: true, fontSize: 16,
     align: "center", valign: "middle", fontFace: "Arial",
   });
 
   // OK frame
   slide.addShape("rect", {
     x: okX, y: photosTop, w: photoW, h: photoH,
-    fill: { color: "F8F8F8" }, line: { color: GREEN, width: 4 },
+    fill: { color: "F8F8F8" }, line: { color: GREEN, width: 6 },
   });
   if (okB64) {
     slide.addImage({
       data: okB64,
-      x: okX + 0.06, y: photosTop + 0.06, w: photoW - 0.12, h: photoH - 0.12,
-      sizing: { type: "cover", w: photoW - 0.12, h: photoH - 0.12 },
+      x: okX + 0.08, y: photosTop + 0.08, w: photoW - 0.16, h: photoH - 0.16,
+      sizing: { type: "cover", w: photoW - 0.16, h: photoH - 0.16 },
     });
   }
   slide.addText("OK", {
-    x: okX + 0.08, y: photosTop + 0.08, w: 0.55, h: 0.3,
-    fill: { color: GREEN }, color: WHITE, bold: true, fontSize: 12,
+    x: okX + 0.1, y: photosTop + 0.1, w: 0.7, h: 0.38,
+    fill: { color: GREEN }, color: WHITE, bold: true, fontSize: 16,
     align: "center", valign: "middle", fontFace: "Arial",
   });
 
   // OBSERVAÇÕES + BRAKE POINT split
   const obsTop = photosBottom + 0.08;
-  const obsH = 0.65;
+  const obsH = 0.7;
   const obsCols = [contentW * 0.12, contentW * 0.48, contentW * 0.16, contentW * 0.12, contentW * 0.12];
   const obsRows = [
     [
-      { text: "OBSERVAÇÕES", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
-      { text: a.observacoes || "", options: { fill: { color: WHITE }, color: BLUE, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
-      { text: "BRAKE POINT", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 10, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: "OBSERVAÇÕES", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 12, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: a.observacoes || "", options: { fill: { color: WHITE }, color: BLUE, fontSize: 12, valign: "top" as const, align: "left" as const, margin: 6 } },
+      { text: "BRAKE POINT", options: { fill: { color: RED }, color: WHITE, bold: true, fontSize: 12, valign: "top" as const, align: "left" as const, margin: 6 } },
       { text: [
-          { text: "SEQ\n", options: { bold: true, color: RED, fontSize: 8 } },
-          { text: a.sequencia_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
+          { text: "SEQ\n", options: { bold: true, color: RED, fontSize: 10 } },
+          { text: a.sequencia_bp || "—", options: { color: BLUE, bold: true, fontSize: 12 } },
         ],
-        options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
+        options: { fill: { color: WHITE }, valign: "top" as const, margin: 5 },
       },
       { text: [
-          { text: "VIN\n", options: { bold: true, color: RED, fontSize: 8 } },
-          { text: a.vin_bp || "—", options: { color: BLUE, bold: true, fontSize: 10 } },
+          { text: "VIN\n", options: { bold: true, color: RED, fontSize: 10 } },
+          { text: a.vin_bp || "—", options: { color: BLUE, bold: true, fontSize: 12 } },
         ],
-        options: { fill: { color: WHITE }, valign: "top" as const, margin: 4 },
+        options: { fill: { color: WHITE }, valign: "top" as const, margin: 5 },
       },
     ],
   ];
@@ -360,8 +360,8 @@ export async function exportAlertaPptx(alerta: any, inspetores: any[] = [], cien
   // EMITIDO POR strip
   const stripY = obsTop + obsH + 0.08;
   slide.addText(`EMITIDO POR: ${a.emitido_por || "—"}    EM: ${fmtDateTime(issuedAt)}`, {
-    x: left, y: stripY, w: contentW, h: 0.3,
-    fill: { color: RED }, color: WHITE, bold: true, fontSize: 11,
+    x: left, y: stripY, w: contentW, h: 0.35,
+    fill: { color: RED }, color: WHITE, bold: true, fontSize: 13,
     align: "center", valign: "middle", fontFace: "Arial",
   });
 

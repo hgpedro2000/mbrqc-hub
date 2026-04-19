@@ -230,7 +230,7 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 12,
+                    fontSize: 14,
                     textAlign: "left",
                     verticalAlign: "middle",
                     letterSpacing: 0.3,
@@ -238,8 +238,8 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                 >
                   DESCRIÇÃO
                 </td>
-                <td colSpan={5} style={{ ...tdStyle, padding: "6px 10px" }}>
-                  <span style={{ color: BLUE, fontSize: 14, fontWeight: 600, lineHeight: 1.2 }}>
+                <td colSpan={5} style={{ ...tdStyle, padding: "8px 12px" }}>
+                  <span style={{ color: BLUE, fontSize: 17, fontWeight: 600, lineHeight: 1.25 }}>
                     {a.descricao || "—"}
                   </span>
                 </td>

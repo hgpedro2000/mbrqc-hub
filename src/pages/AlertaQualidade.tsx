@@ -364,6 +364,19 @@ const AlertaQualidade = () => {
           )}
         </div>
 
+        <Tabs value={archiveTab} onValueChange={(v) => setArchiveTab(v as "vigentes" | "arquivados")}>
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="vigentes" className="gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Vigentes <span className="text-xs opacity-70">({tabCounts.vigentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="arquivados" className="gap-2">
+              <Archive className="w-4 h-4" />
+              Arquivados <span className="text-xs opacity-70">({tabCounts.arquivados})</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (

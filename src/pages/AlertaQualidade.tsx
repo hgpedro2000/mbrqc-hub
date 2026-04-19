@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2, Archive } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -45,6 +46,7 @@ const AlertaQualidade = () => {
   const effectiveCargo = impersonating?.cargo ?? profile?.cargo ?? "";
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [archiveTab, setArchiveTab] = useState<"vigentes" | "arquivados">("vigentes");
   const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
   const [includeCiencias, setIncludeCiencias] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -184,16 +186,38 @@ const AlertaQualidade = () => {
     });
   }, [alertas, canViewAll, effectiveUserId, qualifications, partNumbers]);
 
+  const isExpired = (validade: string | null) => {
+    if (!validade) return false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const v = new Date(validade + "T12:00:00");
+    return v < today;
+  };
+
+  const byTab = useMemo(() => {
+    return filteredByVisibility.filter((a: any) => {
+      const expired = isExpired(a.data_validade);
+      return archiveTab === "arquivados" ? expired : !expired;
+    });
+  }, [filteredByVisibility, archiveTab]);
+
+  const tabCounts = useMemo(() => {
+    let v = 0, ar = 0;
+    for (const a of filteredByVisibility as any[]) {
+      if (isExpired(a.data_validade)) ar++; else v++;
+    }
+    return { vigentes: v, arquivados: ar };
+  }, [filteredByVisibility]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return filteredByVisibility;
+    if (!searchTerm.trim()) return byTab;
     const term = searchTerm.toLowerCase();
-    return filteredByVisibility.filter((a: any) =>
+    return byTab.filter((a: any) =>
       formatSeq(a.sequencial).toLowerCase().includes(term) ||
       a.descricao?.toLowerCase().includes(term) ||
       a.modo_falha?.toLowerCase().includes(term) ||
       a.modelo?.toLowerCase().includes(term)
     );
-  }, [filteredByVisibility, searchTerm]);
+  }, [byTab, searchTerm]);
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;
@@ -339,6 +363,19 @@ const AlertaQualidade = () => {
             </Button>
           )}
         </div>
+
+        <Tabs value={archiveTab} onValueChange={(v) => setArchiveTab(v as "vigentes" | "arquivados")}>
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="vigentes" className="gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Vigentes <span className="text-xs opacity-70">({tabCounts.vigentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="arquivados" className="gap-2">
+              <Archive className="w-4 h-4" />
+              Arquivados <span className="text-xs opacity-70">({tabCounts.arquivados})</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>

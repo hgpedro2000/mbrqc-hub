@@ -2,8 +2,9 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Eye, X } from "lucide-react";
+import { ArrowLeft, AlertTriangle, CheckCircle, Loader2, ShieldCheck, Eye, X, Archive } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -41,6 +42,7 @@ const AlertaQualidadeFeed = () => {
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
   const [aceito, setAceito] = useState(false);
   const [photoPopup, setPhotoPopup] = useState<string | null>(null);
+  const [tab, setTab] = useState<"pendentes" | "vigentes" | "arquivados">("pendentes");
 
   // When impersonating, view as the impersonated user
   const targetUserId = impersonating?.id || user?.id;
@@ -74,23 +76,43 @@ const AlertaQualidadeFeed = () => {
       if (cErr) throw cErr;
       const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
 
-      // Filter: only alerts matching inspector's qualified areas AND not yet acknowledged
-      return (allAlertas || []).filter((a: any) => {
-        if (cienIds.has(a.id)) return false;
-        if (myAreas.length === 0) return false;
-        const linhaPeca = a.linha_peca;
-        if (!linhaPeca) return false;
-        // Resolve area
-        let areaKey = lineAreaMap[linhaPeca];
-        if (!areaKey) {
-          const lineModule = partMap.get(linhaPeca);
-          if (lineModule) areaKey = lineAreaMap[lineModule];
-        }
-        if (!areaKey) return false;
-        return myAreas.includes(areaKey);
-      });
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      // Filter to alerts matching the inspector's areas (keep both acknowledged & pending)
+      return (allAlertas || [])
+        .filter((a: any) => {
+          if (myAreas.length === 0) return false;
+          const linhaPeca = a.linha_peca;
+          if (!linhaPeca) return false;
+          let areaKey = lineAreaMap[linhaPeca];
+          if (!areaKey) {
+            const lineModule = partMap.get(linhaPeca);
+            if (lineModule) areaKey = lineAreaMap[lineModule];
+          }
+          if (!areaKey) return false;
+          return myAreas.includes(areaKey);
+        })
+        .map((a: any) => {
+          const expired = a.data_validade
+            ? new Date(a.data_validade + "T12:00:00") < today
+            : false;
+          return { ...a, _acknowledged: cienIds.has(a.id), _expired: expired };
+        });
     },
     enabled: !!targetUserId,
+  });
+
+  const counts = { pendentes: 0, vigentes: 0, arquivados: 0 };
+  for (const a of alertas as any[]) {
+    if (a._expired) counts.arquivados++;
+    else if (a._acknowledged) counts.vigentes++;
+    else counts.pendentes++;
+  }
+
+  const visibleAlertas = (alertas as any[]).filter((a) => {
+    if (tab === "arquivados") return a._expired;
+    if (tab === "vigentes") return !a._expired && a._acknowledged;
+    return !a._expired && !a._acknowledged; // pendentes
   });
 
   const handleConfirm = async (alertaId: string) => {
@@ -133,25 +155,58 @@ const AlertaQualidadeFeed = () => {
           <div className="flex items-center gap-2 mt-3">
             <AlertTriangle className="w-6 h-6" />
             <div>
-              <h1 className="text-lg sm:text-xl font-heading font-bold">Alertas Pendentes</h1>
-              <p className="text-primary-foreground/70 text-xs">Confirme ciência dos alertas ativos</p>
+              <h1 className="text-lg sm:text-xl font-heading font-bold">Meus Alertas</h1>
+              <p className="text-primary-foreground/70 text-xs">Pendentes, vigentes e arquivados</p>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-2xl space-y-4">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsTrigger value="pendentes" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Pendentes</span>
+              <span className="text-[10px] opacity-70">({counts.pendentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="vigentes" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Vigentes</span>
+              <span className="text-[10px] opacity-70">({counts.vigentes})</span>
+            </TabsTrigger>
+            <TabsTrigger value="arquivados" className="flex-col gap-0.5 py-2">
+              <span className="text-xs">Arquivados</span>
+              <span className="text-[10px] opacity-70">({counts.arquivados})</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
-        ) : alertas.length === 0 ? (
+        ) : visibleAlertas.length === 0 ? (
           <div className="form-section text-center py-12">
-            <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
-            <p className="text-foreground font-semibold">Tudo em dia!</p>
-            <p className="text-muted-foreground text-sm">Nenhum alerta pendente de ciência</p>
+            {tab === "pendentes" ? (
+              <>
+                <CheckCircle className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Tudo em dia!</p>
+                <p className="text-muted-foreground text-sm">Nenhum alerta pendente de ciência</p>
+              </>
+            ) : tab === "vigentes" ? (
+              <>
+                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Nenhum alerta vigente</p>
+                <p className="text-muted-foreground text-sm">Você ainda não deu ciência em alertas dentro do prazo</p>
+              </>
+            ) : (
+              <>
+                <Archive className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-foreground font-semibold">Nenhum alerta arquivado</p>
+                <p className="text-muted-foreground text-sm">Alertas com prazo vencido aparecerão aqui</p>
+              </>
+            )}
           </div>
         ) : (
-          alertas.map((a: any) => (
-            <div key={a.id} className="form-section space-y-3">
+          visibleAlertas.map((a: any) => (
+            <div key={a.id} className={`form-section space-y-3 ${a._expired ? "opacity-80" : ""}`}>
               <div
                 role="button"
                 tabIndex={0}
@@ -166,7 +221,19 @@ const AlertaQualidadeFeed = () => {
                     <h3 className="font-heading font-semibold text-foreground">{a.modo_falha || a.descricao}</h3>
                     {a.modelo && <p className="text-xs text-muted-foreground">{a.modelo}</p>}
                   </div>
-                  <Eye className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Eye className="w-4 h-4 text-muted-foreground mt-1" />
+                    {a._expired && (
+                      <span className="text-[9px] font-bold uppercase rounded-full px-2 py-0.5 bg-muted text-muted-foreground border border-border">
+                        Arquivado
+                      </span>
+                    )}
+                    {!a._expired && a._acknowledged && (
+                      <span className="text-[9px] font-bold uppercase rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/40">
+                        Ciente
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {a.descricao && <p className="text-sm text-muted-foreground">{a.descricao}</p>}
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
@@ -201,14 +268,16 @@ const AlertaQualidadeFeed = () => {
                   )}
                 </div>
               )}
-              <Button
-                onClick={() => setConfirmDialog({ id: a.id, seq: a.sequencial, titulo: a.modo_falha || a.descricao || "Alerta" })}
-                disabled={confirming === a.id}
-                className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
-              >
-                {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Ciente
-              </Button>
+              {!a._acknowledged && !a._expired && (
+                <Button
+                  onClick={() => setConfirmDialog({ id: a.id, seq: a.sequencial, titulo: a.modo_falha || a.descricao || "Alerta" })}
+                  disabled={confirming === a.id}
+                  className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {confirming === a.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                  Ciente
+                </Button>
+              )}
             </div>
           ))
         )}

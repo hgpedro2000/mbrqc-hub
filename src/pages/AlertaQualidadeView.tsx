@@ -9,8 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { captureElementToCanvas } from "@/lib/exportPdfFromRef";
-import jsPDF from "jspdf";
+import { AlertaExportTemplate } from "@/components/alerta/AlertaExportTemplate";
+import { exportAlertaJpg, exportAlertaPdf, exportAlertaPptx } from "@/lib/exportAlertaQualidade";
 
 const AlertaQualidadeView = () => {
   const navigate = useNavigate();

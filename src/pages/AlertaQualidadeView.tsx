@@ -22,6 +22,7 @@ const AlertaQualidadeView = () => {
   const [includeCiencias, setIncludeCiencias] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
   const cienciasRef = useRef<HTMLDivElement>(null);
+  const exportTemplateRef = useRef<HTMLDivElement>(null);
 
   const { data: alerta, isLoading } = useQuery({
     queryKey: ["alerta-view", id],
@@ -76,48 +77,38 @@ const AlertaQualidadeView = () => {
   });
 
   useEffect(() => {
-    const exportFormat = searchParams.get("export") as "jpg" | "pdf" | null;
-    const showCiencias = searchParams.get("ciencias");
+    const exportFormat = searchParams.get("export") as "jpg" | "pdf" | "pptx" | null;
     if (exportFormat && alerta && !isLoading) {
       const timer = setTimeout(() => {
-        handleExport(exportFormat, showCiencias === "1");
+        handleExport(exportFormat);
         setSearchParams({}, { replace: true });
-      }, 500);
+      }, 600);
       return () => clearTimeout(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, alerta, isLoading]);
 
-  const handleExport = async (format: "jpg" | "pdf", withCiencias: boolean = true) => {
-    if (!contentRef.current) return;
+  const handleExport = async (format: "jpg" | "pdf" | "pptx") => {
+    if (!alerta) return;
     setExporting(true);
     try {
-      if (cienciasRef.current && !withCiencias) {
-        cienciasRef.current.style.display = "none";
-      }
-      const canvas = await captureElementToCanvas(contentRef.current, { backgroundColor: "#f8fafc" });
-      if (cienciasRef.current && !withCiencias) {
-        cienciasRef.current.style.display = "";
-      }
-      if (format === "jpg") {
-        const link = document.createElement("a");
-        link.download = `alerta-${alerta?.sequencial || "export"}.jpg`;
-        link.href = canvas.toDataURL("image/jpeg", 0.95);
-        link.click();
+      if (format === "pptx") {
+        await exportAlertaPptx(alerta);
       } else {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] });
-        pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-        pdf.save(`alerta-${alerta?.sequencial || "export"}.pdf`);
+        const el = exportTemplateRef.current;
+        if (!el) return;
+        if (format === "jpg") await exportAlertaJpg(el, alerta);
+        else await exportAlertaPdf(el, alerta);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Export error:", e);
     } finally {
       setExporting(false);
     }
   };
 
-  const handleExportWithDialog = (format: "jpg" | "pdf") => {
-    handleExport(format, includeCiencias);
+  const handleExportWithDialog = (format: "jpg" | "pdf" | "pptx") => {
+    handleExport(format);
     setExportDialog(false);
   };
 

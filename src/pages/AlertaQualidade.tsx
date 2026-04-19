@@ -46,6 +46,7 @@ const AlertaQualidade = () => {
   const effectiveCargo = impersonating?.cargo ?? profile?.cargo ?? "";
   const [scanAlertaId, setScanAlertaId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [archiveTab, setArchiveTab] = useState<"vigentes" | "arquivados">("vigentes");
   const [exportAlertaId, setExportAlertaId] = useState<string | null>(null);
   const [includeCiencias, setIncludeCiencias] = useState(true);
   const [exporting, setExporting] = useState(false);

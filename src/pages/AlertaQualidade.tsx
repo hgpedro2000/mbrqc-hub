@@ -270,10 +270,10 @@ const AlertaQualidade = () => {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const handleExportConfirm = async (format: "jpg" | "pdf") => {
+  const handleExportConfirm = async (format: "jpg" | "pdf" | "pptx") => {
     if (!exportAlertaId) return;
     setExporting(true);
-    const params = new URLSearchParams({ export: format, ciencias: includeCiencias ? "1" : "0" });
+    const params = new URLSearchParams({ export: format });
     navigate(`/alerta-qualidade/ver/${exportAlertaId}?${params.toString()}`);
     setExportAlertaId(null);
     setExporting(false);
@@ -565,17 +565,17 @@ const AlertaQualidade = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Export dialog */}
+      {/* Export dialog — JPG / PDF / PPTX */}
       <Dialog open={!!exportAlertaId} onOpenChange={(o) => { if (!o) setExportAlertaId(null); }}>
         <DialogContent className="max-w-xs">
           <DialogHeader><DialogTitle>Exportar Alerta</DialogTitle></DialogHeader>
-          <div className="flex items-center gap-2 py-2">
-            <Checkbox id="include-ciencias" checked={includeCiencias} onCheckedChange={(c) => setIncludeCiencias(!!c)} />
-            <Label htmlFor="include-ciencias" className="text-sm cursor-pointer">Incluir lista de ciências</Label>
-          </div>
-          <DialogFooter className="flex gap-2 sm:gap-2">
+          <p className="text-xs text-muted-foreground py-1">
+            Documento profissional A4 (retrato) com layout oficial.
+          </p>
+          <DialogFooter className="grid grid-cols-3 gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => handleExportConfirm("jpg")} disabled={exporting}>JPG</Button>
             <Button variant="outline" size="sm" onClick={() => handleExportConfirm("pdf")} disabled={exporting}>PDF</Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportConfirm("pptx")} disabled={exporting}>PPTX</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

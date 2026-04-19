@@ -367,10 +367,10 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 11,
+                    fontSize: 13,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                   }}
                 >
                   OBSERVAÇÕES
@@ -380,9 +380,9 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     ...tdStyle,
                     border: `2px solid ${RED}`,
                     color: BLUE,
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: 500,
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                     whiteSpace: "pre-wrap",
                   }}
                 >
@@ -395,21 +395,21 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
                     background: RED,
                     color: "#fff",
                     fontWeight: 800,
-                    fontSize: 11,
+                    fontSize: 13,
                     textAlign: "left",
                     verticalAlign: "top",
-                    padding: "6px 10px",
+                    padding: "8px 12px",
                   }}
                 >
                   BRAKE POINT
                 </td>
-                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "5px 8px" }}>
-                  <span style={{ ...cellLabel, fontSize: 10 }}>SEQ</span>
-                  <span style={{ ...cellValue, fontSize: 12 }}>{a.sequencia_bp || "—"}</span>
+                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "6px 10px" }}>
+                  <span style={{ ...cellLabel, fontSize: 11 }}>SEQ</span>
+                  <span style={{ ...cellValue, fontSize: 14 }}>{a.sequencia_bp || "—"}</span>
                 </td>
-                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "5px 8px" }}>
-                  <span style={{ ...cellLabel, fontSize: 10 }}>VIN</span>
-                  <span style={{ ...cellValue, fontSize: 12 }}>{a.vin_bp || "—"}</span>
+                <td style={{ ...tdStyle, border: `2px solid ${RED}`, padding: "6px 10px" }}>
+                  <span style={{ ...cellLabel, fontSize: 11 }}>VIN</span>
+                  <span style={{ ...cellValue, fontSize: 14 }}>{a.vin_bp || "—"}</span>
                 </td>
               </tr>
             </tbody>
@@ -421,12 +421,12 @@ export const AlertaExportTemplate: React.FC<Props> = ({ alerta, innerRef }) => {
           style={{
             background: RED,
             color: "#fff",
-            padding: "6px 14px",
+            padding: "8px 16px",
             textAlign: "center",
             fontWeight: 700,
-            fontSize: 12,
+            fontSize: 14,
             letterSpacing: 0.4,
-            margin: "6px 10px 8px",
+            margin: "8px 10px 10px",
             flex: "0 0 auto",
           }}
         >

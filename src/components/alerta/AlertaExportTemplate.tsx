@@ -7,7 +7,7 @@ interface Props {
 }
 
 /** Robust date parser supporting ISO (YYYY-MM-DD[THH:mm...]) and DD/MM/YYYY */
-function parseDateSafe(value: string | null | undefined): Date | null {
+function parseDateSafe(value: any): Date | null {
   if (!value) return null;
   if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
   const s = String(value).trim();

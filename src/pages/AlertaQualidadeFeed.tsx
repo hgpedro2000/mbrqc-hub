@@ -42,6 +42,7 @@ const AlertaQualidadeFeed = () => {
   const [confirmDialog, setConfirmDialog] = useState<{ id: string; seq: number; titulo: string } | null>(null);
   const [aceito, setAceito] = useState(false);
   const [photoPopup, setPhotoPopup] = useState<string | null>(null);
+  const [tab, setTab] = useState<"pendentes" | "vigentes" | "arquivados">("pendentes");
 
   // When impersonating, view as the impersonated user
   const targetUserId = impersonating?.id || user?.id;
@@ -75,23 +76,43 @@ const AlertaQualidadeFeed = () => {
       if (cErr) throw cErr;
       const cienIds = new Set((myCiencias || []).map((c: any) => c.alerta_id));
 
-      // Filter: only alerts matching inspector's qualified areas AND not yet acknowledged
-      return (allAlertas || []).filter((a: any) => {
-        if (cienIds.has(a.id)) return false;
-        if (myAreas.length === 0) return false;
-        const linhaPeca = a.linha_peca;
-        if (!linhaPeca) return false;
-        // Resolve area
-        let areaKey = lineAreaMap[linhaPeca];
-        if (!areaKey) {
-          const lineModule = partMap.get(linhaPeca);
-          if (lineModule) areaKey = lineAreaMap[lineModule];
-        }
-        if (!areaKey) return false;
-        return myAreas.includes(areaKey);
-      });
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      // Filter to alerts matching the inspector's areas (keep both acknowledged & pending)
+      return (allAlertas || [])
+        .filter((a: any) => {
+          if (myAreas.length === 0) return false;
+          const linhaPeca = a.linha_peca;
+          if (!linhaPeca) return false;
+          let areaKey = lineAreaMap[linhaPeca];
+          if (!areaKey) {
+            const lineModule = partMap.get(linhaPeca);
+            if (lineModule) areaKey = lineAreaMap[lineModule];
+          }
+          if (!areaKey) return false;
+          return myAreas.includes(areaKey);
+        })
+        .map((a: any) => {
+          const expired = a.data_validade
+            ? new Date(a.data_validade + "T12:00:00") < today
+            : false;
+          return { ...a, _acknowledged: cienIds.has(a.id), _expired: expired };
+        });
     },
     enabled: !!targetUserId,
+  });
+
+  const counts = { pendentes: 0, vigentes: 0, arquivados: 0 };
+  for (const a of alertas as any[]) {
+    if (a._expired) counts.arquivados++;
+    else if (a._acknowledged) counts.vigentes++;
+    else counts.pendentes++;
+  }
+
+  const visibleAlertas = (alertas as any[]).filter((a) => {
+    if (tab === "arquivados") return a._expired;
+    if (tab === "vigentes") return !a._expired && a._acknowledged;
+    return !a._expired && !a._acknowledged; // pendentes
   });
 
   const handleConfirm = async (alertaId: string) => {

@@ -13,14 +13,6 @@ const fmt = (dateStr: string) => {
   try { return new Date(dateStr + "T00:00:00").toLocaleDateString("pt-BR"); } catch { return "—"; }
 };
 
-const fmtDateTime = (dateStr: string) => {
-  if (!dateStr) return "—";
-  try {
-    const d = new Date(dateStr);
-    return `${d.toLocaleDateString("pt-BR")} – ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
-  } catch { return "—"; }
-};
-
 const Field = ({ label, value, style }: { label: string; value: string; style?: React.CSSProperties }) => (
   <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "4px 8px", borderRight: "1px solid #ccc", ...style }}>
     <span style={{ fontSize: "8px", fontWeight: "bold", color: RED, textTransform: "uppercase", marginBottom: "3px" }}>{label}</span>
@@ -30,10 +22,11 @@ const Field = ({ label, value, style }: { label: string; value: string; style?: 
 
 interface Props {
   alerta: any;
+  exportedAt: string;
   templateRef: React.RefObject<HTMLDivElement>;
 }
 
-const AlertaExportTemplate = ({ alerta: a, templateRef }: Props) => {
+const AlertaExportTemplate = ({ alerta: a, exportedAt, templateRef }: Props) => {
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
   return (
@@ -96,30 +89,25 @@ const AlertaExportTemplate = ({ alerta: a, templateRef }: Props) => {
         {/* Photos */}
         <div style={{ flex: 1, display: "flex", gap: "8px", padding: "8px", minHeight: 0 }}>
           {/* NG */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <div style={{ backgroundColor: "#c0392b", color: "white", fontWeight: "bold", fontSize: "11px", padding: "2px 10px", alignSelf: "flex-start", marginBottom: "4px", borderRadius: "2px" }}>NG</div>
-            <div style={{ flex: 1, border: "4px solid #c0392b", borderRadius: "4px", overflow: "hidden" }}>
-              {a.foto_ng_url
-                ? <img src={a.foto_ng_url} alt="NG" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
-                : <div style={{ width: "100%", height: "100%", backgroundColor: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "12px" }}>Sem foto</div>
-              }
-            </div>
+          <div style={{ flex: 1, position: "relative", border: "4px solid #c0392b", borderRadius: "4px", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, backgroundColor: "#c0392b", color: "white", fontWeight: "bold", fontSize: "12px", padding: "4px 12px", zIndex: 2 }}>NG</div>
+            {a.foto_ng_url
+              ? <img src={a.foto_ng_url} alt="NG" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
+              : <div style={{ width: "100%", height: "100%", backgroundColor: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "12px" }}>Sem foto</div>
+            }
           </div>
           {/* OK */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-            <div style={{ backgroundColor: "#1e8449", color: "white", fontWeight: "bold", fontSize: "11px", padding: "2px 10px", alignSelf: "flex-start", marginBottom: "4px", borderRadius: "2px" }}>OK</div>
-            <div style={{ flex: 1, border: "4px solid #1e8449", borderRadius: "4px", overflow: "hidden" }}>
-              {a.foto_ok_url
-                ? <img src={a.foto_ok_url} alt="OK" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
-                : <div style={{ width: "100%", height: "100%", backgroundColor: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "12px" }}>Sem foto</div>
-              }
-            </div>
+          <div style={{ flex: 1, position: "relative", border: "4px solid #1e8449", borderRadius: "4px", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, backgroundColor: "#1e8449", color: "white", fontWeight: "bold", fontSize: "12px", padding: "4px 12px", zIndex: 2 }}>OK</div>
+            {a.foto_ok_url
+              ? <img src={a.foto_ok_url} alt="OK" style={{ width: "100%", height: "100%", objectFit: "cover" }} crossOrigin="anonymous" />
+              : <div style={{ width: "100%", height: "100%", backgroundColor: "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: "12px" }}>Sem foto</div>
+            }
           </div>
         </div>
 
         {/* Observações + Brake Point */}
-        <div style={{ display: "flex", border: "1px solid #ccc", borderTop: "1px solid #ccc", minHeight: 80, flexShrink: 0 }}>
-          {/* Observações */}
+        <div style={{ display: "flex", border: "1px solid #ccc", minHeight: 80, flexShrink: 0 }}>
           <div style={{ flex: 2, display: "flex" }}>
             <div style={{ backgroundColor: RED, color: "white", fontWeight: "bold", fontSize: "10px", padding: "6px 8px", display: "flex", alignItems: "flex-start", textTransform: "uppercase", flexShrink: 0 }}>
               Observações
@@ -128,7 +116,6 @@ const AlertaExportTemplate = ({ alerta: a, templateRef }: Props) => {
               {a.observacoes || "—"}
             </div>
           </div>
-          {/* Brake Point */}
           <div style={{ flex: 1, borderLeft: "1px solid #ccc", display: "flex" }}>
             <div style={{ backgroundColor: RED, color: "white", fontWeight: "bold", fontSize: "10px", padding: "6px 8px", display: "flex", alignItems: "flex-start", textTransform: "uppercase", flexShrink: 0 }}>
               Brake Point
@@ -147,14 +134,14 @@ const AlertaExportTemplate = ({ alerta: a, templateRef }: Props) => {
         </div>
 
         {/* Footer */}
-        <div style={{ backgroundColor: "#2c2c2c", color: "white", textAlign: "center", padding: "6px", fontSize: "10px", flexShrink: 0 }}>
-          EMITIDO POR: {a.emitido_por || "—"}&nbsp;&nbsp;&nbsp;EM: {fmtDateTime(a.created_at)}
+        <div style={{ backgroundColor: RED, color: "white", textAlign: "center", padding: "6px", fontSize: "10px", flexShrink: 0 }}>
+          EMITIDO POR: {a.emitido_por || "—"}&nbsp;&nbsp;&nbsp;EXPORTADO EM: {exportedAt}
         </div>
       </div>
 
       {/* Right sidebar */}
       <div style={{ width: SIDEBAR_W, backgroundColor: RED, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <div style={{ color: "white", fontWeight: "bold", fontSize: "13px", letterSpacing: "4px", textTransform: "uppercase", transform: "rotate(90deg)", whiteSpace: "nowrap" }}>
+        <div style={{ color: "white", fontWeight: "bold", fontSize: "13px", letterSpacing: "4px", textTransform: "uppercase", writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap" }}>
           ALERTA DE QUALIDADE
         </div>
       </div>

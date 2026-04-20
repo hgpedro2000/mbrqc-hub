@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,9 @@ import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { captureElementToCanvas } from "@/lib/exportPdfFromRef";
 import jsPDF from "jspdf";
+import pptxgen from "pptxgenjs";
+import AlertaExportTemplate from "@/components/AlertaExportTemplate";
+import AlertaAssinaturasExportTemplate from "@/components/AlertaAssinaturasExportTemplate";
 
 const AlertaQualidadeView = () => {
   const navigate = useNavigate();
@@ -20,8 +23,11 @@ const AlertaQualidadeView = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
   const [includeCiencias, setIncludeCiencias] = useState(true);
+
+  const alertaTemplateRef = useRef<HTMLDivElement>(null);
+  const assinaturasTemplateRef = useRef<HTMLDivElement>(null);
+
   const contentRef = useRef<HTMLDivElement>(null);
-  const cienciasRef = useRef<HTMLDivElement>(null);
 
   const { data: alerta, isLoading } = useQuery({
     queryKey: ["alerta-view", id],
@@ -54,9 +60,7 @@ const AlertaQualidadeView = () => {
 
       let query = supabase.from("inspector_qualifications").select("user_id").eq("habilitado", true);
       const areaKey = alerta?.linha_peca ? lineAreaMap[alerta.linha_peca] : null;
-      if (areaKey) {
-        query = query.eq("area", areaKey);
-      }
+      if (areaKey) query = query.eq("area", areaKey);
 
       const { data: qualData, error: qualErr } = await query;
       if (qualErr) throw qualErr;
@@ -75,39 +79,54 @@ const AlertaQualidadeView = () => {
     enabled: !!id && !!alerta,
   });
 
-  useEffect(() => {
-    const exportFormat = searchParams.get("export") as "jpg" | "pdf" | null;
-    const showCiencias = searchParams.get("ciencias");
-    if (exportFormat && alerta && !isLoading) {
-      const timer = setTimeout(() => {
-        handleExport(exportFormat, showCiencias === "1");
-        setSearchParams({}, { replace: true });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, alerta, isLoading]);
-
-  const handleExport = async (format: "jpg" | "pdf", withCiencias: boolean = true) => {
-    if (!contentRef.current) return;
+  const handleExport = async (format: "jpg" | "pdf" | "pptx", withCiencias: boolean = true) => {
+    if (!alertaTemplateRef.current) return;
     setExporting(true);
     try {
-      if (cienciasRef.current && !withCiencias) {
-        cienciasRef.current.style.display = "none";
+      const fileName = `AQ-${String(a.sequencial).padStart(5, "0")}_${(a.descricao || "alerta").slice(0, 20).replace(/[^a-zA-Z0-9]/g, "_")}`;
+
+      // Capture page 1 (alerta)
+      const canvas1 = await captureElementToCanvas(alertaTemplateRef.current, { backgroundColor: "#ffffff", windowWidth: 1122 });
+      const img1 = canvas1.toDataURL("image/jpeg", 0.92);
+
+      // Capture page 2 (assinaturas)
+      let img2: string | null = null;
+      if (withCiencias && assinaturasTemplateRef.current) {
+        const canvas2 = await captureElementToCanvas(assinaturasTemplateRef.current, { backgroundColor: "#ffffff", windowWidth: 1122 });
+        img2 = canvas2.toDataURL("image/jpeg", 0.92);
       }
-      const canvas = await captureElementToCanvas(contentRef.current, { backgroundColor: "#f8fafc" });
-      if (cienciasRef.current && !withCiencias) {
-        cienciasRef.current.style.display = "";
-      }
+
       if (format === "jpg") {
-        const link = document.createElement("a");
-        link.download = `alerta-${alerta?.sequencial || "export"}.jpg`;
-        link.href = canvas.toDataURL("image/jpeg", 0.95);
-        link.click();
-      } else {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF({ orientation: canvas.width > canvas.height ? "landscape" : "portrait", unit: "px", format: [canvas.width, canvas.height] });
-        pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-        pdf.save(`alerta-${alerta?.sequencial || "export"}.pdf`);
+        const link1 = document.createElement("a");
+        link1.download = `${fileName}_alerta.jpg`;
+        link1.href = img1;
+        link1.click();
+        if (img2) {
+          setTimeout(() => {
+            const link2 = document.createElement("a");
+            link2.download = `${fileName}_assinaturas.jpg`;
+            link2.href = img2!;
+            link2.click();
+          }, 600);
+        }
+      } else if (format === "pdf") {
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        pdf.addImage(img1, "JPEG", 0, 0, 297, 210);
+        if (img2) {
+          pdf.addPage([297, 210], "landscape");
+          pdf.addImage(img2, "JPEG", 0, 0, 297, 210);
+        }
+        pdf.save(`${fileName}.pdf`);
+      } else if (format === "pptx") {
+        const pptx = new pptxgen();
+        pptx.layout = "LAYOUT_WIDE";
+        const slide1 = pptx.addSlide();
+        slide1.addImage({ data: img1, x: 0, y: 0, w: "100%", h: "100%" });
+        if (img2) {
+          const slide2 = pptx.addSlide();
+          slide2.addImage({ data: img2, x: 0, y: 0, w: "100%", h: "100%" });
+        }
+        await pptx.writeFile({ fileName: `${fileName}.pptx` });
       }
     } catch (e) {
       console.error(e);
@@ -116,7 +135,7 @@ const AlertaQualidadeView = () => {
     }
   };
 
-  const handleExportWithDialog = (format: "jpg" | "pdf") => {
+  const handleExportWithDialog = (format: "jpg" | "pdf" | "pptx") => {
     handleExport(format, includeCiencias);
     setExportDialog(false);
   };
@@ -136,6 +155,15 @@ const AlertaQualidadeView = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Hidden export templates */}
+      <AlertaExportTemplate alerta={a} templateRef={alertaTemplateRef} />
+      <AlertaAssinaturasExportTemplate
+        alerta={a}
+        inspetores={inspetores}
+        ciencias={ciencias}
+        templateRef={assinaturasTemplateRef}
+      />
+
       <header className="bg-[#c0392b] text-white">
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between">
@@ -150,7 +178,7 @@ const AlertaQualidadeView = () => {
                 className="text-white/80 hover:text-white gap-1 text-xs"
                 onClick={() => { setExportDialog(true); setIncludeCiencias(true); }}
               >
-                <Download className="w-4 h-4" /> Exportar
+                <Download className="w-4 h-4" /> {exporting ? "Exportando..." : "Exportar"}
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 bg-white rounded-md px-2 py-0.5" />
             </div>
@@ -164,12 +192,6 @@ const AlertaQualidadeView = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 max-w-4xl space-y-4" ref={contentRef}>
-        {/* Export-only header */}
-        <div className="bg-[#c0392b] text-white rounded-lg p-3 text-center" style={{ display: "none" }} id="export-header">
-          <h2 className="text-lg font-bold">ALERTA DE QUALIDADE {formatSeq(a.sequencial)}</h2>
-        </div>
-
-        {/* Fields grid — 4 columns symmetrical */}
         <div className="form-section">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
             {fieldRow("Modelo", a.modelo, "red")}
@@ -192,7 +214,6 @@ const AlertaQualidadeView = () => {
           </div>
         </div>
 
-        {/* Photos */}
         {(a.foto_ng_url || a.foto_ok_url) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {a.foto_ng_url && (
@@ -221,7 +242,6 @@ const AlertaQualidadeView = () => {
           </div>
         )}
 
-        {/* Brake Point */}
         {(a.sequencia_bp || a.vin_bp) && (
           <div className="bg-[#c0392b] text-white rounded-lg p-3">
             <p className="text-xs font-bold mb-2">Brake Point</p>
@@ -233,8 +253,7 @@ const AlertaQualidadeView = () => {
           </div>
         )}
 
-        {/* Inspetores status */}
-        <div className="form-section" ref={cienciasRef}>
+        <div className="form-section">
           <h3 className="text-sm font-heading font-bold mb-3">Status de Ciência dos Inspetores</h3>
           <div className="divide-y divide-border">
             {inspetores.map((ins: any) => {
@@ -267,7 +286,6 @@ const AlertaQualidadeView = () => {
             {inspetores.length === 0 && <p className="text-center text-muted-foreground py-4 text-sm">Nenhum inspetor habilitado para esta área</p>}
           </div>
 
-          {/* Detailed audit log of ciências */}
           {ciencias.length > 0 && (
             <div className="mt-5 pt-4 border-t border-border">
               <h3 className="text-sm font-heading font-bold mb-3">Registros de Ciência ({ciencias.length})</h3>
@@ -298,24 +316,15 @@ const AlertaQualidadeView = () => {
                               <span className="text-[10px] text-muted-foreground">{dt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
                             </td>
                             <td className="py-2 px-2">
-                              <Badge
-                                variant="outline"
-                                className={`text-[10px] ${isQr ? "border-blue-500 text-blue-600 bg-blue-500/10" : "border-emerald-500 text-emerald-600 bg-emerald-500/10"}`}
-                              >
+                              <Badge variant="outline" className={`text-[10px] ${isQr ? "border-blue-500 text-blue-600 bg-blue-500/10" : "border-emerald-500 text-emerald-600 bg-emerald-500/10"}`}>
                                 {isQr ? "QR Líder" : "App Próprio"}
                               </Badge>
                             </td>
                             <td className="py-2 pl-2">
-                              {c.versao_termo ? (
-                                <span
-                                  className="font-mono text-[10px] text-muted-foreground"
-                                  title={c.termo_aceito || ""}
-                                >
-                                  {c.versao_termo}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground italic">—</span>
-                              )}
+                              {c.versao_termo
+                                ? <span className="font-mono text-[10px] text-muted-foreground" title={c.termo_aceito || ""}>{c.versao_termo}</span>
+                                : <span className="text-[10px] text-muted-foreground italic">—</span>
+                              }
                             </td>
                           </tr>
                         );
@@ -331,9 +340,7 @@ const AlertaQualidadeView = () => {
       {/* Photo popup */}
       <Dialog open={!!photoPopup} onOpenChange={() => setPhotoPopup(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-3xl p-2 sm:p-4">
-          {photoPopup && (
-            <img src={photoPopup} alt="Foto ampliada" className="w-full max-h-[80vh] object-contain rounded" />
-          )}
+          {photoPopup && <img src={photoPopup} alt="Foto ampliada" className="w-full max-h-[80vh] object-contain rounded" />}
         </DialogContent>
       </Dialog>
 
@@ -354,12 +361,9 @@ const AlertaQualidadeView = () => {
             </Label>
           </div>
           <DialogFooter className="flex gap-2 sm:gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("jpg")} disabled={exporting}>
-              JPG
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pdf")} disabled={exporting}>
-              PDF
-            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("jpg")} disabled={exporting}>JPG</Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pdf")} disabled={exporting}>PDF</Button>
+            <Button variant="outline" size="sm" onClick={() => handleExportWithDialog("pptx")} disabled={exporting}>PPTX</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,7 +1,6 @@
 import React from "react";
 
 const RED = "#8B0000";
-const BLUE = "#1F4E79";
 const PAGE_W = 1122;
 const SIDEBAR_W = 48;
 const CONTENT_W = PAGE_W - SIDEBAR_W;
@@ -15,10 +14,11 @@ interface Props {
   alerta: any;
   inspetores: any[];
   ciencias: any[];
+  exportedAt: string;
   templateRef: React.RefObject<HTMLDivElement>;
 }
 
-const AlertaAssinaturasExportTemplate = ({ alerta: a, inspetores, ciencias, templateRef }: Props) => {
+const AlertaAssinaturasExportTemplate = ({ alerta: a, inspetores, ciencias, exportedAt, templateRef }: Props) => {
   const formatSeq = (seq: number) => `AQ-${String(seq).padStart(5, "0")}`;
 
   const thStyle: React.CSSProperties = {
@@ -122,15 +122,15 @@ const AlertaAssinaturasExportTemplate = ({ alerta: a, inspetores, ciencias, temp
         </div>
 
         {/* Footer */}
-        <div style={{ backgroundColor: "#2c2c2c", color: "white", padding: "6px 16px", fontSize: "10px", display: "flex", justifyContent: "space-between", flexShrink: 0 }}>
-          <span>EMITIDO POR: {a.emitido_por || "—"}&nbsp;&nbsp;&nbsp;DATA: {fmt(a.data_ocorrencia)}</span>
+        <div style={{ backgroundColor: RED, color: "white", padding: "6px 16px", fontSize: "10px", display: "flex", justifyContent: "space-between", flexShrink: 0 }}>
+          <span>EMITIDO POR: {a.emitido_por || "—"}&nbsp;&nbsp;&nbsp;EXPORTADO EM: {exportedAt}</span>
           <span>{formatSeq(a.sequencial)}</span>
         </div>
       </div>
 
       {/* Right sidebar */}
       <div style={{ width: SIDEBAR_W, backgroundColor: RED, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <div style={{ color: "white", fontWeight: "bold", fontSize: "13px", letterSpacing: "4px", textTransform: "uppercase", transform: "rotate(90deg)", whiteSpace: "nowrap" }}>
+        <div style={{ color: "white", fontWeight: "bold", fontSize: "13px", letterSpacing: "4px", textTransform: "uppercase", writingMode: "vertical-rl", transform: "rotate(180deg)", whiteSpace: "nowrap" }}>
           ALERTA DE QUALIDADE
         </div>
       </div>

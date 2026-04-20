@@ -23,6 +23,7 @@ const AlertaQualidadeView = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
   const [includeCiencias, setIncludeCiencias] = useState(true);
+  const [exportedAt, setExportedAt] = useState("");
 
   const alertaTemplateRef = useRef<HTMLDivElement>(null);
   const assinaturasTemplateRef = useRef<HTMLDivElement>(null);
@@ -82,6 +83,9 @@ const AlertaQualidadeView = () => {
   const handleExport = async (format: "jpg" | "pdf" | "pptx", withCiencias: boolean = true) => {
     if (!alertaTemplateRef.current) return;
     setExporting(true);
+    const now = new Date().toLocaleString("pt-BR");
+    setExportedAt(now);
+    await new Promise(r => setTimeout(r, 150));
     try {
       const fileName = `AQ-${String(a.sequencial).padStart(5, "0")}_${(a.descricao || "alerta").slice(0, 20).replace(/[^a-zA-Z0-9]/g, "_")}`;
 
@@ -156,11 +160,12 @@ const AlertaQualidadeView = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hidden export templates */}
-      <AlertaExportTemplate alerta={a} templateRef={alertaTemplateRef} />
+      <AlertaExportTemplate alerta={a} exportedAt={exportedAt} templateRef={alertaTemplateRef} />
       <AlertaAssinaturasExportTemplate
         alerta={a}
         inspetores={inspetores}
         ciencias={ciencias}
+        exportedAt={exportedAt}
         templateRef={assinaturasTemplateRef}
       />
 

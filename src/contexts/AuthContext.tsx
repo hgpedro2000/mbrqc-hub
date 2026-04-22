@@ -34,6 +34,7 @@ interface AuthContextType {
   isAdmin: boolean;
   mfaStatus: MFAStatus;
   refreshMFAStatus: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({

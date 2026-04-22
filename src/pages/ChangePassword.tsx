@@ -46,36 +46,16 @@ const ChangePassword = () => {
   }, [expired]);
 
   useEffect(() => {
-    const sessionTimeout = window.setTimeout(() => {
-      toast.error("Sessão expirada. Faça login novamente.");
-      navigate("/login", { replace: true });
-    }, 5000);
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      if (currentSession) {
-        window.clearTimeout(sessionTimeout);
-        setSession(currentSession);
-        setLoading(false);
-        return;
-      }
-
-      if (event === "INITIAL_SESSION") {
-        return;
-      }
-
-      if (event === "SIGNED_OUT") {
-        window.clearTimeout(sessionTimeout);
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      if (!currentSession) {
         toast.error("Sessão expirada. Faça login novamente.");
         navigate("/login", { replace: true });
+        return;
       }
-    });
 
-    return () => {
-      window.clearTimeout(sessionTimeout);
-      subscription.unsubscribe();
-    };
+      setSession(currentSession);
+      setLoading(false);
+    });
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {

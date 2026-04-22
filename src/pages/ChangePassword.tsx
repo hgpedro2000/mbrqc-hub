@@ -160,7 +160,7 @@ const ChangePassword = () => {
           <AlertDescription className="text-foreground">
             <p className="font-semibold mb-1">Política de senha</p>
             <ul className="list-disc pl-4 space-y-0.5 text-sm text-muted-foreground">
-              <li>Mínimo de {MIN_PASSWORD_LENGTH} caracteres</li>
+              <li>Mínimo de {MIN_PASSWORD_LENGTH} caracteres no total</li>
               <li>Pelo menos 1 letra maiúscula, 1 número e 1 caractere especial</li>
               <li>Não pode repetir as últimas {PASSWORD_HISTORY_SIZE} senhas utilizadas</li>
             </ul>

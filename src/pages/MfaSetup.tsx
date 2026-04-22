@@ -27,9 +27,25 @@ export default function MfaSetup() {
           await supabase.auth.mfa.unenroll({ factorId: f.id });
         }
 
+        // Fetch current user's profile to use as account name in the authenticator app
+        const { data: sessionData } = await supabase.auth.getUser();
+        const userId = sessionData.user?.id;
+        let accountName = sessionData.user?.email || "Quality Tools User";
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, email, employee_number")
+            .eq("id", userId)
+            .maybeSingle();
+          if (profile) {
+            accountName = profile.email || profile.full_name || profile.employee_number || accountName;
+          }
+        }
+
         const { data, error } = await supabase.auth.mfa.enroll({
           factorType: "totp",
-          friendlyName: `Admin MFA ${Date.now()}`,
+          issuer: "Quality Tools MBR",
+          friendlyName: `${accountName} (${Date.now()})`,
         });
         if (error) throw error;
         setFactorId(data.id);

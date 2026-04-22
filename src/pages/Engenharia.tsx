@@ -12,6 +12,7 @@ import PartNumbersTab from "@/components/engenharia/PartNumbersTab";
 import CatalogTab from "@/components/engenharia/CatalogTab";
 import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import CapsuleTab from "@/components/engenharia/CapsuleTab";
+import PrivacyPolicyTab from "@/components/engenharia/PrivacyPolicyTab";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,7 +151,7 @@ const Engenharia = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4 pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]">
-            <TabsList className="inline-flex w-auto min-w-max md:grid md:w-full md:grid-cols-8 h-auto gap-1">
+            <TabsList className="inline-flex w-auto min-w-max md:grid md:w-full md:grid-cols-9 h-auto gap-1">
               <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
@@ -162,6 +163,7 @@ const Engenharia = () => {
                 Help Desk
                 {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
               </TabsTrigger>
+              <TabsTrigger value="privacidade" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Privacidade</TabsTrigger>
             </TabsList>
           </div>
 
@@ -240,6 +242,10 @@ const Engenharia = () => {
               
               toast.info("Dados pré-preenchidos no formulário de Novo Usuário. Clique em 'Novo Usuário' para finalizar.");
             }} />
+          </TabsContent>
+
+          <TabsContent value="privacidade" className="form-section">
+            <PrivacyPolicyTab />
           </TabsContent>
         </Tabs>
       </main>

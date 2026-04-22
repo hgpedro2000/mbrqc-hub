@@ -243,6 +243,10 @@ const Engenharia = () => {
               toast.info("Dados pré-preenchidos no formulário de Novo Usuário. Clique em 'Novo Usuário' para finalizar.");
             }} />
           </TabsContent>
+
+          <TabsContent value="privacidade" className="form-section">
+            <PrivacyPolicyTab />
+          </TabsContent>
         </Tabs>
       </main>
     </div>

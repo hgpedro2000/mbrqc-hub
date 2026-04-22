@@ -178,7 +178,7 @@ const ChangePassword = () => {
               placeholder={t("changePassword.repeatPassword")}
             />
             {confirmPassword.length > 0 && !matches && (
-              <p className="text-xs text-red-500 flex items-center gap-1">
+              <p className="text-xs text-destructive flex items-center gap-1">
                 <X className="w-3 h-3" /> As senhas não coincidem
               </p>
             )}

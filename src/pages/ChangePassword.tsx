@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,44 +18,31 @@ import {
   PASSWORD_HISTORY_SIZE,
   MIN_PASSWORD_LENGTH,
 } from "@/lib/passwordPolicy";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const expired = searchParams.get("expired") === "1";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
 
   const criteria = useMemo(() => evaluatePassword(password), [password]);
   const score = passwordScore(criteria);
   const valid = isPasswordValid(criteria);
   const strength = strengthLabel(score);
   const matches = password.length > 0 && password === confirmPassword;
-  const canSubmit = !loading && !saving;
+  const canSubmit = !authLoading && !saving;
 
   useEffect(() => {
     if (expired) {
       toast.warning("Sua senha expirou. Por favor, cadastre uma nova senha.");
     }
   }, [expired]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      if (!currentSession) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        navigate("/login", { replace: true });
-        return;
-      }
-
-      setSession(currentSession);
-      setLoading(false);
-    });
-  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,12 +58,6 @@ const ChangePassword = () => {
 
     setSaving(true);
     try {
-      if (!session) {
-        toast.error("Sessão expirada. Faça login novamente.");
-        navigate("/login", { replace: true });
-        return;
-      }
-      const user = session.user;
       if (!user) throw new Error("Sessão inválida.");
 
       // Check password history (last N hashes)
@@ -91,7 +71,6 @@ const ChangePassword = () => {
 
       if (history && (history as any[]).some((h) => h.password_hash === newHash)) {
         toast.error(`Você não pode reutilizar uma das últimas ${PASSWORD_HISTORY_SIZE} senhas. Escolha uma diferente.`);
-        setLoading(false);
         return;
       }
 
@@ -228,7 +207,7 @@ const ChangePassword = () => {
             disabled={!canSubmit}
             className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12"
           >
-            {loading ? t("common.saving") : (
+            {authLoading ? t("common.saving") : (
               <>
                 <KeyRound className="w-4 h-4 mr-2" />
                 {t("changePassword.setPassword")}

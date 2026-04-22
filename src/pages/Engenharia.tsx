@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import { ArrowLeft, Settings2, UserCheck, ScrollText } from "lucide-react";
+import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,7 @@ import CatalogTab from "@/components/engenharia/CatalogTab";
 import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import CapsuleTab from "@/components/engenharia/CapsuleTab";
 import PrivacyPolicyTab from "@/components/engenharia/PrivacyPolicyTab";
+import AuditLogsTab from "@/components/engenharia/AuditLogsTab";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,9 +90,6 @@ const Engenharia = () => {
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/admin/audit-logs")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
-                <ScrollText className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Logs de Auditoria</span>
-              </Button>
               <ReportErrorButton moduleName="Engenharia" />
             </div>
           </div>
@@ -151,7 +149,7 @@ const Engenharia = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6">
           <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4 pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]">
-            <TabsList className="inline-flex w-auto min-w-max md:grid md:w-full md:grid-cols-9 h-auto gap-1">
+            <TabsList className="inline-flex w-auto min-w-max md:grid md:w-full md:grid-cols-10 h-auto gap-1">
               <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
@@ -164,6 +162,7 @@ const Engenharia = () => {
                 {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="privacidade" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Privacidade</TabsTrigger>
+              <TabsTrigger value="auditoria" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Auditoria</TabsTrigger>
             </TabsList>
           </div>
 
@@ -246,6 +245,10 @@ const Engenharia = () => {
 
           <TabsContent value="privacidade" className="form-section">
             <PrivacyPolicyTab />
+          </TabsContent>
+
+          <TabsContent value="auditoria" className="form-section">
+            <AuditLogsTab />
           </TabsContent>
         </Tabs>
       </main>

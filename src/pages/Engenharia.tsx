@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
+import { ArrowLeft, Settings2, UserCheck, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -87,7 +87,12 @@ const Engenharia = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <ReportErrorButton moduleName="Engenharia" />
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/admin/audit-logs")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+                <ScrollText className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">Logs de Auditoria</span>
+              </Button>
+              <ReportErrorButton moduleName="Engenharia" />
+            </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
             <Settings2 className="w-5 h-5 sm:w-8 sm:h-8" />

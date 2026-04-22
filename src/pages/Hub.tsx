@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users, GripVertical,
+  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users, GripVertical, ScrollText,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -413,10 +413,16 @@ const Hub = () => {
                 </Button>
               )}
               {showEngineering && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
-                  <Settings2 className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">{t("common.engineering")}</span>
-                </Button>
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/admin/audit-logs")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
+                    <ScrollText className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">Auditoria</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
+                    <Settings2 className="w-4 h-4 md:mr-2" />
+                    <span className="hidden md:inline">{t("common.engineering")}</span>
+                  </Button>
+                </>
               )}
               <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" />

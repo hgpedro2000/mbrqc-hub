@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { KeyRound, Check, X, AlertTriangle } from "lucide-react";
+import { KeyRound, Check, X, AlertTriangle, ShieldCheck } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";

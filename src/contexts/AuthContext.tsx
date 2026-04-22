@@ -47,6 +47,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   mfaStatus: "checking",
   refreshMFAStatus: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);

@@ -76,17 +76,17 @@ const Login = () => {
 
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));
-        navigate("/alterar-senha");
-        return;
+      } else {
+        toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       }
 
-      toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
-      navigate("/");
+      // Mark as submitted; the useEffect above will navigate once the
+      // AuthContext finishes hydrating with the new session.
+      setSubmitted(true);
     } catch (error: any) {
       const msg = error.message || t("login.authError");
       setErrorMessage(msg);
       setErrorDialogOpen(true);
-    } finally {
       setLoading(false);
     }
   };

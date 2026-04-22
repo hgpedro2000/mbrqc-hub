@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,25 @@ import { logAction } from "@/lib/logAction";
 const Login = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { versionKicked } = useAuth();
+  const { versionKicked, user, profile, loading: authLoading } = useAuth();
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  // After successful login, wait for AuthContext to hydrate the session,
+  // then navigate. This avoids a race where navigate("/") runs before the
+  // session is observable to ProtectedRoute, which would bounce back to /login.
+  useEffect(() => {
+    if (!submitted || authLoading || !user) return;
+    if (profile?.must_change_password) {
+      navigate("/alterar-senha", { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  }, [submitted, authLoading, user, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,17 +76,17 @@ const Login = () => {
 
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));
-        navigate("/alterar-senha");
-        return;
+      } else {
+        toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       }
 
-      toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
-      navigate("/");
+      // Mark as submitted; the useEffect above will navigate once the
+      // AuthContext finishes hydrating with the new session.
+      setSubmitted(true);
     } catch (error: any) {
       const msg = error.message || t("login.authError");
       setErrorMessage(msg);
       setErrorDialogOpen(true);
-    } finally {
       setLoading(false);
     }
   };

@@ -1,4 +1,3 @@
- Conteúdo:
   // Health check script - verifica conectividade com Supabase
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL ||
   process.env.SUPABASE_URL;

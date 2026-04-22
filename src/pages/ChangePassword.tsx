@@ -83,13 +83,8 @@ const ChangePassword = () => {
         password_hash: newHash,
       });
 
-      await supabase
-        .from("profiles")
-        .update({
-          must_change_password: false,
-          password_changed_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
+      const { error: rpcError } = await supabase.rpc("clear_must_change_password" as any);
+      if (rpcError) throw rpcError;
 
       // Refresh cached profile so AuthContext doesn't keep blocking the user
       await refreshProfile();

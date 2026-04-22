@@ -14,6 +14,7 @@ interface Profile {
   qr_code_id: string | null;
   email: string | null;
   is_admin: boolean | null;
+  password_changed_at: string | null;
 }
 
 export type MFAStatus =

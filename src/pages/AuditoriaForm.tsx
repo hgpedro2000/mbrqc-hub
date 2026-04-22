@@ -15,6 +15,7 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+import { logAction } from "@/lib/logAction";
 
 type Conformidade = "conforme" | "nao_conforme" | "na" | "parcial";
 
@@ -107,12 +108,14 @@ const AuditoriaForm = () => {
         await supabase.from("audit_responses").delete().eq("auditoria_id", id!);
         const responsesToInsert = Object.entries(responses).filter(([_, r]) => r.conformidade).map(([itemId, r]) => ({ auditoria_id: id!, audit_item_id: itemId, conformidade: r.conformidade, observacao: r.observacao || null, score: r.conformidade === "conforme" ? 1 : 0 }));
         if (responsesToInsert.length > 0) { const { error: respError } = await supabase.from("audit_responses").insert(responsesToInsert); if (respError) throw respError; }
+        logAction("update", "auditoria", { auditoria_id: id, tipo, titulo });
         toast.success(t("auditorias.updateSuccess"));
       } else {
         const { data: auditoria, error } = await supabase.from("auditorias").insert(payload).select().single();
         if (error) throw error;
         const responsesToInsert = Object.entries(responses).filter(([_, r]) => r.conformidade).map(([itemId, r]) => ({ auditoria_id: auditoria.id, audit_item_id: itemId, conformidade: r.conformidade, observacao: r.observacao || null, score: r.conformidade === "conforme" ? 1 : 0 }));
         if (responsesToInsert.length > 0) { const { error: respError } = await supabase.from("audit_responses").insert(responsesToInsert); if (respError) throw respError; }
+        logAction("create", "auditoria", { auditoria_id: auditoria.id, tipo, titulo });
         toast.success(t("auditorias.saveSuccess"));
       }
       navigate("/auditorias");

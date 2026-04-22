@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const expired = searchParams.get("expired") === "1";
 

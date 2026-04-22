@@ -28,7 +28,8 @@ const ChangePassword = () => {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
 
   const criteria = useMemo(() => evaluatePassword(password), [password]);
@@ -36,7 +37,7 @@ const ChangePassword = () => {
   const valid = isPasswordValid(criteria);
   const strength = strengthLabel(score);
   const matches = password.length > 0 && password === confirmPassword;
-  const canSubmit = valid && matches && !loading && session !== null;
+  const canSubmit = !loading && !saving;
 
   useEffect(() => {
     if (expired) {
@@ -45,21 +46,36 @@ const ChangePassword = () => {
   }, [expired]);
 
   useEffect(() => {
+    const sessionTimeout = window.setTimeout(() => {
+      toast.error("Sessão expirada. Faça login novamente.");
+      navigate("/login", { replace: true });
+    }, 5000);
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, currentSession) => {
       if (currentSession) {
+        window.clearTimeout(sessionTimeout);
         setSession(currentSession);
+        setLoading(false);
         return;
       }
 
-      if (event === "SIGNED_OUT" || event === "INITIAL_SESSION") {
+      if (event === "INITIAL_SESSION") {
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        window.clearTimeout(sessionTimeout);
         toast.error("Sessão expirada. Faça login novamente.");
         navigate("/login", { replace: true });
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      window.clearTimeout(sessionTimeout);
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +90,7 @@ const ChangePassword = () => {
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       if (!session) {
         toast.error("Sessão expirada. Faça login novamente.");
@@ -122,7 +138,7 @@ const ChangePassword = () => {
     } catch (error: any) {
       toast.error(error.message || t("changePassword.error"));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 

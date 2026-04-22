@@ -91,9 +91,11 @@ const ChangePassword = () => {
         })
         .eq("id", user.id);
 
-      await supabase.auth.signOut();
+      // Refresh cached profile so AuthContext doesn't keep blocking the user
+      await refreshProfile();
+
       toast.success(t("changePassword.success"));
-      navigate("/login");
+      navigate("/", { replace: true });
     } catch (error: any) {
       toast.error(error.message || t("changePassword.error"));
     } finally {

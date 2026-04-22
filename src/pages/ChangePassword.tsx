@@ -200,6 +200,10 @@ const ChangePassword = () => {
               <CriterionRow ok={criteria.uppercase} label="1 letra maiúscula" />
               <CriterionRow ok={criteria.number} label="1 número" />
               <CriterionRow ok={criteria.special} label="1 caractere especial" />
+              <CriterionRow
+                ok={false}
+                label={`Não reutilizar uma das últimas ${PASSWORD_HISTORY_SIZE} senhas (verificado ao salvar)`}
+              />
             </div>
           </div>
 

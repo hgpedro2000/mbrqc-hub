@@ -17,6 +17,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useTranslation } from "react-i18next";
 import ExitConfirmDialog from "@/components/ExitConfirmDialog";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
+import { logAction } from "@/lib/logAction";
 
 interface ChecklistItem { id: string; label: string; type: "check" | "text"; }
 
@@ -151,6 +152,7 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
     setLoading(true);
     try {
       const payload = { ...buildPayload(), status: "submitted" };
+      let createdId = recordId;
       if (recordId) { const { error } = await supabase.from(tableName).update(payload as any).eq("id", recordId); if (error) throw error; }
       else {
         const { data: userData } = await supabase.auth.getUser();
@@ -158,8 +160,12 @@ const EditableChecklistPage = ({ title, headerLabel, defaultItems, checklistType
         const { data: record, error } = await supabase.from(tableName).insert(insertPayload as any).select("id").single();
         if (error) throw error;
         setRecordId(record.id);
+        createdId = record.id;
       }
       if (photos.length > 0 && recordId) await uploadPhotos(photos.map((p) => p.file), recordId, checklistType);
+      logAction(recordId ? "update" : "create", "tryout", {
+        subtype: checklistType, record_id: createdId,
+      });
       setSubmitted(true);
       setHasChanges(false);
       toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));

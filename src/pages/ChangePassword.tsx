@@ -155,6 +155,18 @@ const ChangePassword = () => {
           </Alert>
         )}
 
+        <Alert className="mb-4 border-primary/40 bg-primary/5">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-foreground">
+            <p className="font-semibold mb-1">Política de senha</p>
+            <ul className="list-disc pl-4 space-y-0.5 text-sm text-muted-foreground">
+              <li>Mínimo de {MIN_PASSWORD_LENGTH} caracteres</li>
+              <li>Pelo menos 1 letra maiúscula, 1 número e 1 caractere especial</li>
+              <li>Não pode repetir as últimas {PASSWORD_HISTORY_SIZE} senhas utilizadas</li>
+            </ul>
+          </AlertDescription>
+        </Alert>
+
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">{t("changePassword.newPassword")}</Label>

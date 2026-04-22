@@ -369,7 +369,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
             <DialogTrigger asChild>
               <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full max-w-lg">
               <DialogHeader><DialogTitle>Criar Novo Usuário</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
@@ -490,7 +490,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
 
       {/* Edit Profile Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full max-w-lg">
           <DialogHeader><DialogTitle>Editar Perfil</DialogTitle></DialogHeader>
           <div className="space-y-4">
             {renderEmpresaFormFields(editEmpresa, setEditEmpresa, editEmpresaTerceira, setEditEmpresaTerceira)}

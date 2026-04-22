@@ -20,6 +20,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 import { compressImage } from "@/lib/compressImage";
+import { logAction } from "@/lib/logAction";
 
 const AlertaQualidadeForm = () => {
   const navigate = useNavigate();
@@ -217,10 +218,13 @@ const AlertaQualidadeForm = () => {
           observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
         } as any).eq("id", editId!);
         if (error) throw error;
+        logAction("update", "alerta_qualidade", {
+          alerta_id: editId, modelo: form.modelo, linha_peca: form.linha_peca,
+        });
         toast.success("Alerta atualizado com sucesso!");
       } else {
         const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
-        const { error } = await supabase.from("alertas").insert({
+        const { data: created, error } = await supabase.from("alertas").insert({
           modelo: form.modelo, modo_falha: form.modo_falha, linha_peca: form.linha_peca,
           local_detectado: form.local_detectado, data_ocorrencia: form.data_ocorrencia,
           data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
@@ -228,8 +232,12 @@ const AlertaQualidadeForm = () => {
           observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
           emitido_por: profile?.full_name || "", criado_por_id: user?.id,
           total_destinatarios: count || 0,
-        } as any);
+        } as any).select("id, sequencial").maybeSingle();
         if (error) throw error;
+        logAction("create", "alerta_qualidade", {
+          alerta_id: created?.id, sequencial: created?.sequencial,
+          modelo: form.modelo, linha_peca: form.linha_peca,
+        });
         toast.success("Alerta criado com sucesso!");
       }
       navigate("/alerta-qualidade");

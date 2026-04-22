@@ -34,6 +34,7 @@ interface AuthContextType {
   isAdmin: boolean;
   mfaStatus: MFAStatus;
   refreshMFAStatus: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -46,6 +47,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   mfaStatus: "checking",
   refreshMFAStatus: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -130,6 +132,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!session?.user) return;
+    await fetchProfile(session.user.id);
+  }, [session, fetchProfile]);
+
   const refreshMFAStatus = useCallback(async () => {
     if (!session?.user) {
       setMfaStatus("not-required");
@@ -138,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentProfile = profile ?? (await fetchProfile(session.user.id));
     const status = await checkMFAStatus(!!currentProfile?.is_admin);
     setMfaStatus(status);
-  }, [session, profile, checkMFAStatus]);
+  }, [session, profile, checkMFAStatus, fetchProfile]);
 
   const hydrateAuthState = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -202,6 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         mfaStatus,
         refreshMFAStatus,
+        refreshProfile,
       }}
     >
       {children}

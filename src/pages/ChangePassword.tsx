@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshProfile } = useAuth();
   const [searchParams] = useSearchParams();
   const expired = searchParams.get("expired") === "1";
 
@@ -91,9 +91,11 @@ const ChangePassword = () => {
         })
         .eq("id", user.id);
 
-      await supabase.auth.signOut();
+      // Refresh cached profile so AuthContext doesn't keep blocking the user
+      await refreshProfile();
+
       toast.success(t("changePassword.success"));
-      navigate("/login");
+      navigate("/", { replace: true });
     } catch (error: any) {
       toast.error(error.message || t("changePassword.error"));
     } finally {

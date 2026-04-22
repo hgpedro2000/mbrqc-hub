@@ -428,7 +428,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
 
       {/* Pending Requests Dialog */}
       <Dialog open={pendingListOpen} onOpenChange={setPendingListOpen}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto w-[95vw] sm:w-full">
           <DialogHeader><DialogTitle>Solicitações de Novo Usuário</DialogTitle></DialogHeader>
           <p className="text-xs text-muted-foreground mb-3">Clique em "Finalizar Cadastro" para pré-preencher o formulário com os dados da solicitação.</p>
           <div className="space-y-2">

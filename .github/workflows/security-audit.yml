@@ -1,6 +1,3 @@
-  Nome: security-audit.yml
-
-  Conteúdo:
   name: Security Audit
 
   on:

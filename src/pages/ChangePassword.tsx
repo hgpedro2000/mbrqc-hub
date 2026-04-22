@@ -28,19 +28,38 @@ const ChangePassword = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const criteria = useMemo(() => evaluatePassword(password), [password]);
   const score = passwordScore(criteria);
   const valid = isPasswordValid(criteria);
   const strength = strengthLabel(score);
   const matches = password.length > 0 && password === confirmPassword;
-  const canSubmit = valid && matches && !loading;
+  const canSubmit = valid && matches && !loading && !checkingSession;
 
   useEffect(() => {
     if (expired) {
       toast.warning("Sua senha expirou. Por favor, cadastre uma nova senha.");
     }
   }, [expired]);
+
+  // Verify active session on mount; redirect to /login if missing/expired
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (!session) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        navigate("/login", { replace: true });
+        return;
+      }
+      setCheckingSession(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +75,14 @@ const ChangePassword = () => {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Re-check session right before performing the update
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        navigate("/login", { replace: true });
+        return;
+      }
+      const user = session.user;
       if (!user) throw new Error("Sessão inválida.");
 
       // Check password history (last N hashes)

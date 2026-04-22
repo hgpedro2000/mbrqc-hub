@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const isAdmin = !!profile?.is_admin;
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
       .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email, is_admin, password_changed_at")
@@ -81,9 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
     setProfile(data as Profile | null);
     return data as Profile | null;
-  };
+  }, []);
 
-  const checkMinVersion = async () => {
+  const checkMinVersion = useCallback(async () => {
     try {
       const { data } = await supabase
         .from("app_config" as any)
@@ -94,9 +94,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setVersionKicked(true);
         await supabase.auth.signOut();
         setProfile(null);
+        return true;
       }
     } catch { /* ignore */ }
-  };
+    return false;
+  }, []);
 
   const checkMFAStatus = useCallback(async (adminFlag: boolean): Promise<MFAStatus> => {
     if (!adminFlag) return "not-required";
@@ -138,40 +140,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setMfaStatus(status);
   }, [session, profile, checkMFAStatus]);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        setMfaStatus("checking");
-        setTimeout(async () => {
-          const p = await fetchProfile(session.user.id);
-          checkMinVersion();
-          const status = await checkMFAStatus(!!p?.is_admin);
-          setMfaStatus(status);
-        }, 0);
-      } else {
-        setProfile(null);
-        setMfaStatus("not-required");
-      }
+  const hydrateAuthState = useCallback(async (nextSession: Session | null) => {
+    setSession(nextSession);
+
+    if (!nextSession?.user) {
+      setProfile(null);
+      setMfaStatus("not-required");
       setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setMfaStatus("checking");
+
+    const currentProfile = await fetchProfile(nextSession.user.id);
+    const kicked = await checkMinVersion();
+
+    if (kicked) {
+      setMfaStatus("not-required");
+      setLoading(false);
+      return;
+    }
+
+    const status = await checkMFAStatus(!!currentProfile?.is_admin);
+    setMfaStatus(status);
+    setLoading(false);
+  }, [checkMFAStatus, checkMinVersion, fetchProfile]);
+
+  useEffect(() => {
+    setLoading(true);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      void hydrateAuthState(nextSession);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        setMfaStatus("checking");
-        const p = await fetchProfile(session.user.id);
-        checkMinVersion();
-        const status = await checkMFAStatus(!!p?.is_admin);
-        setMfaStatus(status);
-      } else {
-        setMfaStatus("not-required");
-      }
-      setLoading(false);
-    });
+    void supabase.auth.getSession().then(({ data: { session } }) => hydrateAuthState(session));
 
     return () => subscription.unsubscribe();
-  }, [checkMFAStatus]);
+  }, [hydrateAuthState]);
 
   const signOut = async () => {
     // Fire-and-forget audit before clearing the session

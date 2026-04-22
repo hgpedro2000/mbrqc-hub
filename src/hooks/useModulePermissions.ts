@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +45,7 @@ export const useEnabledModules = (overrideUserId?: string) => {
   const { user } = useAuth();
   const targetUserId = overrideUserId || user?.id;
   const { data: permissions, isLoading } = useModulePermissions(targetUserId);
-  const { data: roles } = useQuery({
+  const { data: roles, isLoading: rolesLoading } = useQuery({
     queryKey: ["my-roles", targetUserId],
     queryFn: async () => {
       if (!targetUserId) return [];
@@ -58,17 +59,17 @@ export const useEnabledModules = (overrideUserId?: string) => {
     enabled: !!targetUserId,
   });
 
-  const isAdmin = roles?.some((r) => r.role === "admin") ?? false;
+  const isAdmin = useMemo(() => roles?.some((r) => r.role === "admin") ?? false, [roles]);
 
-  // Admins see all modules (only when not overriding)
-  if (isAdmin && !overrideUserId) {
-    return { enabledModules: ALL_MODULES.map((m) => m.id), isLoading: false };
-  }
+  const enabledModules = useMemo(() => {
+    if (isAdmin && !overrideUserId) {
+      return ALL_MODULES.map((m) => m.id);
+    }
 
-  // If no permissions set, show nothing (no modules enabled)
-  const enabledModules = (permissions || [])
-    .filter((p) => p.enabled)
-    .map((p) => p.module as ModuleId);
+    return (permissions || [])
+      .filter((p) => p.enabled)
+      .map((p) => p.module as ModuleId);
+  }, [isAdmin, overrideUserId, permissions]);
 
-  return { enabledModules, isLoading };
+  return { enabledModules, isLoading: isLoading || rolesLoading };
 };

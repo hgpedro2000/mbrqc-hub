@@ -109,45 +109,80 @@ const CapsuleTab = () => {
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="overflow-x-auto -mx-3 px-3">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Arquivo</TableHead>
-                <TableHead className="hidden sm:table-cell">Tamanho</TableHead>
-                <TableHead className="hidden md:table-cell">Enviado por</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((f: any) => (
-                <TableRow key={f.id}>
-                  <TableCell className="flex items-center gap-2">
+        <>
+          {/* Mobile cards */}
+          <div className="block sm:hidden space-y-2">
+            {filtered.map((f: any) => (
+              <div key={f.id} className="border rounded-lg p-3 flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
                     <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm truncate max-w-[200px]">{f.file_name}</span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{formatSize(f.file_size || 0)}</TableCell>
-                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{f.uploaded_by_name}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(f)}>
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(f)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                    <span className="text-sm font-medium truncate">{f.file_name}</span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-muted-foreground">
+                    <span>{formatSize(f.file_size || 0)}</span>
+                    <span>•</span>
+                    <span className="truncate">{f.uploaded_by_name}</span>
+                    <span>•</span>
+                    <span>{new Date(f.created_at).toLocaleDateString("pt-BR")}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(f)}>
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(f)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <p className="text-center text-muted-foreground py-8 text-sm">Nenhum arquivo encontrado</p>
+            )}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto -mx-3 px-3">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Arquivo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Tamanho</TableHead>
+                  <TableHead className="hidden md:table-cell">Enviado por</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum arquivo encontrado</TableCell></TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((f: any) => (
+                  <TableRow key={f.id}>
+                    <TableCell className="flex items-center gap-2">
+                      <FileIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span className="text-sm truncate max-w-[200px]">{f.file_name}</span>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{formatSize(f.file_size || 0)}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{f.uploaded_by_name}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{new Date(f.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(f)}>
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(f)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum arquivo encontrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );

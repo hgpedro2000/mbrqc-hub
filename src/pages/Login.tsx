@@ -16,12 +16,25 @@ import { logAction } from "@/lib/logAction";
 const Login = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { versionKicked } = useAuth();
+  const { versionKicked, user, profile, loading: authLoading } = useAuth();
   const [employeeNumber, setEmployeeNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  // After successful login, wait for AuthContext to hydrate the session,
+  // then navigate. This avoids a race where navigate("/") runs before the
+  // session is observable to ProtectedRoute, which would bounce back to /login.
+  useEffect(() => {
+    if (!submitted || authLoading || !user) return;
+    if (profile?.must_change_password) {
+      navigate("/alterar-senha", { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  }, [submitted, authLoading, user, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

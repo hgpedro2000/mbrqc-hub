@@ -1,6 +1,6 @@
-name: Health Check
+ name: Health Check
 
-  on:
+  "on":
     schedule:
       - cron: '0 11 * * *'
     workflow_dispatch:

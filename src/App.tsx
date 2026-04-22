@@ -38,6 +38,7 @@ import MatrizVersatilidade from "./pages/MatrizVersatilidade";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +92,7 @@ const App = () => (
           <UpdateBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/alterar-senha" element={<ChangePassword />} />

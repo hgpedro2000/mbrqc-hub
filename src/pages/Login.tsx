@@ -142,6 +142,15 @@ const Login = () => {
             {t("login.forgotPassword")}
           </Link>
         </form>
+
+        <div className="mt-6 pt-4 border-t border-border/30 text-center">
+          <Link
+            to="/privacy-policy"
+            className="text-xs text-muted-foreground hover:text-accent transition-colors"
+          >
+            Política de Privacidade
+          </Link>
+        </div>
       </div>
 
       {/* Error Dialog */}

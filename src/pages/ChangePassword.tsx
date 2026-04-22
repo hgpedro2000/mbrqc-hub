@@ -104,7 +104,7 @@ const ChangePassword = () => {
   const CriterionRow = ({ ok, label }: { ok: boolean; label: string }) => (
     <div className="flex items-center gap-2 text-sm">
       {ok ? (
-        <Check className="w-4 h-4 text-green-500 shrink-0" />
+        <Check className="w-4 h-4 text-success shrink-0" />
       ) : (
         <X className="w-4 h-4 text-muted-foreground shrink-0" />
       )}

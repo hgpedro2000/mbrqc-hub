@@ -209,6 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAdmin,
         mfaStatus,
         refreshMFAStatus,
+        refreshProfile,
       }}
     >
       {children}

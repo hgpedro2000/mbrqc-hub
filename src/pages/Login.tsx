@@ -22,19 +22,26 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [submitted, setSubmitted] = useState(false);
 
-  // After successful login, wait for AuthContext to hydrate the session,
-  // then navigate. This avoids a race where navigate("/") runs before the
-  // session is observable to ProtectedRoute, which would bounce back to /login.
+  // Whenever AuthContext finishes hydrating with a valid session/profile,
+  // redirect away from /login. This handles BOTH:
+  //  1) the user just submitted the login form, and
+  //  2) the user reloads /login while already authenticated (e.g. PWA cold start
+  //     in production where the persisted session rehydrates after the page
+  //     mounts). Without this, the user would stay stuck on the login screen
+  //     even though their session is valid.
   useEffect(() => {
-    if (!submitted || authLoading || !user) return;
-    if (profile?.must_change_password) {
+    if (authLoading) return;
+    if (!user) return;
+    // Wait until we actually have the profile loaded so we can decide between
+    // "must change password" and "go home".
+    if (!profile) return;
+    if (profile.must_change_password) {
       navigate("/alterar-senha", { replace: true });
     } else {
       navigate("/", { replace: true });
     }
-  }, [submitted, authLoading, user, profile, navigate]);
+  }, [authLoading, user, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

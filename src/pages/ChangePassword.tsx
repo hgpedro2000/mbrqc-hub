@@ -122,8 +122,8 @@ const ChangePassword = () => {
         </div>
 
         {expired && (
-          <Alert className="mb-4 border-yellow-500/50 bg-yellow-500/10">
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          <Alert className="mb-4 border-warning/50 bg-warning/10">
+            <AlertTriangle className="h-4 w-4 text-warning" />
             <AlertDescription className="text-foreground">
               Sua senha expirou. Por favor, cadastre uma nova senha.
             </AlertDescription>

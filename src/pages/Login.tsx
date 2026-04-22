@@ -99,11 +99,11 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8 relative">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-10">
         <LanguageToggle variant="login" />
       </div>
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md mx-auto">
         {versionKicked && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-destructive shrink-0" />

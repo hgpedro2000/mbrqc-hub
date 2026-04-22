@@ -59,6 +59,15 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/alterar-senha" replace />;
   }
 
+  if (
+    profile &&
+    !profile.must_change_password &&
+    isPasswordExpired(profile.password_changed_at) &&
+    path !== "/alterar-senha"
+  ) {
+    return <Navigate to="/alterar-senha?expired=1" replace />;
+  }
+
   if (isAdmin && mfaStatus === "not-enrolled" && path !== "/mfa-setup") {
     return <Navigate to="/mfa-setup" replace />;
   }

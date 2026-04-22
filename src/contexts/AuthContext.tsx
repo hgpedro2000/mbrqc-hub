@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +13,15 @@ interface Profile {
   cargo: string | null;
   qr_code_id: string | null;
   email: string | null;
+  is_admin: boolean | null;
 }
+
+export type MFAStatus =
+  | "checking"
+  | "not-enrolled"
+  | "needs-verify"
+  | "verified"
+  | "not-required";
 
 interface AuthContextType {
   session: Session | null;
@@ -22,6 +30,9 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   versionKicked: boolean;
+  isAdmin: boolean;
+  mfaStatus: MFAStatus;
+  refreshMFAStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -31,6 +42,9 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   versionKicked: false,
+  isAdmin: false,
+  mfaStatus: "checking",
+  refreshMFAStatus: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -54,14 +68,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [versionKicked, setVersionKicked] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<MFAStatus>("checking");
+
+  const isAdmin = !!profile?.is_admin;
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email")
+      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email, is_admin")
       .eq("id", userId)
       .maybeSingle();
     setProfile(data as Profile | null);
+    return data as Profile | null;
   };
 
   const checkMinVersion = async () => {
@@ -79,39 +97,101 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch { /* ignore */ }
   };
 
+  const checkMFAStatus = useCallback(async (adminFlag: boolean): Promise<MFAStatus> => {
+    if (!adminFlag) return "not-required";
+    try {
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) {
+        console.error("MFA listFactors error:", factorsError);
+        return "not-enrolled";
+      }
+      const verifiedFactors = (factorsData?.totp || []).filter(
+        (f: any) => f.status === "verified"
+      );
+      if (verifiedFactors.length === 0) {
+        return "not-enrolled";
+      }
+      const { data: aalData, error: aalError } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aalError) {
+        console.error("MFA AAL error:", aalError);
+        return "needs-verify";
+      }
+      if (aalData?.currentLevel === "aal2") {
+        return "verified";
+      }
+      return "needs-verify";
+    } catch (err) {
+      console.error("checkMFAStatus error:", err);
+      return "not-enrolled";
+    }
+  }, []);
+
+  const refreshMFAStatus = useCallback(async () => {
+    if (!session?.user) {
+      setMfaStatus("not-required");
+      return;
+    }
+    const currentProfile = profile ?? (await fetchProfile(session.user.id));
+    const status = await checkMFAStatus(!!currentProfile?.is_admin);
+    setMfaStatus(status);
+  }, [session, profile, checkMFAStatus]);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
+        setMfaStatus("checking");
+        setTimeout(async () => {
+          const p = await fetchProfile(session.user.id);
           checkMinVersion();
+          const status = await checkMFAStatus(!!p?.is_admin);
+          setMfaStatus(status);
         }, 0);
       } else {
         setProfile(null);
+        setMfaStatus("not-required");
       }
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        fetchProfile(session.user.id);
+        setMfaStatus("checking");
+        const p = await fetchProfile(session.user.id);
         checkMinVersion();
+        const status = await checkMFAStatus(!!p?.is_admin);
+        setMfaStatus(status);
+      } else {
+        setMfaStatus("not-required");
       }
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [checkMFAStatus]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
+    setMfaStatus("not-required");
   };
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, profile, loading, signOut, versionKicked }}>
+    <AuthContext.Provider
+      value={{
+        session,
+        user: session?.user ?? null,
+        profile,
+        loading,
+        signOut,
+        versionKicked,
+        isAdmin,
+        mfaStatus,
+        refreshMFAStatus,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -34,14 +34,17 @@ import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
 import QrProfilePage from "./pages/QrProfilePage";
 import MatrizVersatilidade from "./pages/MatrizVersatilidade";
+import MfaSetup from "./pages/MfaSetup";
+import MfaVerify from "./pages/MfaVerify";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin, mfaStatus } = useAuth();
+  const path = window.location.pathname;
 
-  if (loading) {
+  if (loading || (isAdmin && mfaStatus === "checking")) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
@@ -51,8 +54,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (profile?.must_change_password && window.location.pathname !== "/alterar-senha") {
+  if (profile?.must_change_password && path !== "/alterar-senha") {
     return <Navigate to="/alterar-senha" replace />;
+  }
+
+  if (isAdmin && mfaStatus === "not-enrolled" && path !== "/mfa-setup") {
+    return <Navigate to="/mfa-setup" replace />;
+  }
+
+  if (isAdmin && mfaStatus === "needs-verify" && path !== "/mfa-verify") {
+    return <Navigate to="/mfa-verify" replace />;
   }
 
   return <>{children}</>;
@@ -72,6 +83,8 @@ const App = () => (
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/alterar-senha" element={<ChangePassword />} />
+            <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
+            <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
             <Route path="/engenharia" element={<ProtectedRoute><Engenharia /></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
             

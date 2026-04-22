@@ -16,6 +16,7 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import ExitConfirmDialog from "@/components/ExitConfirmDialog";
+import { logAction } from "@/lib/logAction";
 
 interface DefectEntry {
   description: string;
@@ -218,6 +219,9 @@ const InjectionForm = () => {
       if (photos.length > 0) await uploadPhotos(photos.map((p) => p.file), recordId, "injection");
       if (dimensionalPhotos.length > 0) await uploadPhotos(dimensionalPhotos.map((p) => p.file), recordId, "injection");
       for (const defect of defects) { if (defect.photos.length > 0) await uploadPhotos(defect.photos.map((p) => p.file), recordId, "injection"); }
+      logAction(isEdit ? "update" : "create", "tryout", {
+        subtype: "injecao", record_id: recordId,
+      });
       setSubmitted(true);
       setHasChanges(false);
       toast.success(isEdit ? t("tryout.updateSuccess") : t("tryout.submitSuccess"));

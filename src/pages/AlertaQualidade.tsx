@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { logAction } from "@/lib/logAction";
 
 const lineAreaMap: Record<string, string> = {
   "CP": "cp", "BP": "bp", "CH": "ch", "OEM": "oem",
@@ -260,6 +261,9 @@ const AlertaQualidade = () => {
         alerta_id: alertaId, inspetor_id: inspetor.id, metodo: "qr_lider", registrado_por_id: user?.id,
       } as any);
       if (insertErr) throw insertErr;
+      logAction("validate_qr", "alerta_qualidade", {
+        alerta_id: alertaId, inspetor_id: inspetor.id, inspetor_name: inspetor.full_name,
+      });
       qc.invalidateQueries({ queryKey: ["ciencias-all"] });
       setScanAlertaId(null);
       // Always confirm success; if training is overdue/expiring, also show informational popup
@@ -286,6 +290,7 @@ const AlertaQualidade = () => {
       await supabase.from("ciencias").delete().eq("alerta_id", deleteAlertaId);
       const { error } = await supabase.from("alertas").delete().eq("id", deleteAlertaId);
       if (error) throw error;
+      logAction("delete", "alerta_qualidade", { alerta_id: deleteAlertaId });
       qc.invalidateQueries({ queryKey: ["alertas-lista-mestra"] });
       toast.success("Alerta excluído com sucesso");
     } catch (e: any) {

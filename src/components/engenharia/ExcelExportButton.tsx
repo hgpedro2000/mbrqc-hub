@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { logAction } from "@/lib/logAction";
 
 interface ExcelExportButtonProps {
   data: Record<string, any>[];
@@ -18,6 +19,7 @@ const ExcelExportButton = ({ data, columns, fileName, disabled }: ExcelExportBut
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados");
     XLSX.writeFile(wb, `${fileName}.xlsx`);
+    logAction("export_excel", "engenharia", { file_name: fileName, row_count: data.length });
   };
 
   return (

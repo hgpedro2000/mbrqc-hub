@@ -37,6 +37,7 @@ import QrProfilePage from "./pages/QrProfilePage";
 import MatrizVersatilidade from "./pages/MatrizVersatilidade";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
+import AuditLogsPage from "./pages/AuditLogsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -146,7 +147,10 @@ const App = () => (
             
             {/* Matriz de Versatilidade */}
             <Route path="/matriz-versatilidade" element={<ProtectedRoute><MatrizVersatilidade /></ProtectedRoute>} />
-            
+
+            {/* Admin: Audit Logs */}
+            <Route path="/admin/audit-logs" element={<ProtectedRoute><AuditLogsPage /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ImpersonationProvider>

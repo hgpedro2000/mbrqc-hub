@@ -11,6 +11,7 @@ import { ArrowLeft, Check, Clock, Download } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { AlertaExportTemplate, AlertaSignaturesTemplate } from "@/components/alerta/AlertaExportTemplate";
 import { exportAlertaJpg, exportAlertaPdf, exportAlertaPptx } from "@/lib/exportAlertaQualidade";
+import { logAction } from "@/lib/logAction";
 
 const AlertaQualidadeView = () => {
   const navigate = useNavigate();
@@ -102,6 +103,12 @@ const AlertaQualidadeView = () => {
         if (format === "jpg") await exportAlertaJpg(el, alerta, page2);
         else await exportAlertaPdf(el, alerta, page2);
       }
+      const actionMap = { pdf: "export_pdf", jpg: "export_jpg", pptx: "export_pptx" } as const;
+      logAction(actionMap[format], "alerta_qualidade", {
+        alerta_id: (alerta as any).id,
+        sequencial: (alerta as any).sequencial,
+        include_ciencias: includeCiencias,
+      });
     } catch (e) {
       console.error("Export error:", e);
     } finally {

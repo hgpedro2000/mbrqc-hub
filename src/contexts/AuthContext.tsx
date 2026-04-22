@@ -174,6 +174,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [checkMFAStatus]);
 
   const signOut = async () => {
+    // Fire-and-forget audit before clearing the session
+    try {
+      const { logAction } = await import("@/lib/logAction");
+      await logAction("logout", "auth");
+    } catch { /* ignore */ }
     await supabase.auth.signOut();
     setProfile(null);
     setMfaStatus("not-required");

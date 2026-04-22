@@ -11,6 +11,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { logAction } from "@/lib/logAction";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,6 +54,12 @@ const Login = () => {
           refresh_token: data.session.refresh_token,
         });
       }
+
+      // Audit: successful login
+      logAction("login", "auth", {
+        employee_number: employeeNumber.trim(),
+        full_name: data.profile?.full_name,
+      });
 
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));

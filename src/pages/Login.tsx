@@ -87,9 +87,9 @@ const Login = () => {
         toast.success(`${t("login.welcome")}, ${data.profile?.full_name || ""}!`);
       }
 
-      // Mark as submitted; the useEffect above will navigate once the
-      // AuthContext finishes hydrating with the new session.
-      setSubmitted(true);
+      // The useEffect above watches AuthContext and will redirect as soon
+      // as the new session/profile finishes hydrating.
+
     } catch (error: any) {
       const msg = error.message || t("login.authError");
       setErrorMessage(msg);

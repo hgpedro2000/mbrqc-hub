@@ -132,6 +132,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!session?.user) return;
+    await fetchProfile(session.user.id);
+  }, [session, fetchProfile]);
+
   const refreshMFAStatus = useCallback(async () => {
     if (!session?.user) {
       setMfaStatus("not-required");
@@ -140,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const currentProfile = profile ?? (await fetchProfile(session.user.id));
     const status = await checkMFAStatus(!!currentProfile?.is_admin);
     setMfaStatus(status);
-  }, [session, profile, checkMFAStatus]);
+  }, [session, profile, checkMFAStatus, fetchProfile]);
 
   const hydrateAuthState = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);

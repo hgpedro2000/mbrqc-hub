@@ -1219,6 +1219,7 @@ export type Database = {
           empresa_terceira: string | null
           full_name: string
           id: string
+          is_admin: boolean
           last_login_at: string | null
           must_change_password: boolean
           qr_code_id: string | null
@@ -1235,6 +1236,7 @@ export type Database = {
           empresa_terceira?: string | null
           full_name: string
           id: string
+          is_admin?: boolean
           last_login_at?: string | null
           must_change_password?: boolean
           qr_code_id?: string | null
@@ -1251,6 +1253,7 @@ export type Database = {
           empresa_terceira?: string | null
           full_name?: string
           id?: string
+          is_admin?: boolean
           last_login_at?: string | null
           must_change_password?: boolean
           qr_code_id?: string | null

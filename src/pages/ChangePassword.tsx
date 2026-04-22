@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { KeyRound, Check, X, AlertTriangle, ShieldCheck } from "lucide-react";
+import { KeyRound, Check, X, AlertTriangle, ShieldCheck, Info } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -200,10 +200,12 @@ const ChangePassword = () => {
               <CriterionRow ok={criteria.uppercase} label="1 letra maiúscula" />
               <CriterionRow ok={criteria.number} label="1 número" />
               <CriterionRow ok={criteria.special} label="1 caractere especial" />
-              <CriterionRow
-                ok={false}
-                label={`Não reutilizar uma das últimas ${PASSWORD_HISTORY_SIZE} senhas (verificado ao salvar)`}
-              />
+              <div className="flex items-center gap-2 text-sm">
+                <Info className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-muted-foreground">
+                  Não pode ser igual às últimas {PASSWORD_HISTORY_SIZE} senhas (verificado ao salvar)
+                </span>
+              </div>
             </div>
           </div>
 

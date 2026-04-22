@@ -9,6 +9,7 @@ import React from "react";
 import jsPDF from "jspdf";
 import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
+import { logAction } from "@/lib/logAction";
 
 interface Props {
   data: Record<string, any>;
@@ -78,6 +79,7 @@ async function exportToPdf(contentRef: React.RefObject<HTMLDivElement>, data: Re
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 100);
+    logAction("export_pdf", "apontamento", { tipo: data.tipo, numero: data.numero });
   } finally {
     exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
     if (parent) {
@@ -124,6 +126,7 @@ function exportToExcel(data: Record<string, any>) {
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Apontamento");
   XLSX.writeFile(wb, `apontamento-${typeLabels[data.tipo] || "export"}-${data.numero || "sem-numero"}.xlsx`);
+  logAction("export_excel", "apontamento", { tipo: data.tipo, numero: data.numero });
 }
 
 export const ApontamentoExportButtons = ({ data, photos, contentRef }: Props) => (

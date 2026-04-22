@@ -9,6 +9,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import React from "react";
+import { logAction } from "@/lib/logAction";
 
 interface ExportProps {
   data: Record<string, any>;
@@ -86,6 +87,7 @@ function exportToExcel(data: Record<string, any>, fields: string[], fieldLabels:
   XLSX.utils.book_append_sheet(wb, ws, "Checklist");
   const numero = data.numero || "sem-numero";
   XLSX.writeFile(wb, `checklist-${getTypeLabel(checklistType)}-${numero}.xlsx`);
+  logAction("export_excel", "tryout", { subtype: checklistType, numero });
 }
 
 async function exportToPptx(data: Record<string, any>, photos: any[], fields: string[], fieldLabels: Record<string, string>, checklistType: string, catMap?: Record<string, string>, defectMap?: Record<string, string>) {
@@ -253,6 +255,7 @@ async function exportToPdfFromRef(contentRef: React.RefObject<HTMLDivElement>, c
   const typeLabel = getTypeLabel(checklistType);
   const fileName = `checklist-${typeLabel}-${numero || "export"}.pdf`;
   await exportPdfFromRef(contentRef.current, fileName);
+  logAction("export_pdf", "tryout", { subtype: checklistType, numero });
 }
 
 export const ChecklistExportButtons = ({ data, photos, checklistType, fields, fieldLabels, contentRef, catMap, defectMap }: ExportProps) => {

@@ -1,0 +1,1 @@
+DELETE FROM auth.mfa_factors WHERE user_id = '94bcaa8f-3518-45c1-b7fb-732aa2755a27';

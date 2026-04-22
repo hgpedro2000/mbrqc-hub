@@ -1209,6 +1209,27 @@ export type Database = {
           },
         ]
       }
+      password_history: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cargo: string | null
@@ -1222,6 +1243,7 @@ export type Database = {
           is_admin: boolean
           last_login_at: string | null
           must_change_password: boolean
+          password_changed_at: string | null
           qr_code_id: string | null
           status: string
           turno: string | null
@@ -1239,6 +1261,7 @@ export type Database = {
           is_admin?: boolean
           last_login_at?: string | null
           must_change_password?: boolean
+          password_changed_at?: string | null
           qr_code_id?: string | null
           status?: string
           turno?: string | null
@@ -1256,6 +1279,7 @@ export type Database = {
           is_admin?: boolean
           last_login_at?: string | null
           must_change_password?: boolean
+          password_changed_at?: string | null
           qr_code_id?: string | null
           status?: string
           turno?: string | null

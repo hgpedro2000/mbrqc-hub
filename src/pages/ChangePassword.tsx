@@ -1,29 +1,54 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { KeyRound, Check, X, AlertTriangle } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import {
+  evaluatePassword,
+  passwordScore,
+  isPasswordValid,
+  strengthLabel,
+  hashPassword,
+  PASSWORD_HISTORY_SIZE,
+  MIN_PASSWORD_LENGTH,
+} from "@/lib/passwordPolicy";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const expired = searchParams.get("expired") === "1";
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const criteria = useMemo(() => evaluatePassword(password), [password]);
+  const score = passwordScore(criteria);
+  const valid = isPasswordValid(criteria);
+  const strength = strengthLabel(score);
+  const matches = password.length > 0 && password === confirmPassword;
+  const canSubmit = valid && matches && !loading;
+
+  useEffect(() => {
+    if (expired) {
+      toast.warning("Sua senha expirou. Por favor, cadastre uma nova senha.");
+    }
+  }, [expired]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast.error(t("changePassword.minError"));
+    if (!valid) {
+      toast.error("A senha não atende todos os critérios de segurança.");
       return;
     }
-
     if (password !== confirmPassword) {
       toast.error(t("changePassword.mismatchError"));
       return;
@@ -31,16 +56,40 @@ const ChangePassword = () => {
 
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sessão inválida.");
+
+      // Check password history (last N hashes)
+      const newHash = await hashPassword(password);
+      const { data: history } = await supabase
+        .from("password_history" as any)
+        .select("password_hash")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(PASSWORD_HISTORY_SIZE);
+
+      if (history && (history as any[]).some((h) => h.password_hash === newHash)) {
+        toast.error(`Você não pode reutilizar uma das últimas ${PASSWORD_HISTORY_SIZE} senhas. Escolha uma diferente.`);
+        setLoading(false);
+        return;
+      }
+
       const { error: pwError } = await supabase.auth.updateUser({ password });
       if (pwError) throw pwError;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({ must_change_password: false })
-          .eq("id", user.id);
-      }
+      // Save to history + reset flags
+      await supabase.from("password_history" as any).insert({
+        user_id: user.id,
+        password_hash: newHash,
+      });
+
+      await supabase
+        .from("profiles")
+        .update({
+          must_change_password: false,
+          password_changed_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
 
       await supabase.auth.signOut();
       toast.success(t("changePassword.success"));
@@ -52,8 +101,19 @@ const ChangePassword = () => {
     }
   };
 
+  const CriterionRow = ({ ok, label }: { ok: boolean; label: string }) => (
+    <div className="flex items-center gap-2 text-sm">
+      {ok ? (
+        <Check className="w-4 h-4 text-success shrink-0" />
+      ) : (
+        <X className="w-4 h-4 text-muted-foreground shrink-0" />
+      )}
+      <span className={ok ? "text-foreground" : "text-muted-foreground"}>{label}</span>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src={logo} alt="Hyundai Mobis" className="h-16 mx-auto mb-4 object-contain" />
@@ -61,16 +121,74 @@ const ChangePassword = () => {
           <p className="text-muted-foreground mt-1">{t("changePassword.subtitle")}</p>
         </div>
 
+        {expired && (
+          <Alert className="mb-4 border-warning/50 bg-warning/10">
+            <AlertTriangle className="h-4 w-4 text-warning" />
+            <AlertDescription className="text-foreground">
+              Sua senha expirou. Por favor, cadastre uma nova senha.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">{t("changePassword.newPassword")}</Label>
-            <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("changePassword.minChars")} />
+            <Input
+              id="password"
+              type="password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
+            />
+
+            {password.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${strength.color}`}
+                    style={{ width: `${strength.widthPct}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Força da senha</span>
+                  <span className="font-medium text-foreground">{strength.label}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-1.5 pt-2">
+              <CriterionRow ok={criteria.minLength} label={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`} />
+              <CriterionRow ok={criteria.uppercase} label="1 letra maiúscula" />
+              <CriterionRow ok={criteria.number} label="1 número" />
+              <CriterionRow ok={criteria.special} label="1 caractere especial" />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t("changePassword.confirmPassword")}</Label>
-            <Input id="confirmPassword" type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder={t("changePassword.repeatPassword")} />
+            <Input
+              id="confirmPassword"
+              type="password"
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder={t("changePassword.repeatPassword")}
+            />
+            {confirmPassword.length > 0 && !matches && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <X className="w-3 h-3" /> As senhas não coincidem
+              </p>
+            )}
           </div>
-          <Button type="submit" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12">
+
+          <Button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12"
+          >
             {loading ? t("common.saving") : (
               <>
                 <KeyRound className="w-4 h-4 mr-2" />

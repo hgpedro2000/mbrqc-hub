@@ -347,7 +347,13 @@ const Hub = () => {
   const [orderedModules, setOrderedModules] = useState(sortedModules);
 
   useEffect(() => {
-    setOrderedModules(sortedModules);
+    setOrderedModules((current) => {
+      const isSameOrder =
+        current.length === sortedModules.length &&
+        current.every((module, index) => module.id === sortedModules[index]?.id);
+
+      return isSameOrder ? current : sortedModules;
+    });
   }, [sortedModules]);
 
   const sensors = useSensors(

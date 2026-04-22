@@ -85,7 +85,7 @@ const AuditLogsTab = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-        <div className="relative lg:col-span-2">
+        <div className="relative sm:col-span-2 lg:col-span-2">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
@@ -108,9 +108,9 @@ const AuditLogsTab = () => {
             {actions.map((a) => <SelectItem key={a as string} value={a as string}>{a as string}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="flex gap-2">
-          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="h-9" />
-          <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="h-9" />
+        <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
+          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="h-9 min-w-0" />
+          <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="h-9 min-w-0" />
         </div>
       </div>
 
@@ -123,7 +123,34 @@ const AuditLogsTab = () => {
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto border border-border/60 rounded-lg">
+          {/* Mobile card list */}
+          <div className="sm:hidden space-y-2">
+            {pageRows.map((l: any) => (
+              <div key={l.id} className="border border-border/60 rounded-lg p-3 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                    {new Date(l.created_at).toLocaleString("pt-BR")}
+                  </span>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{l.action}</Badge>
+                </div>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs font-medium break-all min-w-0 flex-1">{l.user_email || "—"}</p>
+                  <Badge variant="secondary" className="text-[10px] shrink-0">{l.module}</Badge>
+                </div>
+                {l.ip_address && (
+                  <p className="text-[10px] font-mono text-muted-foreground">IP: {l.ip_address}</p>
+                )}
+                {Object.keys(l.details || {}).length > 0 && (
+                  <pre className="text-[10px] whitespace-pre-wrap break-words text-muted-foreground bg-muted/30 rounded p-1.5 max-h-24 overflow-auto">
+                    {JSON.stringify(l.details, null, 0)}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto border border-border/60 rounded-lg">
             <table className="w-full text-xs">
               <thead className="bg-muted/40">
                 <tr className="text-left">

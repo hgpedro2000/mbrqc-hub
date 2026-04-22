@@ -45,16 +45,12 @@ export const useAppVersion = () => {
     return () => clearInterval(interval);
   }, [checkVersion]);
 
-  // Listen for SW updates
-  useEffect(() => {
-    const handler = (e: MessageEvent) => {
-      if (e.data?.type === "SW_UPDATED") {
-        setUpdateAvailable(true);
-      }
-    };
-    navigator.serviceWorker?.addEventListener("message", handler);
-    return () => navigator.serviceWorker?.removeEventListener("message", handler);
-  }, []);
+  // We intentionally ignore generic "SW_UPDATED" messages here. The service
+  // worker fires them every time it activates (including the very first
+  // install on a fresh browser), which would incorrectly show the
+  // "New Version Available" modal and block the user from logging in on the
+  // published site. The version check above is the source of truth for
+  // surfacing real updates.
 
   return { updateAvailable, criticalUpdate, clientVersion: CLIENT_VERSION };
 };

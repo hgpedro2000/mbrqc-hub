@@ -67,11 +67,10 @@ const AlertaQualidadeView = () => {
       const qualifiedIds = [...new Set((qualData || []).map((q: any) => q.user_id))];
       if (qualifiedIds.length === 0) return [];
 
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase as any)
+        .from("public_profiles")
         .select("id, full_name, cargo")
-        .in("id", qualifiedIds)
-        .eq("status", "active");
+        .in("id", qualifiedIds);
       if (error) throw error;
       return data || [];
     },

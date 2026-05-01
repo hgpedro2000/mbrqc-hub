@@ -224,8 +224,9 @@ const AlertaQualidade = () => {
     if (!scanAlertaId) return;
     const alertaId = scanAlertaId;
     try {
-      const { data: inspetor, error: findErr } = await supabase
-        .from("profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
+      const { data: inspetorRaw, error: findErr } = await (supabase as any)
+        .from("public_profiles").select("id, full_name").eq("qr_code_id", qrValue).maybeSingle();
+      const inspetor = inspetorRaw as { id: string; full_name: string } | null;
       if (findErr || !inspetor) { toast.error("QR Code não reconhecido."); return; }
 
       // Check training status (informational only — does NOT block ciência)

@@ -196,8 +196,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
   const { data: creatorProfile } = useQuery({
     queryKey: ["apontamento-creator-profile", item?.created_by],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase as any)
+        .from("public_profiles")
         .select("empresa, empresa_terceira")
         .eq("id", item!.created_by!)
         .maybeSingle();

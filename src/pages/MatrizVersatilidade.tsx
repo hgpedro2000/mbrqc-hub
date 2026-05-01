@@ -112,11 +112,10 @@ const MatrizVersatilidade = () => {
   const { data: inspectors = [] } = useQuery({
     queryKey: ["matriz-inspectors"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase as any)
+        .from("public_profiles")
         .select("id, full_name, cargo, turno, qr_code_id, employee_number")
         .eq("empresa", "mobis_brasil")
-        .eq("status", "active")
         .in("cargo", CARGOS_QUALIDADE)
         .order("full_name");
       if (error) throw error;
@@ -127,7 +126,7 @@ const MatrizVersatilidade = () => {
   const { data: allProfiles = [] } = useQuery({
     queryKey: ["all-profiles-for-editors"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, employee_number, cargo").eq("status", "active").order("full_name");
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, full_name, employee_number, cargo").order("full_name");
       if (error) throw error;
       return data || [];
     },

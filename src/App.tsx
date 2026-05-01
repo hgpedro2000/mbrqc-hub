@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
+import { useUserRole } from "@/hooks/useUserRole";
 import Hub from "./pages/Hub";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
@@ -81,6 +82,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+
+  if (authLoading || roleLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -98,7 +115,7 @@ const App = () => (
             <Route path="/alterar-senha" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />
             <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
-            <Route path="/engenharia" element={<ProtectedRoute><Engenharia /></ProtectedRoute>} />
+            <Route path="/engenharia" element={<ProtectedRoute><AdminRoute><Engenharia /></AdminRoute></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
             
             {/* Tryout */}

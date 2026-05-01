@@ -1153,8 +1153,8 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* TAG NUMBER - Incoming only */}
-        {isIncoming && (
+        {/* TAG NUMBER - Incoming only (hidden when defeitos diferentes, since each defeito has its own tag) */}
+        {isIncoming && ngMultiploDecisao !== "diferente" && (
           <div className="form-section">
             <h2 className="form-section-title flex items-center gap-2">
               <Tag className="w-4 h-4" /> Número da TAG

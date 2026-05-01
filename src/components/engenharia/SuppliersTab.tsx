@@ -94,12 +94,12 @@ const SuppliersTab = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h2 className="text-lg font-heading font-semibold">Fornecedores</h2>
-        <div className="flex flex-wrap gap-2">
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">Fornecedores</h2>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
           {selectedIds.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1">
               <Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}
             </Button>
           )}
@@ -109,7 +109,7 @@ const SuppliersTab = () => {
             onImport={async (rows) => { const { error } = await supabase.from("suppliers").upsert(rows.map((r) => ({ code: r.code, name: r.name })), { onConflict: "code" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-suppliers"] }); toast.success(`${rows.length} fornecedor(es) importado(s)!`); }}
           />
           <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="col-span-2 sm:col-span-1"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
             <DialogContent className="w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle></DialogHeader>
               <div className="space-y-4">

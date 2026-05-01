@@ -342,11 +342,11 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
 
   return (
     <div className="space-y-4 min-w-0 w-full overflow-hidden">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h2 className="text-lg font-heading font-semibold">Usuários</h2>
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">Usuários</h2>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
           {selectedIds.size > 0 && (
-            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1">
               <Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}
             </Button>
           )}
@@ -360,14 +360,14 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
             </DialogContent>
           </Dialog>
           {pendingRequests.length > 0 && (
-            <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
+            <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 col-span-2 sm:col-span-1">
               <ClipboardList className="w-4 h-4" />
               Solicitações ({pendingRequests.length})
             </Button>
           )}
           <Dialog open={open} onOpenChange={(v) => { if (!v) { resetForm(); setActiveRequestId(null); } setOpen(v); }}>
             <DialogTrigger asChild>
-              <Button size="sm"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
+              <Button size="sm" className="col-span-2 sm:col-span-1"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full max-w-lg">
               <DialogHeader><DialogTitle>Criar Novo Usuário</DialogTitle></DialogHeader>

@@ -98,18 +98,18 @@ const PartNumbersTab = () => {
   const toggleSelect = (id: string) => { setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h2 className="text-lg font-heading font-semibold">Part Numbers</h2>
-        <div className="flex flex-wrap gap-2">
-          {selectedIds.size > 0 && <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}><Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}</Button>}
+    <div className="space-y-4 w-full">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">Part Numbers</h2>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
+          {selectedIds.size > 0 && <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1"><Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}</Button>}
           <ExcelExportButton data={partNumbers.map((p: any) => ({ supplier_code: p.suppliers?.code || "", supplier_name: p.suppliers?.name || "", part_number: p.part_number, part_name: p.part_name, project: p.project, line_module: p.line_module, alc_code: p.alc_code || "N/A", active: p.active }))} columns={[{ header: "Fornecedor (Código)", key: "supplier_code" }, { header: "Fornecedor (Nome)", key: "supplier_name" }, { header: "Part Number", key: "part_number" }, { header: "Part Name", key: "part_name" }, { header: "Projeto", key: "project" }, { header: "Módulo", key: "line_module" }, { header: "ALC Code", key: "alc_code" }, { header: "Ativo", key: "active" }]} fileName="part_numbers" />
           <ExcelImportDialog title="Part Numbers" columns={PN_COLUMNS}
             checkDuplicates={async (rows) => { const pns = rows.map((r) => r.part_number); const { data } = await supabase.from("part_numbers").select("part_number").in("part_number", pns); const existing = new Set((data || []).map((d) => d.part_number)); return rows.map((r) => existing.has(r.part_number)); }}
             onImport={async (rows) => { const codes = [...new Set(rows.map((r) => r.supplier_code))]; const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes); const codeToId = new Map((suppData || []).map((s) => [s.code, s.id])); const toInsert = rows.filter((r) => codeToId.has(r.supplier_code)).map((r) => ({ supplier_id: codeToId.get(r.supplier_code)!, part_number: r.part_number, part_name: r.part_name, project: r.project || "", line_module: r.line_module || "", alc_code: r.alc_code || "N/A" })); const skipped = rows.length - toInsert.length; if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado."); const { error } = await supabase.from("part_numbers").upsert(toInsert, { onConflict: "part_number" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(`${toInsert.length} importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s).` : ""}`); }}
           />
           <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="col-span-2 sm:col-span-1"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
             <DialogContent className="w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader><DialogTitle>{editId ? "Editar Part Number" : "Novo Part Number"}</DialogTitle></DialogHeader>
               <div className="space-y-4">

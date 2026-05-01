@@ -48,6 +48,7 @@ interface DefeitoDetalhe {
   modo_falha: string;
   descricao: string;
   qty_ng: number;
+  tag_number: string;
   photoFiles: File[];
   photoPreviews: string[];
 }
@@ -425,8 +426,25 @@ const ApontamentoForm = () => {
       setAcaoImediata(existing.acao_imediata || "");
       setComentarioAdicional(existing.comentario_adicional || "");
       const sd = (existing.segundo_defeitos as any[]) || [];
-      setSegundoDefeitos(sd);
-      setTemSegundoDefeito(sd.length > 0 ? "sim" : "nao");
+      // Distinguish "diferente" defeitos (with modo_falha) from "segundo defeito" (with part_number)
+      const defeitosDiferente = sd.filter((d: any) => d?.modo_falha);
+      const segundosDefeitosLegacy = sd.filter((d: any) => !d?.modo_falha);
+      if (defeitosDiferente.length > 0) {
+        setNgMultiploDecisao("diferente");
+        setDefeitosDetalhes(defeitosDiferente.map((d: any) => ({
+          modo_falha: d.modo_falha || "",
+          descricao: d.descricao || "",
+          qty_ng: Number(d.qty) || 0,
+          tag_number: d.tag || "",
+          photoFiles: [],
+          photoPreviews: [],
+        })));
+        setSegundoDefeitos([]);
+        setTemSegundoDefeito("nao");
+      } else {
+        setSegundoDefeitos(segundosDefeitosLegacy);
+        setTemSegundoDefeito(segundosDefeitosLegacy.length > 0 ? "sim" : "nao");
+      }
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");
@@ -549,8 +567,8 @@ const ApontamentoForm = () => {
     setShowNgDecisionDialog(false);
     if (decision === "diferente") {
       setDefeitosDetalhes([
-        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
-        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
+        { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] },
+        { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] },
       ]);
     } else {
       setDefeitosDetalhes([]);
@@ -559,7 +577,7 @@ const ApontamentoForm = () => {
 
   const addDefeitoDetalhe = () => {
     if (defeitosDetalhes.length >= quantidadeNg) { toast.error(`Máximo ${quantidadeNg} detalhes de defeito`); return; }
-    setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] }]);
+    setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] }]);
   };
 
   const removeDefeitoDetalhe = (index: number) => {
@@ -677,12 +695,12 @@ const ApontamentoForm = () => {
         acao_imediata: acaoImediata || null,
         comentario_adicional: comentarioAdicional || null,
         segundo_defeitos: temSegundoDefeito === "sim" ? segundoDefeitos :
-          ngMultiploDecisao === "diferente" ? defeitosDetalhes.map((d) => ({ modo_falha: d.modo_falha, descricao: d.descricao, qty: d.qty_ng })) : [],
+          ngMultiploDecisao === "diferente" ? defeitosDetalhes.map((d) => ({ modo_falha: d.modo_falha, descricao: d.descricao, qty: d.qty_ng, tag: d.tag_number || null })) : [],
         status: asDraft ? "draft" : "submitted",
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
         tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
-        numero_tag: isIncoming ? (quantidadeNg > 0 ? (tagNumber || null) : null) : null,
+        numero_tag: isIncoming ? (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" ? (tagNumber || null) : null) : null,
       } as any;
 
       let recordId = id;
@@ -959,9 +977,15 @@ const ApontamentoForm = () => {
                       <Label className="text-xs">Descrição *</Label>
                       <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Qty NG *</Label>
-                      <Input type="number" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Qty NG *</Label>
+                        <Input type="number" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
+                        <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -1129,8 +1153,8 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* TAG NUMBER - Incoming only */}
-        {isIncoming && (
+        {/* TAG NUMBER - Incoming only (hidden when defeitos diferentes, since each defeito has its own tag) */}
+        {isIncoming && ngMultiploDecisao !== "diferente" && (
           <div className="form-section">
             <h2 className="form-section-title flex items-center gap-2">
               <Tag className="w-4 h-4" /> Número da TAG

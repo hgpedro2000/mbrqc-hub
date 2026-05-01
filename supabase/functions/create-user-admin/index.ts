@@ -6,24 +6,58 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+async function requireAdmin(req: Request, admin: any) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { error: "Unauthorized", status: 401 };
+  }
+  const token = authHeader.replace("Bearer ", "");
+  const { data: userRes, error: userErr } = await admin.auth.getUser(token);
+  if (userErr || !userRes?.user) {
+    return { error: "Unauthorized", status: 401 };
+  }
+  const { data: roleRow } = await admin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userRes.user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!roleRow) {
+    return { error: "Forbidden: admin role required", status: 403 };
+  }
+  return { user: userRes.user };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira, cargo } = await req.json();
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
-    const internalEmail = `${employee_number}@internal.qhub`;
+    const auth = await requireAdmin(req, admin);
+    if ("error" in auth) {
+      return new Response(JSON.stringify({ error: auth.error }), {
+        status: auth.status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Use provided password or default to 123456
+    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira, cargo } = await req.json();
+
+    if (!employee_number || !full_name) {
+      return new Response(JSON.stringify({ error: "employee_number e full_name são obrigatórios" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const internalEmail = `${employee_number}@internal.qhub`;
     const userPassword = password || "123456";
 
-    // Create auth user
     const { data: authUser, error: authError } = await admin.auth.admin.createUser({
       email: internalEmail,
       password: userPassword,
@@ -39,7 +73,6 @@ Deno.serve(async (req) => {
 
     const userId = authUser.user.id;
 
-    // Create profile with turno, email, empresa fields
     await admin.from("profiles").insert({
       id: userId,
       employee_number,
@@ -53,15 +86,10 @@ Deno.serve(async (req) => {
       cargo: cargo || null,
     });
 
-    // Assign role
     if (role) {
-      await admin.from("user_roles").insert({
-        user_id: userId,
-        role,
-      });
+      await admin.from("user_roles").insert({ user_id: userId, role });
     }
 
-    // Auto-assign default module permissions: Apontamentos + Consulta de Peças
     const defaultModules = ["apontamentos", "consulta_pecas"];
     for (const mod of defaultModules) {
       await admin.from("user_module_permissions").insert({

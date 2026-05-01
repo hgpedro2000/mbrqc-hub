@@ -978,19 +978,19 @@ const ApontamentoForm = () => {
                       <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 w-full">
                         <Label className="text-xs">Qty NG *</Label>
-                        <Input type="number" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} />
+                        <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 w-full">
                         <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
-                        <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" />
+                        <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
                       </div>
                     </div>
                   </div>
                 ))}
                 {defeitosDetalhes.length < quantidadeNg && (
-                  <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
+                  <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
                 )}
                 {totalDefeitosQty !== quantidadeNg && (
                   <p className="text-xs text-destructive font-medium">⚠ A soma dos NG ({totalDefeitosQty}) deve ser igual ao total NG ({quantidadeNg})</p>
@@ -1121,8 +1121,8 @@ const ApontamentoForm = () => {
             Foto do Defeito {!ngIsZero && "*"}
             {validationErrors.has("fotos") && <span className="text-destructive text-sm ml-2">(obrigatório)</span>}
           </h2>
-          <p className="text-xs text-muted-foreground mb-2 sm:mb-3">Mínimo 1, máximo 4 fotos</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+          <p className="text-xs text-muted-foreground mb-2 sm:mb-3 text-center sm:text-left">Mínimo 1, máximo 4 fotos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 justify-items-center sm:justify-items-stretch max-w-md sm:max-w-none mx-auto sm:mx-0 w-full">
             {existingPhotos.map((photo) => (
               <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border">
                 <img src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/checklist-photos/${photo.file_path}`} alt={photo.file_name} className="w-full h-full object-cover" />
@@ -1136,13 +1136,13 @@ const ApontamentoForm = () => {
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
               <>
-                <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
                   <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                   <span className="text-xs text-muted-foreground">Câmera</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                 </label>
                 {(existingPhotos.length + photoFiles.length) < 3 && (
-                  <label className={`aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                  <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
                     <ImagePlus className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                     <span className="text-xs text-muted-foreground">Galeria</span>
                     <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoChange} />
@@ -1160,14 +1160,14 @@ const ApontamentoForm = () => {
               <Tag className="w-4 h-4" /> Número da TAG
             </h2>
             {quantidadeNg === 0 ? (
-              <Input value="N/A" readOnly className="bg-muted max-w-xs" />
+              <Input value="N/A" readOnly className="bg-muted w-full sm:max-w-xs" />
             ) : (
               <div className="space-y-1.5">
                 <Input
                   value={tagNumber}
                   onChange={(e) => setTagNumber(e.target.value)}
                   placeholder="Digite o número da TAG (opcional)"
-                  className="max-w-md"
+                  className="w-full sm:max-w-md"
                 />
                 <p className="text-xs text-muted-foreground">
                   {tagNumber ? "" : "Se não preenchido, ficará como \"Aguardando número de TAG\""}

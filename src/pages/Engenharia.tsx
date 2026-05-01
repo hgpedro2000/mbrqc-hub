@@ -148,21 +148,21 @@ const Engenharia = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-hidden">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6 w-full min-w-0">
-          <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4 pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]">
-            <TabsList className="inline-flex w-auto min-w-max xl:grid xl:w-full xl:grid-cols-10 h-auto gap-1">
-              <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.users")}</TabsTrigger>
-              <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.suppliers")}</TabsTrigger>
-              <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
-              <TabsTrigger value="defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.defects")}</TabsTrigger>
-              <TabsTrigger value="cat_defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.defectCategories")}</TabsTrigger>
-              <TabsTrigger value="responsabilidades" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.responsibilities")}</TabsTrigger>
-              <TabsTrigger value="capsula" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Cápsula</TabsTrigger>
-              <TabsTrigger value="erros" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap relative">
+          <div className="w-full">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 xl:grid-cols-10 h-auto gap-1 p-1">
+              <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.users")}</TabsTrigger>
+              <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.suppliers")}</TabsTrigger>
+              <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
+              <TabsTrigger value="defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.defects")}</TabsTrigger>
+              <TabsTrigger value="cat_defeitos" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.defectCategories")}</TabsTrigger>
+              <TabsTrigger value="responsabilidades" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">{t("engenharia.tabs.responsibilities")}</TabsTrigger>
+              <TabsTrigger value="capsula" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">Cápsula</TabsTrigger>
+              <TabsTrigger value="erros" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap relative w-full">
                 Help Desk
                 {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
               </TabsTrigger>
-              <TabsTrigger value="privacidade" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Privacidade</TabsTrigger>
-              <TabsTrigger value="auditoria" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">Auditoria</TabsTrigger>
+              <TabsTrigger value="privacidade" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">Privacidade</TabsTrigger>
+              <TabsTrigger value="auditoria" className="text-[10px] sm:text-xs md:text-sm px-2 py-1.5 sm:py-2 whitespace-nowrap w-full">Auditoria</TabsTrigger>
             </TabsList>
           </div>
 

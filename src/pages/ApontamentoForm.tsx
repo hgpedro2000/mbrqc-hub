@@ -550,8 +550,8 @@ const ApontamentoForm = () => {
     setShowNgDecisionDialog(false);
     if (decision === "diferente") {
       setDefeitosDetalhes([
-        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
-        { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] },
+        { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] },
+        { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] },
       ]);
     } else {
       setDefeitosDetalhes([]);
@@ -560,7 +560,7 @@ const ApontamentoForm = () => {
 
   const addDefeitoDetalhe = () => {
     if (defeitosDetalhes.length >= quantidadeNg) { toast.error(`Máximo ${quantidadeNg} detalhes de defeito`); return; }
-    setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, photoFiles: [], photoPreviews: [] }]);
+    setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] }]);
   };
 
   const removeDefeitoDetalhe = (index: number) => {

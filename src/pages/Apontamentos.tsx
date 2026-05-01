@@ -168,6 +168,7 @@ const Apontamentos = () => {
     
     const baseFilters: FilterConfig[] = [
       { key: "status", label: "Status", options: statusFilterOptions, labelMap: { draft: "Rascunho", submitted: "Finalizado" } },
+      { key: "resultado", label: "Resultado", options: ["sem_defeito", "ng"], labelMap: { sem_defeito: "Sem defeito encontrado", ng: "NG (com defeito)" } },
       { key: "projeto", label: "Projeto", options: projetos },
       { key: "fornecedor", label: "Fornecedor", options: fornecedores },
       { key: "responsavel", label: "Apontado por", options: responsaveis },
@@ -210,9 +211,16 @@ const Apontamentos = () => {
           const userEmpresa = i.created_by ? empresaByUserId[i.created_by] : undefined;
           if (userEmpresa !== empresaFilter) return false;
         }
-        // Standard filters (except empresa)
+        // Resultado filter (sem defeito vs NG)
+        const resultadoFilter = filterValues["resultado"];
+        if (resultadoFilter && resultadoFilter !== "all") {
+          const isSemDefeito = (i.quantidade_ng ?? 0) === 0 || i.descricao === "Sem defeito encontrado durante essa inspeção";
+          if (resultadoFilter === "sem_defeito" && !isSemDefeito) return false;
+          if (resultadoFilter === "ng" && isSemDefeito) return false;
+        }
+        // Standard filters (except empresa and resultado)
         return Object.entries(filterValues).every(([key, value]) => {
-          if (!value || value === "all" || key === "empresa") return true;
+          if (!value || value === "all" || key === "empresa" || key === "resultado") return true;
           return String((i as any)[key]) === value;
         });
       }),

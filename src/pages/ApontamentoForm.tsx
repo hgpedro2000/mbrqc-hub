@@ -426,8 +426,25 @@ const ApontamentoForm = () => {
       setAcaoImediata(existing.acao_imediata || "");
       setComentarioAdicional(existing.comentario_adicional || "");
       const sd = (existing.segundo_defeitos as any[]) || [];
-      setSegundoDefeitos(sd);
-      setTemSegundoDefeito(sd.length > 0 ? "sim" : "nao");
+      // Distinguish "diferente" defeitos (with modo_falha) from "segundo defeito" (with part_number)
+      const defeitosDiferente = sd.filter((d: any) => d?.modo_falha);
+      const segundosDefeitosLegacy = sd.filter((d: any) => !d?.modo_falha);
+      if (defeitosDiferente.length > 0) {
+        setNgMultiploDecisao("diferente");
+        setDefeitosDetalhes(defeitosDiferente.map((d: any) => ({
+          modo_falha: d.modo_falha || "",
+          descricao: d.descricao || "",
+          qty_ng: Number(d.qty) || 0,
+          tag_number: d.tag || "",
+          photoFiles: [],
+          photoPreviews: [],
+        })));
+        setSegundoDefeitos([]);
+        setTemSegundoDefeito("nao");
+      } else {
+        setSegundoDefeitos(segundosDefeitosLegacy);
+        setTemSegundoDefeito(segundosDefeitosLegacy.length > 0 ? "sim" : "nao");
+      }
       const ci = (existing as any).co_inspetores as string[] || [];
       setCoInspetores(ci);
       setTemCoInspecao(ci.length > 0 ? "sim" : "nao");

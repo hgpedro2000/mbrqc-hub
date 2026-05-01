@@ -12,6 +12,7 @@ import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTria
 import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
 import { HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
@@ -57,6 +58,7 @@ const ApontamentoForm = () => {
   const [searchParams] = useSearchParams();
   const isEdit = !!id;
   const { profile, user } = useAuth();
+  const { isAdmin } = useUserRole();
   const { impersonating } = useImpersonation();
   const activeProfile = impersonating || profile;
   const queryClient = useQueryClient();
@@ -311,6 +313,16 @@ const ApontamentoForm = () => {
     },
     enabled: isEdit,
   });
+
+  // Permission guard: only owner or admin can edit
+  useEffect(() => {
+    if (!isEdit || !existing || !user) return;
+    const isOwner = existing.created_by === user.id;
+    if (!isOwner && !isAdmin) {
+      toast.error("Você só pode editar apontamentos que você mesmo criou.");
+      navigate("/apontamentos", { replace: true });
+    }
+  }, [isEdit, existing, user, isAdmin, navigate]);
 
   // Load defects for modo_falha
   const { data: defects = [] } = useQuery({

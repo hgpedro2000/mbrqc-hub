@@ -388,10 +388,19 @@ const Apontamentos = () => {
                     {hasNg && defectDetails && defectDetails.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {defectDetails.map((def: any, idx: number) => (
-                          <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs">
+                          <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded px-2 py-1 text-xs flex items-center gap-1.5 flex-wrap">
                             <span className="font-semibold text-destructive">{stripCode(def.modo_falha)}</span>
-                            {def.descricao && <span className="text-muted-foreground ml-1">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
-                            <span className="text-muted-foreground ml-1">(×{def.qty})</span>
+                            {def.descricao && <span className="text-muted-foreground">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
+                            <span className="text-muted-foreground">(×{def.qty})</span>
+                            {def.tag ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
+                                <Tag className="w-2.5 h-2.5" />{def.tag}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                <Tag className="w-2.5 h-2.5" />Sem TAG
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -408,13 +417,15 @@ const Apontamentos = () => {
                       </p>
                     ) : null}
 
-                    {/* TAG badge */}
-                    <TagBadge
-                      apontamentoId={item.id}
-                      numeroTag={(item as any).numero_tag || (item as any).tag_number || null}
-                      quantidadeNg={item.quantidade_ng || 0}
-                      onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
-                    />
+                    {/* TAG badge - only show single global TAG when not using per-defect tags */}
+                    {!(defectDetails && defectDetails.length > 0) && (
+                      <TagBadge
+                        apontamentoId={item.id}
+                        numeroTag={(item as any).numero_tag || (item as any).tag_number || null}
+                        quantidadeNg={item.quantidade_ng || 0}
+                        onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
+                      />
+                    )}
 
                     {/* Meta row */}
                     <div className="flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">

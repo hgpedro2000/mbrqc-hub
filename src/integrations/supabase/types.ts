@@ -1586,6 +1586,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      profile_update_is_safe: {
+        Args: { _new: Database["public"]["Tables"]["profiles"]["Row"] }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "engenharia" | "lider" | "inspetor"

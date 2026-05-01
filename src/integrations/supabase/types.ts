@@ -95,6 +95,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "alertas_criado_por_id_fkey"
+            columns: ["criado_por_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       alertas_qualidade: {
@@ -657,10 +664,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ciencias_inspetor_id_fkey"
+            columns: ["inspetor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "ciencias_registrado_por_id_fkey"
             columns: ["registrado_por_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ciencias_registrado_por_id_fkey"
+            columns: ["registrado_por_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1519,7 +1540,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          cargo: string | null
+          employee_number: string | null
+          empresa: string | null
+          empresa_terceira: string | null
+          full_name: string | null
+          id: string | null
+          qr_code_id: string | null
+          status: string | null
+          turno: string | null
+        }
+        Insert: {
+          cargo?: string | null
+          employee_number?: string | null
+          empresa?: string | null
+          empresa_terceira?: string | null
+          full_name?: string | null
+          id?: string | null
+          qr_code_id?: string | null
+          status?: string | null
+          turno?: string | null
+        }
+        Update: {
+          cargo?: string | null
+          employee_number?: string | null
+          empresa?: string | null
+          empresa_terceira?: string | null
+          full_name?: string | null
+          id?: string | null
+          qr_code_id?: string | null
+          status?: string | null
+          turno?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       clear_must_change_password: { Args: never; Returns: undefined }

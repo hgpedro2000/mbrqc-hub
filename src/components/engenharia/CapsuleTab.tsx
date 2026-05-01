@@ -66,8 +66,14 @@ const CapsuleTab = () => {
   };
 
   const handleDownload = async (file: any) => {
-    const { data } = supabase.storage.from("capsule-files").getPublicUrl(file.file_path);
-    window.open(data.publicUrl, "_blank");
+    const { data, error } = await supabase.storage
+      .from("capsule-files")
+      .createSignedUrl(file.file_path, 60);
+    if (error || !data?.signedUrl) {
+      toast.error("Não foi possível gerar link de download");
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
   };
 
   const handleDelete = async (file: any) => {

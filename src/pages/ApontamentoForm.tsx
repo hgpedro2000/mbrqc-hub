@@ -48,6 +48,7 @@ interface DefeitoDetalhe {
   modo_falha: string;
   descricao: string;
   qty_ng: number;
+  tag_number: string;
   photoFiles: File[];
   photoPreviews: string[];
 }

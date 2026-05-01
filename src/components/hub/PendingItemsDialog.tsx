@@ -173,7 +173,7 @@ export const PendingItemsDialog = ({
           const userIds = Array.from(new Set(expired.map((qq: any) => qq.user_id)));
           let profilesMap = new Map<string, string>();
           if (userIds.length) {
-            const { data: profs } = await supabase.from("profiles")
+            const { data: profs } = await (supabase as any).from("public_profiles")
               .select("id, full_name").in("id", userIds);
             profilesMap = new Map((profs || []).map((p: any) => [p.id, p.full_name]));
           }

@@ -60,7 +60,7 @@ const Engenharia = () => {
   const { data: allUsers = [] } = useQuery({
     queryKey: ["eng-profiles-impersonate"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, employee_number, turno, empresa, empresa_terceira").eq("status", "active").order("full_name");
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, full_name, employee_number, turno, empresa, empresa_terceira").order("full_name");
       if (error) throw error;
       return data;
     },

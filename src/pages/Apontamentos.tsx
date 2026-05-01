@@ -107,7 +107,7 @@ const Apontamentos = () => {
   const { data: profilesList = [] } = useQuery({
     queryKey: ["profiles-empresa"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, empresa, empresa_terceira");
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, empresa, empresa_terceira");
       if (error) throw error;
       return data;
     },

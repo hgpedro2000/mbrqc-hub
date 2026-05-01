@@ -336,10 +336,9 @@ const ApontamentoForm = () => {
   const { data: allProfiles = [] } = useQuery({
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
+      const { data, error } = await (supabase as any)
+        .from("public_profiles")
         .select("full_name, turno, empresa")
-        .eq("status", "active")
         .order("full_name");
       if (error) {
         console.error("Error loading profiles for co-inspection:", error);

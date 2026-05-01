@@ -149,7 +149,7 @@ const Engenharia = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-hidden">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6 w-full min-w-0">
           <div className="overflow-x-auto -mx-3 px-3 sm:-mx-4 sm:px-4 pb-1 scrollbar-hide [-webkit-overflow-scrolling:touch]">
-            <TabsList className="inline-flex w-auto min-w-max md:grid md:w-full md:grid-cols-10 h-auto gap-1">
+            <TabsList className="inline-flex w-auto min-w-max xl:grid xl:w-full xl:grid-cols-10 h-auto gap-1">
               <TabsTrigger value="usuarios" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-[10px] sm:text-xs md:text-sm px-2 sm:px-3 py-1.5 sm:py-2 whitespace-nowrap">{t("engenharia.tabs.partNumbers")}</TabsTrigger>

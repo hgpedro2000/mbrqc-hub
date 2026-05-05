@@ -15,9 +15,14 @@ interface Props {
 interface Shape {
   tool: "arrow" | "circle" | "rectangle";
   x1: number; y1: number; x2: number; y2: number;
+  color: string;
 }
 
-const COLORS = "#FF0000";
+const COLOR_OPTIONS: { value: string; label: string; ring: string }[] = [
+  { value: "#FF0000", label: "Vermelho", ring: "ring-red-500" },
+  { value: "#FACC15", label: "Amarelo", ring: "ring-yellow-400" },
+  { value: "#FFFFFF", label: "Branco", ring: "ring-white" },
+];
 const LINE_WIDTH = 3;
 
 const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) => {
@@ -32,6 +37,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
   const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 });
   const [cropRect, setCropRect] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [cropping, setCropping] = useState(false);
+  const [color, setColor] = useState<string>(COLOR_OPTIONS[0].value);
 
   // Load image when file changes
   useEffect(() => {
@@ -72,7 +78,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
     ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
 
     const drawShape = (s: Shape) => {
-      ctx.strokeStyle = COLORS;
+      ctx.strokeStyle = s.color;
       ctx.lineWidth = LINE_WIDTH;
       ctx.fillStyle = "transparent";
 
@@ -108,7 +114,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
 
     // Draw current shape being drawn
     if (drawing && tool && tool !== "crop") {
-      drawShape({ tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y });
+      drawShape({ tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y, color });
     }
 
     // Draw crop overlay
@@ -196,7 +202,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
       const dx = Math.abs(currentPos.x - startPos.x);
       const dy = Math.abs(currentPos.y - startPos.y);
       if (dx > 5 || dy > 5) {
-        setShapes((prev) => [...prev, { tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y }]);
+        setShapes((prev) => [...prev, { tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y, color }]);
       }
     }
   };
@@ -248,9 +254,9 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
   };
 
   const drawShapesOnCtx = (ctx: CanvasRenderingContext2D, shapes: Shape[], sx: number, sy: number, ox: number, oy: number) => {
-    ctx.strokeStyle = COLORS;
     ctx.lineWidth = LINE_WIDTH * sx;
     shapes.forEach((s) => {
+      ctx.strokeStyle = s.color;
       const x1 = s.x1 * sx - ox, y1 = s.y1 * sy - oy;
       const x2 = s.x2 * sx - ox, y2 = s.y2 * sy - oy;
       if (s.tool === "rectangle") {
@@ -308,6 +314,26 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
             </Button>
           ))}
           <div className="flex-1" />
+          {/* Color picker — apenas para formas, não para crop */}
+          {tool && tool !== "crop" && (
+            <div className="flex items-center gap-1 mr-1" role="radiogroup" aria-label="Cor">
+              {COLOR_OPTIONS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={color === c.value}
+                  aria-label={c.label}
+                  title={c.label}
+                  onClick={() => setColor(c.value)}
+                  className={`w-6 h-6 rounded-full border border-border transition-all ${
+                    color === c.value ? `ring-2 ring-offset-1 ring-offset-background ${c.ring}` : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
+          )}
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleUndo} disabled={shapes.length === 0 && !cropRect}>
             <Undo2 className="w-3.5 h-3.5" />
           </Button>

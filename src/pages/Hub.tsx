@@ -13,6 +13,7 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 import { useAppVersion } from "@/hooks/useAppVersion";
+import VersionBadge from "@/components/VersionBadge";
 import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { PendingItemsDialog } from "@/components/hub/PendingItemsDialog";
 import { Badge } from "@/components/ui/badge";
@@ -485,17 +486,7 @@ const Hub = () => {
         )}
 
         <div className="mt-8 flex justify-center">
-          <span
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono border ${
-              updateAvailable
-                ? "bg-amber-50 border-amber-300 text-amber-700"
-                : "bg-muted/40 border-border text-muted-foreground"
-            }`}
-            title={updateAvailable ? "Há uma atualização disponível" : "Você está na versão mais recente"}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${updateAvailable ? "bg-amber-500" : "bg-emerald-500"}`} />
-            v{clientVersion}{updateAvailable ? " • atualização disponível" : ""}
-          </span>
+          <VersionBadge />
         </div>
       </main>
 

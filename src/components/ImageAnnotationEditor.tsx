@@ -314,6 +314,26 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
             </Button>
           ))}
           <div className="flex-1" />
+          {/* Color picker — apenas para formas, não para crop */}
+          {tool && tool !== "crop" && (
+            <div className="flex items-center gap-1 mr-1" role="radiogroup" aria-label="Cor">
+              {COLOR_OPTIONS.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={color === c.value}
+                  aria-label={c.label}
+                  title={c.label}
+                  onClick={() => setColor(c.value)}
+                  className={`w-6 h-6 rounded-full border border-border transition-all ${
+                    color === c.value ? `ring-2 ring-offset-1 ring-offset-background ${c.ring}` : "opacity-70 hover:opacity-100"
+                  }`}
+                  style={{ backgroundColor: c.value }}
+                />
+              ))}
+            </div>
+          )}
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleUndo} disabled={shapes.length === 0 && !cropRect}>
             <Undo2 className="w-3.5 h-3.5" />
           </Button>

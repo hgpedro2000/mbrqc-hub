@@ -220,6 +220,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     enabled: !!apontamentoId && open,
   });
 
+  const { data: history = [] } = useQuery({
+    queryKey: ["apontamento-history", apontamentoId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("apontamento_history")
+        .select("*")
+        .eq("apontamento_id", apontamentoId!)
+        .order("edited_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!apontamentoId && open,
+  });
+
   // Fetch supplier origem
   const { data: supplierOrigemData } = useQuery({
     queryKey: ["apontamento-supplier-origem", item?.fornecedor],

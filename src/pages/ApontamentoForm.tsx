@@ -752,15 +752,27 @@ const ApontamentoForm = () => {
               : "Você não tem permissão para editar este apontamento."
           );
         }
-        // Stamp edit when the (effective) owner is editing and not a real admin bypass
-        const isOwnerEditing = isOwner && !adminBypass;
-        const updatePayload: any = { ...payload };
-        if (isOwnerEditing) {
-          updatePayload.last_edited_at = new Date().toISOString();
-          updatePayload.last_edited_by = activeProfile?.full_name || user?.email || "Usuário";
+        // Server-side authoritative check + update via edge function.
+        // The function validates created_by against the impersonated id (admin only)
+        // or against auth.uid(), and strips protected fields.
+        const { data: fnData, error: fnErr } = await supabase.functions.invoke("update-apontamento", {
+          body: {
+            id,
+            payload,
+            impersonatedUserId: impersonating?.id || null,
+          },
+        });
+        if (fnErr) {
+          let msg = fnErr.message || "Falha ao atualizar apontamento";
+          try {
+            if ((fnErr as any).context?.json) {
+              const b = await (fnErr as any).context.json();
+              if (b?.error) msg = b.error;
+            }
+          } catch { /* ignore */ }
+          throw new Error(msg);
         }
-        const { error } = await supabase.from("apontamentos").update(updatePayload).eq("id", id!);
-        if (error) throw error;
+        if ((fnData as any)?.error) throw new Error((fnData as any).error);
       } else {
         const { data: inserted, error } = await supabase.from("apontamentos").insert(payload).select("id").single();
         if (error) throw error;

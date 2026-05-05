@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Tag, Pencil, Loader2, CheckCircle } from "lucide-react";
+import { X, Tag, Pencil, Loader2, CheckCircle, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -216,6 +216,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
         .eq("checklist_id", apontamentoId!);
       if (error) throw error;
       return data;
+    },
+    enabled: !!apontamentoId && open,
+  });
+
+  const { data: history = [] } = useQuery({
+    queryKey: ["apontamento-history", apontamentoId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("apontamento_history")
+        .select("*")
+        .eq("apontamento_id", apontamentoId!)
+        .order("edited_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
     },
     enabled: !!apontamentoId && open,
   });
@@ -584,6 +598,41 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                       onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] })}
                       allowEdit={true}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Edit history */}
+              {history.length > 0 && (
+                <div className="pt-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <History className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold text-foreground">Histórico de Edições ({history.length})</h3>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {history.map((h: any) => {
+                      const changedKeys = h.changes ? Object.keys(h.changes) : [];
+                      return (
+                        <div key={h.id} className="border border-border rounded-lg p-2.5 bg-muted/20 text-xs">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="font-medium text-foreground">
+                              {h.edited_by_name || "Usuário"}
+                              {h.is_admin_edit && (
+                                <Badge variant="outline" className="ml-1.5 text-[9px] border-violet-300 text-violet-700 bg-violet-50">ADM</Badge>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {new Date(h.edited_at).toLocaleString("pt-BR")}
+                            </span>
+                          </div>
+                          {changedKeys.length > 0 && (
+                            <p className="mt-1 text-[10px] text-muted-foreground">
+                              {changedKeys.length} campo{changedKeys.length > 1 ? "s" : ""} alterado{changedKeys.length > 1 ? "s" : ""}: <span className="font-mono">{changedKeys.slice(0, 6).join(", ")}{changedKeys.length > 6 ? "…" : ""}</span>
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

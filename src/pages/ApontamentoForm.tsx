@@ -1280,9 +1280,21 @@ const ApontamentoForm = () => {
             </div>
             <p className="text-xs text-muted-foreground">{coInspetores.length}/5 selecionados</p>
             <div className="border rounded-lg max-h-60 overflow-y-auto">
-              {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
+              {loadingCoInspetores ? (
+                <div className="px-3 py-6 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Carregando inspetores...
+                </div>
+              ) : errorCoInspetores ? (
+                <div className="px-3 py-4 text-sm text-center space-y-2">
+                  <p className="text-destructive">Erro ao carregar lista de inspetores.</p>
+                  <Button size="sm" variant="outline" onClick={() => refetchCoInspetores()} className="gap-1">
+                    <Loader2 className="w-3 h-3" /> Tentar novamente
+                  </Button>
+                </div>
+              ) : filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
                 <button
                   key={p.full_name}
+                  type="button"
                   onClick={() => addCoInspetor(p.full_name)}
                   className="w-full text-left px-3 py-3 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0 flex items-center justify-between"
                 >

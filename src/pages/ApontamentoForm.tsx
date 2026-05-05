@@ -315,15 +315,25 @@ const ApontamentoForm = () => {
     enabled: isEdit,
   });
 
-  // Permission guard: only owner or admin can edit
+  // Permission guard: only owner or admin can edit.
+  // In test mode (impersonation), the effective owner is the impersonated user,
+  // so the apontamento's created_by must match the impersonated id — admin bypass
+  // is intentionally disabled while impersonating to truly simulate the user.
   useEffect(() => {
     if (!isEdit || !existing || !user) return;
-    const isOwner = existing.created_by === user.id;
-    if (!isOwner && !isAdmin) {
-      toast.error("Você só pode editar apontamentos que você mesmo criou.");
+    const effectiveUserId = impersonating?.id || user.id;
+    const isOwner = existing.created_by === effectiveUserId;
+    const adminBypass = isAdmin && !impersonating;
+    if (!isOwner && !adminBypass) {
+      toast.error(
+        impersonating
+          ? "Modo teste: este apontamento não pertence ao usuário simulado."
+          : "Você só pode editar apontamentos que você mesmo criou."
+      );
       navigate("/apontamentos", { replace: true });
     }
-  }, [isEdit, existing, user, isAdmin, navigate]);
+  }, [isEdit, existing, user, isAdmin, impersonating, navigate]);
+
 
   // Load defects for modo_falha
   const { data: defects = [] } = useQuery({

@@ -12,6 +12,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { PendingItemsDialog } from "@/components/hub/PendingItemsDialog";
 import { Badge } from "@/components/ui/badge";

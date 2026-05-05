@@ -642,6 +642,24 @@ const ApontamentoForm = () => {
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
       }
+      // Co-inspeção validation: only Mobis Brasil
+      if (activeProfile?.empresa !== "empresa_terceira") {
+        if (temCoInspecao === "sim" && coInspetores.length === 0) {
+          errors.add("coInspetores"); msgs.push("Selecione ao menos 1 co-inspetor ou marque 'Não'");
+        }
+        if (coInspetores.length > 5) {
+          errors.add("coInspetores"); msgs.push("Máximo 5 co-inspetores");
+        }
+        // Ensure all selected co-inspectors still exist in the loaded list
+        if (coInspetores.length > 0 && allProfiles.length > 0) {
+          const validNames = new Set(allProfiles.map((p: any) => p.full_name));
+          const invalid = coInspetores.filter((n) => !validNames.has(n));
+          if (invalid.length > 0) {
+            errors.add("coInspetores");
+            msgs.push(`Co-inspetor(es) inválido(s): ${invalid.join(", ")}`);
+          }
+        }
+      }
     }
 
     if (isPeca) {

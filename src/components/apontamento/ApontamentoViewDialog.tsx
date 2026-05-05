@@ -590,7 +590,13 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
             </div>
 
             {/* Footer */}
-            <div data-pdf-section className="border-t border-border px-6 py-3 bg-muted/30 text-center">
+            <div data-pdf-section className="border-t border-border px-6 py-3 bg-muted/30 text-center space-y-1">
+              {(d as any)?.last_edited_at && (
+                <p className="text-[10px] text-amber-700 font-semibold">
+                  ✎ Editado em {new Date((d as any).last_edited_at).toLocaleString("pt-BR")}
+                  {(d as any)?.last_edited_by ? ` por ${(d as any).last_edited_by}` : ""}
+                </p>
+              )}
               <p className="text-[10px] text-muted-foreground">
                 Hyundai Mobis — Apontamento Control • Gerado em {new Date().toLocaleDateString("pt-BR")}
               </p>

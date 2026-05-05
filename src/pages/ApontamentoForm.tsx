@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
@@ -72,6 +73,7 @@ const ApontamentoForm = () => {
   const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
   const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
   const [annotationQueue, setAnnotationQueue] = useState<File[]>([]);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Set<string>>(new Set());
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [validationMessages, setValidationMessages] = useState<string[]>([]);
@@ -604,6 +606,14 @@ const ApontamentoForm = () => {
     const compressed = await Promise.all(files.map((f) => compressImage(f)));
     setAnnotatingFile(compressed[0]);
     setAnnotationQueue(compressed.slice(1));
+  };
+
+  const handleInAppCapture = async (file: File) => {
+    setCameraOpen(false);
+    const totalPhotos = photoFiles.length + existingPhotos.length;
+    if (totalPhotos >= 4) { toast.error("Máximo 4 fotos."); return; }
+    const compressed = await compressImage(file);
+    setAnnotatingFile(compressed);
   };
 
   const addAnnotatedPhoto = (file: File) => {
@@ -1338,11 +1348,14 @@ const ApontamentoForm = () => {
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
               <>
-                <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                <button
+                  type="button"
+                  onClick={() => setCameraOpen(true)}
+                  className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}
+                >
                   <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                   <span className="text-xs text-muted-foreground">Câmera</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
-                </label>
+                </button>
                 {(existingPhotos.length + photoFiles.length) < 3 && (
                   <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
                     <ImagePlus className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
@@ -1570,6 +1583,13 @@ const ApontamentoForm = () => {
         imageFile={annotatingFile}
         onConfirm={handleAnnotationConfirm}
         onCancel={handleAnnotationCancel}
+      />
+
+      {/* In-app camera (avoids Android WebView kill on capture intent) */}
+      <InAppCamera
+        open={cameraOpen}
+        onCapture={handleInAppCapture}
+        onClose={() => setCameraOpen(false)}
       />
     </div>
   );

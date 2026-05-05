@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";

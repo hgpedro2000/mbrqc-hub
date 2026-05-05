@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { getLocalDateString } from "@/lib/localDate";
-import { Dialog, DialogContent, DialogClose, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, Download, FileText, AlertTriangle, CalendarIcon } from "lucide-react";
@@ -9,11 +9,19 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { exportPdfFromRef } from "@/lib/exportPdfFromRef";
 import hyundaiMobisLogo from "@/assets/hyundai-mobis-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { stripCode } from "@/lib/stripCode";
+import {
+  Document,
+  Page,
+  View,
+  Text,
+  Image as PdfImage,
+  StyleSheet,
+  PDFDownloadLink,
+} from "@react-pdf/renderer";
 
 interface Props {
   open: boolean;
@@ -94,11 +102,290 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
   </div>
 );
 
+/* ─────────────────────────── PDF DOCUMENT (react-pdf) ─────────────────────────── */
+
+const pdfStyles = StyleSheet.create({
+  page: {
+    paddingTop: 24,
+    paddingBottom: 32,
+    paddingHorizontal: 20,
+    fontSize: 8,
+    fontFamily: "Helvetica",
+    color: "#1a1a2e",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 2,
+    borderBottomColor: "#1a1a2e",
+    paddingBottom: 8,
+    marginBottom: 10,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logo: { width: 80, height: 28, objectFit: "contain" },
+  title: { fontSize: 13, fontWeight: 700, color: "#1a1a2e" },
+  subtitle: { fontSize: 8, color: "#6b7280", marginTop: 2 },
+  badgeNg: {
+    backgroundColor: "#fee2e2",
+    color: "#b91c1c",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 3,
+    fontSize: 7,
+    fontWeight: 700,
+  },
+  summaryRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  summaryCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 4,
+    padding: 8,
+    alignItems: "center",
+    backgroundColor: "#f9fafb",
+  },
+  summaryValue: { fontSize: 14, fontWeight: 700, color: "#1a1a2e" },
+  summaryValueNg: { fontSize: 14, fontWeight: 700, color: "#ef4444" },
+  summaryLabel: { fontSize: 7, color: "#6b7280", marginTop: 2, textTransform: "uppercase" },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  groupBadge: {
+    backgroundColor: "#e5e7eb",
+    color: "#1a1a2e",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 3,
+    fontSize: 8,
+    fontWeight: 700,
+  },
+  groupCount: { fontSize: 7, color: "#6b7280" },
+  table: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  tHeadRow: {
+    flexDirection: "row",
+    backgroundColor: "#1a1a2e",
+  },
+  tRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+  },
+  tHeadCell: {
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    color: "#ffffff",
+    fontSize: 7,
+    fontWeight: 700,
+  },
+  tCell: {
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    fontSize: 7,
+    color: "#1a1a2e",
+  },
+  tCellNg: { color: "#ef4444", fontWeight: 700 },
+  tagOk: {
+    backgroundColor: "#d1fae5",
+    color: "#065f46",
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderRadius: 2,
+    fontSize: 6,
+    fontWeight: 700,
+  },
+  tagMissing: {
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+    paddingVertical: 1,
+    paddingHorizontal: 4,
+    borderRadius: 2,
+    fontSize: 6,
+    fontWeight: 700,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 14,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 6,
+    fontSize: 7,
+    color: "#6b7280",
+  },
+  empty: { textAlign: "center", marginTop: 40, color: "#6b7280", fontSize: 10 },
+});
+
+// Column widths (must sum to ~100)
+const COLS = [
+  { key: "numero",  label: "Nº",          w: 7 },
+  { key: "turno",   label: "Turno",       w: 6 },
+  { key: "data",    label: "Data",        w: 8 },
+  { key: "pn",      label: "Part Number", w: 11 },
+  { key: "pname",   label: "Part Name",   w: 14 },
+  { key: "forn",    label: "Fornecedor",  w: 12 },
+  { key: "insp",    label: "Insp.",       w: 5, align: "right" as const },
+  { key: "ng",      label: "NG",          w: 5, align: "right" as const },
+  { key: "ok",      label: "OK",          w: 5, align: "right" as const },
+  { key: "tag",     label: "Tag",         w: 9 },
+  { key: "desc",    label: "Descrição",   w: 18 },
+];
+
+interface PdfProps {
+  mode: "daily" | "ng";
+  filtered: any[];
+  byType: Record<string, any[]>;
+  totals: { count: number; insp: number; ng: number };
+  dateLabel: string;
+  locationFilter?: string | null;
+  logoUrl: string;
+}
+
+const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl }: PdfProps) => {
+  const titleText =
+    mode === "ng"
+      ? "Relatório de Peças com Defeito (NG)"
+      : locationFilter === "Área de Incoming"
+      ? "Relatório Incoming"
+      : "Relatório Diário de Apontamentos";
+
+  const generatedAt = `${new Date().toLocaleDateString("pt-BR")} ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={pdfStyles.page}>
+        {/* Header */}
+        <View style={pdfStyles.header} fixed>
+          <View style={pdfStyles.headerLeft}>
+            {logoUrl ? <PdfImage src={logoUrl} style={pdfStyles.logo} /> : null}
+            <View>
+              {mode === "ng" && <Text style={pdfStyles.badgeNg}>PEÇAS NG</Text>}
+              <Text style={pdfStyles.title}>{titleText}</Text>
+              <Text style={pdfStyles.subtitle}>
+                Data: {dateLabel} • {filtered.length} registros
+              </Text>
+            </View>
+          </View>
+          <Text style={{ fontSize: 9, fontWeight: 700, color: "#1a1a2e" }}>HYUNDAI MOBIS</Text>
+        </View>
+
+        {/* Summary */}
+        <View style={pdfStyles.summaryRow}>
+          <View style={pdfStyles.summaryCard}>
+            <Text style={pdfStyles.summaryValue}>{totals.count}</Text>
+            <Text style={pdfStyles.summaryLabel}>Total Registros</Text>
+          </View>
+          <View style={pdfStyles.summaryCard}>
+            <Text style={pdfStyles.summaryValue}>{totals.insp}</Text>
+            <Text style={pdfStyles.summaryLabel}>Inspecionadas</Text>
+          </View>
+          <View style={pdfStyles.summaryCard}>
+            <Text style={pdfStyles.summaryValueNg}>{totals.ng}</Text>
+            <Text style={pdfStyles.summaryLabel}>Total NG</Text>
+          </View>
+        </View>
+
+        {/* Empty */}
+        {filtered.length === 0 && (
+          <Text style={pdfStyles.empty}>
+            {mode === "daily" ? "Nenhum registro nesta data." : "Nenhum registro com NG encontrado."}
+          </Text>
+        )}
+
+        {/* Groups */}
+        {Object.entries(byType).map(([tipo, records]) => (
+          <View key={tipo} wrap>
+            <View style={pdfStyles.groupHeader}>
+              <Text style={pdfStyles.groupBadge}>{typeLabels[tipo] || tipo}</Text>
+              <Text style={pdfStyles.groupCount}>({records.length} registros)</Text>
+            </View>
+
+            <View style={pdfStyles.table}>
+              {/* Header row */}
+              <View style={pdfStyles.tHeadRow} fixed>
+                {COLS.map((c) => (
+                  <Text
+                    key={c.key}
+                    style={[
+                      pdfStyles.tHeadCell,
+                      { width: `${c.w}%`, textAlign: c.align || "left" },
+                    ]}
+                  >
+                    {c.label}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Body rows */}
+              {records.map((r, idx) => {
+                const ngVal = r.quantidade_ng || 0;
+                const tag = r.numero_tag || r.tag_number;
+                return (
+                  <View
+                    key={r.id || idx}
+                    style={[pdfStyles.tRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]}
+                    wrap={false}
+                  >
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[0].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[1].w}%` }]}>{r.turno || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[2].w}%` }]}>
+                      {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                    </Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[3].w}%`, fontWeight: 700 }]}>{r.part_number || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[4].w}%` }]}>{r.part_name || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[5].w}%` }]}>{r.fornecedor || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[6].w}%`, textAlign: "right" }]}>{r.quantidade_inspecionada || 0}</Text>
+                    <Text style={[pdfStyles.tCell, ngVal > 0 ? pdfStyles.tCellNg : {}, { width: `${COLS[7].w}%`, textAlign: "right" }]}>{ngVal}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[8].w}%`, textAlign: "right" }]}>{r.quantidade_ok || 0}</Text>
+                    <View style={[pdfStyles.tCell, { width: `${COLS[9].w}%` }]}>
+                      {tag ? (
+                        <Text style={pdfStyles.tagOk}>TAG: {tag}</Text>
+                      ) : mode === "ng" ? (
+                        <Text style={pdfStyles.tagMissing}>Sem TAG</Text>
+                      ) : (
+                        <Text>—</Text>
+                      )}
+                    </View>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[10].w}%` }]}>
+                      {(stripCode(r.modo_falha) || r.descricao || "—").toString().slice(0, 120)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        ))}
+
+        {/* Footer */}
+        <View style={pdfStyles.footer} fixed>
+          <Text>Hyundai Mobis — Apontamento Control</Text>
+          <Text
+            render={({ pageNumber, totalPages }) => `${generatedAt}  •  Página ${pageNumber}/${totalPages}`}
+          />
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+/* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
+
 const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter }: Props) => {
   const today = getLocalDateString();
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
-  const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Fetch photos for NG report
@@ -160,25 +447,6 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const totalNG = filtered.reduce((s, i) => s + (i.quantidade_ng || 0), 0);
   const totalInsp = filtered.reduce((s, i) => s + (i.quantidade_inspecionada || 0), 0);
 
-  const handleExportPdf = async () => {
-    if (!contentRef.current) return;
-    const el = contentRef.current;
-    const exportBtns = el.querySelectorAll("[data-export-btn]");
-    const mobileCards = el.querySelectorAll("[data-mobile-cards]");
-    exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "none");
-    mobileCards.forEach((c) => (c as HTMLElement).style.display = "none");
-    const desktopTables = el.querySelectorAll("[data-desktop-table]");
-    desktopTables.forEach((t) => (t as HTMLElement).style.display = "block");
-    try {
-      const fileName = mode === "daily" ? `relatorio-diario-${dateFrom}.pdf` : `relatorio-ng-${today}.pdf`;
-      await exportPdfFromRef(el, fileName, { orientation: "landscape", pageWidthMm: 297, windowWidth: 1200 });
-    } finally {
-      exportBtns.forEach((btn) => (btn as HTMLElement).style.display = "");
-      mobileCards.forEach((c) => (c as HTMLElement).style.display = "");
-      desktopTables.forEach((t) => (t as HTMLElement).style.display = "");
-    }
-  };
-
   const handleNumberClick = (id: string) => {
     if (onViewRecord) {
       onOpenChange(false);
@@ -190,6 +458,25 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
     ? new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")
     : `${new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")} a ${new Date(dateTo + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
+  const pdfFileName =
+    mode === "ng"
+      ? `relatorio-ng-${dateFrom}.pdf`
+      : locationFilter === "Área de Incoming"
+      ? `relatorio-incoming-${dateFrom}.pdf`
+      : `relatorio-diario-${dateFrom}.pdf`;
+
+  const pdfDoc = (
+    <ApontamentoPDFDocument
+      mode={mode}
+      filtered={filtered}
+      byType={byType}
+      totals={{ count: filtered.length, insp: totalInsp, ng: totalNG }}
+      dateLabel={dateLabel}
+      locationFilter={locationFilter}
+      logoUrl={hyundaiMobisLogo}
+    />
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] [&>button:last-child]:hidden">
@@ -197,7 +484,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
 
-        <div ref={contentRef} className="flex flex-col">
+        <div className="flex flex-col">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
@@ -215,7 +502,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2" data-export-btn>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -241,7 +528,13 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportPdf}><Download className="w-4 h-4" /> PDF</Button>
+                <PDFDownloadLink document={pdfDoc} fileName={pdfFileName}>
+                  {({ loading }) => (
+                    <Button variant="outline" size="sm" className="gap-1.5" disabled={loading}>
+                      <Download className="w-4 h-4" /> {loading ? "Gerando..." : "PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
               </div>
             </div>
           </div>
@@ -265,7 +558,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                 </div>
 
                 {/* Mobile cards */}
-                <div className="block sm:hidden space-y-2" data-mobile-cards>
+                <div className="block sm:hidden space-y-2">
                   {records.map((r) =>
                     mode === "ng" ? (
                       <NgMobileCard key={r.id} r={r} photoUrl={firstPhotoByItem[r.id]} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} />
@@ -276,7 +569,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                 </div>
 
                 {/* Desktop table */}
-                <div className="hidden sm:block overflow-x-auto rounded-lg border border-border" data-desktop-table>
+                <div className="hidden sm:block overflow-x-auto rounded-lg border border-border">
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-muted/50 border-b">
@@ -299,7 +592,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                         <tr key={r.id} className="border-b last:border-b-0 hover:bg-muted/20">
                           <td className="px-3 py-1.5 font-mono text-muted-foreground">
                             {r.numero ? (
-                              <button onClick={() => handleNumberClick(r.id)} className="text-primary hover:underline cursor-pointer font-semibold" data-export-btn>{r.numero}</button>
+                              <button onClick={() => handleNumberClick(r.id)} className="text-primary hover:underline cursor-pointer font-semibold">{r.numero}</button>
                             ) : "—"}
                           </td>
                           <td className="px-3 py-1.5 whitespace-nowrap">{r.turno || "—"}</td>

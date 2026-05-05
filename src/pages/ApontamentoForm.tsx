@@ -135,6 +135,93 @@ const ApontamentoForm = () => {
   const [pendingQRData, setPendingQRData] = useState<HyundaiQRData | null>(null);
   const [showRescanConfirm, setShowRescanConfirm] = useState(false);
 
+  // ----- Autosave (anti-WebView-kill no Android) -----
+  // Em Android, ao abrir a câmera nativa o SO pode matar o WebView por falta
+  // de memória. Quando o usuário volta, o React re-monta zerado. Salvamos
+  // snapshot em sessionStorage e restauramos na primeira montagem.
+  const autosaveKey = isEdit ? `apontamento:edit:${id}` : `apontamento:novo:${tipo || "incoming"}`;
+  const MAX_AGE_MS = 60 * 60 * 1000; // 1h
+
+  // Restaurar snapshot uma única vez na montagem
+  useEffect(() => {
+    const snap = readFormAutosave<{ __ts: number; data: any }>(autosaveKey);
+    if (!snap?.data) return;
+    if (Date.now() - (snap.__ts || 0) > MAX_AGE_MS) {
+      clearFormAutosave(autosaveKey);
+      return;
+    }
+    const d = snap.data;
+    try {
+      if (d.formTipo) setFormTipo(d.formTipo);
+      if (d.data) setData(d.data);
+      if (d.turno) setTurno(d.turno);
+      if (d.fase) setFase(d.fase);
+      if (d.projeto) setProjeto(d.projeto);
+      if (d.fornecedor) setFornecedor(d.fornecedor);
+      if (d.partNumber) setPartNumber(d.partNumber);
+      if (d.partName) setPartName(d.partName);
+      if (d.modulo) setModulo(d.modulo);
+      if (typeof d.quantidadeInspecionada === "number") setQuantidadeInspecionada(d.quantidadeInspecionada);
+      if (typeof d.quantidadeNg === "number") setQuantidadeNg(d.quantidadeNg);
+      if (typeof d.quantidadeOk === "number") setQuantidadeOk(d.quantidadeOk);
+      if (d.loteInspecionado) setLoteInspecionado(d.loteInspecionado);
+      if (d.modoFalha) setModoFalha(d.modoFalha);
+      if (d.paradaLinha) setParadaLinha(d.paradaLinha);
+      if (d.paradaLinhaTempo) setParadaLinhaTempo(d.paradaLinhaTempo);
+      if (d.descricao) setDescricao(d.descricao);
+      if (d.localDeteccao) setLocalDeteccao(d.localDeteccao);
+      if (d.vinNumber) setVinNumber(d.vinNumber);
+      if (d.responsabilidadeDefeito) setResponsabilidadeDefeito(d.responsabilidadeDefeito);
+      if (typeof d.quantidadeDetectado === "number") setQuantidadeDetectado(d.quantidadeDetectado);
+      if (d.lancamento) setLancamento(d.lancamento);
+      if (d.analiseInicial) setAnaliseInicial(d.analiseInicial);
+      if (d.acaoImediata) setAcaoImediata(d.acaoImediata);
+      if (d.comentarioAdicional) setComentarioAdicional(d.comentarioAdicional);
+      if (Array.isArray(d.segundoDefeitos)) setSegundoDefeitos(d.segundoDefeitos);
+      if (d.temSegundoDefeito) setTemSegundoDefeito(d.temSegundoDefeito);
+      if (d.temCoInspecao) setTemCoInspecao(d.temCoInspecao);
+      if (Array.isArray(d.coInspetores)) setCoInspetores(d.coInspetores);
+      if (d.horaInicio) setHoraInicio(d.horaInicio);
+      if (d.horaFim) setHoraFim(d.horaFim);
+      if (d.ngMultiploDecisao) setNgMultiploDecisao(d.ngMultiploDecisao);
+      if (Array.isArray(d.defeitosDetalhes)) setDefeitosDetalhes(d.defeitosDetalhes);
+      if (d.tagNumber) setTagNumber(d.tagNumber);
+      // Restaurar previews de fotos (data URLs). Os arquivos em si são
+      // recriados a partir das data URLs para upload futuro.
+      if (Array.isArray(d.photoPreviews) && d.photoPreviews.length) {
+        setPhotoPreviews(d.photoPreviews);
+        const files: File[] = [];
+        d.photoPreviews.forEach((url: string, idx: number) => {
+          try {
+            const m = /^data:(.*?);base64,(.*)$/.exec(url);
+            if (!m) return;
+            const mime = m[1] || "image/jpeg";
+            const bin = atob(m[2]);
+            const arr = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+            files.push(new File([arr], `restored-${idx}.jpg`, { type: mime }));
+          } catch { /* skip broken */ }
+        });
+        if (files.length) setPhotoFiles(files);
+      }
+      toast.info("Formulário restaurado após reinício");
+    } catch (err) {
+      console.warn("[autosave] restore failed", err);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Snapshot debounced em sessionStorage
+  useFormAutosave(autosaveKey, {
+    formTipo, data, turno, fase, projeto, fornecedor, partNumber, partName, modulo,
+    quantidadeInspecionada, quantidadeNg, quantidadeOk, loteInspecionado, modoFalha,
+    paradaLinha, paradaLinhaTempo, descricao, localDeteccao, vinNumber,
+    responsabilidadeDefeito, quantidadeDetectado, lancamento, analiseInicial,
+    acaoImediata, comentarioAdicional, segundoDefeitos, temSegundoDefeito,
+    temCoInspecao, coInspetores, horaInicio, horaFim, ngMultiploDecisao,
+    defeitosDetalhes, tagNumber, photoPreviews,
+  }, !isEdit);
+
   const applySuffixSelection = (option: typeof suffixOptions[number]) => {
     setPartNumber(option.part_number);
     if (option.part_name) setPartName(option.part_name);

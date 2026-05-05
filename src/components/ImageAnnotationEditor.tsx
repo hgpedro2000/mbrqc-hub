@@ -78,7 +78,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
     ctx.drawImage(imgEl, 0, 0, canvas.width, canvas.height);
 
     const drawShape = (s: Shape) => {
-      ctx.strokeStyle = COLORS;
+      ctx.strokeStyle = s.color;
       ctx.lineWidth = LINE_WIDTH;
       ctx.fillStyle = "transparent";
 
@@ -114,7 +114,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
 
     // Draw current shape being drawn
     if (drawing && tool && tool !== "crop") {
-      drawShape({ tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y });
+      drawShape({ tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y, color });
     }
 
     // Draw crop overlay
@@ -202,7 +202,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
       const dx = Math.abs(currentPos.x - startPos.x);
       const dy = Math.abs(currentPos.y - startPos.y);
       if (dx > 5 || dy > 5) {
-        setShapes((prev) => [...prev, { tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y }]);
+        setShapes((prev) => [...prev, { tool, x1: startPos.x, y1: startPos.y, x2: currentPos.x, y2: currentPos.y, color }]);
       }
     }
   };
@@ -254,9 +254,9 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
   };
 
   const drawShapesOnCtx = (ctx: CanvasRenderingContext2D, shapes: Shape[], sx: number, sy: number, ox: number, oy: number) => {
-    ctx.strokeStyle = COLORS;
     ctx.lineWidth = LINE_WIDTH * sx;
     shapes.forEach((s) => {
+      ctx.strokeStyle = s.color;
       const x1 = s.x1 * sx - ox, y1 = s.y1 * sy - oy;
       const x2 = s.x2 * sx - ox, y2 = s.y2 * sy - oy;
       if (s.tool === "rectangle") {

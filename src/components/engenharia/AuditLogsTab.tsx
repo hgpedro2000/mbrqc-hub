@@ -129,7 +129,7 @@ const AuditLogsTab = () => {
           </SelectContent>
         </Select>
         <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
-          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="h-9 min-w-0" />
+          <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} className="h-9 min-w-0" />
           <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="h-9 min-w-0" />
         </div>
       </div>

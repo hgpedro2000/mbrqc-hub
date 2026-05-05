@@ -365,6 +365,39 @@ export type Database = {
         }
         Relationships: []
       }
+      app_changelog: {
+        Row: {
+          change_type: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          released_at: string
+          title: string
+          version: string
+        }
+        Insert: {
+          change_type: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          released_at?: string
+          title: string
+          version: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          released_at?: string
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       app_config: {
         Row: {
           key: string

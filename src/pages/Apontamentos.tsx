@@ -314,6 +314,8 @@ const Apontamentos = () => {
         {filtered.map((item) => {
           const defectDetails = getDefectSummary(item);
           const hasNg = (item.quantidade_ng || 0) > 0;
+          const effectiveUserId = impersonating?.id || user?.id;
+          const canShowActions = isAdmin || (!!effectiveUserId && item.created_by === effectiveUserId);
 
           return (
             <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer overflow-hidden" onClick={() => setViewTarget(item.id)}>
@@ -448,7 +450,7 @@ const Apontamentos = () => {
                     <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
                   </div>
                 )}
-                {selectedIds.has(item.id) && <EditActions id={item.id} createdBy={item.created_by} status={item.status} />}
+                {(selectedIds.has(item.id) || canShowActions) && <EditActions id={item.id} createdBy={item.created_by} status={item.status} />}
               </div>
             </div>
           );

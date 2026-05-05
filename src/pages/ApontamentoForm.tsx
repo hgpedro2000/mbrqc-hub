@@ -731,7 +731,14 @@ const ApontamentoForm = () => {
       let recordId = id;
 
       if (isEdit) {
-        const { error } = await supabase.from("apontamentos").update(payload).eq("id", id!);
+        // Stamp edit only when the owner (non-admin) edits their own record
+        const isOwnerEditing = !!user && existing?.created_by === user.id && !isAdmin;
+        const updatePayload: any = { ...payload };
+        if (isOwnerEditing) {
+          updatePayload.last_edited_at = new Date().toISOString();
+          updatePayload.last_edited_by = activeProfile?.full_name || user?.email || "Usuário";
+        }
+        const { error } = await supabase.from("apontamentos").update(updatePayload).eq("id", id!);
         if (error) throw error;
       } else {
         const { data: inserted, error } = await supabase.from("apontamentos").insert(payload).select("id").single();

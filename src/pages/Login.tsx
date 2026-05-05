@@ -163,14 +163,14 @@ const Login = () => {
           </Link>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-border/30 text-center">
+        <div className="mt-6 pt-4 border-t border-border/30 flex flex-col items-center gap-3">
           <Link
             to="/privacy-policy"
             className="text-xs text-muted-foreground hover:text-accent transition-colors"
           >
             Política de Privacidade
           </Link>
-          <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 border border-border/40">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 border border-border/40">
             <span className="text-[10px] font-mono text-muted-foreground">v{import.meta.env.VITE_APP_VERSION || "1.0.0.0"}</span>
           </div>
         </div>

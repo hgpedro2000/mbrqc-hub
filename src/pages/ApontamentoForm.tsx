@@ -762,17 +762,57 @@ const ApontamentoForm = () => {
             impersonatedUserId: impersonating?.id || null,
           },
         });
-        if (fnErr) {
-          let msg = fnErr.message || "Falha ao atualizar apontamento";
+
+        // Try to extract structured error body (status + code + fields)
+        let errBody: any = null;
+        let status: number | null = null;
+        const ctx: any = (fnErr as any)?.context;
+        if (ctx) {
+          status = typeof ctx.status === "number" ? ctx.status : null;
           try {
-            if ((fnErr as any).context?.json) {
-              const b = await (fnErr as any).context.json();
-              if (b?.error) msg = b.error;
+            if (typeof ctx.json === "function") errBody = await ctx.json();
+            else if (typeof ctx.text === "function") {
+              const t = await ctx.text();
+              try { errBody = JSON.parse(t); } catch { errBody = { error: t }; }
             }
           } catch { /* ignore */ }
-          throw new Error(msg);
         }
-        if ((fnData as any)?.error) throw new Error((fnData as any).error);
+        if (!errBody && (fnData as any)?.error) errBody = fnData;
+
+        if (fnErr || errBody?.error) {
+          const code = errBody?.code as string | undefined;
+          const serverMsg = errBody?.error as string | undefined;
+          const fields = errBody?.fields as Record<string, string[]> | undefined;
+
+          // Map by HTTP status / code to friendly messages
+          let friendly = serverMsg || fnErr?.message || "Falha ao atualizar apontamento";
+          if (status === 401 || code === "UNAUTHENTICATED" || code === "INVALID_SESSION") {
+            friendly = "Sua sessão expirou. Faça login novamente para continuar.";
+          } else if (status === 403) {
+            friendly = code === "IMPERSONATION_OWNERSHIP_MISMATCH"
+              ? "Modo teste: este apontamento não pertence ao usuário simulado."
+              : code === "IMPERSONATION_FORBIDDEN"
+              ? "Apenas administradores podem usar o modo teste."
+              : "Você não tem permissão para editar este apontamento.";
+          } else if (status === 404 || code === "NOT_FOUND") {
+            friendly = "Apontamento não encontrado. Pode ter sido excluído por outro usuário.";
+          } else if (status === 400) {
+            if (code === "VALIDATION_FAILED" && fields) {
+              const parts = Object.entries(fields)
+                .slice(0, 3)
+                .map(([f, msgs]) => `${f}: ${msgs?.[0] ?? "inválido"}`)
+                .join(" • ");
+              friendly = `Dados inválidos — ${parts}`;
+            } else if (code === "INVALID_ID") friendly = "ID do apontamento inválido.";
+            else if (code === "INVALID_IMPERSONATION") friendly = "Usuário simulado inválido.";
+            else if (code === "INVALID_BODY" || code === "INVALID_PAYLOAD") friendly = "Dados enviados estão incompletos ou malformados.";
+            else if (code === "DB_UPDATE_ERROR") friendly = `Erro ao salvar no banco: ${serverMsg}`;
+            else friendly = serverMsg || "Requisição inválida.";
+          } else if ((status && status >= 500) || code === "INTERNAL_ERROR" || code === "DB_READ_ERROR") {
+            friendly = "Erro no servidor. Tente novamente em instantes.";
+          }
+          throw new Error(friendly);
+        }
       } else {
         const { data: inserted, error } = await supabase.from("apontamentos").insert(payload).select("id").single();
         if (error) throw error;

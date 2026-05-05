@@ -15,9 +15,14 @@ interface Props {
 interface Shape {
   tool: "arrow" | "circle" | "rectangle";
   x1: number; y1: number; x2: number; y2: number;
+  color: string;
 }
 
-const COLORS = "#FF0000";
+const COLOR_OPTIONS: { value: string; label: string; ring: string }[] = [
+  { value: "#FF0000", label: "Vermelho", ring: "ring-red-500" },
+  { value: "#FACC15", label: "Amarelo", ring: "ring-yellow-400" },
+  { value: "#FFFFFF", label: "Branco", ring: "ring-white" },
+];
 const LINE_WIDTH = 3;
 
 const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) => {
@@ -32,6 +37,7 @@ const ImageAnnotationEditor = ({ open, imageFile, onConfirm, onCancel }: Props) 
   const [canvasSize, setCanvasSize] = useState({ w: 0, h: 0 });
   const [cropRect, setCropRect] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
   const [cropping, setCropping] = useState(false);
+  const [color, setColor] = useState<string>(COLOR_OPTIONS[0].value);
 
   // Load image when file changes
   useEffect(() => {

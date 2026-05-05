@@ -189,6 +189,8 @@ export type Database = {
           fornecedor: string | null
           id: string
           lancamento: string | null
+          last_edited_at: string | null
+          last_edited_by: string | null
           linha: string | null
           local_deteccao: string | null
           lote_inspecionado: string | null
@@ -239,6 +241,8 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           lancamento?: string | null
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           linha?: string | null
           local_deteccao?: string | null
           lote_inspecionado?: string | null
@@ -289,6 +293,8 @@ export type Database = {
           fornecedor?: string | null
           id?: string
           lancamento?: string | null
+          last_edited_at?: string | null
+          last_edited_by?: string | null
           linha?: string | null
           local_deteccao?: string | null
           lote_inspecionado?: string | null

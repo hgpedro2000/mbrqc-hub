@@ -122,6 +122,7 @@ const Hub = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { clientVersion, updateAvailable } = useAppVersion();
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
   const { data: savedOrder } = useQuery({

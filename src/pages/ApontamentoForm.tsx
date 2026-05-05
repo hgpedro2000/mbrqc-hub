@@ -1348,11 +1348,14 @@ const ApontamentoForm = () => {
             ))}
             {(existingPhotos.length + photoFiles.length) < 4 && !ngIsZero && (
               <>
-                <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
+                <button
+                  type="button"
+                  onClick={() => setCameraOpen(true)}
+                  className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}
+                >
                   <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />
                   <span className="text-xs text-muted-foreground">Câmera</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoChange} />
-                </label>
+                </button>
                 {(existingPhotos.length + photoFiles.length) < 3 && (
                   <label className={`w-full aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-accent transition-colors ${validationErrors.has("fotos") ? "border-destructive" : "border-muted-foreground/30"}`}>
                     <ImagePlus className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mb-1" />

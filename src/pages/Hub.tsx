@@ -12,7 +12,6 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
-import { useAppVersion } from "@/hooks/useAppVersion";
 import VersionBadge from "@/components/VersionBadge";
 import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { PendingItemsDialog } from "@/components/hub/PendingItemsDialog";
@@ -123,7 +122,7 @@ const Hub = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { clientVersion, updateAvailable } = useAppVersion();
+  // Version state is read inside <VersionBadge />.
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
   const { data: savedOrder } = useQuery({

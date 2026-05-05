@@ -741,8 +741,19 @@ const ApontamentoForm = () => {
       let recordId = id;
 
       if (isEdit) {
-        // Stamp edit only when the owner (non-admin) edits their own record
-        const isOwnerEditing = !!user && existing?.created_by === user.id && !isAdmin;
+        // Re-validate ownership against the effective user (handles impersonation)
+        const effectiveUserId = impersonating?.id || user?.id;
+        const isOwner = existing?.created_by === effectiveUserId;
+        const adminBypass = isAdmin && !impersonating;
+        if (!isOwner && !adminBypass) {
+          throw new Error(
+            impersonating
+              ? "Modo teste: este apontamento não pertence ao usuário simulado."
+              : "Você não tem permissão para editar este apontamento."
+          );
+        }
+        // Stamp edit when the (effective) owner is editing and not a real admin bypass
+        const isOwnerEditing = isOwner && !adminBypass;
         const updatePayload: any = { ...payload };
         if (isOwnerEditing) {
           updatePayload.last_edited_at = new Date().toISOString();

@@ -346,7 +346,12 @@ const ApontamentoForm = () => {
   });
 
   // Load users for co-inspection - only Mobis Brasil users
-  const { data: allProfiles = [] } = useQuery({
+  const {
+    data: allProfiles = [],
+    isLoading: loadingCoInspetores,
+    isError: errorCoInspetores,
+    refetch: refetchCoInspetores,
+  } = useQuery({
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -355,12 +360,14 @@ const ApontamentoForm = () => {
         .order("full_name");
       if (error) {
         console.error("Error loading profiles for co-inspection:", error);
-        return [];
+        throw error;
       }
       // Filter to only Mobis Brasil users for co-inspection
       return (data || []).filter((p: any) => p.empresa !== "empresa_terceira" && p.full_name !== "TESTER");
     },
     enabled: activeProfile?.empresa !== "empresa_terceira",
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Load existing photos
@@ -634,6 +641,24 @@ const ApontamentoForm = () => {
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
+      }
+      // Co-inspeção validation: only Mobis Brasil
+      if (activeProfile?.empresa !== "empresa_terceira") {
+        if (temCoInspecao === "sim" && coInspetores.length === 0) {
+          errors.add("coInspetores"); msgs.push("Selecione ao menos 1 co-inspetor ou marque 'Não'");
+        }
+        if (coInspetores.length > 5) {
+          errors.add("coInspetores"); msgs.push("Máximo 5 co-inspetores");
+        }
+        // Ensure all selected co-inspectors still exist in the loaded list
+        if (coInspetores.length > 0 && allProfiles.length > 0) {
+          const validNames = new Set(allProfiles.map((p: any) => p.full_name));
+          const invalid = coInspetores.filter((n) => !validNames.has(n));
+          if (invalid.length > 0) {
+            errors.add("coInspetores");
+            msgs.push(`Co-inspetor(es) inválido(s): ${invalid.join(", ")}`);
+          }
+        }
       }
     }
 
@@ -1255,9 +1280,21 @@ const ApontamentoForm = () => {
             </div>
             <p className="text-xs text-muted-foreground">{coInspetores.length}/5 selecionados</p>
             <div className="border rounded-lg max-h-60 overflow-y-auto">
-              {filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
+              {loadingCoInspetores ? (
+                <div className="px-3 py-6 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Carregando inspetores...
+                </div>
+              ) : errorCoInspetores ? (
+                <div className="px-3 py-4 text-sm text-center space-y-2">
+                  <p className="text-destructive">Erro ao carregar lista de inspetores.</p>
+                  <Button size="sm" variant="outline" onClick={() => refetchCoInspetores()} className="gap-1">
+                    <Loader2 className="w-3 h-3" /> Tentar novamente
+                  </Button>
+                </div>
+              ) : filteredProfiles.length > 0 ? filteredProfiles.map((p: any) => (
                 <button
                   key={p.full_name}
+                  type="button"
                   onClick={() => addCoInspetor(p.full_name)}
                   className="w-full text-left px-3 py-3 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0 flex items-center justify-between"
                 >

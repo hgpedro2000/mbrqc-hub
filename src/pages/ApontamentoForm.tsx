@@ -833,22 +833,30 @@ const ApontamentoForm = () => {
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
               <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
-                <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nao">Não</SelectItem>
                   <SelectItem value="sim">Sim</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  if (temCoInspecao !== "sim") setTemCoInspecao("sim");
+                  setShowCoInspetorDialog(true);
+                }}
+                className="w-full gap-2"
+              >
+                <Search className="w-4 h-4" /> Selecionar Co-Inspetores
+              </Button>
               {temCoInspecao === "sim" && (
                 <div className="space-y-2">
-                  <Button variant="outline" type="button" onClick={() => setShowCoInspetorDialog(true)} className="w-full gap-2">
-                    <Search className="w-4 h-4" /> Selecionar Co-Inspetores
-                  </Button>
                   <div className="flex flex-wrap gap-2">
                     {coInspetores.map((name) => (
                       <Badge key={name} variant="secondary" className="gap-1">
                         {name}
-                        <button onClick={() => removeCoInspetor(name)}><X className="w-3 h-3" /></button>
+                        <button type="button" onClick={() => removeCoInspetor(name)}><X className="w-3 h-3" /></button>
                       </Badge>
                     ))}
                   </div>

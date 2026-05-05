@@ -173,6 +173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      apontamento_history: {
+        Row: {
+          apontamento_id: string
+          changes: Json
+          edited_at: string
+          edited_by: string | null
+          edited_by_email: string | null
+          edited_by_name: string | null
+          id: string
+          is_admin_edit: boolean
+        }
+        Insert: {
+          apontamento_id: string
+          changes?: Json
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_email?: string | null
+          edited_by_name?: string | null
+          id?: string
+          is_admin_edit?: boolean
+        }
+        Update: {
+          apontamento_id?: string
+          changes?: Json
+          edited_at?: string
+          edited_by?: string | null
+          edited_by_email?: string | null
+          edited_by_name?: string | null
+          id?: string
+          is_admin_edit?: boolean
+        }
+        Relationships: []
+      }
       apontamentos: {
         Row: {
           acao_corretiva: string | null

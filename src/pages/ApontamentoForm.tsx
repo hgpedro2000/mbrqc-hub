@@ -346,7 +346,12 @@ const ApontamentoForm = () => {
   });
 
   // Load users for co-inspection - only Mobis Brasil users
-  const { data: allProfiles = [] } = useQuery({
+  const {
+    data: allProfiles = [],
+    isLoading: loadingCoInspetores,
+    isError: errorCoInspetores,
+    refetch: refetchCoInspetores,
+  } = useQuery({
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -355,12 +360,14 @@ const ApontamentoForm = () => {
         .order("full_name");
       if (error) {
         console.error("Error loading profiles for co-inspection:", error);
-        return [];
+        throw error;
       }
       // Filter to only Mobis Brasil users for co-inspection
       return (data || []).filter((p: any) => p.empresa !== "empresa_terceira" && p.full_name !== "TESTER");
     },
     enabled: activeProfile?.empresa !== "empresa_terceira",
+    retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Load existing photos

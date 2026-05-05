@@ -912,6 +912,7 @@ const ApontamentoForm = () => {
       }
 
       toast.success(isEdit ? "Registro atualizado!" : asDraft ? "Rascunho salvo!" : "Registro finalizado!");
+      clearFormAutosave(autosaveKey);
       navigate("/apontamentos");
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar");

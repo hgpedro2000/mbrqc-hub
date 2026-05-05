@@ -10,19 +10,39 @@ import * as XLSX from "xlsx";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 50;
+const MAX_ROWS = 5000;
+
+const toISODate = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const firstDayOfMonth = (ref = new Date()) => toISODate(new Date(ref.getFullYear(), ref.getMonth(), 1));
+const lastDayOfMonth = (ref = new Date()) => toISODate(new Date(ref.getFullYear(), ref.getMonth() + 1, 0));
 
 const AuditLogsTab = () => {
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState<string>(() => firstDayOfMonth());
+  const [dateTo, setDateTo] = useState<string>(() => lastDayOfMonth());
   const [page, setPage] = useState(0);
+
+  // When the user changes the month part of dateFrom, auto-adjust dateTo to that month's last day
+  const handleDateFromChange = (v: string) => {
+    setDateFrom(v);
+    setPage(0);
+    if (v) {
+      const ref = new Date(`${v}T12:00:00`);
+      setDateTo(lastDayOfMonth(ref));
+    }
+  };
 
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ["audit-logs", moduleFilter, actionFilter, dateFrom, dateTo],
     queryFn: async () => {
-      let q = supabase.from("audit_logs" as any).select("*").order("created_at", { ascending: false }).limit(1000);
+      let q = supabase.from("audit_logs" as any).select("*").order("created_at", { ascending: false }).limit(MAX_ROWS);
       if (moduleFilter !== "all") q = q.eq("module", moduleFilter);
       if (actionFilter !== "all") q = q.eq("action", actionFilter);
       if (dateFrom) q = q.gte("created_at", `${dateFrom}T00:00:00`);
@@ -109,7 +129,7 @@ const AuditLogsTab = () => {
           </SelectContent>
         </Select>
         <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1">
-          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(0); }} className="h-9 min-w-0" />
+          <Input type="date" value={dateFrom} onChange={(e) => handleDateFromChange(e.target.value)} className="h-9 min-w-0" />
           <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(0); }} className="h-9 min-w-0" />
         </div>
       </div>

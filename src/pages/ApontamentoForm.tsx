@@ -608,6 +608,14 @@ const ApontamentoForm = () => {
     setAnnotationQueue(compressed.slice(1));
   };
 
+  const handleInAppCapture = async (file: File) => {
+    setCameraOpen(false);
+    const totalPhotos = photoFiles.length + existingPhotos.length;
+    if (totalPhotos >= 4) { toast.error("Máximo 4 fotos."); return; }
+    const compressed = await compressImage(file);
+    setAnnotatingFile(compressed);
+  };
+
   const addAnnotatedPhoto = (file: File) => {
     setPhotoFiles((prev) => [...prev, file]);
     const reader = new FileReader();

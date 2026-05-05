@@ -1584,6 +1584,13 @@ const ApontamentoForm = () => {
         onConfirm={handleAnnotationConfirm}
         onCancel={handleAnnotationCancel}
       />
+
+      {/* In-app camera (avoids Android WebView kill on capture intent) */}
+      <InAppCamera
+        open={cameraOpen}
+        onCapture={handleInAppCapture}
+        onClose={() => setCameraOpen(false)}
+      />
     </div>
   );
 };

@@ -269,7 +269,8 @@ const Apontamentos = () => {
   };
 
   const EditActions = ({ id, createdBy, status }: { id: string; createdBy?: string | null; status?: string }) => {
-    const isOwner = user && createdBy === user.id;
+    const effectiveUserId = impersonating?.id || user?.id;
+    const isOwner = !!effectiveUserId && createdBy === effectiveUserId;
     const canEdit = isAdmin || isOwner;
     const isFinalized = status !== "draft";
     return (

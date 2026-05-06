@@ -525,6 +525,19 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
+
+  useEffect(() => { setSelectedFornecedores([]); }, [dateFrom, dateTo]);
+
+  const fornecedoresDisponiveis = useMemo(() => {
+    return Array.from(new Set(
+      items
+        .filter((i) => (i.quantidade_ng || 0) > 0)
+        .filter((i) => i.data >= dateFrom && i.data <= dateTo)
+        .map((i) => i.fornecedor)
+        .filter(Boolean)
+    )).sort();
+  }, [items, dateFrom, dateTo]);
 
   // Fetch photos for NG report
   const ngItemIds = useMemo(() => {

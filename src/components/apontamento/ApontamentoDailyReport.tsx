@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { getLocalDateString } from "@/lib/localDate";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Download, FileText, AlertTriangle, CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X, Download, FileText, AlertTriangle, CalendarIcon, Filter } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -524,6 +525,19 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
+
+  useEffect(() => { setSelectedFornecedores([]); }, [dateFrom, dateTo]);
+
+  const fornecedoresDisponiveis = useMemo(() => {
+    return Array.from(new Set(
+      items
+        .filter((i) => (i.quantidade_ng || 0) > 0)
+        .filter((i) => i.data >= dateFrom && i.data <= dateTo)
+        .map((i) => i.fornecedor)
+        .filter(Boolean)
+    )).sort();
+  }, [items, dateFrom, dateTo]);
 
   // Fetch photos for NG report
   const ngItemIds = useMemo(() => {
@@ -581,9 +595,12 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
       if (dateFrom && dateTo) {
         list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);
       }
+      if (selectedFornecedores.length > 0) {
+        list = list.filter((i) => selectedFornecedores.includes(i.fornecedor));
+      }
     }
     return list;
-  }, [items, dateFrom, dateTo, mode, locationFilter]);
+  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -676,6 +693,63 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
+                {mode === "ng" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "text-xs h-8 gap-1.5",
+                          selectedFornecedores.length > 0 && "border-primary text-primary"
+                        )}
+                      >
+                        <Filter className="w-3 h-3" />
+                        {selectedFornecedores.length > 0
+                          ? `Fornecedor (${selectedFornecedores.length})`
+                          : "Fornecedor"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[220px] p-2 max-h-[280px] overflow-y-auto" align="start">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] text-muted-foreground font-medium">Filtrar por Fornecedor</span>
+                        {selectedFornecedores.length > 0 && (
+                          <button
+                            onClick={() => setSelectedFornecedores([])}
+                            className="text-[10px] text-primary hover:underline"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      {fornecedoresDisponiveis.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">Nenhum fornecedor encontrado</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {fornecedoresDisponiveis.map((f) => {
+                            const checked = selectedFornecedores.includes(f);
+                            return (
+                              <label
+                                key={f}
+                                className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted cursor-pointer"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(v) => {
+                                    setSelectedFornecedores((prev) =>
+                                      v ? [...prev, f] : prev.filter((x) => x !== f)
+                                    );
+                                  }}
+                                />
+                                <span className="text-xs flex-1 truncate">{f}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                )}
                 <PDFDownloadLink document={pdfDoc} fileName={pdfFileName}>
                   {({ loading }) => (
                     <Button variant="outline" size="sm" className="gap-1.5" disabled={loading}>

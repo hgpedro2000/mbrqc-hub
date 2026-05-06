@@ -45,8 +45,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    const tempPassword = crypto.randomUUID().replace(/-/g, "") + "!Aa1";
     const { error: authError } = await admin.auth.admin.updateUserById(user_id, {
-      password: "admin123",
+      password: tempPassword,
     });
     if (authError) {
       return new Response(JSON.stringify({ error: authError.message }), {
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({ success: true, temporary_password: tempPassword }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

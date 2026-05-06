@@ -567,7 +567,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const photos = photoMap?.[r.id] || [];
               const circle = CIRCLED[globalIdx] || `${globalIdx + 1}.`;
               return (
-                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock} wrap={false}>
+                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{circle} {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>

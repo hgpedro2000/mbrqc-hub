@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { getLocalDateString } from "@/lib/localDate";
 import { Dialog, DialogContent, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, Download, FileText, AlertTriangle, CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X, Download, FileText, AlertTriangle, CalendarIcon, Filter } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,27 @@ serve(async (req) => {
   }
 
   try {
+    // Require authenticated user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: userRes, error: userErr } = await supabaseAuth.auth.getUser();
+    if (userErr || !userRes?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { to, name, qrCodeId, imageBase64 } = await req.json();
 
     if (!to || !imageBase64) {
@@ -20,17 +42,35 @@ serve(async (req) => {
       });
     }
 
+    // Restrict recipient to caller's own email (auth or profile)
+    const callerEmail = (userRes.user.email || "").toLowerCase();
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: prof } = await admin
+      .from("profiles")
+      .select("email")
+      .eq("id", userRes.user.id)
+      .maybeSingle();
+    const profileEmail = (prof?.email || "").toLowerCase();
+    const target = String(to).toLowerCase();
+    if (target !== callerEmail && target !== profileEmail) {
+      return new Response(JSON.stringify({ error: "Recipient must be your own email address." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
     if (!RESEND_API_KEY) {
-      // Fallback: use mailto link approach - return success with instruction
       return new Response(JSON.stringify({ error: "Email service not configured. Ask admin to set RESEND_API_KEY." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Extract base64 data
     const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
 
     const res = await fetch("https://api.resend.com/emails", {
@@ -68,7 +108,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
     }
 
     const internalEmail = `${employee_number}@internal.qhub`;
-    const userPassword = password || "123456";
+    const generatedTempPassword = crypto.randomUUID().replace(/-/g, "") + "!Aa1";
+    const userPassword = password || generatedTempPassword;
 
     const { data: authUser, error: authError } = await admin.auth.admin.createUser({
       email: internalEmail,
@@ -100,7 +101,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, user_id: userId, email: internalEmail }),
+      JSON.stringify({ success: true, user_id: userId, email: internalEmail, temporary_password: password ? undefined : userPassword }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

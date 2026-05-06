@@ -48,7 +48,7 @@ export const PendingTagsAlert = ({
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
       .gt("quantidade_ng", 0)
       .is("numero_tag" as any, null)
       .is("tag_number" as any, null)

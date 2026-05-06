@@ -146,16 +146,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setMfaStatus("not-required");
       return;
     }
-    const currentProfile = profile ?? (await fetchProfile(session.user.id));
-    const status = await checkMFAStatus(!!currentProfile?.is_admin);
+    const adminFlag = await fetchAdminRole(session.user.id);
+    const status = await checkMFAStatus(adminFlag);
     setMfaStatus(status);
-  }, [session, profile, checkMFAStatus, fetchProfile]);
+  }, [session, checkMFAStatus, fetchAdminRole]);
 
   const hydrateAuthState = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
 
     if (!nextSession?.user) {
       setProfile(null);
+      setIsAdminRole(false);
       setMfaStatus("not-required");
       setLoading(false);
       return;
@@ -164,7 +165,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setMfaStatus("checking");
 
-    const currentProfile = await fetchProfile(nextSession.user.id);
+    await fetchProfile(nextSession.user.id);
+    const adminFlag = await fetchAdminRole(nextSession.user.id);
     const kicked = await checkMinVersion();
 
     if (kicked) {
@@ -173,10 +175,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const status = await checkMFAStatus(!!currentProfile?.is_admin);
+    const status = await checkMFAStatus(adminFlag);
     setMfaStatus(status);
     setLoading(false);
-  }, [checkMFAStatus, checkMinVersion, fetchProfile]);
+  }, [checkMFAStatus, checkMinVersion, fetchProfile, fetchAdminRole]);
 
   useEffect(() => {
     setLoading(true);

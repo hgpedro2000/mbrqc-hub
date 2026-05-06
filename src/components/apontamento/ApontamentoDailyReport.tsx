@@ -495,9 +495,14 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
     const list = filtered;
     const pageOf = (i: number) => 2 + Math.floor(i / 2);
 
-    // Pair items into groups of 2 for detailed pages
-    const pairs: any[][] = [];
-    for (let i = 0; i < list.length; i += 2) pairs.push(list.slice(i, i + 2));
+    // Pair items into groups of 2 for detailed pages.
+    // Validation: ensure every detail page renders exactly 2 slots, padding with null when odd.
+    const pairs: (any | null)[][] = [];
+    for (let i = 0; i < list.length; i += 2) {
+      const slice: (any | null)[] = list.slice(i, i + 2);
+      while (slice.length < 2) slice.push(null);
+      pairs.push(slice);
+    }
 
     return (
       <Document>
@@ -562,6 +567,10 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
             {pair.map((r, sub) => {
               const globalIdx = pageIdx * 2 + sub;
+              if (!r) {
+                // Placeholder slot to guarantee 2 blocks per detail page
+                return <View key={`empty-${pageIdx}-${sub}`} style={pdfStyles.ngDBlock} />;
+              }
               const modos = parseModos(r);
               const tags = parseTags(r);
               const photos = photoMap?.[r.id] || [];

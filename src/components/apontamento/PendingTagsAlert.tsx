@@ -48,7 +48,7 @@ export const PendingTagsAlert = ({
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
       .gt("quantidade_ng", 0)
       .is("numero_tag" as any, null)
       .is("tag_number" as any, null)
@@ -61,8 +61,14 @@ export const PendingTagsAlert = ({
       return;
     }
 
-    const { data } = await query;
+    const data = (await query).data;
     setPendingItems(data || []);
+  };
+
+  const getTagCount = (item: any) => {
+    const main = item?.modo_falha ? 1 : 0;
+    const extras = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos.length : 0;
+    return Math.max(1, main + extras);
   };
 
   useEffect(() => {
@@ -181,22 +187,25 @@ export const PendingTagsAlert = ({
                         {item.turno && <span>• Turno {item.turno}</span>}
                       </div>
                     </div>
-                    {editingId !== item.id && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 text-xs w-full sm:w-auto"
-                        onClick={() => { setEditingId(item.id); setTagInputs(Array(item.quantidade_ng || 1).fill("")); }}
-                      >
-                        <Tag className="w-3 h-3 mr-1" />
-                        Inserir TAG{(item.quantidade_ng || 1) > 1 ? `s (${item.quantidade_ng})` : ""}
-                      </Button>
-                    )}
+                    {editingId !== item.id && (() => {
+                      const tagCount = getTagCount(item);
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 text-xs w-full sm:w-auto"
+                          onClick={() => { setEditingId(item.id); setTagInputs(Array(tagCount).fill("")); }}
+                        >
+                          <Tag className="w-3 h-3 mr-1" />
+                          Inserir TAG{tagCount > 1 ? `s (${tagCount})` : ""}
+                        </Button>
+                      );
+                    })()}
                   </div>
 
                   {editingId === item.id && (
                     <div className="space-y-2">
-                      {Array.from({ length: item.quantidade_ng || 1 }).map((_, idx) => (
+                      {Array.from({ length: getTagCount(item) }).map((_, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-[10px] text-muted-foreground w-10 shrink-0">#{idx + 1}</span>
                           <Input
@@ -209,7 +218,7 @@ export const PendingTagsAlert = ({
                             placeholder={`Número da TAG ${idx + 1}`}
                             className="h-8 text-sm flex-1"
                             autoFocus={idx === 0}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, item.quantidade_ng || 1)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, getTagCount(item))}
                           />
                         </div>
                       ))}
@@ -229,7 +238,7 @@ export const PendingTagsAlert = ({
                         <Button
                           size="sm"
                           className="h-8 shrink-0"
-                          onClick={() => handleSaveTag(item.id, item.quantidade_ng || 1)}
+                          onClick={() => handleSaveTag(item.id, getTagCount(item))}
                           disabled={saving}
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}

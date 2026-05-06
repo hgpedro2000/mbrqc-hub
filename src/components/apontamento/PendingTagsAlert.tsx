@@ -36,7 +36,7 @@ export const PendingTagsAlert = ({
     else setInternalOpen(v);
   };
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [tagInput, setTagInput] = useState("");
+  const [tagInputs, setTagInputs] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const activeProfile = impersonating || profile;

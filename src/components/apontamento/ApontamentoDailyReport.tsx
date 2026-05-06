@@ -442,6 +442,43 @@ const parseTags = (r: any): string[] => {
   return raw.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
 };
 
+const CIRCLED = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+
+const NgSharedHeader = ({ logoUrl, titleText, dateLabel, totals, filtered }: { logoUrl: string; titleText: string; dateLabel: string; totals: { count: number; insp: number; ng: number }; filtered: any[] }) => (
+  <View style={pdfStyles.ngHeader} fixed>
+    <View style={pdfStyles.ngHeaderLeft}>
+      {logoUrl ? <PdfImage src={logoUrl} style={pdfStyles.ngLogo} /> : null}
+      <View style={pdfStyles.ngHeaderDivider} />
+      <View>
+        <Text style={pdfStyles.ngBadgeNg}>PEÇAS NG</Text>
+        <Text style={pdfStyles.ngTitleText}>{titleText}</Text>
+        <Text style={pdfStyles.ngSubtitleText}>Data: {dateLabel} • {filtered.length} registros</Text>
+      </View>
+    </View>
+    <View style={pdfStyles.ngHeaderCards}>
+      <View style={pdfStyles.ngHeaderCard}>
+        <Text style={pdfStyles.ngHeaderCardValue}>{totals.count}</Text>
+        <Text style={pdfStyles.ngHeaderCardLabel}>Registros</Text>
+      </View>
+      <View style={pdfStyles.ngHeaderCard}>
+        <Text style={pdfStyles.ngHeaderCardValue}>{totals.insp}</Text>
+        <Text style={pdfStyles.ngHeaderCardLabel}>Inspecionadas</Text>
+      </View>
+      <View style={pdfStyles.ngHeaderCard}>
+        <Text style={pdfStyles.ngHeaderCardValueNg}>{totals.ng}</Text>
+        <Text style={pdfStyles.ngHeaderCardLabel}>Total NG</Text>
+      </View>
+    </View>
+  </View>
+);
+
+const NgFooter = ({ generatedAt }: { generatedAt: string }) => (
+  <View style={pdfStyles.ngFooter} fixed>
+    <Text>Hyundai Mobis — Apontamento Control</Text>
+    <Text render={({ pageNumber, totalPages }) => `${generatedAt} • Página ${pageNumber}/${totalPages}`} />
+  </View>
+);
+
 const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap }: PdfProps) => {
   const titleText =
     mode === "ng"
@@ -452,6 +489,165 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
   const generatedAt = `${new Date().toLocaleDateString("pt-BR")} ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
 
+  /* ─────────── NG REPORT (v2) ─────────── */
+  if (mode === "ng") {
+    // Build a flat sorted-by-input list (preserve filtered order). Each item gets index + page calculation.
+    const list = filtered;
+    const pageOf = (i: number) => 2 + Math.floor(i / 2);
+
+    // Pair items into groups of 2 for detailed pages
+    const pairs: any[][] = [];
+    for (let i = 0; i < list.length; i += 2) pairs.push(list.slice(i, i + 2));
+
+    return (
+      <Document>
+        {/* PAGE 1 — SUMMARY */}
+        <Page size="A4" orientation="landscape" style={{ paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, fontSize: 7, fontFamily: "Helvetica", color: "#1a1a2e" }}>
+          <NgSharedHeader logoUrl={logoUrl} titleText={titleText} dateLabel={dateLabel} totals={totals} filtered={filtered} />
+
+          <Text style={pdfStyles.ngSectionTitle}>Sumário de Ocorrências</Text>
+
+          {list.length === 0 ? (
+            <Text style={pdfStyles.empty}>Nenhum registro com NG encontrado.</Text>
+          ) : (
+            <View>
+              <View style={pdfStyles.ngSumHead} fixed>
+                {NG_SUM_COLS.map((c) => (
+                  <Text key={c.key} style={[pdfStyles.ngSumHeadCell, { width: `${c.w}%`, textAlign: c.align || "left" }]}>{c.label}</Text>
+                ))}
+              </View>
+              {list.map((r, idx) => {
+                const tags = parseTags(r);
+                const modos = parseModos(r);
+                const modosTxt = modos.map((m) => m.qty ? `${m.nome} (${m.qty})` : m.nome).join(" • ");
+                const turnoData = `${r.turno || "—"} ${r.data ? "/ " + new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : ""}`.trim();
+                return (
+                  <View key={r.id || idx} style={[pdfStyles.ngSumRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]} wrap={false}>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[0].w}%`, alignItems: "center" }]}>
+                      <View style={pdfStyles.ngSumIdxCircle}><Text style={pdfStyles.ngSumIdxText}>{idx + 1}</Text></View>
+                    </View>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[1].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[2].w}%`, fontWeight: 700, fontSize: 6 }]}>{r.part_number || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[3].w}%` }]} numberOfLines={1}>{r.part_name || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[4].w}%` }]} numberOfLines={1}>{r.fornecedor || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[5].w}%`, fontSize: 6 }]}>{turnoData}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[6].w}%`, textAlign: "center" }]}>{r.quantidade_inspecionada || 0}</Text>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[7].w}%`, alignItems: "center" }]}>
+                      <Text style={pdfStyles.ngSumNgPill}>{r.quantidade_ng || 0}</Text>
+                    </View>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[8].w}%`, fontSize: 6 }]} numberOfLines={1}>{modosTxt || "—"}</Text>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[9].w}%` }]}>
+                      {tags.length > 0
+                        ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
+                        : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
+                    </View>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]} numberOfLines={1}>{r.descricao || "—"}</Text>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
+                      <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+              <Text style={pdfStyles.ngSumNote}>* "Pág." indica onde o detalhamento completo com fotos de cada ocorrência pode ser encontrado.</Text>
+            </View>
+          )}
+
+          <NgFooter generatedAt={generatedAt} />
+        </Page>
+
+        {/* DETAILED PAGES — 2 blocks per page */}
+        {pairs.map((pair, pageIdx) => (
+          <Page key={pageIdx} size="A4" orientation="landscape" style={{ paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, fontSize: 7, fontFamily: "Helvetica", color: "#1a1a2e" }}>
+            <NgSharedHeader logoUrl={logoUrl} titleText={titleText} dateLabel={dateLabel} totals={totals} filtered={filtered} />
+
+            {pair.map((r, sub) => {
+              const globalIdx = pageIdx * 2 + sub;
+              const modos = parseModos(r);
+              const tags = parseTags(r);
+              const photos = photoMap?.[r.id] || [];
+              const circle = CIRCLED[globalIdx] || `${globalIdx + 1}.`;
+              return (
+                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock} wrap={false}>
+                  <View style={pdfStyles.ngDHeader}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={pdfStyles.ngDHeaderTitle}>{circle} {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>
+                      <Text style={pdfStyles.ngDHeaderSub}>
+                        {(r.fornecedor || "—")} • Turno {r.turno || "—"} • {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={pdfStyles.ngDHeaderQty}>{r.quantidade_ng || 0} NG</Text>
+                      <Text style={pdfStyles.ngDHeaderOf}>de {r.quantidade_inspecionada || 0} insp. • {r.quantidade_ok || 0} OK</Text>
+                    </View>
+                  </View>
+
+                  <View style={pdfStyles.ngDBody}>
+                    <View style={pdfStyles.ngDMetaGrid}>
+                      <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Local</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{r.local_deteccao || "—"}</Text>
+                      </View>
+                      <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Lote Inspecionado</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{r.lote_inspecionado || "—"}</Text>
+                      </View>
+                      <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Responsabilidade</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade) || "—"}</Text>
+                      </View>
+                      <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Origem</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{r.origem || "—"}</Text>
+                      </View>
+                      <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Projeto</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{r.projeto || "—"}</Text>
+                      </View>
+                    </View>
+
+                    {modos.length > 0 && (
+                      <View>
+                        <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
+                        {modos.map((m, idx) => (
+                          <View key={idx} style={pdfStyles.ngDFalhaItem}>
+                            <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
+                            <Text style={pdfStyles.ngDFalhaName}>{m.nome}</Text>
+                            {m.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {m.qty}</Text> : null}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
+                      <Text style={pdfStyles.tagsLabel}>Tags:</Text>
+                      {tags.length > 0
+                        ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngDTagOk}>TAG: {t}</Text>)
+                        : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
+                    </View>
+
+                    {photos.length > 0 && (
+                      <View>
+                        <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                          {photos.map((url, i) => (
+                            <PdfImage key={i} src={url} style={{ width: 110, height: 110, objectFit: "cover", borderRadius: 3 }} />
+                          ))}
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+
+            <NgFooter generatedAt={generatedAt} />
+          </Page>
+        ))}
+      </Document>
+    );
+  }
+
+  /* ─────────── DAILY / INCOMING REPORT (unchanged) ─────────── */
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={pdfStyles.page}>
@@ -460,7 +656,6 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
           <View style={pdfStyles.headerLeft}>
             {logoUrl ? <PdfImage src={logoUrl} style={pdfStyles.logo} /> : null}
             <View>
-              {mode === "ng" && <Text style={pdfStyles.badgeNg}>PEÇAS NG</Text>}
               <Text style={pdfStyles.title}>{titleText}</Text>
               <Text style={pdfStyles.subtitle}>
                 Data: {dateLabel} • {filtered.length} registros
@@ -488,9 +683,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
         {/* Empty */}
         {filtered.length === 0 && (
-          <Text style={pdfStyles.empty}>
-            {mode === "daily" ? "Nenhum registro nesta data." : "Nenhum registro com NG encontrado."}
-          </Text>
+          <Text style={pdfStyles.empty}>Nenhum registro nesta data.</Text>
         )}
 
         {/* Groups */}
@@ -501,151 +694,57 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               <Text style={pdfStyles.groupCount}>({records.length} registros)</Text>
             </View>
 
-            {mode === "ng" ? (
-              <View>
-                {records.map((r) => {
-                  const modos = parseModos(r);
-                  const tags = parseTags(r);
-                  const photos = photoMap?.[r.id] || [];
-                  return (
-                    <View key={r.id} style={pdfStyles.ngBlock} wrap={false}>
-                      <View style={pdfStyles.ngBlockHeader}>
-                        <View>
-                          <Text style={pdfStyles.ngBlockRef}>
-                            {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}
-                          </Text>
-                          <Text style={pdfStyles.ngBlockSub}>
-                            {r.fornecedor || "—"} • Turno {r.turno || "—"} • {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                          </Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end" }}>
-                          <Text style={pdfStyles.ngCount}>{r.quantidade_ng || 0} NG</Text>
-                          <Text style={pdfStyles.ngOf}>de {r.quantidade_inspecionada || 0} insp. • {r.quantidade_ok || 0} OK</Text>
-                        </View>
-                      </View>
-
-                      <View style={pdfStyles.ngBlockBody}>
-                        <View style={pdfStyles.metaGrid}>
-                          <View style={pdfStyles.metaCol}>
-                            <Text style={pdfStyles.metaLabel}>Local</Text>
-                            <Text style={pdfStyles.metaValue}>{r.local_deteccao || "—"}</Text>
-                          </View>
-                          <View style={pdfStyles.metaCol}>
-                            <Text style={pdfStyles.metaLabel}>Lote Inspecionado</Text>
-                            <Text style={pdfStyles.metaValue}>{r.lote_inspecionado || "—"}</Text>
-                          </View>
-                          <View style={pdfStyles.metaCol}>
-                            <Text style={pdfStyles.metaLabel}>Responsabilidade</Text>
-                            <Text style={pdfStyles.metaValue}>{stripCode(r.responsabilidade) || "—"}</Text>
-                          </View>
-                          <View style={pdfStyles.metaCol}>
-                            <Text style={pdfStyles.metaLabel}>Origem</Text>
-                            <Text style={pdfStyles.metaValue}>{r.origem || "—"}</Text>
-                          </View>
-                          <View style={pdfStyles.metaCol}>
-                            <Text style={pdfStyles.metaLabel}>Projeto</Text>
-                            <Text style={pdfStyles.metaValue}>{r.projeto || "—"}</Text>
-                          </View>
-                        </View>
-
-                        {modos.length > 0 && (
-                          <View>
-                            <Text style={pdfStyles.sectionTitle}>Modos de Falha</Text>
-                            {modos.map((modo, idx) => (
-                              <View key={idx} style={pdfStyles.falhaItem}>
-                                <View style={pdfStyles.falhaNum}>
-                                  <Text style={pdfStyles.falhaNumText}>{idx + 1}</Text>
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                  <Text style={pdfStyles.falhaName}>{modo.nome}</Text>
-                                  {modo.descricao ? <Text style={pdfStyles.falhaDesc}>{modo.descricao}</Text> : null}
-                                </View>
-                                {modo.qty ? <Text style={pdfStyles.falhaQty}>Qty: {modo.qty}</Text> : null}
-                              </View>
-                            ))}
-                          </View>
-                        )}
-
-                        <View style={pdfStyles.tagsRow}>
-                          <Text style={pdfStyles.tagsLabel}>Tags: </Text>
-                          {tags.length > 0
-                            ? tags.map((t, i) => <Text key={i} style={pdfStyles.tagOk}>TAG: {t}</Text>)
-                            : <Text style={pdfStyles.tagMissing}>Sem TAG</Text>
-                          }
-                        </View>
-
-                        {photos.length > 0 && (
-                          <View>
-                            <Text style={pdfStyles.sectionTitle}>Fotos ({photos.length})</Text>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                              {photos.map((url, i) => (
-                                <PdfImage
-                                  key={i}
-                                  src={url}
-                                  style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 3 }}
-                                />
-                              ))}
-                            </View>
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  );
-                })}
+            <View style={pdfStyles.table}>
+              {/* Header row */}
+              <View style={pdfStyles.tHeadRow} fixed>
+                {COLS.map((c) => (
+                  <Text
+                    key={c.key}
+                    style={[
+                      pdfStyles.tHeadCell,
+                      { width: `${c.w}%`, textAlign: c.align || "left" },
+                    ]}
+                  >
+                    {c.label}
+                  </Text>
+                ))}
               </View>
-            ) : (
-              <View style={pdfStyles.table}>
-                {/* Header row */}
-                <View style={pdfStyles.tHeadRow} fixed>
-                  {COLS.map((c) => (
-                    <Text
-                      key={c.key}
-                      style={[
-                        pdfStyles.tHeadCell,
-                        { width: `${c.w}%`, textAlign: c.align || "left" },
-                      ]}
-                    >
-                      {c.label}
+
+              {/* Body rows */}
+              {records.map((r, idx) => {
+                const ngVal = r.quantidade_ng || 0;
+                const tag = r.numero_tag || r.tag_number;
+                return (
+                  <View
+                    key={r.id || idx}
+                    style={[pdfStyles.tRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]}
+                    wrap={false}
+                  >
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[0].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[1].w}%` }]}>{r.turno || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[2].w}%` }]}>
+                      {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
                     </Text>
-                  ))}
-                </View>
-
-                {/* Body rows */}
-                {records.map((r, idx) => {
-                  const ngVal = r.quantidade_ng || 0;
-                  const tag = r.numero_tag || r.tag_number;
-                  return (
-                    <View
-                      key={r.id || idx}
-                      style={[pdfStyles.tRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]}
-                      wrap={false}
-                    >
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[0].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[1].w}%` }]}>{r.turno || "—"}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[2].w}%` }]}>
-                        {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                      </Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[3].w}%`, fontWeight: 700 }]}>{r.part_number || "—"}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[4].w}%` }]}>{r.part_name || "—"}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[5].w}%` }]}>{r.fornecedor || "—"}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[6].w}%`, textAlign: "right" }]}>{r.quantidade_inspecionada || 0}</Text>
-                      <Text style={[pdfStyles.tCell, ngVal > 0 ? pdfStyles.tCellNg : {}, { width: `${COLS[7].w}%`, textAlign: "right" }]}>{ngVal}</Text>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[8].w}%`, textAlign: "right" }]}>{r.quantidade_ok || 0}</Text>
-                      <View style={[pdfStyles.tCell, { width: `${COLS[9].w}%` }]}>
-                        {tag ? (
-                          <Text style={pdfStyles.tagOk}>TAG: {tag}</Text>
-                        ) : (
-                          <Text>—</Text>
-                        )}
-                      </View>
-                      <Text style={[pdfStyles.tCell, { width: `${COLS[10].w}%` }]}>
-                        {(stripCode(r.modo_falha) || r.descricao || "—").toString().slice(0, 120)}
-                      </Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[3].w}%`, fontWeight: 700 }]}>{r.part_number || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[4].w}%` }]}>{r.part_name || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[5].w}%` }]}>{r.fornecedor || "—"}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[6].w}%`, textAlign: "right" }]}>{r.quantidade_inspecionada || 0}</Text>
+                    <Text style={[pdfStyles.tCell, ngVal > 0 ? pdfStyles.tCellNg : {}, { width: `${COLS[7].w}%`, textAlign: "right" }]}>{ngVal}</Text>
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[8].w}%`, textAlign: "right" }]}>{r.quantidade_ok || 0}</Text>
+                    <View style={[pdfStyles.tCell, { width: `${COLS[9].w}%` }]}>
+                      {tag ? (
+                        <Text style={pdfStyles.tagOk}>TAG: {tag}</Text>
+                      ) : (
+                        <Text>—</Text>
+                      )}
                     </View>
-                  );
-                })}
-              </View>
-            )}
+                    <Text style={[pdfStyles.tCell, { width: `${COLS[10].w}%` }]}>
+                      {(stripCode(r.modo_falha) || r.descricao || "—").toString().slice(0, 120)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
         ))}
 

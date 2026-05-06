@@ -527,6 +527,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [dateTo, setDateTo] = useState(today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   useEffect(() => { setSelectedFornecedores([]); }, [dateFrom, dateTo]);
 

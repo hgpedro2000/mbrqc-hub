@@ -61,8 +61,14 @@ export const PendingTagsAlert = ({
       return;
     }
 
-    const { data } = await query;
+    const data = (await query).data;
     setPendingItems(data || []);
+  };
+
+  const getTagCount = (item: any) => {
+    const main = item?.modo_falha ? 1 : 0;
+    const extras = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos.length : 0;
+    return Math.max(1, main + extras);
   };
 
   useEffect(() => {

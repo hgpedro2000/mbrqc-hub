@@ -391,6 +391,22 @@ const COLS = [
   { key: "desc",    label: "Descrição",   w: 18 },
 ];
 
+// NG summary columns (sums to 100)
+const NG_SUM_COLS = [
+  { key: "idx",   label: "#",              w: 3,  align: "center" as const },
+  { key: "num",   label: "Nº",             w: 8 },
+  { key: "pn",    label: "Part Number",    w: 11 },
+  { key: "pname", label: "Part Name",      w: 13 },
+  { key: "forn",  label: "Fornecedor",     w: 10 },
+  { key: "td",    label: "Turno/Data",     w: 7 },
+  { key: "insp",  label: "Insp.",          w: 4,  align: "center" as const },
+  { key: "ng",    label: "NG",             w: 4,  align: "center" as const },
+  { key: "modos", label: "Modos de Falha", w: 14 },
+  { key: "tags",  label: "Tags",           w: 11 },
+  { key: "desc",  label: "Descrição",      w: 11 },
+  { key: "pag",   label: "Pág.",           w: 4,  align: "center" as const },
+];
+
 interface PdfProps {
   mode: "daily" | "ng";
   filtered: any[];

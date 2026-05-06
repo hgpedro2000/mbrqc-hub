@@ -85,15 +85,15 @@ export const PendingTagsAlert = ({
     setSaving(true);
     try {
       const joined = trimmed.join(", ");
-      const { error } = await supabase
-        .from("apontamentos")
-        .update({
+      const { data, error } = await supabase.functions.invoke("insert-tag", {
+        body: {
+          id,
           numero_tag: joined,
-          tag_inserted_at: new Date().toISOString(),
-          tag_inserted_by: profile?.full_name || "",
-        } as any)
-        .eq("id", id);
+          impersonatedUserId: impersonating?.id || null,
+        },
+      });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       toast.success("TAGs salvas!");
       setTagInputs([]);
       setEditingId(null);

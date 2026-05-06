@@ -595,9 +595,12 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
       if (dateFrom && dateTo) {
         list = list.filter((i) => i.data >= dateFrom && i.data <= dateTo);
       }
+      if (selectedFornecedores.length > 0) {
+        list = list.filter((i) => selectedFornecedores.includes(i.fornecedor));
+      }
     }
     return list;
-  }, [items, dateFrom, dateTo, mode, locationFilter]);
+  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};

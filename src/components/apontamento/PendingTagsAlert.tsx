@@ -179,40 +179,52 @@ export const PendingTagsAlert = ({
                         size="sm"
                         variant="outline"
                         className="shrink-0 text-xs w-full sm:w-auto"
-                        onClick={() => { setEditingId(item.id); setTagInput(""); }}
+                        onClick={() => { setEditingId(item.id); setTagInputs(Array(item.quantidade_ng || 1).fill("")); }}
                       >
                         <Tag className="w-3 h-3 mr-1" />
-                        Inserir TAG
+                        Inserir TAG{(item.quantidade_ng || 1) > 1 ? `s (${item.quantidade_ng})` : ""}
                       </Button>
                     )}
                   </div>
 
                   {editingId === item.id && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        placeholder="Número da TAG"
-                        className="h-8 text-sm flex-1"
-                        autoFocus
-                        onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id)}
-                      />
-                      <Button
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => handleSaveTag(item.id)}
-                        disabled={saving}
-                      >
-                        {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => setEditingId(null)}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </Button>
+                    <div className="space-y-2">
+                      {Array.from({ length: item.quantidade_ng || 1 }).map((_, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-[10px] text-muted-foreground w-10 shrink-0">#{idx + 1}</span>
+                          <Input
+                            value={tagInputs[idx] || ""}
+                            onChange={(e) => {
+                              const next = [...tagInputs];
+                              next[idx] = e.target.value;
+                              setTagInputs(next);
+                            }}
+                            placeholder={`Número da TAG ${idx + 1}`}
+                            className="h-8 text-sm flex-1"
+                            autoFocus={idx === 0}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, item.quantidade_ng || 1)}
+                          />
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => setEditingId(null)}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-8 shrink-0"
+                          onClick={() => handleSaveTag(item.id, item.quantidade_ng || 1)}
+                          disabled={saving}
+                        >
+                          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                          Salvar
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>

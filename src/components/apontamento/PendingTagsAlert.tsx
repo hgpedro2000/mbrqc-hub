@@ -66,21 +66,23 @@ export const PendingTagsAlert = ({
     if (canInsertTag) fetchPending();
   }, [canInsertTag, user, isAdmin]);
 
-  const handleSaveTag = async (id: string) => {
-    if (!tagInput.trim()) { toast.error("Informe o número da TAG"); return; }
+  const handleSaveTag = async (id: string, qty: number) => {
+    const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
+    if (trimmed.some(t => !t)) { toast.error(`Informe todas as ${qty} TAGs`); return; }
     setSaving(true);
     try {
+      const joined = trimmed.join(", ");
       const { error } = await supabase
         .from("apontamentos")
         .update({
-          numero_tag: tagInput.trim(),
+          numero_tag: joined,
           tag_inserted_at: new Date().toISOString(),
           tag_inserted_by: profile?.full_name || "",
         } as any)
         .eq("id", id);
       if (error) throw error;
-      toast.success("TAG salva!");
-      setTagInput("");
+      toast.success("TAGs salvas!");
+      setTagInputs([]);
       setEditingId(null);
       await fetchPending();
     } catch (e: any) {

@@ -271,9 +271,34 @@ interface PdfProps {
   dateLabel: string;
   locationFilter?: string | null;
   logoUrl: string;
+  photoMap?: Record<string, string[]>;
 }
 
-const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl }: PdfProps) => {
+const parseModos = (r: any) => {
+  const raw = (r.modo_falha || "").toString();
+  if (!raw.trim()) return [] as { nome: string; descricao?: string; qty?: number }[];
+  const parts = raw.split(/[,;]+/).map((s: string) => stripCode(s.trim())).filter(Boolean);
+  const detalhes = r.detalhes_modo_falha;
+  const qtyMap: Record<string, number> = {};
+  if (detalhes && typeof detalhes === "object") {
+    Object.entries(detalhes).forEach(([k, v]: [string, any]) => {
+      const n = typeof v === "number" ? v : (typeof v === "object" && v?.qty) ? Number(v.qty) : NaN;
+      if (!Number.isNaN(n)) qtyMap[stripCode(k)] = n;
+    });
+  }
+  return parts.map((nome: string, i: number) => ({
+    nome,
+    descricao: i === 0 ? r.descricao || undefined : undefined,
+    qty: qtyMap[nome],
+  }));
+};
+
+const parseTags = (r: any): string[] => {
+  const raw = (r.numero_tag || r.tag_number || "").toString();
+  return raw.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
+};
+
+const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap }: PdfProps) => {
   const titleText =
     mode === "ng"
       ? "Relatório de Peças com Defeito (NG)"

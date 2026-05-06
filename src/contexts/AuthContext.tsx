@@ -59,11 +59,25 @@ const CLIENT_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0.0";
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [isAdminRole, setIsAdminRole] = useState(false);
   const [loading, setLoading] = useState(true);
   const [versionKicked, setVersionKicked] = useState(false);
   const [mfaStatus, setMfaStatus] = useState<MFAStatus>("checking");
 
-  const isAdmin = !!profile?.is_admin;
+  // Authoritative admin check: user_roles table (not profile.is_admin which can drift)
+  const isAdmin = isAdminRole;
+
+  const fetchAdminRole = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles" as any)
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    const isA = !!data;
+    setIsAdminRole(isA);
+    return isA;
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase

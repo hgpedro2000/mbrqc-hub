@@ -565,12 +565,11 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const modos = parseModos(r);
               const tags = parseTags(r);
               const photos = photoMap?.[r.id] || [];
-              const circle = CIRCLED[globalIdx] || `${globalIdx + 1}.`;
               return (
                 <View key={r.id || globalIdx} style={pdfStyles.ngDBlock}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
-                      <Text style={pdfStyles.ngDHeaderTitle}>{circle} {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>
+                      <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>
                       <Text style={pdfStyles.ngDHeaderSub}>
                         {(r.fornecedor || "—")} • Turno {r.turno || "—"} • {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
                       </Text>
@@ -605,18 +604,22 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       </View>
                     </View>
 
-                    {modos.length > 0 && (
-                      <View>
-                        <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
-                        {modos.map((m, idx) => (
+                    <View>
+                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
+                      {modos.length > 0 ? (
+                        modos.map((m, idx) => (
                           <View key={idx} style={pdfStyles.ngDFalhaItem}>
                             <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
                             <Text style={pdfStyles.ngDFalhaName}>{m.nome}</Text>
                             {m.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {m.qty}</Text> : null}
                           </View>
-                        ))}
-                      </View>
-                    )}
+                        ))
+                      ) : (
+                        <View style={pdfStyles.ngDFalhaItem}>
+                          <Text style={pdfStyles.ngDFalhaName}>—</Text>
+                        </View>
+                      )}
+                    </View>
 
                     <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
                       <Text style={pdfStyles.tagsLabel}>Tags:</Text>

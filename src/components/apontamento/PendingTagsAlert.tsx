@@ -218,7 +218,11 @@ export const PendingTagsAlert = ({
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8 shrink-0"
-                          onClick={() => setEditingId(null)}
+                          onClick={() => {
+                            const hasAny = tagInputs.some(t => (t || "").trim());
+                            if (hasAny) setCancelConfirm(true);
+                            else { setEditingId(null); setTagInputs([]); }
+                          }}
                         >
                           <X className="w-3.5 h-3.5" />
                         </Button>

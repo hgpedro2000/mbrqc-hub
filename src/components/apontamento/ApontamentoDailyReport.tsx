@@ -621,6 +621,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
       dateLabel={dateLabel}
       locationFilter={locationFilter}
       logoUrl={hyundaiMobisLogo}
+      photoMap={allPhotosByItem}
     />
   );
 

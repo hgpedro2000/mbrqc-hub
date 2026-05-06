@@ -126,7 +126,7 @@ export const PendingTagsAlert = ({
       )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-full max-w-[640px] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base break-words">
               <Tag className="w-4 h-4 shrink-0" />

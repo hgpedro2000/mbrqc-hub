@@ -71,7 +71,11 @@ export const PendingTagsAlert = ({
 
   const handleSaveTag = async (id: string, qty: number) => {
     const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
-    if (trimmed.some(t => !t)) { toast.error(`Informe todas as ${qty} TAGs`); return; }
+    const missing = trimmed.filter(t => !t).length;
+    if (missing > 0) {
+      setMissingAlert({ qty, missing });
+      return;
+    }
     setSaving(true);
     try {
       const joined = trimmed.join(", ");

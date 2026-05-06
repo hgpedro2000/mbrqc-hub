@@ -226,6 +226,26 @@ const pdfStyles = StyleSheet.create({
     color: "#6b7280",
   },
   empty: { textAlign: "center", marginTop: 40, color: "#6b7280", fontSize: 10 },
+  ngBlock: { marginBottom: 10, borderWidth: 1, borderColor: "#d1d5db", borderRadius: 4 },
+  ngBlockHeader: { backgroundColor: "#1a1a2e", padding: 6, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  ngBlockRef: { fontSize: 9, fontWeight: 700, color: "#ffffff" },
+  ngBlockSub: { fontSize: 7, color: "#94a3b8", marginTop: 1 },
+  ngCount: { fontSize: 10, fontWeight: 700, color: "#fca5a5" },
+  ngOf: { fontSize: 6, color: "#94a3b8" },
+  ngBlockBody: { padding: 8, gap: 7 },
+  metaGrid: { flexDirection: "row", backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 3, padding: 6 },
+  metaCol: { flex: 1, paddingHorizontal: 2 },
+  metaLabel: { fontSize: 6, color: "#9ca3af", textTransform: "uppercase", marginBottom: 1 },
+  metaValue: { fontSize: 7, color: "#1a1a2e", fontWeight: 500 },
+  sectionTitle: { fontSize: 7, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", marginBottom: 4 },
+  falhaItem: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#ffffff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 3, padding: 5, marginBottom: 3 },
+  falhaNum: { width: 14, height: 14, borderRadius: 7, backgroundColor: "#ef4444", alignItems: "center", justifyContent: "center" },
+  falhaNumText: { fontSize: 6, fontWeight: 700, color: "#ffffff" },
+  falhaName: { fontSize: 7, fontWeight: 700, color: "#1a1a2e" },
+  falhaDesc: { fontSize: 6, color: "#6b7280", marginTop: 1 },
+  falhaQty: { fontSize: 7, fontWeight: 700, backgroundColor: "#fee2e2", color: "#b91c1c", paddingVertical: 2, paddingHorizontal: 5, borderRadius: 2 },
+  tagsRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  tagsLabel: { fontSize: 6, color: "#9ca3af", textTransform: "uppercase" },
 });
 
 // Column widths (must sum to ~100)
@@ -251,9 +271,34 @@ interface PdfProps {
   dateLabel: string;
   locationFilter?: string | null;
   logoUrl: string;
+  photoMap?: Record<string, string[]>;
 }
 
-const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl }: PdfProps) => {
+const parseModos = (r: any) => {
+  const raw = (r.modo_falha || "").toString();
+  if (!raw.trim()) return [] as { nome: string; descricao?: string; qty?: number }[];
+  const parts = raw.split(/[,;]+/).map((s: string) => stripCode(s.trim())).filter(Boolean);
+  const detalhes = r.detalhes_modo_falha;
+  const qtyMap: Record<string, number> = {};
+  if (detalhes && typeof detalhes === "object") {
+    Object.entries(detalhes).forEach(([k, v]: [string, any]) => {
+      const n = typeof v === "number" ? v : (typeof v === "object" && v?.qty) ? Number(v.qty) : NaN;
+      if (!Number.isNaN(n)) qtyMap[stripCode(k)] = n;
+    });
+  }
+  return parts.map((nome: string, i: number) => ({
+    nome,
+    descricao: i === 0 ? r.descricao || undefined : undefined,
+    qty: qtyMap[nome],
+  }));
+};
+
+const parseTags = (r: any): string[] => {
+  const raw = (r.numero_tag || r.tag_number || "").toString();
+  return raw.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
+};
+
+const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap }: PdfProps) => {
   const titleText =
     mode === "ng"
       ? "Relatório de Peças com Defeito (NG)"
@@ -312,59 +357,151 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               <Text style={pdfStyles.groupCount}>({records.length} registros)</Text>
             </View>
 
-            <View style={pdfStyles.table}>
-              {/* Header row */}
-              <View style={pdfStyles.tHeadRow} fixed>
-                {COLS.map((c) => (
-                  <Text
-                    key={c.key}
-                    style={[
-                      pdfStyles.tHeadCell,
-                      { width: `${c.w}%`, textAlign: c.align || "left" },
-                    ]}
-                  >
-                    {c.label}
-                  </Text>
-                ))}
-              </View>
+            {mode === "ng" ? (
+              <View>
+                {records.map((r) => {
+                  const modos = parseModos(r);
+                  const tags = parseTags(r);
+                  const photos = photoMap?.[r.id] || [];
+                  return (
+                    <View key={r.id} style={pdfStyles.ngBlock} wrap={false}>
+                      <View style={pdfStyles.ngBlockHeader}>
+                        <View>
+                          <Text style={pdfStyles.ngBlockRef}>
+                            {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}
+                          </Text>
+                          <Text style={pdfStyles.ngBlockSub}>
+                            {r.fornecedor || "—"} • Turno {r.turno || "—"} • {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                          </Text>
+                        </View>
+                        <View style={{ alignItems: "flex-end" }}>
+                          <Text style={pdfStyles.ngCount}>{r.quantidade_ng || 0} NG</Text>
+                          <Text style={pdfStyles.ngOf}>de {r.quantidade_inspecionada || 0} insp. • {r.quantidade_ok || 0} OK</Text>
+                        </View>
+                      </View>
 
-              {/* Body rows */}
-              {records.map((r, idx) => {
-                const ngVal = r.quantidade_ng || 0;
-                const tag = r.numero_tag || r.tag_number;
-                return (
-                  <View
-                    key={r.id || idx}
-                    style={[pdfStyles.tRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]}
-                    wrap={false}
-                  >
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[0].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[1].w}%` }]}>{r.turno || "—"}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[2].w}%` }]}>
-                      {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                    </Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[3].w}%`, fontWeight: 700 }]}>{r.part_number || "—"}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[4].w}%` }]}>{r.part_name || "—"}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[5].w}%` }]}>{r.fornecedor || "—"}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[6].w}%`, textAlign: "right" }]}>{r.quantidade_inspecionada || 0}</Text>
-                    <Text style={[pdfStyles.tCell, ngVal > 0 ? pdfStyles.tCellNg : {}, { width: `${COLS[7].w}%`, textAlign: "right" }]}>{ngVal}</Text>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[8].w}%`, textAlign: "right" }]}>{r.quantidade_ok || 0}</Text>
-                    <View style={[pdfStyles.tCell, { width: `${COLS[9].w}%` }]}>
-                      {tag ? (
-                        <Text style={pdfStyles.tagOk}>TAG: {tag}</Text>
-                      ) : mode === "ng" ? (
-                        <Text style={pdfStyles.tagMissing}>Sem TAG</Text>
-                      ) : (
-                        <Text>—</Text>
-                      )}
+                      <View style={pdfStyles.ngBlockBody}>
+                        <View style={pdfStyles.metaGrid}>
+                          <View style={pdfStyles.metaCol}>
+                            <Text style={pdfStyles.metaLabel}>Local</Text>
+                            <Text style={pdfStyles.metaValue}>{r.local_deteccao || "—"}</Text>
+                          </View>
+                          <View style={pdfStyles.metaCol}>
+                            <Text style={pdfStyles.metaLabel}>Lote Inspecionado</Text>
+                            <Text style={pdfStyles.metaValue}>{r.lote_inspecionado || "—"}</Text>
+                          </View>
+                          <View style={pdfStyles.metaCol}>
+                            <Text style={pdfStyles.metaLabel}>Responsabilidade</Text>
+                            <Text style={pdfStyles.metaValue}>{stripCode(r.responsabilidade) || "—"}</Text>
+                          </View>
+                          <View style={pdfStyles.metaCol}>
+                            <Text style={pdfStyles.metaLabel}>Origem</Text>
+                            <Text style={pdfStyles.metaValue}>{r.origem || "—"}</Text>
+                          </View>
+                          <View style={pdfStyles.metaCol}>
+                            <Text style={pdfStyles.metaLabel}>Projeto</Text>
+                            <Text style={pdfStyles.metaValue}>{r.projeto || "—"}</Text>
+                          </View>
+                        </View>
+
+                        {modos.length > 0 && (
+                          <View>
+                            <Text style={pdfStyles.sectionTitle}>Modos de Falha</Text>
+                            {modos.map((modo, idx) => (
+                              <View key={idx} style={pdfStyles.falhaItem}>
+                                <View style={pdfStyles.falhaNum}>
+                                  <Text style={pdfStyles.falhaNumText}>{idx + 1}</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={pdfStyles.falhaName}>{modo.nome}</Text>
+                                  {modo.descricao ? <Text style={pdfStyles.falhaDesc}>{modo.descricao}</Text> : null}
+                                </View>
+                                {modo.qty ? <Text style={pdfStyles.falhaQty}>Qty: {modo.qty}</Text> : null}
+                              </View>
+                            ))}
+                          </View>
+                        )}
+
+                        <View style={pdfStyles.tagsRow}>
+                          <Text style={pdfStyles.tagsLabel}>Tags: </Text>
+                          {tags.length > 0
+                            ? tags.map((t, i) => <Text key={i} style={pdfStyles.tagOk}>TAG: {t}</Text>)
+                            : <Text style={pdfStyles.tagMissing}>Sem TAG</Text>
+                          }
+                        </View>
+
+                        {photos.length > 0 && (
+                          <View>
+                            <Text style={pdfStyles.sectionTitle}>Fotos ({photos.length})</Text>
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                              {photos.map((url, i) => (
+                                <PdfImage
+                                  key={i}
+                                  src={url}
+                                  style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 3 }}
+                                />
+                              ))}
+                            </View>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                    <Text style={[pdfStyles.tCell, { width: `${COLS[10].w}%` }]}>
-                      {(stripCode(r.modo_falha) || r.descricao || "—").toString().slice(0, 120)}
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={pdfStyles.table}>
+                {/* Header row */}
+                <View style={pdfStyles.tHeadRow} fixed>
+                  {COLS.map((c) => (
+                    <Text
+                      key={c.key}
+                      style={[
+                        pdfStyles.tHeadCell,
+                        { width: `${c.w}%`, textAlign: c.align || "left" },
+                      ]}
+                    >
+                      {c.label}
                     </Text>
-                  </View>
-                );
-              })}
-            </View>
+                  ))}
+                </View>
+
+                {/* Body rows */}
+                {records.map((r, idx) => {
+                  const ngVal = r.quantidade_ng || 0;
+                  const tag = r.numero_tag || r.tag_number;
+                  return (
+                    <View
+                      key={r.id || idx}
+                      style={[pdfStyles.tRow, { backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff" }]}
+                      wrap={false}
+                    >
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[0].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[1].w}%` }]}>{r.turno || "—"}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[2].w}%` }]}>
+                        {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                      </Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[3].w}%`, fontWeight: 700 }]}>{r.part_number || "—"}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[4].w}%` }]}>{r.part_name || "—"}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[5].w}%` }]}>{r.fornecedor || "—"}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[6].w}%`, textAlign: "right" }]}>{r.quantidade_inspecionada || 0}</Text>
+                      <Text style={[pdfStyles.tCell, ngVal > 0 ? pdfStyles.tCellNg : {}, { width: `${COLS[7].w}%`, textAlign: "right" }]}>{ngVal}</Text>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[8].w}%`, textAlign: "right" }]}>{r.quantidade_ok || 0}</Text>
+                      <View style={[pdfStyles.tCell, { width: `${COLS[9].w}%` }]}>
+                        {tag ? (
+                          <Text style={pdfStyles.tagOk}>TAG: {tag}</Text>
+                        ) : (
+                          <Text>—</Text>
+                        )}
+                      </View>
+                      <Text style={[pdfStyles.tCell, { width: `${COLS[10].w}%` }]}>
+                        {(stripCode(r.modo_falha) || r.descricao || "—").toString().slice(0, 120)}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         ))}
 
@@ -412,6 +549,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
         const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
         map[p.checklist_id] = urlData.publicUrl;
       }
+    });
+    return map;
+  }, [ngPhotos]);
+
+  const allPhotosByItem = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    ngPhotos.forEach((p) => {
+      const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+      if (!map[p.checklist_id]) map[p.checklist_id] = [];
+      map[p.checklist_id].push(urlData.publicUrl);
     });
     return map;
   }, [ngPhotos]);
@@ -474,6 +621,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
       dateLabel={dateLabel}
       locationFilter={locationFilter}
       logoUrl={hyundaiMobisLogo}
+      photoMap={allPhotosByItem}
     />
   );
 

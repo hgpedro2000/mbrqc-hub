@@ -238,7 +238,7 @@ export const PendingTagsAlert = ({
                         <Button
                           size="sm"
                           className="h-8 shrink-0"
-                          onClick={() => handleSaveTag(item.id, item.quantidade_ng || 1)}
+                          onClick={() => handleSaveTag(item.id, getTagCount(item))}
                           disabled={saving}
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}

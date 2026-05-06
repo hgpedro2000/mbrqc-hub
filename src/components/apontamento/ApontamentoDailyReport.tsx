@@ -528,20 +528,20 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[1].w}%`, fontWeight: 700 }]}>{r.numero || "—"}</Text>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[2].w}%`, fontWeight: 700, fontSize: 6 }]}>{r.part_number || "—"}</Text>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[3].w}%` }]} numberOfLines={1}>{r.part_name || "—"}</Text>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[4].w}%` }]} numberOfLines={1}>{r.fornecedor || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[3].w}%` }]}>{r.part_name || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[4].w}%` }]}>{r.fornecedor || "—"}</Text>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[5].w}%`, fontSize: 6 }]}>{turnoData}</Text>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[6].w}%`, textAlign: "center" }]}>{r.quantidade_inspecionada || 0}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[7].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumNgPill}>{r.quantidade_ng || 0}</Text>
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[8].w}%`, fontSize: 6 }]} numberOfLines={1}>{modosTxt || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[8].w}%`, fontSize: 6 }]}>{modosTxt || "—"}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[9].w}%` }]}>
                       {tags.length > 0
                         ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
                         : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]} numberOfLines={1}>{r.descricao || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{r.descricao || "—"}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
                     </View>

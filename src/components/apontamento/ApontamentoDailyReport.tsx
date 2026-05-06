@@ -693,6 +693,63 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
+                {mode === "ng" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "text-xs h-8 gap-1.5",
+                          selectedFornecedores.length > 0 && "border-primary text-primary"
+                        )}
+                      >
+                        <Filter className="w-3 h-3" />
+                        {selectedFornecedores.length > 0
+                          ? `Fornecedor (${selectedFornecedores.length})`
+                          : "Fornecedor"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[220px] p-2 max-h-[280px] overflow-y-auto" align="start">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] text-muted-foreground font-medium">Filtrar por Fornecedor</span>
+                        {selectedFornecedores.length > 0 && (
+                          <button
+                            onClick={() => setSelectedFornecedores([])}
+                            className="text-[10px] text-primary hover:underline"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      {fornecedoresDisponiveis.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">Nenhum fornecedor encontrado</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {fornecedoresDisponiveis.map((f) => {
+                            const checked = selectedFornecedores.includes(f);
+                            return (
+                              <label
+                                key={f}
+                                className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted cursor-pointer"
+                              >
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(v) => {
+                                    setSelectedFornecedores((prev) =>
+                                      v ? [...prev, f] : prev.filter((x) => x !== f)
+                                    );
+                                  }}
+                                />
+                                <span className="text-xs flex-1 truncate">{f}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                )}
                 <PDFDownloadLink document={pdfDoc} fileName={pdfFileName}>
                   {({ loading }) => (
                     <Button variant="outline" size="sm" className="gap-1.5" disabled={loading}>

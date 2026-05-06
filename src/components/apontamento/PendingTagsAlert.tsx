@@ -205,7 +205,7 @@ export const PendingTagsAlert = ({
 
                   {editingId === item.id && (
                     <div className="space-y-2">
-                      {Array.from({ length: item.quantidade_ng || 1 }).map((_, idx) => (
+                      {Array.from({ length: getTagCount(item) }).map((_, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-[10px] text-muted-foreground w-10 shrink-0">#{idx + 1}</span>
                           <Input
@@ -218,7 +218,7 @@ export const PendingTagsAlert = ({
                             placeholder={`Número da TAG ${idx + 1}`}
                             className="h-8 text-sm flex-1"
                             autoFocus={idx === 0}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, item.quantidade_ng || 1)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, getTagCount(item))}
                           />
                         </div>
                       ))}

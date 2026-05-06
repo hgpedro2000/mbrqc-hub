@@ -752,13 +752,70 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 )}
-                <PDFDownloadLink document={pdfDoc} fileName={pdfFileName}>
-                  {({ loading }) => (
-                    <Button variant="outline" size="sm" className="gap-1.5" disabled={loading}>
-                      <Download className="w-4 h-4" /> {loading ? "Gerando..." : "PDF"}
-                    </Button>
-                  )}
-                </PDFDownloadLink>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={generatingPdf}
+                  onClick={async () => {
+                    if (generatingPdf) return;
+                    setGeneratingPdf(true);
+                    try {
+                      // Pre-fetch images as data URIs with per-image timeout to avoid hangs
+                      let safePhotoMap: Record<string, string[]> = {};
+                      if (mode === "ng") {
+                        const allUrls = Array.from(new Set(filtered.flatMap((r) => allPhotosByItem[r.id] || [])));
+                        const fetchOne = (url: string) =>
+                          new Promise<[string, string | null]>((resolve) => {
+                            const timer = setTimeout(() => resolve([url, null]), 8000);
+                            fetch(url)
+                              .then((r) => (r.ok ? r.blob() : Promise.reject()))
+                              .then((b) => new Promise<string>((res, rej) => {
+                                const fr = new FileReader();
+                                fr.onload = () => res(fr.result as string);
+                                fr.onerror = rej;
+                                fr.readAsDataURL(b);
+                              }))
+                              .then((dataUri) => { clearTimeout(timer); resolve([url, dataUri]); })
+                              .catch(() => { clearTimeout(timer); resolve([url, null]); });
+                          });
+                        const results = await Promise.all(allUrls.map(fetchOne));
+                        const urlToData = new Map(results);
+                        Object.entries(allPhotosByItem).forEach(([id, urls]) => {
+                          safePhotoMap[id] = urls.map((u) => urlToData.get(u)).filter(Boolean) as string[];
+                        });
+                      }
+                      const docToRender = (
+                        <ApontamentoPDFDocument
+                          mode={mode}
+                          filtered={filtered}
+                          byType={byType}
+                          totals={{ count: filtered.length, insp: totalInsp, ng: totalNG }}
+                          dateLabel={dateLabel}
+                          locationFilter={locationFilter}
+                          logoUrl={hyundaiMobisLogo}
+                          photoMap={mode === "ng" ? safePhotoMap : allPhotosByItem}
+                        />
+                      );
+                      const blob = await pdf(docToRender).toBlob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = pdfFileName;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    } catch (e: any) {
+                      console.error("PDF generation failed", e);
+                      toast({ title: "Falha ao gerar PDF", description: e?.message || "Tente um período menor.", variant: "destructive" });
+                    } finally {
+                      setGeneratingPdf(false);
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4" /> {generatingPdf ? "Gerando..." : "PDF"}
+                </Button>
               </div>
             </div>
           </div>

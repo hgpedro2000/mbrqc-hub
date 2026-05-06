@@ -56,7 +56,8 @@ Deno.serve(async (req) => {
     }
 
     const internalEmail = `${employee_number}@internal.qhub`;
-    const userPassword = password || "123456";
+    const generatedTempPassword = crypto.randomUUID().replace(/-/g, "") + "!Aa1";
+    const userPassword = password || generatedTempPassword;
 
     const { data: authUser, error: authError } = await admin.auth.admin.createUser({
       email: internalEmail,

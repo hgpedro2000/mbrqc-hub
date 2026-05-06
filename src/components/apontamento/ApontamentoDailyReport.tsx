@@ -21,8 +21,9 @@ import {
   Text,
   Image as PdfImage,
   StyleSheet,
-  PDFDownloadLink,
+  pdf,
 } from "@react-pdf/renderer";
+import { toast } from "@/hooks/use-toast";
 
 interface Props {
   open: boolean;

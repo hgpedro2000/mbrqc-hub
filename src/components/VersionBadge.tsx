@@ -41,15 +41,21 @@ const VersionBadge = () => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono border transition-colors hover:opacity-80 ${
+        className={`relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono border transition-colors hover:opacity-80 ${
           updateAvailable
-            ? "bg-amber-50 border-amber-300 text-amber-700"
+            ? "bg-amber-100 border-amber-400 text-amber-800 animate-pulse shadow-[0_0_0_0_rgba(245,158,11,0.6)] ring-2 ring-amber-300/60"
             : "bg-muted/40 border-border text-muted-foreground"
         }`}
-        title="Ver histórico de versões"
+        title={updateAvailable ? "Nova versão disponível — clique para ver" : "Ver histórico de versões"}
       >
+        {updateAvailable && (
+          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+          </span>
+        )}
         <span className={`w-1.5 h-1.5 rounded-full ${updateAvailable ? "bg-amber-500" : "bg-emerald-500"}`} />
-        v{clientVersion}{updateAvailable ? " • atualização disponível" : ""}
+        v{clientVersion}{updateAvailable ? " • atualizar" : ""}
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

@@ -5,6 +5,7 @@ import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useTagPermission } from "@/hooks/useTagPermission";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tag, AlertTriangle, Loader2, CheckCircle, X } from "lucide-react";
@@ -39,6 +40,8 @@ export const PendingTagsAlert = ({
   const [tagInputs, setTagInputs] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
+  const [missingAlert, setMissingAlert] = useState<{ qty: number; missing: number } | null>(null);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
   const activeProfile = impersonating || profile;
 
   const fetchPending = async () => {
@@ -68,7 +71,11 @@ export const PendingTagsAlert = ({
 
   const handleSaveTag = async (id: string, qty: number) => {
     const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
-    if (trimmed.some(t => !t)) { toast.error(`Informe todas as ${qty} TAGs`); return; }
+    const missing = trimmed.filter(t => !t).length;
+    if (missing > 0) {
+      setMissingAlert({ qty, missing });
+      return;
+    }
     setSaving(true);
     try {
       const joined = trimmed.join(", ");
@@ -211,7 +218,11 @@ export const PendingTagsAlert = ({
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8 shrink-0"
-                          onClick={() => setEditingId(null)}
+                          onClick={() => {
+                            const hasAny = tagInputs.some(t => (t || "").trim());
+                            if (hasAny) setCancelConfirm(true);
+                            else { setEditingId(null); setTagInputs([]); }
+                          }}
                         >
                           <X className="w-3.5 h-3.5" />
                         </Button>
@@ -240,6 +251,41 @@ export const PendingTagsAlert = ({
         onOpenChange={(open) => !open && setViewTarget(null)}
         apontamentoId={viewTarget}
       />
+      {/* Missing TAGs alert */}
+      <AlertDialog open={!!missingAlert} onOpenChange={(o) => !o && setMissingAlert(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>TAGs incompletas</AlertDialogTitle>
+            <AlertDialogDescription>
+              {missingAlert && (
+                <>Você precisa preencher as <strong>{missingAlert.qty}</strong> TAGs antes de salvar.{" "}
+                Faltam <strong>{missingAlert.missing}</strong> campo(s). Nada será salvo enquanto todos os campos não estiverem preenchidos.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setMissingAlert(null)}>Entendi</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel confirmation */}
+      <AlertDialog open={cancelConfirm} onOpenChange={setCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar TAGs digitadas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem TAGs preenchidas que ainda não foram salvas. Se cancelar agora, nada será salvo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setEditingId(null); setTagInputs([]); setCancelConfirm(false); }}>
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

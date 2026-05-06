@@ -251,6 +251,41 @@ export const PendingTagsAlert = ({
         onOpenChange={(open) => !open && setViewTarget(null)}
         apontamentoId={viewTarget}
       />
+      {/* Missing TAGs alert */}
+      <AlertDialog open={!!missingAlert} onOpenChange={(o) => !o && setMissingAlert(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>TAGs incompletas</AlertDialogTitle>
+            <AlertDialogDescription>
+              {missingAlert && (
+                <>Você precisa preencher as <strong>{missingAlert.qty}</strong> TAGs antes de salvar.{" "}
+                Faltam <strong>{missingAlert.missing}</strong> campo(s). Nada será salvo enquanto todos os campos não estiverem preenchidos.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setMissingAlert(null)}>Entendi</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Cancel confirmation */}
+      <AlertDialog open={cancelConfirm} onOpenChange={setCancelConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar TAGs digitadas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem TAGs preenchidas que ainda não foram salvas. Se cancelar agora, nada será salvo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setEditingId(null); setTagInputs([]); setCancelConfirm(false); }}>
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

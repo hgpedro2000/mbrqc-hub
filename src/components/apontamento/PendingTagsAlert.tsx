@@ -187,17 +187,20 @@ export const PendingTagsAlert = ({
                         {item.turno && <span>• Turno {item.turno}</span>}
                       </div>
                     </div>
-                    {editingId !== item.id && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="shrink-0 text-xs w-full sm:w-auto"
-                        onClick={() => { setEditingId(item.id); setTagInputs(Array(item.quantidade_ng || 1).fill("")); }}
-                      >
-                        <Tag className="w-3 h-3 mr-1" />
-                        Inserir TAG{(item.quantidade_ng || 1) > 1 ? `s (${item.quantidade_ng})` : ""}
-                      </Button>
-                    )}
+                    {editingId !== item.id && (() => {
+                      const tagCount = getTagCount(item);
+                      return (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="shrink-0 text-xs w-full sm:w-auto"
+                          onClick={() => { setEditingId(item.id); setTagInputs(Array(tagCount).fill("")); }}
+                        >
+                          <Tag className="w-3 h-3 mr-1" />
+                          Inserir TAG{tagCount > 1 ? `s (${tagCount})` : ""}
+                        </Button>
+                      );
+                    })()}
                   </div>
 
                   {editingId === item.id && (

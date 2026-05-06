@@ -567,6 +567,10 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
             {pair.map((r, sub) => {
               const globalIdx = pageIdx * 2 + sub;
+              if (!r) {
+                // Placeholder slot to guarantee 2 blocks per detail page
+                return <View key={`empty-${pageIdx}-${sub}`} style={pdfStyles.ngDBlock} />;
+              }
               const modos = parseModos(r);
               const tags = parseTags(r);
               const photos = photoMap?.[r.id] || [];

@@ -553,6 +553,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
     return map;
   }, [ngPhotos]);
 
+  const allPhotosByItem = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    ngPhotos.forEach((p) => {
+      const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+      if (!map[p.checklist_id]) map[p.checklist_id] = [];
+      map[p.checklist_id].push(urlData.publicUrl);
+    });
+    return map;
+  }, [ngPhotos]);
+
   const filtered = useMemo(() => {
     let list = items;
     if (locationFilter) {

@@ -504,6 +504,19 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
       pairs.push(slice);
     }
 
+    // Strict validation: every detail page MUST have exactly 2 slots before rendering.
+    pairs.forEach((p, idx) => {
+      if (p.length !== 2) {
+        console.error(`[NG PDF] Detail page ${idx + 1} has ${p.length} slots, expected exactly 2.`, p);
+        while (p.length < 2) p.push(null);
+        if (p.length > 2) p.length = 2;
+      }
+    });
+    const invalidPages = pairs.filter((p) => p.length !== 2);
+    if (invalidPages.length > 0) {
+      throw new Error(`[NG PDF] Validation failed: ${invalidPages.length} detail page(s) do not contain exactly 2 occurrences.`);
+    }
+
     return (
       <Document>
         {/* PAGE 1 — SUMMARY */}

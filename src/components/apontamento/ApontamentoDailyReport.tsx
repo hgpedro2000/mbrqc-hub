@@ -567,7 +567,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                         ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
                         : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{r.descricao || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{cleanDesc(r.descricao)}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
                     </View>

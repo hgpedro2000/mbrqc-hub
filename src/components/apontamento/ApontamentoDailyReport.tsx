@@ -416,6 +416,7 @@ interface PdfProps {
   locationFilter?: string | null;
   logoUrl: string;
   photoMap?: Record<string, string[]>;
+  supplierOrigemMap?: Record<string, string>;
 }
 
 const parseModos = (r: any) => {
@@ -479,7 +480,7 @@ const NgFooter = ({ generatedAt }: { generatedAt: string }) => (
   </View>
 );
 
-const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap }: PdfProps) => {
+const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap, supplierOrigemMap }: PdfProps) => {
   const titleText =
     mode === "ng"
       ? "Relatório de Peças com Defeito (NG)"
@@ -494,6 +495,14 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
     // Build a flat sorted-by-input list (preserve filtered order). Each item gets index + page calculation.
     const list = filtered;
     const pageOf = (i: number) => 2 + Math.floor(i / 2);
+
+    // Helper: treat "Sem descrição" placeholder as empty
+    const cleanDesc = (v: any) => {
+      const s = (v ?? "").toString().trim();
+      if (!s) return "—";
+      if (/^sem\s+descri[çc][ãa]o$/i.test(s)) return "—";
+      return s;
+    };
 
     // Pair items into groups of 2 for detailed pages.
     // Validation: ensure every detail page renders exactly 2 slots, padding with null when odd.
@@ -559,7 +568,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                         ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
                         : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{r.descricao || "—"}</Text>
+                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{cleanDesc(r.descricao)}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
                     </View>
@@ -588,7 +597,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const tags = parseTags(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock}>
+                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>
@@ -614,11 +623,11 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Responsabilidade</Text>
-                        <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade) || "—"}</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade_defeito || r.responsabilidade) || "—"}</Text>
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Origem</Text>
-                        <Text style={pdfStyles.ngDMetaValue}>{r.origem || "—"}</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{(r.fornecedor && supplierOrigemMap?.[r.fornecedor]) || r.origem || "—"}</Text>
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Projeto</Text>
@@ -653,16 +662,16 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     <View>
                       <Text style={pdfStyles.ngDSectionTitle}>Descrição</Text>
                       <Text style={{ fontSize: 7, color: "#1a1a2e", backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 4, paddingHorizontal: 6 }}>
-                        {r.descricao && String(r.descricao).trim() ? r.descricao : "—"}
+                        {cleanDesc(r.descricao)}
                       </Text>
                     </View>
 
                     {photos.length > 0 && (
-                      <View>
+                      <View wrap={false}>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                          {photos.map((url, i) => (
-                            <PdfImage key={i} src={url} style={{ width: 110, height: 110, objectFit: "cover", borderRadius: 3 }} />
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                          {photos.slice(0, 4).map((url, i) => (
+                            <PdfImage key={i} src={url} style={{ width: 70, height: 70, objectFit: "cover", borderRadius: 3 }} />
                           ))}
                         </View>
                       </View>
@@ -854,6 +863,29 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
     return map;
   }, [ngPhotos]);
 
+  // Fetch supplier origem map for NG report
+  const ngFornecedores = useMemo(() => {
+    if (mode !== "ng") return [];
+    return Array.from(new Set(items.filter(i => (i.quantidade_ng || 0) > 0 && i.fornecedor).map(i => i.fornecedor as string)));
+  }, [items, mode]);
+
+  const { data: supplierOrigemRows = [] } = useQuery({
+    queryKey: ["ng-report-supplier-origem", ngFornecedores],
+    queryFn: async () => {
+      if (ngFornecedores.length === 0) return [];
+      const { data, error } = await supabase.from("suppliers").select("name, origem").in("name", ngFornecedores).eq("active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: mode === "ng" && ngFornecedores.length > 0,
+  });
+
+  const supplierOrigemMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (supplierOrigemRows as any[]).forEach((s) => { if (s?.name && s?.origem) map[s.name] = s.origem; });
+    return map;
+  }, [supplierOrigemRows]);
+
   const filtered = useMemo(() => {
     let list = items;
     if (locationFilter) {
@@ -916,6 +948,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
       locationFilter={locationFilter}
       logoUrl={hyundaiMobisLogo}
       photoMap={allPhotosByItem}
+      supplierOrigemMap={supplierOrigemMap}
     />
   );
 
@@ -1102,6 +1135,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                             locationFilter={locationFilter}
                             logoUrl={hyundaiMobisLogo}
                             photoMap={mode === "ng" ? safePhotoMap : allPhotosByItem}
+                            supplierOrigemMap={supplierOrigemMap}
                           />
                         );
                         const blob = await pdf(docToRender).toBlob();

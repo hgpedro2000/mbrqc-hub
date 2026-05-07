@@ -597,7 +597,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const tags = parseTags(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock}>
+                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>

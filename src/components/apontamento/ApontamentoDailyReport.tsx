@@ -650,6 +650,13 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                         : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
                     </View>
 
+                    <View>
+                      <Text style={pdfStyles.ngDSectionTitle}>Descrição</Text>
+                      <Text style={{ fontSize: 7, color: "#1a1a2e", backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 4, paddingHorizontal: 6 }}>
+                        {r.descricao && String(r.descricao).trim() ? r.descricao : "—"}
+                      </Text>
+                    </View>
+
                     {photos.length > 0 && (
                       <View>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>

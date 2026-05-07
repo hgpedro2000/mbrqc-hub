@@ -495,6 +495,14 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
     const list = filtered;
     const pageOf = (i: number) => 2 + Math.floor(i / 2);
 
+    // Helper: treat "Sem descrição" placeholder as empty
+    const cleanDesc = (v: any) => {
+      const s = (v ?? "").toString().trim();
+      if (!s) return "—";
+      if (/^sem\s+descri[çc][ãa]o$/i.test(s)) return "—";
+      return s;
+    };
+
     // Pair items into groups of 2 for detailed pages.
     // Validation: ensure every detail page renders exactly 2 slots, padding with null when odd.
     const pairs: (any | null)[][] = [];

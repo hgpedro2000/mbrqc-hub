@@ -863,6 +863,29 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
     return map;
   }, [ngPhotos]);
 
+  // Fetch supplier origem map for NG report
+  const ngFornecedores = useMemo(() => {
+    if (mode !== "ng") return [];
+    return Array.from(new Set(items.filter(i => (i.quantidade_ng || 0) > 0 && i.fornecedor).map(i => i.fornecedor as string)));
+  }, [items, mode]);
+
+  const { data: supplierOrigemRows = [] } = useQuery({
+    queryKey: ["ng-report-supplier-origem", ngFornecedores],
+    queryFn: async () => {
+      if (ngFornecedores.length === 0) return [];
+      const { data, error } = await supabase.from("suppliers").select("name, origem").in("name", ngFornecedores).eq("active", true);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: mode === "ng" && ngFornecedores.length > 0,
+  });
+
+  const supplierOrigemMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    (supplierOrigemRows as any[]).forEach((s) => { if (s?.name && s?.origem) map[s.name] = s.origem; });
+    return map;
+  }, [supplierOrigemRows]);
+
   const filtered = useMemo(() => {
     let list = items;
     if (locationFilter) {

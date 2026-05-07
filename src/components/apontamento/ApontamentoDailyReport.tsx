@@ -650,6 +650,13 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                         : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
                     </View>
 
+                    <View>
+                      <Text style={pdfStyles.ngDSectionTitle}>Descrição</Text>
+                      <Text style={{ fontSize: 7, color: "#1a1a2e", backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 4, paddingHorizontal: 6 }}>
+                        {r.descricao && String(r.descricao).trim() ? r.descricao : "—"}
+                      </Text>
+                    </View>
+
                     {photos.length > 0 && (
                       <View>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
@@ -1038,17 +1045,34 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                           const total = allUrls.length;
                           let done = 0;
                           setPdfStage(total > 0 ? `Baixando fotos (0/${total})` : "Preparando...");
+                          const compressBlob = (blob: Blob): Promise<string> =>
+                            new Promise((resolve, reject) => {
+                              const img = new Image();
+                              const objUrl = URL.createObjectURL(blob);
+                              img.onload = () => {
+                                URL.revokeObjectURL(objUrl);
+                                const MAX = 800;
+                                let { width, height } = img;
+                                if (width > MAX || height > MAX) {
+                                  if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+                                  else { width = Math.round((width * MAX) / height); height = MAX; }
+                                }
+                                const canvas = document.createElement("canvas");
+                                canvas.width = width; canvas.height = height;
+                                const ctx = canvas.getContext("2d");
+                                if (!ctx) return reject(new Error("no ctx"));
+                                ctx.drawImage(img, 0, 0, width, height);
+                                resolve(canvas.toDataURL("image/jpeg", 0.6));
+                              };
+                              img.onerror = () => { URL.revokeObjectURL(objUrl); reject(new Error("img load")); };
+                              img.src = objUrl;
+                            });
                           const fetchOne = (url: string) =>
                             new Promise<[string, string | null]>((resolve) => {
-                              const timer = setTimeout(() => resolve([url, null]), 8000);
+                              const timer = setTimeout(() => resolve([url, null]), 12000);
                               fetch(url)
                                 .then((r) => (r.ok ? r.blob() : Promise.reject()))
-                                .then((b) => new Promise<string>((res, rej) => {
-                                  const fr = new FileReader();
-                                  fr.onload = () => res(fr.result as string);
-                                  fr.onerror = rej;
-                                  fr.readAsDataURL(b);
-                                }))
+                                .then((b) => compressBlob(b))
                                 .then((dataUri) => { clearTimeout(timer); resolve([url, dataUri]); })
                                 .catch(() => { clearTimeout(timer); resolve([url, null]); });
                             }).then((res) => {

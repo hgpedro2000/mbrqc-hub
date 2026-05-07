@@ -1135,6 +1135,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                             locationFilter={locationFilter}
                             logoUrl={hyundaiMobisLogo}
                             photoMap={mode === "ng" ? safePhotoMap : allPhotosByItem}
+                            supplierOrigemMap={supplierOrigemMap}
                           />
                         );
                         const blob = await pdf(docToRender).toBlob();

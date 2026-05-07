@@ -622,11 +622,11 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Responsabilidade</Text>
-                        <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade) || "—"}</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade_defeito || r.responsabilidade) || "—"}</Text>
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Origem</Text>
-                        <Text style={pdfStyles.ngDMetaValue}>{r.origem || "—"}</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{(r.fornecedor && supplierOrigemMap?.[r.fornecedor]) || r.origem || "—"}</Text>
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Projeto</Text>

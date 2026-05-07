@@ -667,11 +667,11 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
 
                     {photos.length > 0 && (
-                      <View>
+                      <View wrap={false}>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                          {photos.map((url, i) => (
-                            <PdfImage key={i} src={url} style={{ width: 110, height: 110, objectFit: "cover", borderRadius: 3 }} />
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                          {photos.slice(0, 4).map((url, i) => (
+                            <PdfImage key={i} src={url} style={{ width: 70, height: 70, objectFit: "cover", borderRadius: 3 }} />
                           ))}
                         </View>
                       </View>

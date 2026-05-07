@@ -480,7 +480,7 @@ const NgFooter = ({ generatedAt }: { generatedAt: string }) => (
   </View>
 );
 
-const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap }: PdfProps) => {
+const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, locationFilter, logoUrl, photoMap, supplierOrigemMap }: PdfProps) => {
   const titleText =
     mode === "ng"
       ? "Relatório de Peças com Defeito (NG)"

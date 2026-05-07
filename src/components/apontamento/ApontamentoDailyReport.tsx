@@ -416,6 +416,7 @@ interface PdfProps {
   locationFilter?: string | null;
   logoUrl: string;
   photoMap?: Record<string, string[]>;
+  supplierOrigemMap?: Record<string, string>;
 }
 
 const parseModos = (r: any) => {

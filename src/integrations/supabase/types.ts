@@ -1651,6 +1651,15 @@ export type Database = {
     }
     Functions: {
       clear_must_change_password: { Args: never; Returns: undefined }
+      get_co_inspection_profiles: {
+        Args: never
+        Returns: {
+          empresa: string
+          full_name: string
+          id: string
+          turno: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

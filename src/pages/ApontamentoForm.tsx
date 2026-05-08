@@ -455,15 +455,12 @@ const ApontamentoForm = () => {
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
-        .from("public_profiles")
-        .select("full_name, turno, empresa")
-        .order("full_name");
+        .rpc("get_co_inspection_profiles");
       if (error) {
         console.error("Error loading profiles for co-inspection:", error);
         throw error;
       }
-      // Filter to only Mobis Brasil users for co-inspection
-      return (data || []).filter((p: any) => p.empresa !== "empresa_terceira" && p.full_name !== "TESTER");
+      return data || [];
     },
     enabled: activeProfile?.empresa !== "empresa_terceira",
     retry: 2,

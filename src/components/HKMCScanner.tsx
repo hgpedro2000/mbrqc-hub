@@ -189,22 +189,23 @@ const HKMCScanner = () => {
     { label: "Supplier Code", key: "supplierCode" },
     { label: "Part Number", key: "partNumber" },
     { label: "Sequence Code", key: "sequenceCode" },
-    { label: "EO Number", key: "eoNumber" },
+    { group: "Traceability", label: "", key: "productionDate" },
     { label: "Production date", key: "productionDate" },
     { label: "Part 4M", key: "part4M" },
-    { group: "Traceability", label: "", key: "aOrAt" },
     { label: "A or @", key: "aOrAt" },
     { label: "Trace No. (7~)", key: "traceNo" },
+    { group: "ETC", label: "", key: "supplierItself" },
+    { label: "Supplier itself", key: "supplierItself" },
     { label: "Trailer", key: "trailer" },
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="bg-background pb-24 md:pb-4">
       {/* Raw string area */}
       <div
         className="px-4 py-3 text-sm font-mono break-all"
         style={{ background: "#fffacd", color: "#111" }}
-        dangerouslySetInnerHTML={{ __html: highlightRaw(data.raw) }}
+        dangerouslySetInnerHTML={{ __html: highlightRaw(normalizeRaw(data.raw)) }}
       />
 
       {/* Header */}

@@ -97,6 +97,18 @@ const ApontamentoDashboard = () => {
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
+    if (failureModeFilter) {
+      const norm = failureModeFilter.toLowerCase();
+      list = list.filter((i) => {
+        const main = (i.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+        if (main === norm) return true;
+        const sd = (i as any).segundo_defeitos as any[] | null;
+        if (sd && Array.isArray(sd)) {
+          return sd.some((d) => (d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase() === norm);
+        }
+        return false;
+      });
+    }
     if (responsibilityFilter) {
       list = list.filter((i) => {
         const resp = i.responsabilidade_defeito;

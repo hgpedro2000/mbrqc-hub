@@ -1086,7 +1086,7 @@ const ApontamentoDashboard = () => {
                   <DonutChart key={i} data={[
                     { name: "OK", value: mod.ok },
                     { name: "NG", value: mod.ng },
-                  ]} title={mod.name}
+                  ]} title={mod.label}
                     active={moduleFilter === mod.name}
                     onClick={() => setModuleFilter(moduleFilter === mod.name ? null : mod.name)}
                   />

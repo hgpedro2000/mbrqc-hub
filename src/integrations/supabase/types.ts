@@ -1667,6 +1667,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      normalize_part_number: { Args: { _pn: string }; Returns: string }
       profile_update_is_safe: {
         Args: { _new: Database["public"]["Tables"]["profiles"]["Row"] }
         Returns: boolean

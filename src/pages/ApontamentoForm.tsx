@@ -827,6 +827,7 @@ const ApontamentoForm = () => {
         fornecedor: fornecedor || null,
         part_number: partNumber || null,
         part_name: partName || null,
+        alc_code: (alcCode && alcCode.trim()) ? alcCode.trim() : "N/A",
         descricao: descricao || "Sem descrição",
         quantidade_inspecionada: quantidadeInspecionada,
         quantidade_ng: quantidadeNg,

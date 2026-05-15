@@ -36,6 +36,7 @@ import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
 import QrProfilePage from "./pages/QrProfilePage";
 import MatrizVersatilidade from "./pages/MatrizVersatilidade";
+import BarcodeScanner from "./pages/BarcodeScanner";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
 import AuditLogsPage from "./pages/AuditLogsPage";
@@ -189,6 +190,9 @@ const App = () => (
             
             {/* Matriz de Versatilidade */}
             <Route path="/matriz-versatilidade" element={<ProtectedRoute><MatrizVersatilidade /></ProtectedRoute>} />
+
+            {/* Barcode Scanner H/KMC */}
+            <Route path="/barcode-scanner" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />
 
             {/* Admin: Audit Logs */}
             <Route path="/admin/audit-logs" element={<ProtectedRoute><AuditLogsPage /></ProtectedRoute>} />

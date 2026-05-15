@@ -21,6 +21,7 @@ export interface HKMCParsed {
   part4M: string;
   aOrAt: string;
   traceNo: string;
+  supplierItself: string;
   trailer: string;
 }
 
@@ -47,6 +48,7 @@ export function parseHKMC(input: string): HKMCParsed {
     part4M: "",
     aOrAt: "",
     traceNo: "",
+    supplierItself: "",
     trailer: "",
   };
 
@@ -55,8 +57,14 @@ export function parseHKMC(input: string): HKMCParsed {
   if (headerMatch) result.header = headerMatch[0];
 
   // Tokens split by GS
-  const tokens = raw.split("\x1D").map((t) => t.replace(/[\x1E\x04]/g, "").trim()).filter(Boolean);
-  for (const tok of tokens) {
+  const tokens = raw
+    .split("\x1D")
+    .map((t) => t.replace(/[\x04]/g, ""))
+    .filter((t) => t.length > 0);
+
+  for (const tokRaw of tokens) {
+    const tok = tokRaw.replace(/\x1E/g, "").trim();
+    if (!tok) continue;
     if (tok.startsWith("[)>")) continue;
     const prefix = tok[0];
     const value = tok.slice(1);
@@ -66,11 +74,18 @@ export function parseHKMC(input: string): HKMCParsed {
       case "S": result.sequenceCode = value; break;
       case "E": result.eoNumber = value; break;
       case "D": result.productionDate = value; break;
-      case "T": result.part4M = value; break;
-      case "@": result.aOrAt = value; break;
-      case "A": result.aOrAt = value; break;
+      case "T": {
+        // Composite: YYMMDD(6) + Part4M(4) + A/@(1) + TraceNo(7) = 18 chars
+        result.productionDate = value.slice(0, 6);
+        result.part4M = value.slice(6, 10);
+        const ch = value.slice(10, 11);
+        if (ch === "A" || ch === "@") result.aOrAt = ch;
+        result.traceNo = value.slice(11, 18);
+        break;
+      }
       default:
-        if (!result.traceNo && tok.length >= 7) result.traceNo = tok;
+        // Unprefixed token → "Supplier itself" (ETC section)
+        if (!result.supplierItself) result.supplierItself = tok;
     }
   }
 
@@ -174,22 +189,23 @@ const HKMCScanner = () => {
     { label: "Supplier Code", key: "supplierCode" },
     { label: "Part Number", key: "partNumber" },
     { label: "Sequence Code", key: "sequenceCode" },
-    { label: "EO Number", key: "eoNumber" },
+    { group: "Traceability", label: "", key: "productionDate" },
     { label: "Production date", key: "productionDate" },
     { label: "Part 4M", key: "part4M" },
-    { group: "Traceability", label: "", key: "aOrAt" },
     { label: "A or @", key: "aOrAt" },
     { label: "Trace No. (7~)", key: "traceNo" },
+    { group: "ETC", label: "", key: "supplierItself" },
+    { label: "Supplier itself", key: "supplierItself" },
     { label: "Trailer", key: "trailer" },
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="bg-background pb-24 md:pb-4">
       {/* Raw string area */}
       <div
         className="px-4 py-3 text-sm font-mono break-all"
         style={{ background: "#fffacd", color: "#111" }}
-        dangerouslySetInnerHTML={{ __html: highlightRaw(data.raw) }}
+        dangerouslySetInnerHTML={{ __html: highlightRaw(normalizeRaw(data.raw)) }}
       />
 
       {/* Header */}
@@ -245,7 +261,7 @@ const HKMCScanner = () => {
       </div>
 
       {/* Footer buttons */}
-      <div className="fixed bottom-0 left-0 right-0 grid grid-cols-3 gap-2 p-3 bg-background border-t border-border">
+      <div className="fixed bottom-0 left-0 right-0 md:static md:mt-3 grid grid-cols-3 gap-2 p-3 bg-background border-t border-border md:border-t-0">
         <Button
           onClick={() => setHistoryOpen(true)}
           style={{ background: "#2d6db5", color: "#fff" }}

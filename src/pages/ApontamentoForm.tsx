@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag, ImagePlus } from "lucide-react";
 import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
-import { HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { HyundaiQRData, extractAlcFromPartNumber } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useImpersonation } from "@/contexts/ImpersonationContext";

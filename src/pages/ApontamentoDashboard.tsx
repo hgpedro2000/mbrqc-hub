@@ -181,6 +181,7 @@ const ApontamentoDashboard = () => {
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (moduleFilter) list = list.filter((i) => ((i as any).modulo || "—") === moduleFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;

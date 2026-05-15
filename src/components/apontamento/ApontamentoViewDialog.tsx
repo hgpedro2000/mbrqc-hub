@@ -595,8 +595,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
 
-              {/* TAG Number section */}
-              {(d?.quantidade_ng || 0) > 0 && (
+              {/* TAG Number section (only when not already shown per defect) */}
+              {(d?.quantidade_ng || 0) > 0 && !(hasMultipleFailureModes && segundoDefeitos.some((x: any) => x?.tag)) && (
                 <div data-pdf-section className="px-0 sm:px-2">
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>

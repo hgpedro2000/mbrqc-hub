@@ -22,6 +22,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // Terceiros possuem letras no código — permite alternar para teclado alfanumérico.
+  const [alphaKeyboard, setAlphaKeyboard] = useState(false);
 
   // Whenever AuthContext finishes hydrating with a valid session/profile,
   // redirect away from /login. This handles BOTH:
@@ -124,13 +126,26 @@ const Login = () => {
               type="text"
               required
               value={employeeNumber}
-              onChange={(e) => setEmployeeNumber(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => {
+                const v = e.target.value;
+                setEmployeeNumber(alphaKeyboard ? v.toUpperCase().replace(/\s/g, "") : v.replace(/\D/g, ""));
+              }}
               placeholder=""
-              inputMode="numeric"
-              pattern="[0-9]*"
+              inputMode={alphaKeyboard ? "text" : "numeric"}
+              pattern={alphaKeyboard ? undefined : "[0-9]*"}
               autoComplete="username"
+              autoCapitalize={alphaKeyboard ? "characters" : "off"}
               onFocus={(e) => e.target.placeholder = ""}
             />
+            <button
+              type="button"
+              onClick={() => setAlphaKeyboard((v) => !v)}
+              className="text-xs text-muted-foreground hover:text-accent transition-colors underline-offset-2 hover:underline"
+            >
+              {alphaKeyboard
+                ? "Usar teclado numérico"
+                : "Meu código tem letras (terceiros) — usar teclado alfanumérico"}
+            </button>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("login.password")}</Label>

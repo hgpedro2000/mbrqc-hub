@@ -22,8 +22,9 @@ export function extractAlcFromPartNumber(pn: string): string {
 // Examples: HU94C5ZR200986T, HU93A1ZR123456T
 export const HYUNDAI_LOT_REGEX = /\b(HU\d{2}[A-Z0-9]{6,16}T)\b/i;
 
-// Matches typical Hyundai Mobis part-number patterns (e.g. 96160R1BF0MDG, 84852-R1520, 84852R1520NNB)
-export const HYUNDAI_PN_REGEX = /(?:^|[^A-Z0-9])(\d{5}[-_\s.]?[A-Z0-9]{4,10})(?=$|[^A-Z0-9])/gi;
+// Matches typical Hyundai Mobis part-number patterns (e.g. 96160R1BF0MDG, 84852-R1520, 84852R1520NNB,
+// 865B4-BX700, 866W7R1700). The first 5 chars are alphanumeric but must contain ≥3 digits.
+export const HYUNDAI_PN_REGEX = /(?:^|[^A-Z0-9])([A-Z0-9]{5}[-_\s.]?[A-Z0-9]{4,10})(?=$|[^A-Z0-9])/gi;
 
 // Supplier box labels often decode as plain text: "86552R1600 0096AWEZ2704260069".
 // These are not QR/DataMatrix payloads, but still contain a valid PN and lot.
@@ -36,8 +37,15 @@ const extractPartNumber = (text: string) => {
   const candidates = [...text.toUpperCase().matchAll(HYUNDAI_PN_REGEX)]
     .map((match) => normalizeCode(match[1]))
     .filter((candidate) => {
+      const prefix = candidate.slice(0, 5);
       const suffix = candidate.slice(5);
-      return candidate.length >= 9 && candidate.length <= 15 && /[A-Z]/.test(suffix);
+      const digitCount = (prefix.match(/\d/g) || []).length;
+      return (
+        candidate.length >= 9 &&
+        candidate.length <= 15 &&
+        digitCount >= 3 &&
+        /[A-Z]/.test(suffix)
+      );
     });
 
   return candidates[0] || "";

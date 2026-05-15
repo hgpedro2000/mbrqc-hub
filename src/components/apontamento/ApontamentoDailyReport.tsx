@@ -636,6 +636,10 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                         <Text style={pdfStyles.ngDMetaValue}>{(r.fornecedor && supplierOrigemMap?.[r.fornecedor]) || r.origem || "—"}</Text>
                       </View>
                       <View style={pdfStyles.ngDMetaCol}>
+                        <Text style={pdfStyles.ngDMetaLabel}>ALC</Text>
+                        <Text style={pdfStyles.ngDMetaValue}>{r.alc_code || "N/A"}</Text>
+                      </View>
+                      <View style={pdfStyles.ngDMetaCol}>
                         <Text style={pdfStyles.ngDMetaLabel}>Projeto</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{r.projeto || "—"}</Text>
                       </View>

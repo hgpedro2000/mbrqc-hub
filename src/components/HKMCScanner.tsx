@@ -238,50 +238,47 @@ const HKMCScanner = () => {
       <div className="w-full">
         <table className="w-full text-xs sm:text-sm border-collapse table-fixed">
           <colgroup>
-            <col className="w-10" />
-            <col className="w-14 sm:w-20" />
+            <col className="w-16 sm:w-20" />
             <col />
+            <col className="w-12 sm:w-16" />
+            <col className="w-[42%]" />
           </colgroup>
           <thead>
-            <tr className="bg-muted">
-              <th className="text-left px-2 py-2 border-b border-border">Item</th>
-              <th className="text-left px-2 py-2 border-b border-border">Result</th>
-              <th className="text-left px-2 py-2 border-b border-border">Data</th>
+            <tr style={{ background: "#e0e8f5" }}>
+              <th colSpan={2} className="text-center px-2 py-2 border border-border font-semibold">Item</th>
+              <th className="text-center px-2 py-2 border border-border font-semibold">Result</th>
+              <th className="text-center px-2 py-2 border border-border font-semibold">Data</th>
             </tr>
           </thead>
           <tbody>
-            {(() => {
-              let n = 0;
-              return rows.map((r, i) => {
-                if (r.group) {
-                  return (
-                    <tr key={`g-${i}`}>
-                      <td colSpan={3} className="px-2 py-1.5 font-semibold text-foreground text-xs sm:text-sm" style={{ background: "#e0e8f5" }}>
-                        {r.group}
-                      </td>
-                    </tr>
-                  );
-                }
-                n += 1;
-                const value = data[r.key] as string;
+            {sections.map((section, si) =>
+              section.rows.map((r, ri) => {
+                const value = (data[r.key] as string) || "";
+                const isFirst = ri === 0;
                 return (
-                  <tr key={i} className="border-b border-border align-top">
-                    <td className="px-2 py-2">{n}</td>
-                    <td className="px-2 py-2">
+                  <tr key={`${si}-${ri}`} className="align-middle">
+                    {isFirst && (
+                      <td
+                        rowSpan={section.rows.length}
+                        className="text-center px-1 py-2 border border-border font-semibold"
+                        style={{ background: "#f5f7fb" }}
+                      >
+                        {section.group}
+                      </td>
+                    )}
+                    <td className="text-center px-2 py-2 border border-border">{r.label}</td>
+                    <td className="text-center px-2 py-2 border border-border">
                       {value ? (
                         <span style={{ color: "#2d6db5" }} className="font-semibold">OK</span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
                     </td>
-                    <td className="px-2 py-2 font-mono break-all">
-                      <div className="text-[10px] sm:text-xs text-muted-foreground">{r.label}</div>
-                      <div className="break-all">{value || ""}</div>
-                    </td>
+                    <td className="px-2 py-2 border border-border font-mono break-all">{value}</td>
                   </tr>
                 );
-              });
-            })()}
+              })
+            )}
           </tbody>
         </table>
       </div>

@@ -1703,6 +1703,46 @@ const ApontamentoForm = () => {
         </DialogContent>
       </Dialog>
 
+      {/* ALC Mismatch Dialog */}
+      <Dialog open={showAlcMismatchDialog} onOpenChange={setShowAlcMismatchDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Divergência de ALC
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              O ALC lido na etiqueta diverge do cadastrado em Engenharia para este Part Number. Verifique fisicamente a peça antes de prosseguir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC lido</p>
+                <p className="font-mono text-sm font-bold text-destructive">{alcMismatchScanned || "—"}</p>
+              </div>
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC esperado</p>
+                <p className="font-mono text-sm font-bold text-emerald-700">{alcExpected || "N/A"}</p>
+              </div>
+            </div>
+            <div className="rounded-lg border p-3 bg-muted/30 space-y-0.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Part Number</p>
+              <p className="font-mono text-sm">{partNumber || "—"}</p>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <Button onClick={handleAlcManualKeep} variant="outline" className="w-full h-auto py-3 flex flex-col gap-0.5">
+                <span className="font-semibold">Registrar manualmente com foto</span>
+                <span className="text-[11px] text-muted-foreground font-normal">Mantém o ALC lido e exige foto da etiqueta</span>
+              </Button>
+              <Button onClick={handleAlcConfirmError} variant="destructive" className="w-full h-auto py-3 flex flex-col gap-0.5">
+                <span className="font-semibold">Confirmar erro de ALC</span>
+                <span className="text-[11px] font-normal opacity-90">Abre defeito NG e exige Modo de Falha</span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Image Annotation Editor */}
       <ImageAnnotationEditor
         open={!!annotatingFile}

@@ -23,8 +23,9 @@ import {
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
 
-const TYPES = ["incoming", "peca", "processo", "oem"] as const;
-const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM" };
+const TYPES = ["incoming", "peca", "processo", "oem", "100days"] as const;
+const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM", "100days": "100 Days" };
+const HUNDRED_DAYS_PROJECT = "BC4b";
 const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 
 const ApontamentoDashboard = () => {
@@ -35,14 +36,31 @@ const ApontamentoDashboard = () => {
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
+  const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [pnFilter, setPnFilter] = useState<string | null>(null);
+  const [failureModeFilter, setFailureModeFilter] = useState<string | null>(null);
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["apontamentos"],
+    queryKey: ["apontamentos", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const PAGE = 1000;
+      let from = 0;
+      const all: any[] = [];
+      // paginate to bypass Supabase default 1000-row cap
+      while (true) {
+        const { data, error } = await supabase
+          .from("apontamentos")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 
@@ -63,12 +81,34 @@ const ApontamentoDashboard = () => {
 
   const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
 
-  // Filter by type and date range
+  // Base list: 100 Days = incoming filtered to BC4b project
+  const baseList = useMemo(() => {
+    if (activeType === "100days") {
+      return items.filter((i) => i.tipo === "incoming" && (i.projeto || "").toUpperCase() === HUNDRED_DAYS_PROJECT.toUpperCase());
+    }
+    return items.filter((i) => i.tipo === activeType);
+  }, [items, activeType]);
+
+  // Filter by date range / supplier / responsibility / project / PN
   const filtered = useMemo(() => {
-    let list = items.filter((i) => i.tipo === activeType);
+    let list = baseList;
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
+    if (failureModeFilter) {
+      const norm = failureModeFilter.toLowerCase();
+      list = list.filter((i) => {
+        const main = (i.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+        if (main === norm) return true;
+        const sd = (i as any).segundo_defeitos as any[] | null;
+        if (sd && Array.isArray(sd)) {
+          return sd.some((d) => (d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase() === norm);
+        }
+        return false;
+      });
+    }
     if (responsibilityFilter) {
       list = list.filter((i) => {
         const resp = i.responsabilidade_defeito;
@@ -80,14 +120,16 @@ const ApontamentoDashboard = () => {
       });
     }
     return list;
-  }, [items, activeType, dateFrom, dateTo, supplierFilter, responsibilityFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter, failureModeFilter, responsibilityFilter]);
 
-  // Origem data (Part vs Sorting counts) — computed from date-filtered items (before responsibility filter)
+  // Origem data (Part vs Sorting counts) — date-filtered (no responsibility filter); empty dates = ALL apontamentos
   const origemData = useMemo(() => {
-    let list = items.filter((i) => i.tipo === activeType);
+    let list = baseList;
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
     list.forEach((i) => {
@@ -101,7 +143,7 @@ const ApontamentoDashboard = () => {
       else sortingCount++; // default to sorting
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
-  }, [items, activeType, dateFrom, dateTo, supplierFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter]);
 
   const total = filtered.length;
 
@@ -245,14 +287,18 @@ const ApontamentoDashboard = () => {
     </div>
   );
 
-  const DonutChart = ({ data, title }: { data: { name: string; value: number }[]; title: string }) => {
+  const DonutChart = ({ data, title, onClick, active }: { data: { name: string; value: number }[]; title: string; onClick?: () => void; active?: boolean }) => {
     const okVal = data[0]?.value || 0;
     const ngVal = data[1]?.value || 0;
     const totalD = okVal + ngVal;
     const okPct = totalD > 0 ? ((okVal / totalD) * 100).toFixed(1) : "0";
     const ngPct = totalD > 0 ? ((ngVal / totalD) * 100).toFixed(1) : "0";
     return (
-      <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`flex flex-col items-center rounded-md p-1 transition-colors ${onClick ? "cursor-pointer hover:bg-[hsl(220,15%,18%)]" : "cursor-default"} ${active ? "ring-1 ring-[hsl(210,70%,60%)] bg-[hsl(210,70%,60%)]/10" : ""}`}
+      >
         <div className="relative w-28 h-28">
           <ChartContainer config={chartConfig} className="h-28 w-28">
             <PieChart>
@@ -261,7 +307,7 @@ const ApontamentoDashboard = () => {
               </Pie>
             </PieChart>
           </ChartContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title}</span>
           </div>
         </div>
@@ -275,7 +321,7 @@ const ApontamentoDashboard = () => {
             <span>NG: {ngVal}</span>
           </div>
         </div>
-      </div>
+      </button>
     );
   };
 
@@ -811,7 +857,7 @@ const ApontamentoDashboard = () => {
       {/* Type tabs */}
       <div className="px-3 md:px-4 pt-3">
         <Tabs value={activeType} onValueChange={setActiveType}>
-          <TabsList className="grid w-full grid-cols-4 h-auto bg-[hsl(220,15%,16%)] border border-[hsl(220,10%,25%)]">
+          <TabsList className="grid w-full grid-cols-5 h-auto bg-[hsl(220,15%,16%)] border border-[hsl(220,10%,25%)]">
             {TYPES.map((t) => (
               <TabsTrigger key={t} value={t} className="text-xs sm:text-sm py-2 text-[hsl(0,0%,60%)] data-[state=active]:bg-[hsl(220,10%,25%)] data-[state=active]:text-[hsl(0,0%,95%)]">
                 {TYPE_LABELS[t]}
@@ -822,7 +868,7 @@ const ApontamentoDashboard = () => {
       </div>
 
       {/* Origem KPI — only for incoming */}
-      {activeType === "incoming" && (
+      {(activeType === "incoming" || activeType === "100days") && (
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
@@ -961,11 +1007,19 @@ const ApontamentoDashboard = () => {
                 <DonutChart key={i} data={[
                   { name: "OK", value: proj.ok },
                   { name: "NG", value: proj.ng },
-                ]} title={proj.name} />
+                ]} title={proj.name}
+                  active={projectFilter === proj.name}
+                  onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
+                />
               )) : (
                 <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
               )}
             </div>
+            {projectFilter && (
+              <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro modelo: {projectFilter}
+              </button>
+            )}
           </div>
 
           {/* Main Failure Mode */}
@@ -978,15 +1032,28 @@ const ApontamentoDashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>
-                    {failureModeData.map((_, i) => (
-                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`} />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}
+                    cursor="pointer"
+                    onClick={(d: any) => {
+                      const fname = d?.payload?.fullName ?? d?.fullName;
+                      if (fname) setFailureModeFilter(failureModeFilter === fname ? null : fname);
+                    }}
+                  >
+                    {failureModeData.map((entry, i) => (
+                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`}
+                        opacity={failureModeFilter && failureModeFilter !== entry.fullName ? 0.35 : 1}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
               </ChartContainer>
             ) : (
               <p className="text-[hsl(0,0%,50%)] text-xs text-center py-8">Sem dados.</p>
+            )}
+            {failureModeFilter && (
+              <button onClick={() => setFailureModeFilter(null)} className="mx-3 mb-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro modo de falha: {failureModeFilter}
+              </button>
             )}
           </div>
         </div>
@@ -1020,6 +1087,13 @@ const ApontamentoDashboard = () => {
         {/* BOTTOM RIGHT: Main Issues table (NG only) */}
         <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
+          {pnFilter && (
+            <div className="px-3 pt-2">
+              <button onClick={() => setPnFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro PN: {pnFilter}
+              </button>
+            </div>
+          )}
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -1034,7 +1108,12 @@ const ApontamentoDashboard = () => {
               {mainIssues.length > 0 ? mainIssues.map((issue, i) => (
                 <tr key={i} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.supplier}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.pn}</td>
+                  <td
+                    className="px-3 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline"
+                    onClick={() => setPnFilter(pnFilter === issue.pn ? null : issue.pn)}
+                  >{issue.pn}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,55%,55%)] font-semibold">{issue.ng}</td>

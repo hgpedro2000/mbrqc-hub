@@ -48,6 +48,7 @@ export function parseHKMC(input: string): HKMCParsed {
     part4M: "",
     aOrAt: "",
     traceNo: "",
+    supplierItself: "",
     trailer: "",
   };
 
@@ -56,8 +57,14 @@ export function parseHKMC(input: string): HKMCParsed {
   if (headerMatch) result.header = headerMatch[0];
 
   // Tokens split by GS
-  const tokens = raw.split("\x1D").map((t) => t.replace(/[\x1E\x04]/g, "").trim()).filter(Boolean);
-  for (const tok of tokens) {
+  const tokens = raw
+    .split("\x1D")
+    .map((t) => t.replace(/[\x04]/g, ""))
+    .filter((t) => t.length > 0);
+
+  for (const tokRaw of tokens) {
+    const tok = tokRaw.replace(/\x1E/g, "").trim();
+    if (!tok) continue;
     if (tok.startsWith("[)>")) continue;
     const prefix = tok[0];
     const value = tok.slice(1);
@@ -67,11 +74,18 @@ export function parseHKMC(input: string): HKMCParsed {
       case "S": result.sequenceCode = value; break;
       case "E": result.eoNumber = value; break;
       case "D": result.productionDate = value; break;
-      case "T": result.part4M = value; break;
-      case "@": result.aOrAt = value; break;
-      case "A": result.aOrAt = value; break;
+      case "T": {
+        // Composite: YYMMDD(6) + Part4M(4) + A/@(1) + TraceNo(7) = 18 chars
+        result.productionDate = value.slice(0, 6);
+        result.part4M = value.slice(6, 10);
+        const ch = value.slice(10, 11);
+        if (ch === "A" || ch === "@") result.aOrAt = ch;
+        result.traceNo = value.slice(11, 18);
+        break;
+      }
       default:
-        if (!result.traceNo && tok.length >= 7) result.traceNo = tok;
+        // Unprefixed token → "Supplier itself" (ETC section)
+        if (!result.supplierItself) result.supplierItself = tok;
     }
   }
 

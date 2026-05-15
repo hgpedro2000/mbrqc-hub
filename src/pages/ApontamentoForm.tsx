@@ -1096,23 +1096,26 @@ const ApontamentoForm = () => {
             </div>
           )}
 
-          {/* Fornecedor + Part Number */}
+          {/* Projeto, Fornecedor, Part Number, Part Name (Módulo rendered abaixo) */}
           <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <SupplierPartSelector
               fornecedor={fornecedor}
               partNumber={partNumber}
               partName={partName}
               projeto={projeto}
-              modulo={modulo}
               onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
               onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
               onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); setProjeto(d.project); setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; }); }}
             />
           </div>
 
-          {/* RESPONSABILIDADE + ALC - Incoming only */}
-          {isIncoming && (
-            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          {/* MÓDULO + RESPONSABILIDADE + ALC - linha simétrica de 3 colunas (Incoming) */}
+          {isIncoming ? (
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="space-y-1.5">
+                <Label>Módulo</Label>
+                <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+              </div>
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
                 {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
@@ -1129,8 +1132,8 @@ const ApontamentoForm = () => {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="flex items-center gap-2">
-                  ALC
+                <Label className="flex items-center gap-2 flex-wrap">
+                  <span>ALC</span>
                   {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
                   {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente (esperado: {alcExpected || "—"})</span>}
                   {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
@@ -1154,6 +1157,11 @@ const ApontamentoForm = () => {
                 />
               </div>
             </div>
+          ) : (
+            <div className="mt-3 sm:mt-4 space-y-1.5">
+              <Label>Módulo</Label>
+              <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+            </div>
           )}
         </div>
 
@@ -1162,24 +1170,26 @@ const ApontamentoForm = () => {
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
-              <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
-                <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="nao">Não</SelectItem>
-                  <SelectItem value="sim">Sim</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => {
-                  if (temCoInspecao !== "sim") setTemCoInspecao("sim");
-                  setShowCoInspetorDialog(true);
-                }}
-                className="w-full gap-2"
-              >
-                <Search className="w-4 h-4" /> Selecionar Co-Inspetores
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
+                  <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nao">Não</SelectItem>
+                    <SelectItem value="sim">Sim</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    if (temCoInspecao !== "sim") setTemCoInspecao("sim");
+                    setShowCoInspetorDialog(true);
+                  }}
+                  className="w-full sm:flex-1 gap-2"
+                >
+                  <Search className="w-4 h-4" /> Selecionar Co-Inspetores
+                </Button>
+              </div>
               {temCoInspecao === "sim" && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">

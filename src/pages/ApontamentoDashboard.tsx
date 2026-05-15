@@ -41,6 +41,7 @@ const ApontamentoDashboard = () => {
   const [supplierFilterMap, setSupplierFilterMap] = useState<Record<string, string | null>>({});
   const [responsibilityFilterMap, setResponsibilityFilterMap] = useState<Record<string, string | null>>({});
   const [projectFilterMap, setProjectFilterMap] = useState<Record<string, string | null>>({});
+  const [moduleFilterMap, setModuleFilterMap] = useState<Record<string, string | null>>({});
   const [pnFilterMap, setPnFilterMap] = useState<Record<string, string | null>>({});
   const [failureModeFilterMap, setFailureModeFilterMap] = useState<Record<string, string[]>>({});
 
@@ -49,6 +50,7 @@ const ApontamentoDashboard = () => {
   const supplierFilter = supplierFilterMap[activeType] ?? null;
   const responsibilityFilter = responsibilityFilterMap[activeType] ?? null;
   const projectFilter = projectFilterMap[activeType] ?? null;
+  const moduleFilter = moduleFilterMap[activeType] ?? null;
   const pnFilter = pnFilterMap[activeType] ?? null;
   const failureModeFilter = failureModeFilterMap[activeType] ?? [];
 
@@ -66,6 +68,7 @@ const ApontamentoDashboard = () => {
   const setSupplierFilter = makeScopedSetter<string | null>(setSupplierFilterMap, null);
   const setResponsibilityFilter = makeScopedSetter<string | null>(setResponsibilityFilterMap, null);
   const setProjectFilter = makeScopedSetter<string | null>(setProjectFilterMap, null);
+  const setModuleFilter = makeScopedSetter<string | null>(setModuleFilterMap, null);
   const setPnFilter = makeScopedSetter<string | null>(setPnFilterMap, null);
   const setFailureModeFilter = makeScopedSetter<string[]>(setFailureModeFilterMap, []);
 
@@ -145,6 +148,7 @@ const ApontamentoDashboard = () => {
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (moduleFilter) list = list.filter((i) => ((i as any).modulo || "—") === moduleFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     if (failureModeFilter.length > 0) {
       list = list.filter((i) => {
@@ -168,7 +172,7 @@ const ApontamentoDashboard = () => {
       });
     }
     return list;
-  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter, failureModeFilter, responsibilityFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter, failureModeFilter, responsibilityFilter]);
 
   // Origem data (Part vs Sorting counts) — date-filtered (no responsibility filter); empty dates = ALL apontamentos
   const origemData = useMemo(() => {
@@ -177,6 +181,7 @@ const ApontamentoDashboard = () => {
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (moduleFilter) list = list.filter((i) => ((i as any).modulo || "—") === moduleFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
@@ -191,7 +196,7 @@ const ApontamentoDashboard = () => {
       else sortingCount++; // default to sorting
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
-  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
 
   const total = filtered.length;
 
@@ -220,6 +225,22 @@ const ApontamentoDashboard = () => {
       e.ok += (d.quantidade_ok || 0);
       e.ng += (d.quantidade_ng || 0);
       map.set(proj, e);
+    });
+    return Array.from(map.entries())
+      .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4);
+  }, [filtered]);
+
+  // Module Status donuts (rate OK vs NG by module) — used in 100 Days tab
+  const moduleData = useMemo(() => {
+    const map = new Map<string, { ok: number; ng: number }>();
+    filtered.forEach((d) => {
+      const mod = (d as any).modulo || "—";
+      const e = map.get(mod) || { ok: 0, ng: 0 };
+      e.ok += (d.quantidade_ok || 0);
+      e.ng += (d.quantidade_ng || 0);
+      map.set(mod, e);
     });
     return Array.from(map.entries())
       .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
@@ -1045,30 +1066,54 @@ const ApontamentoDashboard = () => {
           )}
         </div>
 
-        {/* RIGHT: Project Status donuts + Failure Mode */}
+        {/* RIGHT: Project/Module Status donuts + Failure Mode */}
         <div className="lg:col-span-5 flex flex-col gap-3">
-          {/* Project Status donuts */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
-            <SectionHeader>Project Status</SectionHeader>
-            <div className="flex justify-around mt-3 flex-wrap gap-2">
-              {projectData.length > 0 ? projectData.map((proj, i) => (
-                <DonutChart key={i} data={[
-                  { name: "OK", value: proj.ok },
-                  { name: "NG", value: proj.ng },
-                ]} title={proj.name}
-                  active={projectFilter === proj.name}
-                  onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
-                />
-              )) : (
-                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
+          {/* Status donuts — Module for 100 Days, Project otherwise */}
+          {activeType === "100days" ? (
+            <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
+              <SectionHeader>Module Status</SectionHeader>
+              <div className="flex justify-around mt-3 flex-wrap gap-2">
+                {moduleData.length > 0 ? moduleData.map((mod, i) => (
+                  <DonutChart key={i} data={[
+                    { name: "OK", value: mod.ok },
+                    { name: "NG", value: mod.ng },
+                  ]} title={mod.name}
+                    active={moduleFilter === mod.name}
+                    onClick={() => setModuleFilter(moduleFilter === mod.name ? null : mod.name)}
+                  />
+                )) : (
+                  <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de módulo.</p>
+                )}
+              </div>
+              {moduleFilter && (
+                <button onClick={() => setModuleFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro módulo: {moduleFilter}
+                </button>
               )}
             </div>
-            {projectFilter && (
-              <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
-                ✕ Filtro modelo: {projectFilter}
-              </button>
-            )}
-          </div>
+          ) : (
+            <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
+              <SectionHeader>Project Status</SectionHeader>
+              <div className="flex justify-around mt-3 flex-wrap gap-2">
+                {projectData.length > 0 ? projectData.map((proj, i) => (
+                  <DonutChart key={i} data={[
+                    { name: "OK", value: proj.ok },
+                    { name: "NG", value: proj.ng },
+                  ]} title={proj.name}
+                    active={projectFilter === proj.name}
+                    onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
+                  />
+                )) : (
+                  <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
+                )}
+              </div>
+              {projectFilter && (
+                <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro modelo: {projectFilter}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Main Failure Mode */}
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1 rounded-lg">

@@ -1042,9 +1042,9 @@ const ApontamentoForm = () => {
             />
           </div>
 
-          {/* RESPONSABILIDADE - Incoming only */}
+          {/* RESPONSABILIDADE + ALC - Incoming only */}
           {isIncoming && (
-            <div className="mt-3 sm:mt-4">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
                 {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
@@ -1059,6 +1059,31 @@ const ApontamentoForm = () => {
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2">
+                  ALC
+                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
+                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente (esperado: {alcExpected || "—"})</span>}
+                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
+                </Label>
+                <Input
+                  value={alcCode}
+                  onChange={(e) => {
+                    const v = e.target.value.toUpperCase();
+                    setAlcCode(v);
+                    setAlcStatus("manual");
+                  }}
+                  onBlur={() => { if (!alcCode.trim()) setAlcCode("N/A"); }}
+                  placeholder="N/A"
+                  className={
+                    alcStatus === "match"
+                      ? "border-emerald-500 ring-1 ring-emerald-500/40"
+                      : alcStatus === "mismatch"
+                      ? "border-destructive ring-1 ring-destructive/40"
+                      : ""
+                  }
+                />
               </div>
             </div>
           )}

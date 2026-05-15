@@ -32,6 +32,12 @@ interface Props {
   mode: "daily" | "ng";
   onViewRecord?: (id: string) => void;
   locationFilter?: string | null;
+  failureModeFilter?: string | null;
+  tipoFilter?: string | null;
+  projectFilter?: string | null;
+  pnSetFilter?: Set<string> | null;
+  initialDateFrom?: string;
+  initialDateTo?: string;
 }
 
 const typeLabels: Record<string, string> = {

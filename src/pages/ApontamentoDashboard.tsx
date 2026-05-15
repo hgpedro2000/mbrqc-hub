@@ -50,6 +50,7 @@ const ApontamentoDashboard = () => {
   const supplierFilter = supplierFilterMap[activeType] ?? null;
   const responsibilityFilter = responsibilityFilterMap[activeType] ?? null;
   const projectFilter = projectFilterMap[activeType] ?? null;
+  const moduleFilter = moduleFilterMap[activeType] ?? null;
   const pnFilter = pnFilterMap[activeType] ?? null;
   const failureModeFilter = failureModeFilterMap[activeType] ?? [];
 

@@ -196,7 +196,7 @@ const ApontamentoDashboard = () => {
       else sortingCount++; // default to sorting
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
-  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
 
   const total = filtered.length;
 

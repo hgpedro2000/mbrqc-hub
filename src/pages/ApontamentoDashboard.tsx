@@ -130,13 +130,13 @@ const ApontamentoDashboard = () => {
 
   const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
 
-  // Base list: 100 Days = incoming filtered to BC4b project
+  // Base list: 100 Days = incoming whose part_number belongs to project BC4b (per master part_numbers table)
   const baseList = useMemo(() => {
     if (activeType === "100days") {
-      return items.filter((i) => i.tipo === "incoming" && (i.projeto || "").toUpperCase() === HUNDRED_DAYS_PROJECT.toUpperCase());
+      return items.filter((i) => i.tipo === "incoming" && i.part_number && bc4bPnSet.has(i.part_number));
     }
     return items.filter((i) => i.tipo === activeType);
-  }, [items, activeType]);
+  }, [items, activeType, bc4bPnSet]);
 
   // Filter by date range / supplier / responsibility / project / PN
   const filtered = useMemo(() => {

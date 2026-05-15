@@ -41,6 +41,7 @@ const ApontamentoDashboard = () => {
   const [supplierFilterMap, setSupplierFilterMap] = useState<Record<string, string | null>>({});
   const [responsibilityFilterMap, setResponsibilityFilterMap] = useState<Record<string, string | null>>({});
   const [projectFilterMap, setProjectFilterMap] = useState<Record<string, string | null>>({});
+  const [moduleFilterMap, setModuleFilterMap] = useState<Record<string, string | null>>({});
   const [pnFilterMap, setPnFilterMap] = useState<Record<string, string | null>>({});
   const [failureModeFilterMap, setFailureModeFilterMap] = useState<Record<string, string[]>>({});
 

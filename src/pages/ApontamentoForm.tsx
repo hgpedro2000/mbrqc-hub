@@ -565,6 +565,8 @@ const ApontamentoForm = () => {
       setFornecedor(existing.fornecedor || "");
       setPartNumber(existing.part_number || "");
       setPartName(existing.part_name || "");
+      setAlcCode((existing as any).alc_code || "N/A");
+      setAlcStatus("idle");
       setQuantidadeInspecionada(existing.quantidade_inspecionada || 0);
       setQuantidadeNg(existing.quantidade_ng || 0);
       setQuantidadeOk(existing.quantidade_ok || 0);

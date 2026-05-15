@@ -1066,30 +1066,54 @@ const ApontamentoDashboard = () => {
           )}
         </div>
 
-        {/* RIGHT: Project Status donuts + Failure Mode */}
+        {/* RIGHT: Project/Module Status donuts + Failure Mode */}
         <div className="lg:col-span-5 flex flex-col gap-3">
-          {/* Project Status donuts */}
-          <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
-            <SectionHeader>Project Status</SectionHeader>
-            <div className="flex justify-around mt-3 flex-wrap gap-2">
-              {projectData.length > 0 ? projectData.map((proj, i) => (
-                <DonutChart key={i} data={[
-                  { name: "OK", value: proj.ok },
-                  { name: "NG", value: proj.ng },
-                ]} title={proj.name}
-                  active={projectFilter === proj.name}
-                  onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
-                />
-              )) : (
-                <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
+          {/* Status donuts — Module for 100 Days, Project otherwise */}
+          {activeType === "100days" ? (
+            <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
+              <SectionHeader>Module Status</SectionHeader>
+              <div className="flex justify-around mt-3 flex-wrap gap-2">
+                {moduleData.length > 0 ? moduleData.map((mod, i) => (
+                  <DonutChart key={i} data={[
+                    { name: "OK", value: mod.ok },
+                    { name: "NG", value: mod.ng },
+                  ]} title={mod.name}
+                    active={moduleFilter === mod.name}
+                    onClick={() => setModuleFilter(moduleFilter === mod.name ? null : mod.name)}
+                  />
+                )) : (
+                  <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de módulo.</p>
+                )}
+              </div>
+              {moduleFilter && (
+                <button onClick={() => setModuleFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro módulo: {moduleFilter}
+                </button>
               )}
             </div>
-            {projectFilter && (
-              <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
-                ✕ Filtro modelo: {projectFilter}
-              </button>
-            )}
-          </div>
+          ) : (
+            <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] p-3 rounded-lg">
+              <SectionHeader>Project Status</SectionHeader>
+              <div className="flex justify-around mt-3 flex-wrap gap-2">
+                {projectData.length > 0 ? projectData.map((proj, i) => (
+                  <DonutChart key={i} data={[
+                    { name: "OK", value: proj.ok },
+                    { name: "NG", value: proj.ng },
+                  ]} title={proj.name}
+                    active={projectFilter === proj.name}
+                    onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
+                  />
+                )) : (
+                  <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
+                )}
+              </div>
+              {projectFilter && (
+                <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                  ✕ Filtro modelo: {projectFilter}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Main Failure Mode */}
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] flex-1 rounded-lg">

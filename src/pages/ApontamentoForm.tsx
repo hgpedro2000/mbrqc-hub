@@ -440,7 +440,27 @@ const ApontamentoForm = () => {
     setPendingQRData(null);
   };
 
-  const cancelRescan = () => {
+  // ALC mismatch — option 1: keep manual entry (with photo) and continue
+  const handleAlcManualKeep = () => {
+    setShowAlcMismatchDialog(false);
+    setAlcStatus("manual");
+    toast.warning("ALC registrado manualmente. Anexe foto da etiqueta física para evidência.", { duration: 6000 });
+  };
+
+  // ALC mismatch — option 2: confirm divergence and auto-open NG defect with modo_falha required
+  const handleAlcConfirmError = () => {
+    setShowAlcMismatchDialog(false);
+    setAlcStatus("mismatch");
+    // Force at least 1 NG and require modo_falha
+    if (quantidadeInspecionada <= 0) setQuantidadeInspecionada(1);
+    if (quantidadeNg < 1) setQuantidadeNg(1);
+    // Pre-fill description with the divergence context
+    const ctx = `Divergência de ALC: lido "${alcMismatchScanned}" — esperado "${alcExpected || "N/A"}" para PN ${partNumber}.`;
+    setDescricao((prev) => (prev && prev !== "Sem defeito encontrado durante essa inspeção" ? `${ctx}\n${prev}` : ctx));
+    // Highlight modo_falha as required
+    setValidationErrors((p) => { const n = new Set(p); n.add("modoFalha"); return n; });
+    toast.error("Defeito de ALC registrado. Selecione o Modo de Falha e anexe foto da etiqueta.", { duration: 7000 });
+  };
     setShowRescanConfirm(false);
     setPendingQRData(null);
     toast.info("Leitura atual mantida.");

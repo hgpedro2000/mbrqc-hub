@@ -36,14 +36,30 @@ const ApontamentoDashboard = () => {
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
+  const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [pnFilter, setPnFilter] = useState<string | null>(null);
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["apontamentos"],
+    queryKey: ["apontamentos", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
+      const PAGE = 1000;
+      let from = 0;
+      const all: any[] = [];
+      // paginate to bypass Supabase default 1000-row cap
+      while (true) {
+        const { data, error } = await supabase
+          .from("apontamentos")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
+      return all;
     },
   });
 

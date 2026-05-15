@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, CalendarIcon, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, CalendarIcon, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -38,7 +38,7 @@ const ApontamentoDashboard = () => {
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [pnFilter, setPnFilter] = useState<string | null>(null);
-  const [failureModeFilter, setFailureModeFilter] = useState<string | null>(null);
+  const [failureModeFilter, setFailureModeFilter] = useState<string[]>([]);
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({

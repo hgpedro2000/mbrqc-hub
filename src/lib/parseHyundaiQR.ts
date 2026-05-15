@@ -3,8 +3,19 @@ export interface HyundaiQRData {
   partNumber: string;
   supplierCode: string;
   lotNumber: string;
+  /** ALC / Sequence code (S-prefix in HKMC standard, fallback: PN suffix) */
+  alc: string;
   raw: string;
   partial?: boolean; // true when only lot was captured (PN missing)
+}
+
+/** Extract ALC candidate from a Hyundai PN — usually the last 3 chars (e.g., "NNB", "T5G", "MDG"). */
+export function extractAlcFromPartNumber(pn: string): string {
+  if (!pn) return "";
+  const norm = pn.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (norm.length < 9) return "";
+  const suffix = norm.slice(-3);
+  return /[A-Z]/.test(suffix) ? suffix : "";
 }
 
 // Matches the linear lot/serial barcode at the bottom of Hyundai/Kia/Mobis labels.

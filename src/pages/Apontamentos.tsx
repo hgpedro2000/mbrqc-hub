@@ -126,16 +126,20 @@ const Apontamentos = () => {
     return map;
   }, [profilesList]);
 
-  const firstPhotoByItem = useMemo(() => {
-    const map: Record<string, string> = {};
+  const photosByItem = useMemo(() => {
+    const map: Record<string, string[]> = {};
     allPhotos.forEach((p) => {
-      if (!map[p.checklist_id]) {
-        const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
-        map[p.checklist_id] = urlData.publicUrl;
-      }
+      const { data: urlData } = supabase.storage.from("checklist-photos").getPublicUrl(p.file_path);
+      if (!map[p.checklist_id]) map[p.checklist_id] = [];
+      map[p.checklist_id].push(urlData.publicUrl);
     });
     return map;
   }, [allPhotos]);
+  const firstPhotoByItem = useMemo(() => {
+    const map: Record<string, string> = {};
+    Object.entries(photosByItem).forEach(([k, v]) => { if (v[0]) map[k] = v[0]; });
+    return map;
+  }, [photosByItem]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {

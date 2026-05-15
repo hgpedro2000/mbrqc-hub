@@ -235,17 +235,21 @@ const ApontamentoForm = () => {
 
   const applyQRScan = async (qrData: HyundaiQRData) => {
     const pn = qrData.partNumber;
-    setPartNumber(pn);
+    if (pn) setPartNumber(pn);
     if (qrData.lotNumber) setLoteInspecionado(qrData.lotNumber);
     setPendingLot(qrData.lotNumber || "");
     setValidationErrors((prev) => {
       const next = new Set(prev);
-      next.delete("partNumber");
-      next.delete("loteInspecionado");
-      next.delete("projeto");
-      next.delete("fornecedor");
+      if (pn) next.delete("partNumber");
+      if (qrData.lotNumber) next.delete("loteInspecionado");
       return next;
     });
+
+    // Partial scan (only lot read from linear barcode) — guide user to complete PN.
+    if (!pn) {
+      toast.info("Lote capturado. Aponte para o QR/DataMatrix 2D ou preencha o Part Number manualmente.", { duration: 5000 });
+      return;
+    }
 
     try {
       const pnNormalized = pn.replace(/-/g, "");

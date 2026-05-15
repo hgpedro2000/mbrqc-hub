@@ -838,6 +838,28 @@ const Apontamentos = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Photo gallery dialog (multiple photos) */}
+      {galleryPhotos && (
+        <Dialog open={!!galleryPhotos} onOpenChange={() => setGalleryPhotos(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Fotos ({galleryPhotos.length})</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+              {galleryPhotos.map((url, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg overflow-hidden border border-border aspect-square cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                  onClick={() => setPhotoLightbox(url)}
+                >
+                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Photo lightbox */}
       {photoLightbox && (
         <Dialog open={!!photoLightbox} onOpenChange={() => setPhotoLightbox(null)}>

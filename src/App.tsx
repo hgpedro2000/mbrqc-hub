@@ -85,9 +85,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   // Use real session admin (not impersonation-aware) so admins can always access engineering
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const roleLoading = false;
 
-  if (authLoading || roleLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" />
@@ -95,7 +94,30 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin) {
+    return (
+      <div
+        role="alert"
+        aria-live="polite"
+        data-testid="admin-route-denied"
+        className="min-h-screen bg-background flex items-center justify-center px-4"
+      >
+        <div className="max-w-md w-full text-center space-y-4 border border-border rounded-xl p-6 bg-card">
+          <h1 className="text-xl font-heading font-bold text-foreground">Acesso negado</h1>
+          <p className="text-sm text-muted-foreground">
+            O Modo Engenharia exige um perfil de <strong>admin real</strong>. Sua conta atual não possui essa permissão,
+            então o acesso foi bloqueado pelo backend.
+          </p>
+          <a
+            href="/"
+            className="inline-block text-sm text-primary hover:underline"
+          >
+            Voltar ao Hub
+          </a>
+        </div>
+      </div>
+    );
+  }
   return <>{children}</>;
 };
 

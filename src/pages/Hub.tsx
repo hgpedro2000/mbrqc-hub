@@ -332,7 +332,7 @@ const Hub = () => {
     return t("greeting.evening");
   };
 
-  const showEngineering = isAdmin;
+  const showEngineering = realIsAdmin;
   const visibleModuleIds = new Set(enabledModules);
   
   const sortedModules = useMemo(() => {

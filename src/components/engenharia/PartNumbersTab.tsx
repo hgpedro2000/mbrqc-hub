@@ -114,7 +114,7 @@ const PartNumbersTab = () => {
               <DialogHeader><DialogTitle>{editId ? "Editar Part Number" : "Novo Part Number"}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2"><Label>Fornecedor *</Label><Select value={supplierId} onValueChange={setSupplierId}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>)}</SelectContent></Select></div>
-                <div className="space-y-2"><Label>Part Number *</Label><Input value={partNumber} onChange={(e) => setPartNumber(e.target.value)} placeholder="Ex: ABC-12345" /></div>
+                <div className="space-y-2"><Label>Part Number *</Label><Input value={partNumber} onChange={(e) => setPartNumber(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" /></div>
                 <div className="space-y-2"><Label>Part Name *</Label><Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" /></div>
                 <div className="space-y-2"><Label>Projeto</Label><Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" /></div>
                 <div className="space-y-2"><Label>Módulo de Linha</Label><Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" /></div>

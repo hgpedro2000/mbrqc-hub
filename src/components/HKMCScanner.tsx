@@ -200,62 +200,71 @@ const HKMCScanner = () => {
   ];
 
   return (
-    <div className="bg-background pb-24 md:pb-4">
+    <div className="bg-background pb-24 md:pb-4 w-full max-w-full overflow-x-hidden">
       {/* Raw string area */}
       <div
-        className="px-4 py-3 text-sm font-mono break-all"
+        className="px-3 py-3 text-xs sm:text-sm font-mono break-all leading-relaxed"
         style={{ background: "#fffacd", color: "#111" }}
         dangerouslySetInnerHTML={{ __html: highlightRaw(normalizeRaw(data.raw)) }}
       />
 
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-4 py-3 text-white font-semibold"
+        className="flex items-center gap-2 px-3 py-3 text-white font-semibold text-sm sm:text-base"
         style={{ background: "#2d6db5" }}
       >
-        <QrCode className="w-5 h-5" />
-        <span>H/KMC Part 2D Barcode Standard</span>
+        <QrCode className="w-5 h-5 shrink-0" />
+        <span className="truncate">H/KMC Part 2D Barcode Standard</span>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <div className="w-full">
+        <table className="w-full text-xs sm:text-sm border-collapse table-fixed">
+          <colgroup>
+            <col className="w-10" />
+            <col className="w-14 sm:w-20" />
+            <col />
+          </colgroup>
           <thead>
             <tr className="bg-muted">
-              <th className="text-left px-3 py-2 border-b border-border w-10">Item</th>
-              <th className="text-left px-3 py-2 border-b border-border w-20">Result</th>
-              <th className="text-left px-3 py-2 border-b border-border">Data</th>
+              <th className="text-left px-2 py-2 border-b border-border">Item</th>
+              <th className="text-left px-2 py-2 border-b border-border">Result</th>
+              <th className="text-left px-2 py-2 border-b border-border">Data</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => {
-              if (r.group) {
+            {(() => {
+              let n = 0;
+              return rows.map((r, i) => {
+                if (r.group) {
+                  return (
+                    <tr key={`g-${i}`}>
+                      <td colSpan={3} className="px-2 py-1.5 font-semibold text-foreground text-xs sm:text-sm" style={{ background: "#e0e8f5" }}>
+                        {r.group}
+                      </td>
+                    </tr>
+                  );
+                }
+                n += 1;
+                const value = data[r.key] as string;
                 return (
-                  <tr key={`g-${i}`}>
-                    <td colSpan={3} className="px-3 py-1.5 font-semibold text-foreground" style={{ background: "#e0e8f5" }}>
-                      {r.group}
+                  <tr key={i} className="border-b border-border align-top">
+                    <td className="px-2 py-2">{n}</td>
+                    <td className="px-2 py-2">
+                      {value ? (
+                        <span style={{ color: "#2d6db5" }} className="font-semibold">OK</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-2 font-mono break-all">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground">{r.label}</div>
+                      <div className="break-all">{value || ""}</div>
                     </td>
                   </tr>
                 );
-              }
-              const value = data[r.key] as string;
-              return (
-                <tr key={i} className="border-b border-border">
-                  <td className="px-3 py-2">{i}</td>
-                  <td className="px-3 py-2">
-                    {value ? (
-                      <span style={{ color: "#2d6db5" }} className="font-semibold">OK</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 font-mono break-all">
-                    <div className="text-xs text-muted-foreground">{r.label}</div>
-                    <div>{value || ""}</div>
-                  </td>
-                </tr>
-              );
-            })}
+              });
+            })()}
           </tbody>
         </table>
       </div>

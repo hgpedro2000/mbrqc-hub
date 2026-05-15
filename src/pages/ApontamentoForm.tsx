@@ -780,17 +780,20 @@ const ApontamentoForm = () => {
     if (isPeca) {
       if (quantidadeNg < 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG"); }
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (quantidadeNg > 0 && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
     }
 
     if (isProcesso) {
       if (quantidadeNg <= 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG (deve ser > 0)"); }
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
     }
 
     if (isOem) {
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (!localDeteccao) { errors.add("localDeteccao"); msgs.push("Local de Detecção"); }
       if (!analiseInicial) { errors.add("analiseInicial"); msgs.push("Análise Inicial"); }
       if (!acaoImediata) { errors.add("acaoImediata"); msgs.push("Ação Imediata"); }

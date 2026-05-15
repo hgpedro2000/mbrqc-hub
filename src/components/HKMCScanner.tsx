@@ -74,6 +74,7 @@ export function parseHKMC(input: string): HKMCParsed {
       case "S": result.sequenceCode = value; break;
       case "E": result.eoNumber = value; break;
       case "D": result.productionDate = value; break;
+      case "C": result.supplierItself = value; break;
       case "T": {
         // Composite: YYMMDD(6) + Part4M(4) + A/@(1) + TraceNo(7) = 18 chars
         result.productionDate = value.slice(0, 6);

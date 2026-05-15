@@ -20,6 +20,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { compressImage } from "@/lib/compressImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
@@ -466,6 +467,14 @@ const ApontamentoForm = () => {
     setShowRescanConfirm(false);
     setPendingQRData(null);
     toast.info("Leitura atual mantida.");
+  };
+
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const requestExit = () => setShowExitConfirm(true);
+  const confirmExit = () => {
+    try { clearFormAutosave(autosaveKey); } catch {}
+    setShowExitConfirm(false);
+    navigate("/apontamentos");
   };
 
   // Load existing data
@@ -1022,7 +1031,7 @@ const ApontamentoForm = () => {
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
+            <Button variant="ghost" size="sm" onClick={requestExit} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
             <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
           <div className="flex items-center gap-2 mt-2 sm:mt-4">
@@ -1531,7 +1540,7 @@ const ApontamentoForm = () => {
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
           <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>
-          <Button variant="ghost" onClick={() => navigate("/apontamentos")} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
+          <Button variant="ghost" onClick={requestExit} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
         </div>
       </main>
 
@@ -1767,6 +1776,22 @@ const ApontamentoForm = () => {
         onCapture={handleInAppCapture}
         onClose={() => setCameraOpen(false)}
       />
+      <AlertDialog open={showExitConfirm} onOpenChange={setShowExitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sair sem salvar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os dados preenchidos no checklist serão descartados. Deseja realmente sair?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Não, continuar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmExit} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Sim, sair e descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

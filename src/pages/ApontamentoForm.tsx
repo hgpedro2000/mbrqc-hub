@@ -715,6 +715,7 @@ const ApontamentoForm = () => {
   const isProcesso = formTipo === "processo";
   const isOem = formTipo === "oem";
   const ngIsZero = isIncoming && quantidadeNg === 0;
+  const adminEdit = isEdit && isAdmin && !impersonating;
   const today = getLocalDateString();
 
   const calcDuration = (start: string, end: string): string => {
@@ -973,7 +974,14 @@ const ApontamentoForm = () => {
             </div>
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>
-              <Input value={turno || "—"} readOnly className="bg-muted" />
+              {adminEdit ? (
+                <Select value={turno} onValueChange={setTurno}>
+                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              ) : (
+                <Input value={turno || "—"} readOnly className="bg-muted" />
+              )}
             </div>
             {!isOem && !isIncoming && (
               <div className="space-y-1.5">
@@ -987,7 +995,17 @@ const ApontamentoForm = () => {
             {isIncoming && (
               <div className="space-y-1.5">
                 <Label>Local de Inspeção</Label>
-                <Input value={fase || "—"} readOnly className="bg-muted" />
+                {adminEdit ? (
+                  <Select value={fase} onValueChange={setFase}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Sala do Audio">Sala do Audio</SelectItem>
+                      <SelectItem value="Área de Incoming">Área de Incoming</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={fase || "—"} readOnly className="bg-muted" />
+                )}
               </div>
             )}
             {isOem && (
@@ -1024,7 +1042,7 @@ const ApontamentoForm = () => {
             <div className="mt-3 sm:mt-4">
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
-                {activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira ? (
+                {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
                   <Input value="Sorting" readOnly className="bg-muted" />
                 ) : (
                   <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>

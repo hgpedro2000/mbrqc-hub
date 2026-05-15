@@ -1087,6 +1087,13 @@ const ApontamentoDashboard = () => {
         {/* BOTTOM RIGHT: Main Issues table (NG only) */}
         <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
+          {pnFilter && (
+            <div className="px-3 pt-2">
+              <button onClick={() => setPnFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro PN: {pnFilter}
+              </button>
+            </div>
+          )}
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -1101,7 +1108,12 @@ const ApontamentoDashboard = () => {
               {mainIssues.length > 0 ? mainIssues.map((issue, i) => (
                 <tr key={i} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.supplier}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.pn}</td>
+                  <td
+                    className="px-3 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline"
+                    onClick={() => setPnFilter(pnFilter === issue.pn ? null : issue.pn)}
+                  >{issue.pn}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
+                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,55%,55%)] font-semibold">{issue.ng}</td>

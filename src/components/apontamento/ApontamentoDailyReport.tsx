@@ -922,8 +922,23 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
         list = list.filter((i) => selectedFornecedores.includes(i.fornecedor));
       }
     }
+    if (tipoFilter) list = list.filter((i) => i.tipo === tipoFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "") === projectFilter);
+    if (pnSetFilter) list = list.filter((i) => i.part_number && pnSetFilter.has(i.part_number));
+    if (failureModeFilter) {
+      const norm = failureModeFilter.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+      list = list.filter((i) => {
+        const main = (i.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+        if (main === norm) return true;
+        const sd = (i as any).segundo_defeitos as any[] | null;
+        if (sd && Array.isArray(sd)) {
+          return sd.some((d) => (d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase() === norm);
+        }
+        return false;
+      });
+    }
     return list;
-  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores]);
+  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores, failureModeFilter, tipoFilter, projectFilter, pnSetFilter]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};

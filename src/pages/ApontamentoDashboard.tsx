@@ -232,6 +232,22 @@ const ApontamentoDashboard = () => {
       .slice(0, 4);
   }, [filtered]);
 
+  // Module Status donuts (rate OK vs NG by module) — used in 100 Days tab
+  const moduleData = useMemo(() => {
+    const map = new Map<string, { ok: number; ng: number }>();
+    filtered.forEach((d) => {
+      const mod = (d as any).modulo || "—";
+      const e = map.get(mod) || { ok: 0, ng: 0 };
+      e.ok += (d.quantidade_ok || 0);
+      e.ng += (d.quantidade_ng || 0);
+      map.set(mod, e);
+    });
+    return Array.from(map.entries())
+      .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4);
+  }, [filtered]);
+
   // Main Failure Mode bar (only from NG items)
   const failureModeData = useMemo(() => {
     const map = new Map<string, number>();

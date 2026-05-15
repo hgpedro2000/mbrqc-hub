@@ -450,11 +450,27 @@ const Apontamentos = () => {
                 </div>
 
                 {/* Main photo thumbnail */}
-                {firstPhotoByItem[item.id] && (
-                  <div className="shrink-0 w-16 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(firstPhotoByItem[item.id]); }}>
-                    <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
-                  </div>
-                )}
+                {firstPhotoByItem[item.id] && (() => {
+                  const all = photosByItem[item.id] || [];
+                  const extra = Math.max(0, all.length - 1);
+                  return (
+                    <div
+                      className="relative shrink-0 w-16 h-16 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-lg overflow-hidden border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (extra > 0) setGalleryPhotos(all);
+                        else setPhotoLightbox(firstPhotoByItem[item.id]);
+                      }}
+                    >
+                      <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
+                      {extra > 0 && (
+                        <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md leading-none pointer-events-none">
+                          +{extra}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
                 {(selectedIds.has(item.id) || canShowActions) && <EditActions id={item.id} createdBy={item.created_by} status={item.status} />}
               </div>
             </div>

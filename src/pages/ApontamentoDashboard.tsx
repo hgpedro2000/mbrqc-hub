@@ -32,13 +32,41 @@ const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const [activeType, setActiveType] = useState("incoming");
   const today = getLocalDateString();
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [supplierFilter, setSupplierFilter] = useState<string | null>(null);
-  const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
-  const [projectFilter, setProjectFilter] = useState<string | null>(null);
-  const [pnFilter, setPnFilter] = useState<string | null>(null);
-  const [failureModeFilter, setFailureModeFilter] = useState<string[]>([]);
+
+  // Per-tab filter state — each tab keeps its own filters independently
+  const [dateFromMap, setDateFromMap] = useState<Record<string, string>>({});
+  const [dateToMap, setDateToMap] = useState<Record<string, string>>({});
+  const [supplierFilterMap, setSupplierFilterMap] = useState<Record<string, string | null>>({});
+  const [responsibilityFilterMap, setResponsibilityFilterMap] = useState<Record<string, string | null>>({});
+  const [projectFilterMap, setProjectFilterMap] = useState<Record<string, string | null>>({});
+  const [pnFilterMap, setPnFilterMap] = useState<Record<string, string | null>>({});
+  const [failureModeFilterMap, setFailureModeFilterMap] = useState<Record<string, string[]>>({});
+
+  const dateFrom = dateFromMap[activeType] ?? "";
+  const dateTo = dateToMap[activeType] ?? "";
+  const supplierFilter = supplierFilterMap[activeType] ?? null;
+  const responsibilityFilter = responsibilityFilterMap[activeType] ?? null;
+  const projectFilter = projectFilterMap[activeType] ?? null;
+  const pnFilter = pnFilterMap[activeType] ?? null;
+  const failureModeFilter = failureModeFilterMap[activeType] ?? [];
+
+  const makeScopedSetter = <T,>(setMap: React.Dispatch<React.SetStateAction<Record<string, T>>>, fallback: T) =>
+    (value: T | ((prev: T) => T)) => {
+      setMap((m) => {
+        const prev = (m[activeType] ?? fallback) as T;
+        const next = typeof value === "function" ? (value as (p: T) => T)(prev) : value;
+        return { ...m, [activeType]: next };
+      });
+    };
+
+  const setDateFrom = makeScopedSetter<string>(setDateFromMap, "");
+  const setDateTo = makeScopedSetter<string>(setDateToMap, "");
+  const setSupplierFilter = makeScopedSetter<string | null>(setSupplierFilterMap, null);
+  const setResponsibilityFilter = makeScopedSetter<string | null>(setResponsibilityFilterMap, null);
+  const setProjectFilter = makeScopedSetter<string | null>(setProjectFilterMap, null);
+  const setPnFilter = makeScopedSetter<string | null>(setPnFilterMap, null);
+  const setFailureModeFilter = makeScopedSetter<string[]>(setFailureModeFilterMap, []);
+
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({

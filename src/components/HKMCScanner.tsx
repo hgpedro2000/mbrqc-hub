@@ -261,7 +261,7 @@ const HKMCScanner = () => {
       </div>
 
       {/* Footer buttons */}
-      <div className="fixed bottom-0 left-0 right-0 grid grid-cols-3 gap-2 p-3 bg-background border-t border-border">
+      <div className="fixed bottom-0 left-0 right-0 md:static md:mt-3 grid grid-cols-3 gap-2 p-3 bg-background border-t border-border md:border-t-0">
         <Button
           onClick={() => setHistoryOpen(true)}
           style={{ background: "#2d6db5", color: "#fff" }}

@@ -38,6 +38,7 @@ const ApontamentoDashboard = () => {
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [pnFilter, setPnFilter] = useState<string | null>(null);
+  const [failureModeFilter, setFailureModeFilter] = useState<string | null>(null);
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({

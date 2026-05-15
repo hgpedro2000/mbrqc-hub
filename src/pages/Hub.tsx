@@ -115,7 +115,7 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount, onBadgeClick 
 };
 
 const Hub = () => {
-  const { signOut, profile, user } = useAuth();
+  const { signOut, profile, user, isAdmin: realIsAdmin } = useAuth();
   const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const { enabledModules } = useEnabledModules(impersonating?.id);

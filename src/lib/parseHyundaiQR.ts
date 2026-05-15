@@ -3,8 +3,19 @@ export interface HyundaiQRData {
   partNumber: string;
   supplierCode: string;
   lotNumber: string;
+  /** ALC / Sequence code (S-prefix in HKMC standard, fallback: PN suffix) */
+  alc?: string;
   raw: string;
   partial?: boolean; // true when only lot was captured (PN missing)
+}
+
+/** Extract ALC candidate from a Hyundai PN — usually the last 3 chars (e.g., "NNB", "T5G", "MDG"). */
+export function extractAlcFromPartNumber(pn: string): string {
+  if (!pn) return "";
+  const norm = pn.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (norm.length < 9) return "";
+  const suffix = norm.slice(-3);
+  return /[A-Z]/.test(suffix) ? suffix : "";
 }
 
 // Matches the linear lot/serial barcode at the bottom of Hyundai/Kia/Mobis labels.
@@ -51,17 +62,19 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     let partNumber = "";
     let supplierCode = "";
     let lotNumber = "";
+    let sequenceCode = "";
 
     parts.forEach((segment) => {
       const clean = segment.replace(/[\x1e\x04\[\)>]/g, "").trim();
       if (clean.startsWith("V") && !vendorCode) vendorCode = clean.slice(1);
       else if (clean.startsWith("P") && !partNumber) partNumber = clean.slice(1);
-      else if (clean.startsWith("S") && !supplierCode) supplierCode = clean.slice(1);
+      else if (clean.startsWith("S") && !sequenceCode) sequenceCode = clean.slice(1);
       else if (clean.startsWith("T") && !lotNumber) lotNumber = clean.slice(1);
     });
 
     if (partNumber) {
-      return { vendorCode, partNumber, supplierCode, lotNumber, raw: trimmed };
+      const alc = sequenceCode || extractAlcFromPartNumber(partNumber);
+      return { vendorCode, partNumber, supplierCode, lotNumber, alc, raw: trimmed };
     }
 
     // Fallback 1: scanned the linear lot barcode only (HU…T) — accept as partial scan.
@@ -72,6 +85,7 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
         partNumber: "",
         supplierCode: "",
         lotNumber: lotMatch[1].toUpperCase(),
+        alc: "",
         raw: trimmed,
         partial: true,
       };
@@ -85,6 +99,7 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
         partNumber: fallbackPartNumber,
         supplierCode: "",
         lotNumber: extractSupplierLot(trimmed),
+        alc: extractAlcFromPartNumber(fallbackPartNumber),
         raw: trimmed,
       };
     }

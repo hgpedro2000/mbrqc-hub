@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag, ImagePlus } from "lucide-react";
 import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
-import { HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { HyundaiQRData, extractAlcFromPartNumber } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -88,6 +88,11 @@ const ApontamentoForm = () => {
   const [partNumber, setPartNumber] = useState("");
   const [partName, setPartName] = useState("");
   const [modulo, setModulo] = useState("");
+  const [alcCode, setAlcCode] = useState("N/A");
+  const [alcExpected, setAlcExpected] = useState<string>(""); // expected ALC from part_numbers
+  const [alcStatus, setAlcStatus] = useState<"idle" | "match" | "mismatch" | "manual">("idle");
+  const [showAlcMismatchDialog, setShowAlcMismatchDialog] = useState(false);
+  const [alcMismatchScanned, setAlcMismatchScanned] = useState("");
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
   const [quantidadeOk, setQuantidadeOk] = useState<number>(0);
@@ -822,6 +827,7 @@ const ApontamentoForm = () => {
         fornecedor: fornecedor || null,
         part_number: partNumber || null,
         part_name: partName || null,
+        alc_code: (alcCode && alcCode.trim()) ? alcCode.trim() : "N/A",
         descricao: descricao || "Sem descrição",
         quantidade_inspecionada: quantidadeInspecionada,
         quantidade_ng: quantidadeNg,
@@ -1037,9 +1043,9 @@ const ApontamentoForm = () => {
             />
           </div>
 
-          {/* RESPONSABILIDADE - Incoming only */}
+          {/* RESPONSABILIDADE + ALC - Incoming only */}
           {isIncoming && (
-            <div className="mt-3 sm:mt-4">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
                 {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
@@ -1054,6 +1060,31 @@ const ApontamentoForm = () => {
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2">
+                  ALC
+                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
+                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente (esperado: {alcExpected || "—"})</span>}
+                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
+                </Label>
+                <Input
+                  value={alcCode}
+                  onChange={(e) => {
+                    const v = e.target.value.toUpperCase();
+                    setAlcCode(v);
+                    setAlcStatus("manual");
+                  }}
+                  onBlur={() => { if (!alcCode.trim()) setAlcCode("N/A"); }}
+                  placeholder="N/A"
+                  className={
+                    alcStatus === "match"
+                      ? "border-emerald-500 ring-1 ring-emerald-500/40"
+                      : alcStatus === "mismatch"
+                      ? "border-destructive ring-1 ring-destructive/40"
+                      : ""
+                  }
+                />
               </div>
             </div>
           )}

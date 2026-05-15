@@ -157,11 +157,12 @@ const SupplierPartSelector = ({
     setSearchQuery("");
   };
 
-  // Handle manual part number input - try to auto-match
+  // Handle manual part number input - normalize (UPPERCASE + remove "-") and auto-match
   const handleManualPartNumber = (value: string) => {
-    onPartNumberChange(value);
+    const normalized = value.toUpperCase().replace(/-/g, "");
+    onPartNumberChange(normalized);
     const match = filteredParts.find(
-      (p) => p.part_number.toLowerCase() === value.toLowerCase()
+      (p) => p.part_number.replace(/-/g, "").toUpperCase() === normalized
     );
     if (match) {
       onPartDataChange({
@@ -188,7 +189,7 @@ const SupplierPartSelector = ({
         </div>
         <div className="space-y-2">
           <Label>Part Number</Label>
-          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value)} placeholder="Ex: ABC-12345" />
+          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" />
         </div>
         <div className="space-y-2">
           <Label>Part Name</Label>

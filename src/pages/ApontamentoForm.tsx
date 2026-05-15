@@ -715,6 +715,7 @@ const ApontamentoForm = () => {
   const isProcesso = formTipo === "processo";
   const isOem = formTipo === "oem";
   const ngIsZero = isIncoming && quantidadeNg === 0;
+  const adminEdit = isEdit && isAdmin && !impersonating;
   const today = getLocalDateString();
 
   const calcDuration = (start: string, end: string): string => {

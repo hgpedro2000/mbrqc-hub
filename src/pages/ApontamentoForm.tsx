@@ -88,6 +88,11 @@ const ApontamentoForm = () => {
   const [partNumber, setPartNumber] = useState("");
   const [partName, setPartName] = useState("");
   const [modulo, setModulo] = useState("");
+  const [alcCode, setAlcCode] = useState("N/A");
+  const [alcExpected, setAlcExpected] = useState<string>(""); // expected ALC from part_numbers
+  const [alcStatus, setAlcStatus] = useState<"idle" | "match" | "mismatch" | "manual">("idle");
+  const [showAlcMismatchDialog, setShowAlcMismatchDialog] = useState(false);
+  const [alcMismatchScanned, setAlcMismatchScanned] = useState("");
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
   const [quantidadeOk, setQuantidadeOk] = useState<number>(0);

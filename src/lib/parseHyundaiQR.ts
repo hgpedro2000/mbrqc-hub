@@ -37,8 +37,15 @@ const extractPartNumber = (text: string) => {
   const candidates = [...text.toUpperCase().matchAll(HYUNDAI_PN_REGEX)]
     .map((match) => normalizeCode(match[1]))
     .filter((candidate) => {
+      const prefix = candidate.slice(0, 5);
       const suffix = candidate.slice(5);
-      return candidate.length >= 9 && candidate.length <= 15 && /[A-Z]/.test(suffix);
+      const digitCount = (prefix.match(/\d/g) || []).length;
+      return (
+        candidate.length >= 9 &&
+        candidate.length <= 15 &&
+        digitCount >= 3 &&
+        /[A-Z]/.test(suffix)
+      );
     });
 
   return candidates[0] || "";

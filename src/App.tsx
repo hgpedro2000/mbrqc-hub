@@ -83,8 +83,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading: authLoading } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  // Use real session admin (not impersonation-aware) so admins can always access engineering
+  const { user, loading: authLoading, isAdmin } = useAuth();
+  const roleLoading = false;
 
   if (authLoading || roleLoading) {
     return (

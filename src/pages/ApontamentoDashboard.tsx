@@ -68,6 +68,7 @@ const ApontamentoDashboard = () => {
   const setSupplierFilter = makeScopedSetter<string | null>(setSupplierFilterMap, null);
   const setResponsibilityFilter = makeScopedSetter<string | null>(setResponsibilityFilterMap, null);
   const setProjectFilter = makeScopedSetter<string | null>(setProjectFilterMap, null);
+  const setModuleFilter = makeScopedSetter<string | null>(setModuleFilterMap, null);
   const setPnFilter = makeScopedSetter<string | null>(setPnFilterMap, null);
   const setFailureModeFilter = makeScopedSetter<string[]>(setFailureModeFilterMap, []);
 

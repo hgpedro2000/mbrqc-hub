@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
-import { useUserRole } from "@/hooks/useUserRole";
+
 import Hub from "./pages/Hub";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";

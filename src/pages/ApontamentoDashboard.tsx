@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
+import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
+import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 
 const TYPES = ["incoming", "peca", "processo", "oem", "100days"] as const;
 const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM", "100days": "100 Days" };
@@ -101,6 +103,25 @@ const ApontamentoDashboard = () => {
     },
   });
 
+  // Master PNs for 100 Days project (filter by master, not by sometimes-misregistered apontamento.projeto)
+  const { data: bc4bPnsRaw = [] } = useQuery({
+    queryKey: ["pns-bc4b"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("part_number")
+        .eq("project", HUNDRED_DAYS_PROJECT);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const bc4bPnSet = useMemo(() => new Set((bc4bPnsRaw as any[]).map((p) => p.part_number)), [bc4bPnsRaw]);
+
+  // NG report dialog state (opened from clicking a Problem Type row)
+  const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
+
   const suppliersMap = useMemo(() => {
     const m = new Map<string, string>();
     suppliersRaw.forEach((s) => { m.set(s.code.toUpperCase(), s.name); m.set(s.name.toUpperCase(), s.name); });
@@ -109,13 +130,13 @@ const ApontamentoDashboard = () => {
 
   const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
 
-  // Base list: 100 Days = incoming filtered to BC4b project
+  // Base list: 100 Days = incoming whose part_number belongs to project BC4b (per master part_numbers table)
   const baseList = useMemo(() => {
     if (activeType === "100days") {
-      return items.filter((i) => i.tipo === "incoming" && (i.projeto || "").toUpperCase() === HUNDRED_DAYS_PROJECT.toUpperCase());
+      return items.filter((i) => i.tipo === "incoming" && i.part_number && bc4bPnSet.has(i.part_number));
     }
     return items.filter((i) => i.tipo === activeType);
-  }, [items, activeType]);
+  }, [items, activeType, bc4bPnSet]);
 
   // Filter by date range / supplier / responsibility / project / PN
   const filtered = useMemo(() => {
@@ -1115,8 +1136,13 @@ const ApontamentoDashboard = () => {
             </thead>
             <tbody>
               {problemTypes.items.map((p, i) => (
-                <tr key={p.type} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{p.type}</td>
+                <tr
+                  key={p.type}
+                  className={`border-b border-[hsl(220,10%,20%)] cursor-pointer hover:bg-[hsl(220,15%,22%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}
+                  onClick={() => { setNgReportFailureMode(p.type); setNgReportOpen(true); }}
+                  title="Ver peças NG com este modo de falha"
+                >
+                  <td className="px-3 py-1 text-[hsl(210,70%,60%)] underline-offset-2 hover:underline">{p.type}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{p.qty}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{problemTypes.total > 0 ? ((p.qty / problemTypes.total) * 100).toFixed(0) : 0}%</td>
                 </tr>
@@ -1169,6 +1195,20 @@ const ApontamentoDashboard = () => {
           </table>
         </div>
       </main>
+
+      <ApontamentoDailyReport
+        open={ngReportOpen}
+        onOpenChange={(o) => { setNgReportOpen(o); if (!o) setNgReportFailureMode(null); }}
+        items={items}
+        mode="ng"
+        onViewRecord={(id) => setViewTarget(id)}
+        failureModeFilter={ngReportFailureMode}
+        tipoFilter={activeType === "100days" ? "incoming" : activeType}
+        pnSetFilter={activeType === "100days" ? bc4bPnSet : null}
+        initialDateFrom={dateFrom || undefined}
+        initialDateTo={dateTo || undefined}
+      />
+      <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
     </div>
   );
 };

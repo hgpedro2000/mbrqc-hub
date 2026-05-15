@@ -32,6 +32,12 @@ interface Props {
   mode: "daily" | "ng";
   onViewRecord?: (id: string) => void;
   locationFilter?: string | null;
+  failureModeFilter?: string | null;
+  tipoFilter?: string | null;
+  projectFilter?: string | null;
+  pnSetFilter?: Set<string> | null;
+  initialDateFrom?: string;
+  initialDateTo?: string;
 }
 
 const typeLabels: Record<string, string> = {
@@ -803,15 +809,23 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
 /* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
 
-const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter }: Props) => {
+const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter, failureModeFilter, tipoFilter, projectFilter, pnSetFilter, initialDateFrom, initialDateTo }: Props) => {
   const today = getLocalDateString();
-  const [dateFrom, setDateFrom] = useState(today);
-  const [dateTo, setDateTo] = useState(today);
+  const [dateFrom, setDateFrom] = useState(initialDateFrom ?? today);
+  const [dateTo, setDateTo] = useState(initialDateTo ?? today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [pdfStage, setPdfStage] = useState<string>("");
+
+  useEffect(() => {
+    if (open) {
+      setDateFrom(initialDateFrom ?? today);
+      setDateTo(initialDateTo ?? today);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialDateFrom, initialDateTo]);
 
   useEffect(() => { setSelectedFornecedores([]); }, [dateFrom, dateTo]);
 
@@ -908,8 +922,23 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
         list = list.filter((i) => selectedFornecedores.includes(i.fornecedor));
       }
     }
+    if (tipoFilter) list = list.filter((i) => i.tipo === tipoFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "") === projectFilter);
+    if (pnSetFilter) list = list.filter((i) => i.part_number && pnSetFilter.has(i.part_number));
+    if (failureModeFilter) {
+      const norm = failureModeFilter.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+      list = list.filter((i) => {
+        const main = (i.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+        if (main === norm) return true;
+        const sd = (i as any).segundo_defeitos as any[] | null;
+        if (sd && Array.isArray(sd)) {
+          return sd.some((d) => (d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase() === norm);
+        }
+        return false;
+      });
+    }
     return list;
-  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores]);
+  }, [items, dateFrom, dateTo, mode, locationFilter, selectedFornecedores, failureModeFilter, tipoFilter, projectFilter, pnSetFilter]);
 
   const byType = useMemo(() => {
     const groups: Record<string, any[]> = {};

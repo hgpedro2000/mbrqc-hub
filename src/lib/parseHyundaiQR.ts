@@ -12,7 +12,33 @@ export interface HyundaiQRData {
 export const HYUNDAI_LOT_REGEX = /\b(HU\d{2}[A-Z0-9]{6,16}T)\b/i;
 
 // Matches typical Hyundai Mobis part-number patterns (e.g. 96160R1BF0MDG, 84852-R1520, 84852R1520NNB)
-export const HYUNDAI_PN_REGEX = /\b(\d{5}[-]?[A-Z0-9]{4,10})\b/;
+export const HYUNDAI_PN_REGEX = /(?:^|[^A-Z0-9])(\d{5}[-_\s.]?[A-Z0-9]{4,10})(?=$|[^A-Z0-9])/gi;
+
+// Supplier box labels often decode as plain text: "86552R1600 0096AWEZ2704260069".
+// These are not QR/DataMatrix payloads, but still contain a valid PN and lot.
+export const SUPPLIER_BOX_LOT_REGEX = /(?:^|[^A-Z0-9])(\d{4}[A-Z]{2,}[A-Z0-9]{8,20})(?=$|[^A-Z0-9])/i;
+export const SUPPLIER_LOG_LOT_REGEX = /(?:^|[^A-Z0-9])(\d{4}[-_\s.]?LOG[-_\s.]?\d{2,6})(?=$|[^A-Z0-9])/i;
+
+const normalizeCode = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+const extractPartNumber = (text: string) => {
+  const candidates = [...text.toUpperCase().matchAll(HYUNDAI_PN_REGEX)]
+    .map((match) => normalizeCode(match[1]))
+    .filter((candidate) => {
+      const suffix = candidate.slice(5);
+      return candidate.length >= 9 && candidate.length <= 15 && /[A-Z]/.test(suffix);
+    });
+
+  return candidates[0] || "";
+};
+
+const extractSupplierLot = (text: string) => {
+  const boxLot = text.match(SUPPLIER_BOX_LOT_REGEX)?.[1];
+  if (boxLot) return normalizeCode(boxLot);
+
+  const logLot = text.match(SUPPLIER_LOG_LOT_REGEX)?.[1];
+  return logLot ? normalizeCode(logLot) : "";
+};
 
 export function parseHyundaiQR(raw: string): HyundaiQRData | null {
   try {
@@ -51,14 +77,14 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
       };
     }
 
-    // Fallback 2: free-text content containing a PN-shaped token.
-    const pnMatch = trimmed.match(HYUNDAI_PN_REGEX);
-    if (pnMatch) {
+    // Fallback 2: supplier box/free-text content containing a PN-shaped token.
+    const fallbackPartNumber = extractPartNumber(trimmed);
+    if (fallbackPartNumber) {
       return {
         vendorCode: "",
-        partNumber: pnMatch[1].replace(/-/g, "").toUpperCase(),
+        partNumber: fallbackPartNumber,
         supplierCode: "",
-        lotNumber: "",
+        lotNumber: extractSupplierLot(trimmed),
         raw: trimmed,
       };
     }

@@ -189,7 +189,7 @@ const SupplierPartSelector = ({
         </div>
         <div className="space-y-2">
           <Label>Part Number</Label>
-          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value)} placeholder="Ex: ABC-12345" />
+          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" />
         </div>
         <div className="space-y-2">
           <Label>Part Name</Label>

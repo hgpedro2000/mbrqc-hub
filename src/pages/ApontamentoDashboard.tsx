@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
+import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
+import ApontamentoViewDialog from "@/components/apontamento/ApontamentoViewDialog";
 
 const TYPES = ["incoming", "peca", "processo", "oem", "100days"] as const;
 const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM", "100days": "100 Days" };

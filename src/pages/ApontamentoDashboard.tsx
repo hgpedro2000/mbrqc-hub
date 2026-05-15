@@ -80,12 +80,6 @@ const ApontamentoDashboard = () => {
 
   const resolveName = (raw: string) => suppliersMap.get(raw.toUpperCase()) || raw;
 
-  // Filter by type and date range
-  const filtered = useMemo(() => {
-    let list = items.filter((i) => i.tipo === activeType);
-    if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
-    if (dateTo) list = list.filter((i) => i.data <= dateTo);
-    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
   // Base list: 100 Days = incoming filtered to BC4b project
   const baseList = useMemo(() => {
     if (activeType === "100days") {

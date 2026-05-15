@@ -1032,15 +1032,28 @@ const ApontamentoDashboard = () => {
                   <XAxis dataKey="name" tick={{ fontSize: 9, fill: "#ffffff" }} angle={-35} textAnchor="end" axisLine={false} height={40} />
                   <YAxis hide />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}>
-                    {failureModeData.map((_, i) => (
-                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`} />
+                  <Bar dataKey="value" radius={[2, 2, 0, 0]} barSize={30} label={{ position: "top", fontSize: 10, fill: "hsl(0,0%,80%)" }}
+                    cursor="pointer"
+                    onClick={(d: any) => {
+                      const fname = d?.payload?.fullName ?? d?.fullName;
+                      if (fname) setFailureModeFilter(failureModeFilter === fname ? null : fname);
+                    }}
+                  >
+                    {failureModeData.map((entry, i) => (
+                      <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`}
+                        opacity={failureModeFilter && failureModeFilter !== entry.fullName ? 0.35 : 1}
+                      />
                     ))}
                   </Bar>
                 </BarChart>
               </ChartContainer>
             ) : (
               <p className="text-[hsl(0,0%,50%)] text-xs text-center py-8">Sem dados.</p>
+            )}
+            {failureModeFilter && (
+              <button onClick={() => setFailureModeFilter(null)} className="mx-3 mb-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro modo de falha: {failureModeFilter}
+              </button>
             )}
           </div>
         </div>

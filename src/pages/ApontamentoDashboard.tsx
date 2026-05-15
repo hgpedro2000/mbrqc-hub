@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, CalendarIcon, ChevronDown } from "lucide-react";
+import { ArrowLeft, Download, CalendarIcon, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -38,7 +38,7 @@ const ApontamentoDashboard = () => {
   const [responsibilityFilter, setResponsibilityFilter] = useState<string | null>(null);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [pnFilter, setPnFilter] = useState<string | null>(null);
-  const [failureModeFilter, setFailureModeFilter] = useState<string | null>(null);
+  const [failureModeFilter, setFailureModeFilter] = useState<string[]>([]);
   const [showPPM, setShowPPM] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
@@ -97,14 +97,13 @@ const ApontamentoDashboard = () => {
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
-    if (failureModeFilter) {
-      const norm = failureModeFilter.toLowerCase();
+    if (failureModeFilter.length > 0) {
       list = list.filter((i) => {
         const main = (i.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
-        if (main === norm) return true;
+        if (failureModeFilter.includes(main)) return true;
         const sd = (i as any).segundo_defeitos as any[] | null;
         if (sd && Array.isArray(sd)) {
-          return sd.some((d) => (d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase() === norm);
+          return sd.some((d) => failureModeFilter.includes((d.modo_falha || "").replace(/^\d+\s*-\s*/, "").trim().toLowerCase()));
         }
         return false;
       });
@@ -1036,12 +1035,15 @@ const ApontamentoDashboard = () => {
                     cursor="pointer"
                     onClick={(d: any) => {
                       const fname = d?.payload?.fullName ?? d?.fullName;
-                      if (fname) setFailureModeFilter(failureModeFilter === fname ? null : fname);
+                      if (!fname) return;
+                      setFailureModeFilter((prev) =>
+                        prev.includes(fname) ? prev.filter((f) => f !== fname) : [...prev, fname]
+                      );
                     }}
                   >
                     {failureModeData.map((entry, i) => (
                       <Cell key={i} fill={`hsl(${210 - i * 15}, ${60 + i * 5}%, ${55 + i * 3}%)`}
-                        opacity={failureModeFilter && failureModeFilter !== entry.fullName ? 0.35 : 1}
+                        opacity={failureModeFilter.length > 0 && !failureModeFilter.includes(entry.fullName) ? 0.35 : 1}
                       />
                     ))}
                   </Bar>
@@ -1050,10 +1052,24 @@ const ApontamentoDashboard = () => {
             ) : (
               <p className="text-[hsl(0,0%,50%)] text-xs text-center py-8">Sem dados.</p>
             )}
-            {failureModeFilter && (
-              <button onClick={() => setFailureModeFilter(null)} className="mx-3 mb-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
-                ✕ Filtro modo de falha: {failureModeFilter}
-              </button>
+            {failureModeFilter.length > 0 && (
+              <div className="mx-3 mb-2 flex flex-wrap gap-1.5 items-center">
+                {failureModeFilter.map((fm) => (
+                  <button
+                    key={fm}
+                    onClick={() => setFailureModeFilter((prev) => prev.filter((f) => f !== fm))}
+                    className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[hsl(210,70%,60%)]/10 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/20 transition-colors"
+                  >
+                    <X className="w-2.5 h-2.5" /> {fm}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setFailureModeFilter([])}
+                  className="text-[10px] text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,80%)] hover:underline"
+                >
+                  Limpar todos
+                </button>
+              </div>
             )}
           </div>
         </div>

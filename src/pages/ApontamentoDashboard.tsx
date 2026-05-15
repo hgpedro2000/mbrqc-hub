@@ -86,6 +86,22 @@ const ApontamentoDashboard = () => {
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+  // Base list: 100 Days = incoming filtered to BC4b project
+  const baseList = useMemo(() => {
+    if (activeType === "100days") {
+      return items.filter((i) => i.tipo === "incoming" && (i.projeto || "").toUpperCase() === HUNDRED_DAYS_PROJECT.toUpperCase());
+    }
+    return items.filter((i) => i.tipo === activeType);
+  }, [items, activeType]);
+
+  // Filter by date range / supplier / responsibility / project / PN
+  const filtered = useMemo(() => {
+    let list = baseList;
+    if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
+    if (dateTo) list = list.filter((i) => i.data <= dateTo);
+    if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     if (responsibilityFilter) {
       list = list.filter((i) => {
         const resp = i.responsabilidade_defeito;
@@ -97,14 +113,16 @@ const ApontamentoDashboard = () => {
       });
     }
     return list;
-  }, [items, activeType, dateFrom, dateTo, supplierFilter, responsibilityFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter, responsibilityFilter]);
 
-  // Origem data (Part vs Sorting counts) — computed from date-filtered items (before responsibility filter)
+  // Origem data (Part vs Sorting counts) — date-filtered (no responsibility filter); empty dates = ALL apontamentos
   const origemData = useMemo(() => {
-    let list = items.filter((i) => i.tipo === activeType);
+    let list = baseList;
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
+    if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
+    if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
     list.forEach((i) => {
@@ -118,7 +136,7 @@ const ApontamentoDashboard = () => {
       else sortingCount++; // default to sorting
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
-  }, [items, activeType, dateFrom, dateTo, supplierFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter]);
 
   const total = filtered.length;
 

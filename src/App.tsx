@@ -108,7 +108,12 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
             O Modo Engenharia exige um perfil de <strong>admin real</strong>. Sua conta atual não possui essa permissão,
             então o acesso foi bloqueado pelo backend.
           </p>
-          <Navigate to="/" replace />
+          <a
+            href="/"
+            className="inline-block text-sm text-primary hover:underline"
+          >
+            Voltar ao Hub
+          </a>
         </div>
       </div>
     );

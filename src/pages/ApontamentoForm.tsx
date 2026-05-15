@@ -256,13 +256,16 @@ const ApontamentoForm = () => {
       return;
     }
 
+    // ALC scanned from label (sequence/suffix) — compare against engineering's expected ALC
+    const scannedAlc = (qrData.alc || "").toUpperCase().trim();
+
     try {
       const pnNormalized = pn.replace(/-/g, "");
 
       // Try exact match first
       let { data: partData } = await supabase
         .from("part_numbers")
-        .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+        .select("part_name, project, line_module, supplier_id, part_number, alc_code, suppliers(name)")
         .eq("part_number", pn)
         .eq("active", true)
         .limit(1)
@@ -272,7 +275,7 @@ const ApontamentoForm = () => {
       if (!partData) {
         const { data: allActive } = await supabase
           .from("part_numbers")
-          .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+          .select("part_name, project, line_module, supplier_id, part_number, alc_code, suppliers(name)")
           .eq("active", true);
         if (allActive) {
           partData = allActive.find((p) => p.part_number.replace(/-/g, "") === pnNormalized) || null;
@@ -286,6 +289,25 @@ const ApontamentoForm = () => {
         if (partData.line_module) setModulo(partData.line_module);
         const supplierName = (partData as any).suppliers?.name;
         if (supplierName) setFornecedor(supplierName);
+
+        // ALC comparison
+        const expectedAlc = ((partData as any).alc_code || "").toUpperCase().trim();
+        setAlcExpected(expectedAlc);
+        if (scannedAlc) {
+          setAlcCode(scannedAlc);
+          if (!expectedAlc || expectedAlc === "N/A") {
+            setAlcStatus("manual");
+          } else if (expectedAlc === scannedAlc) {
+            setAlcStatus("match");
+          } else {
+            setAlcStatus("mismatch");
+            setAlcMismatchScanned(scannedAlc);
+            setShowAlcMismatchDialog(true);
+          }
+        } else {
+          setAlcCode(expectedAlc || "N/A");
+          setAlcStatus("idle");
+        }
         return;
       }
 

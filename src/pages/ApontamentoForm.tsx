@@ -316,7 +316,7 @@ const ApontamentoForm = () => {
       // Strategy 2: scanned PN has a suffix, strip last 3 chars to find base variants
       const { data: allActive } = await supabase
         .from("part_numbers")
-        .select("part_name, project, line_module, part_number, suppliers(name)")
+        .select("part_name, project, line_module, part_number, alc_code, suppliers(name)")
         .eq("active", true);
 
       if (allActive) {
@@ -344,7 +344,6 @@ const ApontamentoForm = () => {
             const norm = p.part_number.replace(/-/g, "");
             return fuzzyNormalize(norm) === fuzzyScanned;
           });
-          // Also try fuzzy on base (without last 3 suffix chars)
           if (matches.length === 0) {
             const fuzzyBase = fuzzyScanned.slice(0, -3);
             matches = allActive.filter((p) => {
@@ -355,8 +354,27 @@ const ApontamentoForm = () => {
           }
         }
 
+        const applyAlcFor = (m: any) => {
+          const expectedAlc = ((m as any).alc_code || "").toUpperCase().trim();
+          setAlcExpected(expectedAlc);
+          if (scannedAlc) {
+            setAlcCode(scannedAlc);
+            if (!expectedAlc || expectedAlc === "N/A") {
+              setAlcStatus("manual");
+            } else if (expectedAlc === scannedAlc) {
+              setAlcStatus("match");
+            } else {
+              setAlcStatus("mismatch");
+              setAlcMismatchScanned(scannedAlc);
+              setShowAlcMismatchDialog(true);
+            }
+          } else {
+            setAlcCode(expectedAlc || "N/A");
+            setAlcStatus("idle");
+          }
+        };
+
         if (matches.length === 1) {
-          // Single variant — auto-fill with it
           const m = matches[0];
           setPartNumber(m.part_number);
           if (m.part_name) setPartName(m.part_name);
@@ -364,8 +382,8 @@ const ApontamentoForm = () => {
           if (m.line_module) setModulo(m.line_module);
           const supplierName = (m as any).suppliers?.name;
           if (supplierName) setFornecedor(supplierName);
+          applyAlcFor(m);
         } else if (matches.length > 1) {
-          // Multiple variants — show picker
           const options = matches.map((m) => ({
             part_number: m.part_number,
             part_name: m.part_name || "",
@@ -377,6 +395,9 @@ const ApontamentoForm = () => {
           setSelectedSuffixPn("");
           setSuffixPickerOpen(true);
           toast.warning("Part Number lido não encontrado exatamente. Selecione a variante correta.", { duration: 5000 });
+        } else if (scannedAlc) {
+          setAlcCode(scannedAlc);
+          setAlcStatus("manual");
         }
       }
     } catch {

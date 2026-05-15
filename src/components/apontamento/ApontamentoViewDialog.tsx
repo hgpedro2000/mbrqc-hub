@@ -337,10 +337,19 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Detalhamento por Modo de Falha</p>
               {segundoDefeitos.map((def: any, idx: number) => (
                 <div key={idx} className="border border-border rounded-lg p-3 bg-muted/20 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">{idx + 1}</span>
                     <span className="text-sm font-semibold">{stripCode(def.modo_falha) || "—"}</span>
                     <Badge variant="outline" className="text-xs ml-auto">Qty: {def.qty || 0}</Badge>
+                    {def.tag ? (
+                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-300 text-[10px] gap-1">
+                        <Tag className="w-3 h-3" /> TAG: {def.tag}
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 gap-1">
+                        <Tag className="w-3 h-3" /> Sem TAG
+                      </Badge>
+                    )}
                   </div>
                   {def.descricao && <p className="text-xs text-muted-foreground pl-8">{def.descricao}</p>}
                 </div>
@@ -586,8 +595,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
 
-              {/* TAG Number section */}
-              {(d?.quantidade_ng || 0) > 0 && (
+              {/* TAG Number section (only when not already shown per defect) */}
+              {(d?.quantidade_ng || 0) > 0 && !(hasMultipleFailureModes && segundoDefeitos.some((x: any) => x?.tag)) && (
                 <div data-pdf-section className="px-0 sm:px-2">
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>

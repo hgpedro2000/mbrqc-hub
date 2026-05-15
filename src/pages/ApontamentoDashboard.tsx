@@ -1195,6 +1195,20 @@ const ApontamentoDashboard = () => {
           </table>
         </div>
       </main>
+
+      <ApontamentoDailyReport
+        open={ngReportOpen}
+        onOpenChange={(o) => { setNgReportOpen(o); if (!o) setNgReportFailureMode(null); }}
+        items={items}
+        mode="ng"
+        onViewRecord={(id) => setViewTarget(id)}
+        failureModeFilter={ngReportFailureMode}
+        tipoFilter={activeType === "100days" ? "incoming" : activeType}
+        pnSetFilter={activeType === "100days" ? bc4bPnSet : null}
+        initialDateFrom={dateFrom || undefined}
+        initialDateTo={dateTo || undefined}
+      />
+      <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
     </div>
   );
 };

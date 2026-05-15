@@ -1136,8 +1136,13 @@ const ApontamentoDashboard = () => {
             </thead>
             <tbody>
               {problemTypes.items.map((p, i) => (
-                <tr key={p.type} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{p.type}</td>
+                <tr
+                  key={p.type}
+                  className={`border-b border-[hsl(220,10%,20%)] cursor-pointer hover:bg-[hsl(220,15%,22%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}
+                  onClick={() => { setNgReportFailureMode(p.type); setNgReportOpen(true); }}
+                  title="Ver peças NG com este modo de falha"
+                >
+                  <td className="px-3 py-1 text-[hsl(210,70%,60%)] underline-offset-2 hover:underline">{p.type}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{p.qty}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{problemTypes.total > 0 ? ((p.qty / problemTypes.total) * 100).toFixed(0) : 0}%</td>
                 </tr>

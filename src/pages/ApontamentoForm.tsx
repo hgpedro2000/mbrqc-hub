@@ -1042,7 +1042,7 @@ const ApontamentoForm = () => {
             <div className="mt-3 sm:mt-4">
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
-                {activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira ? (
+                {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
                   <Input value="Sorting" readOnly className="bg-muted" />
                 ) : (
                   <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>

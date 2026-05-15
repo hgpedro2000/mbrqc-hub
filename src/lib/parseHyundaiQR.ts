@@ -4,7 +4,7 @@ export interface HyundaiQRData {
   supplierCode: string;
   lotNumber: string;
   /** ALC / Sequence code (S-prefix in HKMC standard, fallback: PN suffix) */
-  alc: string;
+  alc?: string;
   raw: string;
   partial?: boolean; // true when only lot was captured (PN missing)
 }

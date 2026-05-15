@@ -172,7 +172,7 @@ const ApontamentoDashboard = () => {
       });
     }
     return list;
-  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, pnFilter, failureModeFilter, responsibilityFilter]);
+  }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter, failureModeFilter, responsibilityFilter]);
 
   // Origem data (Part vs Sorting counts) — date-filtered (no responsibility filter); empty dates = ALL apontamentos
   const origemData = useMemo(() => {

@@ -210,6 +210,7 @@ export type Database = {
         Row: {
           acao_corretiva: string | null
           acao_imediata: string | null
+          alc_code: string | null
           analise_inicial: string | null
           causa_raiz: string | null
           co_inspetores: Json | null
@@ -262,6 +263,7 @@ export type Database = {
         Insert: {
           acao_corretiva?: string | null
           acao_imediata?: string | null
+          alc_code?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
           co_inspetores?: Json | null
@@ -314,6 +316,7 @@ export type Database = {
         Update: {
           acao_corretiva?: string | null
           acao_imediata?: string | null
+          alc_code?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
           co_inspetores?: Json | null

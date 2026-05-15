@@ -1,0 +1,1 @@
+ALTER TABLE public.apontamentos ADD COLUMN IF NOT EXISTS alc_code text DEFAULT 'N/A';

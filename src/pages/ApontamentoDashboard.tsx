@@ -23,8 +23,9 @@ import {
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
 
-const TYPES = ["incoming", "peca", "processo", "oem"] as const;
-const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM" };
+const TYPES = ["incoming", "peca", "processo", "oem", "100days"] as const;
+const TYPE_LABELS: Record<string, string> = { incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM", "100days": "100 Days" };
+const HUNDRED_DAYS_PROJECT = "BC4b";
 const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 
 const ApontamentoDashboard = () => {

@@ -103,6 +103,25 @@ const ApontamentoDashboard = () => {
     },
   });
 
+  // Master PNs for 100 Days project (filter by master, not by sometimes-misregistered apontamento.projeto)
+  const { data: bc4bPnsRaw = [] } = useQuery({
+    queryKey: ["pns-bc4b"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("part_number")
+        .eq("project", HUNDRED_DAYS_PROJECT);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const bc4bPnSet = useMemo(() => new Set((bc4bPnsRaw as any[]).map((p) => p.part_number)), [bc4bPnsRaw]);
+
+  // NG report dialog state (opened from clicking a Problem Type row)
+  const [ngReportOpen, setNgReportOpen] = useState(false);
+  const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [viewTarget, setViewTarget] = useState<string | null>(null);
+
   const suppliersMap = useMemo(() => {
     const m = new Map<string, string>();
     suppliersRaw.forEach((s) => { m.set(s.code.toUpperCase(), s.name); m.set(s.name.toUpperCase(), s.name); });

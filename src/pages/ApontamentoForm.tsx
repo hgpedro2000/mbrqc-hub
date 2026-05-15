@@ -461,6 +461,8 @@ const ApontamentoForm = () => {
     setValidationErrors((p) => { const n = new Set(p); n.add("modoFalha"); return n; });
     toast.error("Defeito de ALC registrado. Selecione o Modo de Falha e anexe foto da etiqueta.", { duration: 7000 });
   };
+
+  const cancelRescan = () => {
     setShowRescanConfirm(false);
     setPendingQRData(null);
     toast.info("Leitura atual mantida.");

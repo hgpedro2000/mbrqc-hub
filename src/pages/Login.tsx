@@ -22,6 +22,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  // Terceiros possuem letras no código — permite alternar para teclado alfanumérico.
+  const [alphaKeyboard, setAlphaKeyboard] = useState(false);
 
   // Whenever AuthContext finishes hydrating with a valid session/profile,
   // redirect away from /login. This handles BOTH:

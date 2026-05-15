@@ -112,13 +112,18 @@ const ApontamentoDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number")
+        .select("part_number, line_module")
         .eq("project", HUNDRED_DAYS_PROJECT);
       if (error) throw error;
       return data || [];
     },
   });
   const bc4bPnSet = useMemo(() => new Set((bc4bPnsRaw as any[]).map((p) => p.part_number)), [bc4bPnsRaw]);
+  const bc4bPnModuleMap = useMemo(() => {
+    const m = new Map<string, string>();
+    (bc4bPnsRaw as any[]).forEach((p) => { if (p.part_number) m.set(p.part_number, (p.line_module || "—").toUpperCase()); });
+    return m;
+  }, [bc4bPnsRaw]);
 
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);

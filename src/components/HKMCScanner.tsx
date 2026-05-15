@@ -21,6 +21,7 @@ export interface HKMCParsed {
   part4M: string;
   aOrAt: string;
   traceNo: string;
+  supplierItself: string;
   trailer: string;
 }
 

@@ -385,8 +385,15 @@ const ApontamentoDashboard = () => {
               </Pie>
             </PieChart>
           </ChartContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title}</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center leading-tight">
+            {title.includes(" - ") ? (
+              <>
+                <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title.split(" - ")[0]}</span>
+                <span className="text-[9px] font-semibold text-[hsl(0,0%,85%)]">{title.split(" - ").slice(1).join(" - ")}</span>
+              </>
+            ) : (
+              <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title}</span>
+            )}
           </div>
         </div>
         <div className="flex flex-col items-center gap-0 mt-1">

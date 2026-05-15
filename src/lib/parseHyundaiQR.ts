@@ -62,17 +62,19 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     let partNumber = "";
     let supplierCode = "";
     let lotNumber = "";
+    let sequenceCode = "";
 
     parts.forEach((segment) => {
       const clean = segment.replace(/[\x1e\x04\[\)>]/g, "").trim();
       if (clean.startsWith("V") && !vendorCode) vendorCode = clean.slice(1);
       else if (clean.startsWith("P") && !partNumber) partNumber = clean.slice(1);
-      else if (clean.startsWith("S") && !supplierCode) supplierCode = clean.slice(1);
+      else if (clean.startsWith("S") && !sequenceCode) sequenceCode = clean.slice(1);
       else if (clean.startsWith("T") && !lotNumber) lotNumber = clean.slice(1);
     });
 
     if (partNumber) {
-      return { vendorCode, partNumber, supplierCode, lotNumber, raw: trimmed };
+      const alc = sequenceCode || extractAlcFromPartNumber(partNumber);
+      return { vendorCode, partNumber, supplierCode, lotNumber, alc, raw: trimmed };
     }
 
     // Fallback 1: scanned the linear lot barcode only (HU…T) — accept as partial scan.
@@ -83,6 +85,7 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
         partNumber: "",
         supplierCode: "",
         lotNumber: lotMatch[1].toUpperCase(),
+        alc: "",
         raw: trimmed,
         partial: true,
       };
@@ -96,6 +99,7 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
         partNumber: fallbackPartNumber,
         supplierCode: "",
         lotNumber: extractSupplierLot(trimmed),
+        alc: extractAlcFromPartNumber(fallbackPartNumber),
         raw: trimmed,
       };
     }

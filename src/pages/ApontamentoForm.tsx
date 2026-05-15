@@ -256,13 +256,16 @@ const ApontamentoForm = () => {
       return;
     }
 
+    // ALC scanned from label (sequence/suffix) — compare against engineering's expected ALC
+    const scannedAlc = (qrData.alc || "").toUpperCase().trim();
+
     try {
       const pnNormalized = pn.replace(/-/g, "");
 
       // Try exact match first
       let { data: partData } = await supabase
         .from("part_numbers")
-        .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+        .select("part_name, project, line_module, supplier_id, part_number, alc_code, suppliers(name)")
         .eq("part_number", pn)
         .eq("active", true)
         .limit(1)
@@ -272,7 +275,7 @@ const ApontamentoForm = () => {
       if (!partData) {
         const { data: allActive } = await supabase
           .from("part_numbers")
-          .select("part_name, project, line_module, supplier_id, part_number, suppliers(name)")
+          .select("part_name, project, line_module, supplier_id, part_number, alc_code, suppliers(name)")
           .eq("active", true);
         if (allActive) {
           partData = allActive.find((p) => p.part_number.replace(/-/g, "") === pnNormalized) || null;
@@ -286,6 +289,25 @@ const ApontamentoForm = () => {
         if (partData.line_module) setModulo(partData.line_module);
         const supplierName = (partData as any).suppliers?.name;
         if (supplierName) setFornecedor(supplierName);
+
+        // ALC comparison
+        const expectedAlc = ((partData as any).alc_code || "").toUpperCase().trim();
+        setAlcExpected(expectedAlc);
+        if (scannedAlc) {
+          setAlcCode(scannedAlc);
+          if (!expectedAlc || expectedAlc === "N/A") {
+            setAlcStatus("manual");
+          } else if (expectedAlc === scannedAlc) {
+            setAlcStatus("match");
+          } else {
+            setAlcStatus("mismatch");
+            setAlcMismatchScanned(scannedAlc);
+            setShowAlcMismatchDialog(true);
+          }
+        } else {
+          setAlcCode(expectedAlc || "N/A");
+          setAlcStatus("idle");
+        }
         return;
       }
 
@@ -294,7 +316,7 @@ const ApontamentoForm = () => {
       // Strategy 2: scanned PN has a suffix, strip last 3 chars to find base variants
       const { data: allActive } = await supabase
         .from("part_numbers")
-        .select("part_name, project, line_module, part_number, suppliers(name)")
+        .select("part_name, project, line_module, part_number, alc_code, suppliers(name)")
         .eq("active", true);
 
       if (allActive) {
@@ -322,7 +344,6 @@ const ApontamentoForm = () => {
             const norm = p.part_number.replace(/-/g, "");
             return fuzzyNormalize(norm) === fuzzyScanned;
           });
-          // Also try fuzzy on base (without last 3 suffix chars)
           if (matches.length === 0) {
             const fuzzyBase = fuzzyScanned.slice(0, -3);
             matches = allActive.filter((p) => {
@@ -333,8 +354,27 @@ const ApontamentoForm = () => {
           }
         }
 
+        const applyAlcFor = (m: any) => {
+          const expectedAlc = ((m as any).alc_code || "").toUpperCase().trim();
+          setAlcExpected(expectedAlc);
+          if (scannedAlc) {
+            setAlcCode(scannedAlc);
+            if (!expectedAlc || expectedAlc === "N/A") {
+              setAlcStatus("manual");
+            } else if (expectedAlc === scannedAlc) {
+              setAlcStatus("match");
+            } else {
+              setAlcStatus("mismatch");
+              setAlcMismatchScanned(scannedAlc);
+              setShowAlcMismatchDialog(true);
+            }
+          } else {
+            setAlcCode(expectedAlc || "N/A");
+            setAlcStatus("idle");
+          }
+        };
+
         if (matches.length === 1) {
-          // Single variant — auto-fill with it
           const m = matches[0];
           setPartNumber(m.part_number);
           if (m.part_name) setPartName(m.part_name);
@@ -342,8 +382,8 @@ const ApontamentoForm = () => {
           if (m.line_module) setModulo(m.line_module);
           const supplierName = (m as any).suppliers?.name;
           if (supplierName) setFornecedor(supplierName);
+          applyAlcFor(m);
         } else if (matches.length > 1) {
-          // Multiple variants — show picker
           const options = matches.map((m) => ({
             part_number: m.part_number,
             part_name: m.part_name || "",
@@ -355,6 +395,9 @@ const ApontamentoForm = () => {
           setSelectedSuffixPn("");
           setSuffixPickerOpen(true);
           toast.warning("Part Number lido não encontrado exatamente. Selecione a variante correta.", { duration: 5000 });
+        } else if (scannedAlc) {
+          setAlcCode(scannedAlc);
+          setAlcStatus("manual");
         }
       }
     } catch {
@@ -395,6 +438,28 @@ const ApontamentoForm = () => {
     }
     setShowRescanConfirm(false);
     setPendingQRData(null);
+  };
+
+  // ALC mismatch — option 1: keep manual entry (with photo) and continue
+  const handleAlcManualKeep = () => {
+    setShowAlcMismatchDialog(false);
+    setAlcStatus("manual");
+    toast.warning("ALC registrado manualmente. Anexe foto da etiqueta física para evidência.", { duration: 6000 });
+  };
+
+  // ALC mismatch — option 2: confirm divergence and auto-open NG defect with modo_falha required
+  const handleAlcConfirmError = () => {
+    setShowAlcMismatchDialog(false);
+    setAlcStatus("mismatch");
+    // Force at least 1 NG and require modo_falha
+    if (quantidadeInspecionada <= 0) setQuantidadeInspecionada(1);
+    if (quantidadeNg < 1) setQuantidadeNg(1);
+    // Pre-fill description with the divergence context
+    const ctx = `Divergência de ALC: lido "${alcMismatchScanned}" — esperado "${alcExpected || "N/A"}" para PN ${partNumber}.`;
+    setDescricao((prev) => (prev && prev !== "Sem defeito encontrado durante essa inspeção" ? `${ctx}\n${prev}` : ctx));
+    // Highlight modo_falha as required
+    setValidationErrors((p) => { const n = new Set(p); n.add("modoFalha"); return n; });
+    toast.error("Defeito de ALC registrado. Selecione o Modo de Falha e anexe foto da etiqueta.", { duration: 7000 });
   };
 
   const cancelRescan = () => {
@@ -522,6 +587,8 @@ const ApontamentoForm = () => {
       setFornecedor(existing.fornecedor || "");
       setPartNumber(existing.part_number || "");
       setPartName(existing.part_name || "");
+      setAlcCode((existing as any).alc_code || "N/A");
+      setAlcStatus("idle");
       setQuantidadeInspecionada(existing.quantidade_inspecionada || 0);
       setQuantidadeNg(existing.quantidade_ng || 0);
       setQuantidadeOk(existing.quantidade_ok || 0);
@@ -1630,6 +1697,46 @@ const ApontamentoForm = () => {
               </Button>
               <Button onClick={cancelRescan} variant="outline" className="w-full">
                 Manter leitura atual
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ALC Mismatch Dialog */}
+      <Dialog open={showAlcMismatchDialog} onOpenChange={setShowAlcMismatchDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Divergência de ALC
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              O ALC lido na etiqueta diverge do cadastrado em Engenharia para este Part Number. Verifique fisicamente a peça antes de prosseguir.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC lido</p>
+                <p className="font-mono text-sm font-bold text-destructive">{alcMismatchScanned || "—"}</p>
+              </div>
+              <div className="rounded-lg border p-3 space-y-1">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC esperado</p>
+                <p className="font-mono text-sm font-bold text-emerald-700">{alcExpected || "N/A"}</p>
+              </div>
+            </div>
+            <div className="rounded-lg border p-3 bg-muted/30 space-y-0.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase">Part Number</p>
+              <p className="font-mono text-sm">{partNumber || "—"}</p>
+            </div>
+            <div className="flex flex-col gap-2 pt-1">
+              <Button onClick={handleAlcManualKeep} variant="outline" className="w-full h-auto py-3 flex flex-col gap-0.5">
+                <span className="font-semibold">Registrar manualmente com foto</span>
+                <span className="text-[11px] text-muted-foreground font-normal">Mantém o ALC lido e exige foto da etiqueta</span>
+              </Button>
+              <Button onClick={handleAlcConfirmError} variant="destructive" className="w-full h-auto py-3 flex flex-col gap-0.5">
+                <span className="font-semibold">Confirmar erro de ALC</span>
+                <span className="text-[11px] font-normal opacity-90">Abre defeito NG e exige Modo de Falha</span>
               </Button>
             </div>
           </div>

@@ -100,6 +100,7 @@ function exportToExcel(data: Record<string, any>) {
     { Campo: "Fornecedor", Valor: data.fornecedor || "—" },
     { Campo: "Part Number", Valor: data.part_number || "—" },
     { Campo: "Part Name", Valor: data.part_name || "—" },
+    { Campo: "ALC", Valor: data.alc_code || "N/A" },
     { Campo: "Fase", Valor: data.fase || "—" },
     { Campo: "Qtd. Inspecionada", Valor: String(data.quantidade_inspecionada || 0) },
     { Campo: "Qtd. NG", Valor: String(data.quantidade_ng || 0) },

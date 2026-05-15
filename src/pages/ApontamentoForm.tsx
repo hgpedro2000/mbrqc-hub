@@ -469,6 +469,14 @@ const ApontamentoForm = () => {
     toast.info("Leitura atual mantida.");
   };
 
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const requestExit = () => setShowExitConfirm(true);
+  const confirmExit = () => {
+    try { clearFormAutosave(autosaveKey); } catch {}
+    setShowExitConfirm(false);
+    navigate("/apontamentos");
+  };
+
   // Load existing data
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["apontamento-edit", id],

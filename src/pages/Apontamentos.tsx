@@ -56,6 +56,7 @@ const Apontamentos = () => {
   const [ngLocationFilter, setNgLocationFilter] = useState<string | null>(null);
   const [showNgLocationDialog, setShowNgLocationDialog] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
+  const [galleryPhotos, setGalleryPhotos] = useState<string[] | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
   const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);

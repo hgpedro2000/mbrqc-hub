@@ -1007,11 +1007,19 @@ const ApontamentoDashboard = () => {
                 <DonutChart key={i} data={[
                   { name: "OK", value: proj.ok },
                   { name: "NG", value: proj.ng },
-                ]} title={proj.name} />
+                ]} title={proj.name}
+                  active={projectFilter === proj.name}
+                  onClick={() => setProjectFilter(projectFilter === proj.name ? null : proj.name)}
+                />
               )) : (
                 <p className="text-[hsl(0,0%,50%)] text-xs text-center py-4">Sem dados de projeto.</p>
               )}
             </div>
+            {projectFilter && (
+              <button onClick={() => setProjectFilter(null)} className="mt-2 text-[10px] text-[hsl(210,70%,60%)] hover:underline">
+                ✕ Filtro modelo: {projectFilter}
+              </button>
+            )}
           </div>
 
           {/* Main Failure Mode */}

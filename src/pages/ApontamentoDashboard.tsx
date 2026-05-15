@@ -844,7 +844,7 @@ const ApontamentoDashboard = () => {
       {/* Type tabs */}
       <div className="px-3 md:px-4 pt-3">
         <Tabs value={activeType} onValueChange={setActiveType}>
-          <TabsList className="grid w-full grid-cols-4 h-auto bg-[hsl(220,15%,16%)] border border-[hsl(220,10%,25%)]">
+          <TabsList className="grid w-full grid-cols-5 h-auto bg-[hsl(220,15%,16%)] border border-[hsl(220,10%,25%)]">
             {TYPES.map((t) => (
               <TabsTrigger key={t} value={t} className="text-xs sm:text-sm py-2 text-[hsl(0,0%,60%)] data-[state=active]:bg-[hsl(220,10%,25%)] data-[state=active]:text-[hsl(0,0%,95%)]">
                 {TYPE_LABELS[t]}

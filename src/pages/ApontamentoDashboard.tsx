@@ -274,14 +274,18 @@ const ApontamentoDashboard = () => {
     </div>
   );
 
-  const DonutChart = ({ data, title }: { data: { name: string; value: number }[]; title: string }) => {
+  const DonutChart = ({ data, title, onClick, active }: { data: { name: string; value: number }[]; title: string; onClick?: () => void; active?: boolean }) => {
     const okVal = data[0]?.value || 0;
     const ngVal = data[1]?.value || 0;
     const totalD = okVal + ngVal;
     const okPct = totalD > 0 ? ((okVal / totalD) * 100).toFixed(1) : "0";
     const ngPct = totalD > 0 ? ((ngVal / totalD) * 100).toFixed(1) : "0";
     return (
-      <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`flex flex-col items-center rounded-md p-1 transition-colors ${onClick ? "cursor-pointer hover:bg-[hsl(220,15%,18%)]" : "cursor-default"} ${active ? "ring-1 ring-[hsl(210,70%,60%)] bg-[hsl(210,70%,60%)]/10" : ""}`}
+      >
         <div className="relative w-28 h-28">
           <ChartContainer config={chartConfig} className="h-28 w-28">
             <PieChart>
@@ -290,7 +294,7 @@ const ApontamentoDashboard = () => {
               </Pie>
             </PieChart>
           </ChartContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-[11px] font-bold text-[hsl(0,0%,95%)]">{title}</span>
           </div>
         </div>
@@ -304,7 +308,7 @@ const ApontamentoDashboard = () => {
             <span>NG: {ngVal}</span>
           </div>
         </div>
-      </div>
+      </button>
     );
   };
 

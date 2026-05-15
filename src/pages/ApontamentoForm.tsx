@@ -747,9 +747,15 @@ const ApontamentoForm = () => {
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
+      }
+      if (ngMultiploDecisao === "diferente") {
+        defeitosDetalhes.forEach((d, idx) => {
+          if (!d.modo_falha) { errors.add(`defeito-${idx}-modoFalha`); msgs.push(`Defeito ${idx + 1}: Modo de Falha`); }
+        });
       }
       // Co-inspeção validation: only Mobis Brasil
       if (activeProfile?.empresa !== "empresa_terceira") {
@@ -774,17 +780,20 @@ const ApontamentoForm = () => {
     if (isPeca) {
       if (quantidadeNg < 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG"); }
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (quantidadeNg > 0 && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
     }
 
     if (isProcesso) {
       if (quantidadeNg <= 0) { errors.add("quantidadeNg"); msgs.push("Quantidade NG (deve ser > 0)"); }
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
     }
 
     if (isOem) {
       if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (!localDeteccao) { errors.add("localDeteccao"); msgs.push("Local de Detecção"); }
       if (!analiseInicial) { errors.add("analiseInicial"); msgs.push("Análise Inicial"); }
       if (!acaoImediata) { errors.add("acaoImediata"); msgs.push("Ação Imediata"); }

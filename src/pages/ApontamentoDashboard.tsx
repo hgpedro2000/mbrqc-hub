@@ -112,13 +112,18 @@ const ApontamentoDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number")
+        .select("part_number, line_module")
         .eq("project", HUNDRED_DAYS_PROJECT);
       if (error) throw error;
       return data || [];
     },
   });
   const bc4bPnSet = useMemo(() => new Set((bc4bPnsRaw as any[]).map((p) => p.part_number)), [bc4bPnsRaw]);
+  const bc4bPnModuleMap = useMemo(() => {
+    const m = new Map<string, string>();
+    (bc4bPnsRaw as any[]).forEach((p) => { if (p.part_number) m.set(p.part_number, (p.line_module || "—").toUpperCase()); });
+    return m;
+  }, [bc4bPnsRaw]);
 
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);
@@ -148,7 +153,7 @@ const ApontamentoDashboard = () => {
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
-    if (moduleFilter) list = list.filter((i) => ((i as any).modulo || "—") === moduleFilter);
+    if (moduleFilter) list = list.filter((i) => (bc4bPnModuleMap.get(i.part_number || "") || "—") === moduleFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     if (failureModeFilter.length > 0) {
       list = list.filter((i) => {
@@ -181,7 +186,7 @@ const ApontamentoDashboard = () => {
     if (dateTo) list = list.filter((i) => i.data <= dateTo);
     if (supplierFilter) list = list.filter((i) => resolveName(i.fornecedor || "Desconhecido") === supplierFilter);
     if (projectFilter) list = list.filter((i) => (i.projeto || "—") === projectFilter);
-    if (moduleFilter) list = list.filter((i) => ((i as any).modulo || "—") === moduleFilter);
+    if (moduleFilter) list = list.filter((i) => (bc4bPnModuleMap.get(i.part_number || "") || "—") === moduleFilter);
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
@@ -234,19 +239,23 @@ const ApontamentoDashboard = () => {
 
   // Module Status donuts (rate OK vs NG by module) — used in 100 Days tab
   const moduleData = useMemo(() => {
+    const labels: Record<string, string> = { CP: "CP - Cockpit", BP: "BP - Bumper", CH: "CH - Chassis", EI: "EI - End Items" };
+    const order = ["CP", "BP", "CH", "EI"];
     const map = new Map<string, { ok: number; ng: number }>();
+    order.forEach((k) => map.set(k, { ok: 0, ng: 0 }));
     filtered.forEach((d) => {
-      const mod = (d as any).modulo || "—";
-      const e = map.get(mod) || { ok: 0, ng: 0 };
+      const mod = (bc4bPnModuleMap.get(d.part_number || "") || "—").toUpperCase();
+      const key = order.includes(mod) ? mod : "—";
+      const e = map.get(key) || { ok: 0, ng: 0 };
       e.ok += (d.quantidade_ok || 0);
       e.ng += (d.quantidade_ng || 0);
-      map.set(mod, e);
+      map.set(key, e);
     });
     return Array.from(map.entries())
-      .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 4);
-  }, [filtered]);
+      .filter(([, v]) => v.ok + v.ng > 0)
+      .map(([name, { ok, ng }]) => ({ name, label: labels[name] || name, ok, ng, total: ok + ng }))
+      .sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+  }, [filtered, bc4bPnModuleMap]);
 
   // Main Failure Mode bar (only from NG items)
   const failureModeData = useMemo(() => {
@@ -1077,7 +1086,7 @@ const ApontamentoDashboard = () => {
                   <DonutChart key={i} data={[
                     { name: "OK", value: mod.ok },
                     { name: "NG", value: mod.ng },
-                  ]} title={mod.name}
+                  ]} title={mod.label}
                     active={moduleFilter === mod.name}
                     onClick={() => setModuleFilter(moduleFilter === mod.name ? null : mod.name)}
                   />

@@ -18,6 +18,7 @@ export const ALL_MODULES = [
   { id: "consumiveis_inventario", label: "  ↳ Inventário e Requisições", parent: "consumiveis" },
   { id: "consulta-pecas", label: "Consulta de Peças" },
   { id: "matriz-versatilidade", label: "Matriz de Versatilidade" },
+  { id: "barcode-scanner", label: "Barcode Scanner H/KMC" },
 ] as const;
 
 export type ModuleId = typeof ALL_MODULES[number]["id"];

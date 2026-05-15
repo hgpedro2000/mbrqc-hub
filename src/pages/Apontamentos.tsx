@@ -495,6 +495,8 @@ const Apontamentos = () => {
         {filtered.map((item) => {
           const hasNg = (item.quantidade_ng || 0) > 0;
           const photoUrl = firstPhotoByItem[item.id];
+          const allPhotosForItem = photosByItem[item.id] || [];
+          const extraCount = Math.max(0, allPhotosForItem.length - 1);
           return (
             <div key={item.id} className="form-section hover:border-accent/30 transition-colors cursor-pointer p-3" onClick={() => setViewTarget(item.id)}>
               <div className="flex items-start gap-3">
@@ -505,8 +507,20 @@ const Apontamentos = () => {
                 )}
                 {/* Photo thumbnail */}
                 {photoUrl && (
-                  <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border" onClick={(e) => { e.stopPropagation(); setPhotoLightbox(photoUrl); }}>
+                  <div
+                    className="relative shrink-0 w-12 h-12 rounded-lg overflow-hidden border border-border"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (extraCount > 0) setGalleryPhotos(allPhotosForItem);
+                      else setPhotoLightbox(photoUrl);
+                    }}
+                  >
                     <img src={photoUrl} alt="Foto" className="w-full h-full object-cover" />
+                    {extraCount > 0 && (
+                      <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[9px] font-semibold px-1 py-0.5 rounded leading-none pointer-events-none">
+                        +{extraCount}
+                      </span>
+                    )}
                   </div>
                 )}
                 <div className="flex-1 min-w-0 space-y-1">

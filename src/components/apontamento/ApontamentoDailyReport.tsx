@@ -809,15 +809,23 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
 
 /* ─────────────────────────── MAIN COMPONENT ─────────────────────────── */
 
-const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter }: Props) => {
+const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord, locationFilter, failureModeFilter, tipoFilter, projectFilter, pnSetFilter, initialDateFrom, initialDateTo }: Props) => {
   const today = getLocalDateString();
-  const [dateFrom, setDateFrom] = useState(today);
-  const [dateTo, setDateTo] = useState(today);
+  const [dateFrom, setDateFrom] = useState(initialDateFrom ?? today);
+  const [dateTo, setDateTo] = useState(initialDateTo ?? today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [pdfStage, setPdfStage] = useState<string>("");
+
+  useEffect(() => {
+    if (open) {
+      setDateFrom(initialDateFrom ?? today);
+      setDateTo(initialDateTo ?? today);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialDateFrom, initialDateTo]);
 
   useEffect(() => { setSelectedFornecedores([]); }, [dateFrom, dateTo]);
 

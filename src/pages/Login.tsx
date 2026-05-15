@@ -124,9 +124,11 @@ const Login = () => {
               type="text"
               required
               value={employeeNumber}
-              onChange={(e) => setEmployeeNumber(e.target.value)}
+              onChange={(e) => setEmployeeNumber(e.target.value.replace(/\D/g, ""))}
               placeholder=""
-              inputMode="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="username"
               onFocus={(e) => e.target.placeholder = ""}
             />
           </div>

@@ -183,20 +183,37 @@ const HKMCScanner = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanOpen]);
 
-  const rows: Array<{ group?: string; label: string; key: keyof HKMCParsed }> = [
-    { group: "Spec", label: "", key: "header" },
-    { label: "Header", key: "header" },
-    { label: "Supplier Code", key: "supplierCode" },
-    { label: "Part Number", key: "partNumber" },
-    { label: "Sequence Code", key: "sequenceCode" },
-    { group: "Traceability", label: "", key: "productionDate" },
-    { label: "Production date", key: "productionDate" },
-    { label: "Part 4M", key: "part4M" },
-    { label: "A or @", key: "aOrAt" },
-    { label: "Trace No. (7~)", key: "traceNo" },
-    { group: "ETC", label: "", key: "supplierItself" },
-    { label: "Supplier itself", key: "supplierItself" },
-    { label: "Trailer", key: "trailer" },
+  // Sections matching the official H/KMC app layout (grouped left column with rowspan)
+  const sections: Array<{ group: string; rows: Array<{ label: string; key: keyof HKMCParsed }> }> = [
+    {
+      group: "",
+      rows: [{ label: "Header", key: "header" }],
+    },
+    {
+      group: "Spec",
+      rows: [
+        { label: "Supplier Code", key: "supplierCode" },
+        { label: "Part Number", key: "partNumber" },
+        { label: "Sequence Code", key: "sequenceCode" },
+      ],
+    },
+    {
+      group: "Trace-ability",
+      rows: [
+        { label: "Production date", key: "productionDate" },
+        { label: "Part 4M", key: "part4M" },
+        { label: "A or @", key: "aOrAt" },
+        { label: "Trace No. (7~)", key: "traceNo" },
+      ],
+    },
+    {
+      group: "ETC",
+      rows: [{ label: "Supplier itself", key: "supplierItself" }],
+    },
+    {
+      group: "",
+      rows: [{ label: "Trailer", key: "trailer" }],
+    },
   ];
 
   return (

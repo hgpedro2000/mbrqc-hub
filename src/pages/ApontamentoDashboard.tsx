@@ -239,19 +239,23 @@ const ApontamentoDashboard = () => {
 
   // Module Status donuts (rate OK vs NG by module) — used in 100 Days tab
   const moduleData = useMemo(() => {
+    const labels: Record<string, string> = { CP: "CP - Cockpit", BP: "BP - Bumper", CH: "CH - Chassis", EI: "EI - End Items" };
+    const order = ["CP", "BP", "CH", "EI"];
     const map = new Map<string, { ok: number; ng: number }>();
+    order.forEach((k) => map.set(k, { ok: 0, ng: 0 }));
     filtered.forEach((d) => {
-      const mod = (d as any).modulo || "—";
-      const e = map.get(mod) || { ok: 0, ng: 0 };
+      const mod = (bc4bPnModuleMap.get(d.part_number || "") || "—").toUpperCase();
+      const key = order.includes(mod) ? mod : "—";
+      const e = map.get(key) || { ok: 0, ng: 0 };
       e.ok += (d.quantidade_ok || 0);
       e.ng += (d.quantidade_ng || 0);
-      map.set(mod, e);
+      map.set(key, e);
     });
     return Array.from(map.entries())
-      .map(([name, { ok, ng }]) => ({ name, ok, ng, total: ok + ng }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 4);
-  }, [filtered]);
+      .filter(([, v]) => v.ok + v.ng > 0)
+      .map(([name, { ok, ng }]) => ({ name, label: labels[name] || name, ok, ng, total: ok + ng }))
+      .sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+  }, [filtered, bc4bPnModuleMap]);
 
   // Main Failure Mode bar (only from NG items)
   const failureModeData = useMemo(() => {

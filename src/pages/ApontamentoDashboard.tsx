@@ -855,7 +855,7 @@ const ApontamentoDashboard = () => {
       </div>
 
       {/* Origem KPI — only for incoming */}
-      {activeType === "incoming" && (
+      {(activeType === "incoming" || activeType === "100days") && (
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>

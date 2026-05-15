@@ -101,6 +101,10 @@
     "matrizVersatilidade": {
       "title": "Versatility Matrix",
       "description": "Inspector qualifications and training tracking."
+    },
+    "barcodeScanner": {
+      "title": "Barcode Scanner H/KMC",
+      "description": "H/KMC Part 2D Barcode Standard QR reader."
     }
   },
   "login": {

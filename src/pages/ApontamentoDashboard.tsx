@@ -169,17 +169,16 @@ const ApontamentoDashboard = () => {
     if (responsibilityFilter) {
       list = list.filter((i) => {
         const resp = i.responsabilidade_defeito;
-        const loc = (i as any).local_deteccao || (i as any).fase;
-        const displayResp = resp
-          ? resp.replace(/^\d+\s*-\s*/, "").trim()
-          : loc === "Sala do Audio" ? "Part" : "Sorting";
-        return displayResp.toLowerCase().includes(responsibilityFilter.toLowerCase());
+        if (!resp) return false;
+        const displayResp = resp.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+        if (!displayResp.includes("part") && !displayResp.includes("sorting")) return false;
+        return displayResp.includes(responsibilityFilter.toLowerCase());
       });
     }
     return list;
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter, failureModeFilter, responsibilityFilter]);
 
-  // Origem data (Part vs Sorting counts) — date-filtered (no responsibility filter); empty dates = ALL apontamentos
+  // Origem data (Part vs Sorting counts) — only counts records whose Responsabilidade is PART or SORTING
   const origemData = useMemo(() => {
     let list = baseList;
     if (dateFrom) list = list.filter((i) => i.data >= dateFrom);
@@ -192,16 +191,15 @@ const ApontamentoDashboard = () => {
     let sortingCount = 0;
     list.forEach((i) => {
       const resp = i.responsabilidade_defeito;
-      const loc = (i as any).local_deteccao || (i as any).fase;
-      const displayResp = resp
-        ? resp.replace(/^\d+\s*-\s*/, "").trim()
-        : loc === "Sala do Audio" ? "Part" : "Sorting";
-      if (displayResp.toLowerCase().includes("part")) partCount++;
-      else if (displayResp.toLowerCase().includes("sorting")) sortingCount++;
-      else sortingCount++; // default to sorting
+      if (!resp) return;
+      const displayResp = resp.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
+      if (displayResp.includes("part")) partCount++;
+      else if (displayResp.includes("sorting")) sortingCount++;
+      // otherwise: not counted
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
+
 
   const total = filtered.length;
 

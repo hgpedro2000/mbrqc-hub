@@ -1056,7 +1056,7 @@ const ApontamentoDashboard = () => {
             </thead>
             <tbody>
               {supplierData.map((s, i) => {
-                const ppm = s.ok > 0 ? Math.round((s.ng / s.ok) * 1_000_000) : 0;
+                const ppm = s.ok > 0 ? (s.ng / s.ok) * 1_000_000 : 0;
                 return (
                   <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                     <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>

@@ -483,6 +483,7 @@ const ApontamentoForm = () => {
   const handleAlcConfirmError = () => {
     setShowAlcMismatchDialog(false);
     setAlcStatus("mismatch");
+    setAlcValidatedVia((prev) => prev ?? "pc");
     // Force at least 1 NG and require modo_falha
     if (quantidadeInspecionada <= 0) setQuantidadeInspecionada(1);
     if (quantidadeNg < 1) setQuantidadeNg(1);

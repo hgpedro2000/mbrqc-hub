@@ -13,6 +13,7 @@ interface PartData {
   part_name: string;
   project: string;
   line_module: string;
+  alc_code?: string;
 }
 
 interface SupplierPartSelectorProps {

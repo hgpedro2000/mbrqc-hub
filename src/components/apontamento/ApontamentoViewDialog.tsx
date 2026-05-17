@@ -51,12 +51,13 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
   </div>
 );
 
-const DataField = ({ label, value, fullWidth }: { label: string; value: string; fullWidth?: boolean }) => (
-  <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : ""}`}>
+const DataField = ({ label, value, fullWidth, colSpanClass, valueClass, children }: { label: string; value?: string; fullWidth?: boolean; colSpanClass?: string; valueClass?: string; children?: React.ReactNode }) => (
+  <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : (colSpanClass || "")}`}>
     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">{label}</p>
-    <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{value}</p>
+    {children ?? <p className={`text-sm font-medium whitespace-pre-wrap break-words ${valueClass || "text-foreground"}`}>{value}</p>}
   </div>
 );
+
 
 /* ── TagBadgeInline ── */
 interface TagBadgeInlineProps {

@@ -842,6 +842,9 @@ const ApontamentoForm = () => {
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
+      if (alcExpected && alcExpected !== "N/A" && alcStatus !== "match" && alcStatus !== "mismatch") {
+        errors.add("alcCode"); msgs.push("Validação do ALC (clique em \"Validar ALC manual\")");
+      }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
@@ -1154,8 +1157,9 @@ const ApontamentoForm = () => {
                 <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
               </div>
               <div className="space-y-1.5">
-                <Label className="flex items-center gap-2">
+                <Label className={`flex items-center gap-2 ${validationErrors.has("alcCode") ? "text-destructive font-semibold" : ""}`}>
                   <span>ALC</span>
+                  {alcExpected && alcExpected !== "N/A" && <span className="text-destructive">*</span>}
                   {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
                   {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente</span>}
                   {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
@@ -1171,24 +1175,39 @@ const ApontamentoForm = () => {
                           ? "border-emerald-500 ring-1 ring-emerald-500/40 text-emerald-700 font-semibold"
                           : alcStatus === "mismatch"
                           ? "border-destructive ring-1 ring-destructive/40 text-destructive font-semibold"
+                          : validationErrors.has("alcCode")
+                          ? "border-destructive ring-1 ring-destructive"
                           : ""
                       )
                     }
                   />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0 whitespace-nowrap"
-                    disabled={!alcExpected || alcExpected === "N/A"}
-                    onClick={() => {
-                      setAlcManualInput("");
-                      setShowAlcValidateDialog(true);
-                    }}
-                    title={!alcExpected || alcExpected === "N/A" ? "Sem ALC cadastrado para este Part Number" : "Validar ALC manualmente"}
-                  >
-                    Validar ALC manual
-                  </Button>
+                  {alcStatus === "match" ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled
+                      className="shrink-0 whitespace-nowrap border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold disabled:opacity-100 dark:bg-emerald-950/30 dark:text-emerald-300"
+                      title="ALC já validado"
+                    >
+                      ✓ Validado
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={`shrink-0 whitespace-nowrap ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
+                      disabled={!alcExpected || alcExpected === "N/A"}
+                      onClick={() => {
+                        setAlcManualInput("");
+                        setShowAlcValidateDialog(true);
+                      }}
+                      title={!alcExpected || alcExpected === "N/A" ? "Sem ALC cadastrado para este Part Number" : "Validar ALC manualmente"}
+                    >
+                      Validar ALC manual
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="space-y-1.5">

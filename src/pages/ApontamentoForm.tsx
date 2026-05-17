@@ -766,7 +766,7 @@ const ApontamentoForm = () => {
   const updateSegundoDefeito = (index: number, field: keyof SegundoDefeito, value: any) => setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
 
   const addCoInspetor = (name: string) => {
-    if (coInspetores.length >= 5) { toast.error("Máximo 5 co-inspetores"); return; }
+    if (coInspetores.length >= 6) { toast.error("Máximo 6 co-inspetores"); return; }
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");

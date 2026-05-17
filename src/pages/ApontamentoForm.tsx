@@ -97,6 +97,7 @@ const ApontamentoForm = () => {
   const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
   const [showAlcValidateDialog, setShowAlcValidateDialog] = useState(false);
   const [alcManualInput, setAlcManualInput] = useState("");
+  const [alcValidatedVia, setAlcValidatedVia] = useState<"pc" | "qr" | null>(null);
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
@@ -179,6 +180,7 @@ const ApontamentoForm = () => {
       if (d.alcStatus) setAlcStatus(d.alcStatus);
       if (d.alcMismatchScanned) setAlcMismatchScanned(d.alcMismatchScanned);
       if (typeof d.alcMismatchAttempts === "number") setAlcMismatchAttempts(d.alcMismatchAttempts);
+      if (d.alcValidatedVia) setAlcValidatedVia(d.alcValidatedVia);
       if (typeof d.quantidadeInspecionada === "number") setQuantidadeInspecionada(d.quantidadeInspecionada);
       if (typeof d.quantidadeNg === "number") setQuantidadeNg(d.quantidadeNg);
       if (typeof d.quantidadeOk === "number") setQuantidadeOk(d.quantidadeOk);
@@ -232,7 +234,7 @@ const ApontamentoForm = () => {
   // Snapshot debounced em sessionStorage
   useFormAutosave(autosaveKey, {
     formTipo, data, turno, fase, projeto, fornecedor, partNumber, partName, modulo,
-    alcCode, alcExpected, alcStatus, alcMismatchScanned, alcMismatchAttempts,
+    alcCode, alcExpected, alcStatus, alcMismatchScanned, alcMismatchAttempts, alcValidatedVia,
     quantidadeInspecionada, quantidadeNg, quantidadeOk, loteInspecionado, modoFalha,
     paradaLinha, paradaLinhaTempo, descricao, localDeteccao, vinNumber,
     responsabilidadeDefeito, quantidadeDetectado, lancamento, analiseInicial,
@@ -315,8 +317,10 @@ const ApontamentoForm = () => {
             setAlcStatus("manual");
           } else if (expectedAlc === scannedAlc) {
             setAlcStatus("match");
+            setAlcValidatedVia("qr");
           } else {
             setAlcStatus("mismatch");
+            setAlcValidatedVia("qr");
             setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
             setAlcMismatchScanned(scannedAlc);
             setShowAlcMismatchDialog(true);
@@ -380,8 +384,10 @@ const ApontamentoForm = () => {
               setAlcStatus("manual");
             } else if (expectedAlc === scannedAlc) {
               setAlcStatus("match");
+              setAlcValidatedVia("qr");
             } else {
               setAlcStatus("mismatch");
+              setAlcValidatedVia("qr");
               setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
               setAlcMismatchScanned(scannedAlc);
               setShowAlcMismatchDialog(true);
@@ -478,6 +484,7 @@ const ApontamentoForm = () => {
   const handleAlcConfirmError = () => {
     setShowAlcMismatchDialog(false);
     setAlcStatus("mismatch");
+    setAlcValidatedVia((prev) => prev ?? "pc");
     // Force at least 1 NG and require modo_falha
     if (quantidadeInspecionada <= 0) setQuantidadeInspecionada(1);
     if (quantidadeNg < 1) setQuantidadeNg(1);
@@ -623,7 +630,10 @@ const ApontamentoForm = () => {
       setPartNumber(existing.part_number || "");
       setPartName(existing.part_name || "");
       setAlcCode((existing as any).alc_code || "N/A");
-      setAlcStatus("idle");
+      setAlcExpected((existing as any).alc_expected || "");
+      const savedStatus = (existing as any).alc_validation_status;
+      setAlcStatus(savedStatus === "ok" ? "match" : savedStatus === "error" ? "mismatch" : "idle");
+      setAlcValidatedVia((existing as any).alc_validation_method || null);
       setQuantidadeInspecionada(existing.quantidade_inspecionada || 0);
       setQuantidadeNg(existing.quantidade_ng || 0);
       setQuantidadeOk(existing.quantidade_ok || 0);
@@ -766,7 +776,7 @@ const ApontamentoForm = () => {
   const updateSegundoDefeito = (index: number, field: keyof SegundoDefeito, value: any) => setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
 
   const addCoInspetor = (name: string) => {
-    if (coInspetores.length >= 5) { toast.error("Máximo 5 co-inspetores"); return; }
+    if (coInspetores.length >= 6) { toast.error("Máximo 6 co-inspetores"); return; }
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");
@@ -905,8 +915,8 @@ const ApontamentoForm = () => {
         if (temCoInspecao === "sim" && coInspetores.length === 0) {
           errors.add("coInspetores"); msgs.push("Selecione ao menos 1 co-inspetor ou marque 'Não'");
         }
-        if (coInspetores.length > 5) {
-          errors.add("coInspetores"); msgs.push("Máximo 5 co-inspetores");
+        if (coInspetores.length > 6) {
+          errors.add("coInspetores"); msgs.push("Máximo 6 co-inspetores");
         }
         // Ensure all selected co-inspectors still exist in the loaded list
         if (coInspetores.length > 0 && allProfiles.length > 0) {
@@ -965,6 +975,9 @@ const ApontamentoForm = () => {
         part_number: partNumber || null,
         part_name: partName || null,
         alc_code: (alcCode && alcCode.trim()) ? alcCode.trim() : "N/A",
+        alc_expected: (alcExpected && alcExpected.trim()) ? alcExpected.trim() : null,
+        alc_validation_method: alcValidatedVia,
+        alc_validation_status: alcStatus === "match" ? "ok" : alcStatus === "mismatch" ? "error" : null,
         descricao: descricao || "Sem descrição",
         quantidade_inspecionada: quantidadeInspecionada,
         quantidade_ng: quantidadeNg,
@@ -975,7 +988,7 @@ const ApontamentoForm = () => {
         parada_linha_tempo: paradaLinha === "sim" ? paradaLinhaTempo : null,
         local_deteccao: localDeteccao || null,
         vin_number: vinNumber || null,
-        responsabilidade_defeito: responsabilidadeDefeito || null,
+        responsabilidade_defeito: (isIncoming && (quantidadeNg === 0 || descricao === "Sem defeito encontrado durante essa inspeção")) ? null : (responsabilidadeDefeito || null),
         quantidade_detectado: quantidadeDetectado,
         lancamento: lancamento || null,
         analise_inicial: analiseInicial || null,
@@ -1193,9 +1206,9 @@ const ApontamentoForm = () => {
             />
           </div>
 
-          {/* MÓDULO + ALC + RESPONSABILIDADE - linha simétrica de 3 colunas (Incoming) */}
+          {/* MÓDULO + ALC - Incoming (Responsabilidade movido p/ Dados de Inspeção) */}
           {isIncoming ? (
-            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-end">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-end">
               <div className="space-y-1.5">
                 <Label>Módulo</Label>
                 <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
@@ -1241,7 +1254,11 @@ const ApontamentoForm = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className={`shrink-0 whitespace-nowrap ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
+                      className={`shrink-0 whitespace-nowrap ${
+                        alcExpected && alcExpected !== "N/A" && alcStatus !== "mismatch"
+                          ? "animate-pulse border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300"
+                          : ""
+                      } ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
                       disabled={!alcExpected || alcExpected === "N/A"}
                       onClick={() => {
                         setAlcManualInput("");
@@ -1253,21 +1270,6 @@ const ApontamentoForm = () => {
                     </Button>
                   )}
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Responsabilidade</Label>
-                {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
-                  <Input value="Sorting" readOnly className="bg-muted" />
-                ) : (
-                  <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {responsibilities.map((r: any) => (
-                        <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
             </div>
           ) : (
@@ -1282,7 +1284,7 @@ const ApontamentoForm = () => {
         {isIncoming && activeProfile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                 <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
                   <SelectTrigger className="w-full sm:w-28"><SelectValue /></SelectTrigger>
@@ -1303,19 +1305,19 @@ const ApontamentoForm = () => {
                 >
                   <Search className="w-4 h-4" /> Selecionar Co-Inspetores
                 </Button>
-                {temCoInspecao === "sim" && coInspetores.length > 0 && (
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    {coInspetores.map((name) => (
-                      <Badge key={name} variant="secondary" className="gap-1 justify-between w-full sm:w-auto sm:self-start px-2 py-1">
-                        <span className="truncate">{name}</span>
-                        <button type="button" onClick={() => removeCoInspetor(name)} className="shrink-0"><X className="w-3 h-3" /></button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
+              {temCoInspecao === "sim" && coInspetores.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {coInspetores.map((name) => (
+                    <Badge key={name} variant="secondary" className="gap-1 justify-between w-full px-2 py-1.5">
+                      <span className="truncate">{name}</span>
+                      <button type="button" onClick={() => removeCoInspetor(name)} className="shrink-0"><X className="w-3 h-3" /></button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
               {temCoInspecao === "sim" && (
-                <p className="text-xs text-muted-foreground">Até 5 co-inspetores ({coInspetores.length}/5)</p>
+                <p className="text-xs text-muted-foreground">Até 6 co-inspetores ({coInspetores.length}/6)</p>
               )}
             </div>
           </div>
@@ -1351,26 +1353,45 @@ const ApontamentoForm = () => {
               </div>
             </div>
 
-            {/* QUANTIDADES */}
+            {/* DADOS DE INSPEÇÃO */}
             <div className="form-section">
-              <h2 className="form-section-title">Quantidades</h2>
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <h2 className="form-section-title">Dados de Inspeção</h2>
+              <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-1.5">
-                  <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
-                  <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                  <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
+                  <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>NG *</Label>
-                  <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-1.5">
+                    <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
+                    <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>NG *</Label>
+                    <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>OK</Label>
+                    <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>OK</Label>
-                  <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
-                </div>
-              </div>
-              <div className="mt-3 sm:mt-4 space-y-1.5">
-                <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
-                <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
+                {quantidadeNg > 0 && (
+                  <div className="space-y-1.5">
+                    <Label>Responsabilidade *</Label>
+                    {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
+                      <Input value="Sorting" readOnly className="bg-muted" />
+                    ) : (
+                      <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {responsibilities.map((r: any) => (
+                            <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1710,7 +1731,7 @@ const ApontamentoForm = () => {
                 </Badge>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">{coInspetores.length}/5 selecionados</p>
+            <p className="text-xs text-muted-foreground">{coInspetores.length}/6 selecionados</p>
             <div className="border rounded-lg max-h-60 overflow-y-auto">
               {loadingCoInspetores ? (
                 <div className="px-3 py-6 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">
@@ -1992,6 +2013,7 @@ const ApontamentoForm = () => {
                       onClick={() => {
                         setAlcCode(checked);
                         setAlcStatus("match");
+                        setAlcValidatedVia("pc");
                         setValidationErrors((p) => { const n = new Set(p); n.delete("alcCode"); return n; });
                         setShowAlcValidateDialog(false);
                         toast.success("ALC validado com sucesso e registrado no checklist.");

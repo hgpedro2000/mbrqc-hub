@@ -385,7 +385,22 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
           <DataField label="ALC" value={(d?.alc_code && String(d.alc_code).trim()) || "N/A"} />
-          <DataField label="Responsabilidade" value={d?.responsabilidade_defeito ? stripCode(d.responsabilidade_defeito) : "SORTING"} />
+          {d?.alc_validation_method && (
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Validação ALC</p>
+              <p className={`text-sm font-semibold ${d?.alc_validation_status === "ok" ? "text-emerald-600" : "text-destructive"}`}>
+                {d?.alc_validation_status === "ok" ? "✓ Validado OK" : "✗ Erro de ALC"} — {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+              </p>
+            </div>
+          )}
+          <DataField
+            label="Responsabilidade"
+            value={
+              ((d?.quantidade_ng ?? 0) === 0 || d?.descricao === "Sem defeito encontrado durante essa inspeção")
+                ? "N/A"
+                : (d?.responsabilidade_defeito ? stripCode(d.responsabilidade_defeito) : "SORTING")
+            }
+          />
           {!hasMultipleFailureModes && d?.modo_falha && (
             <DataField label="Modo de Falha" value={stripCode(d.modo_falha)} />
           )}

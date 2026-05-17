@@ -55,15 +55,29 @@ const Login = () => {
       });
 
       if (error) {
-        // Try to extract the real error message from the response body
-        let realMsg = t("login.authError");
+        // Extract the real error message from the response body (robust)
+        let realMsg = "";
         try {
-          if (error.context && typeof error.context.json === "function") {
-            const body = await error.context.json();
-            if (body?.error) realMsg = body.error;
+          const ctx: any = (error as any).context;
+          if (ctx) {
+            if (typeof ctx.clone === "function") {
+              const cloned = ctx.clone();
+              try {
+                const body = await cloned.json();
+                if (body?.error) realMsg = body.error;
+              } catch {
+                const txt = await ctx.clone().text();
+                try { const j = JSON.parse(txt); if (j?.error) realMsg = j.error; } catch { if (txt) realMsg = txt; }
+              }
+            } else if (typeof ctx.json === "function") {
+              const body = await ctx.json();
+              if (body?.error) realMsg = body.error;
+            } else if (ctx.body?.error) {
+              realMsg = ctx.body.error;
+            }
           }
         } catch { /* ignore parse errors */ }
-        throw new Error(realMsg);
+        throw new Error(realMsg || t("login.authError"));
       }
 
       if (data?.error) {

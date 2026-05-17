@@ -1735,7 +1735,20 @@ const ApontamentoForm = () => {
       </Dialog>
 
       {/* ALC Mismatch Dialog */}
-      <Dialog open={showAlcMismatchDialog} onOpenChange={setShowAlcMismatchDialog}>
+      <Dialog
+        open={showAlcMismatchDialog}
+        onOpenChange={(open) => {
+          if (!open && alcMismatchAttempts >= 3) {
+            // 3ª tentativa: fechar no X descarta dados e volta para a tela de apontamentos
+            setShowAlcMismatchDialog(false);
+            try { clearFormAutosave(autosaveKey); } catch {}
+            toast.info("Leitura descartada. Reinicie o apontamento.");
+            navigate("/apontamentos");
+            return;
+          }
+          setShowAlcMismatchDialog(open);
+        }}
+      >
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">

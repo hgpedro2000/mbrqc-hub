@@ -1128,16 +1128,68 @@ const ApontamentoForm = () => {
               projeto={projeto}
               onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
               onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
-              onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); setProjeto(d.project); setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; }); }}
+              onPartDataChange={(d) => {
+                setPartName(d.part_name);
+                setModulo(d.line_module);
+                setProjeto(d.project);
+                const exp = (d.alc_code || "").toUpperCase().trim();
+                setAlcExpected(exp);
+                if (!exp || exp === "N/A") {
+                  setAlcCode("N/A");
+                  setAlcStatus("idle");
+                } else {
+                  setAlcCode(exp);
+                  setAlcStatus("idle");
+                }
+                setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; });
+              }}
             />
           </div>
 
-          {/* MÓDULO + RESPONSABILIDADE + ALC - linha simétrica de 3 colunas (Incoming) */}
+          {/* MÓDULO + ALC + RESPONSABILIDADE - linha simétrica de 3 colunas (Incoming) */}
           {isIncoming ? (
-            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-end">
               <div className="space-y-1.5">
                 <Label>Módulo</Label>
                 <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2">
+                  <span>ALC</span>
+                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
+                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente</span>}
+                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={alcCode}
+                    readOnly
+                    placeholder="N/A"
+                    className={
+                      "bg-muted " + (
+                        alcStatus === "match"
+                          ? "border-emerald-500 ring-1 ring-emerald-500/40 text-emerald-700 font-semibold"
+                          : alcStatus === "mismatch"
+                          ? "border-destructive ring-1 ring-destructive/40 text-destructive font-semibold"
+                          : ""
+                      )
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 whitespace-nowrap"
+                    disabled={!alcExpected || alcExpected === "N/A"}
+                    onClick={() => {
+                      setAlcManualInput("");
+                      setShowAlcValidateDialog(true);
+                    }}
+                    title={!alcExpected || alcExpected === "N/A" ? "Sem ALC cadastrado para este Part Number" : "Validar ALC manualmente"}
+                  >
+                    Validar ALC manual
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
@@ -1153,31 +1205,6 @@ const ApontamentoForm = () => {
                     </SelectContent>
                   </Select>
                 )}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="flex items-center gap-2 flex-wrap">
-                  <span>ALC</span>
-                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
-                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente (esperado: {alcExpected || "—"})</span>}
-                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
-                </Label>
-                <Input
-                  value={alcCode}
-                  onChange={(e) => {
-                    const v = e.target.value.toUpperCase();
-                    setAlcCode(v);
-                    setAlcStatus("manual");
-                  }}
-                  onBlur={() => { if (!alcCode.trim()) setAlcCode("N/A"); }}
-                  placeholder="N/A"
-                  className={
-                    alcStatus === "match"
-                      ? "border-emerald-500 ring-1 ring-emerald-500/40"
-                      : alcStatus === "mismatch"
-                      ? "border-destructive ring-1 ring-destructive/40"
-                      : ""
-                  }
-                />
               </div>
             </div>
           ) : (

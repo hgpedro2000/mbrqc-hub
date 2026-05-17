@@ -139,6 +139,7 @@ const ApontamentoForm = () => {
     project: string;
     line_module: string;
     supplier_name: string;
+    alc_code?: string;
   }>>([]);
   const [pendingLot, setPendingLot] = useState("");
   const [selectedSuffixPn, setSelectedSuffixPn] = useState("");
@@ -173,6 +174,11 @@ const ApontamentoForm = () => {
       if (d.partNumber) setPartNumber(d.partNumber);
       if (d.partName) setPartName(d.partName);
       if (d.modulo) setModulo(d.modulo);
+      if (d.alcCode) setAlcCode(d.alcCode);
+      if (d.alcExpected) setAlcExpected(d.alcExpected);
+      if (d.alcStatus) setAlcStatus(d.alcStatus);
+      if (d.alcMismatchScanned) setAlcMismatchScanned(d.alcMismatchScanned);
+      if (typeof d.alcMismatchAttempts === "number") setAlcMismatchAttempts(d.alcMismatchAttempts);
       if (typeof d.quantidadeInspecionada === "number") setQuantidadeInspecionada(d.quantidadeInspecionada);
       if (typeof d.quantidadeNg === "number") setQuantidadeNg(d.quantidadeNg);
       if (typeof d.quantidadeOk === "number") setQuantidadeOk(d.quantidadeOk);
@@ -226,6 +232,7 @@ const ApontamentoForm = () => {
   // Snapshot debounced em sessionStorage
   useFormAutosave(autosaveKey, {
     formTipo, data, turno, fase, projeto, fornecedor, partNumber, partName, modulo,
+    alcCode, alcExpected, alcStatus, alcMismatchScanned, alcMismatchAttempts,
     quantidadeInspecionada, quantidadeNg, quantidadeOk, loteInspecionado, modoFalha,
     paradaLinha, paradaLinhaTempo, descricao, localDeteccao, vinNumber,
     responsabilidadeDefeito, quantidadeDetectado, lancamento, analiseInicial,
@@ -240,6 +247,10 @@ const ApontamentoForm = () => {
     if (option.project) setProjeto(option.project);
     if (option.line_module) setModulo(option.line_module);
     if (option.supplier_name) setFornecedor(option.supplier_name);
+    const exp = (option.alc_code || "").toUpperCase().trim();
+    setAlcExpected(exp);
+    setAlcCode(exp || "N/A");
+    setAlcStatus("idle");
     setSuffixPickerOpen(false);
   };
 

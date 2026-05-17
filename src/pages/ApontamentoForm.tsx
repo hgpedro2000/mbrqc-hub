@@ -1738,6 +1738,39 @@ const ApontamentoForm = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
+            {/* Attempt counter — pílulas 1·2·3 */}
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">Leituras com o mesmo ALC divergente</p>
+                <p className="text-[11px] font-bold">{Math.min(alcMismatchAttempts, 3)} / 3</p>
+              </div>
+              <div className="flex gap-1.5">
+                {[1, 2, 3].map((n) => {
+                  const reached = alcMismatchAttempts >= n;
+                  const isFinal = n === 3;
+                  return (
+                    <div
+                      key={n}
+                      className={`flex-1 h-8 rounded-md border flex items-center justify-center text-xs font-bold ${
+                        reached
+                          ? isFinal
+                            ? "bg-destructive text-destructive-foreground border-destructive"
+                            : "bg-amber-500 text-white border-amber-600"
+                          : "bg-background text-muted-foreground border-border"
+                      }`}
+                    >
+                      {n}ª
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                {alcMismatchAttempts >= 3
+                  ? "3ª leitura idêntica: a opção de reler foi removida — só é possível Confirmar erro de ALC."
+                  : `Você pode reler até 2× mais. Na 3ª leitura com o mesmo ALC, o botão "Ler QR Code novamente" desaparece e resta apenas "Confirmar erro de ALC".`}
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border p-3 space-y-1">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC lido</p>
@@ -1764,7 +1797,9 @@ const ApontamentoForm = () => {
                 >
                   <span className="font-semibold">Ler QR Code novamente</span>
                   <span className="text-[11px] text-muted-foreground font-normal">
-                    Tentativa {alcMismatchAttempts} de 2 — releia a etiqueta para confirmar
+                    {alcMismatchAttempts === 1
+                      ? "1ª divergência — restam 2 releituras antes de bloquear"
+                      : "2ª divergência — última releitura antes de bloquear"}
                   </span>
                 </Button>
               )}
@@ -1772,7 +1807,7 @@ const ApontamentoForm = () => {
                 <span className="font-semibold">Confirmar erro de ALC</span>
                 <span className="text-[11px] font-normal opacity-90">
                   {alcMismatchAttempts >= 3
-                    ? "Mesma divergência confirmada 3x — abrir defeito NG"
+                    ? "Mesma divergência confirmada 3× — abrir defeito NG"
                     : "Abre defeito NG e exige Modo de Falha"}
                 </span>
               </Button>

@@ -13,6 +13,10 @@ interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
 }
 
+export interface QRScannerButtonHandle {
+  openScanner: () => void;
+}
+
 const READER_ID = "qr-reader-incoming";
 const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE,

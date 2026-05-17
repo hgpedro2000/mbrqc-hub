@@ -1064,7 +1064,7 @@ const ApontamentoDashboard = () => {
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
                     {showPPM && (
-                      <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR')}</td>
+                      <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     )}
                   </tr>
                 );

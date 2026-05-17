@@ -189,15 +189,20 @@ const ApontamentoDashboard = () => {
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
+    let totalInspected = 0;
+    let totalOk = 0;
+    let totalNg = 0;
     list.forEach((i) => {
+      totalInspected += (i.quantidade_ok || 0) + (i.quantidade_ng || 0);
+      totalOk += (i.quantidade_ok || 0);
+      totalNg += (i.quantidade_ng || 0);
       const resp = i.responsabilidade_defeito;
       if (!resp) return;
       const displayResp = resp.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
       if (displayResp.includes("part")) partCount++;
       else if (displayResp.includes("sorting")) sortingCount++;
-      // otherwise: not counted
     });
-    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
+    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount, totalInspected, totalOk, totalNg };
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
 
 
@@ -981,6 +986,26 @@ const ApontamentoDashboard = () => {
                 <p className="text-[11px] text-[hsl(0,0%,50%)]">100%</p>
               </button>
             </div>
+            <div className="border-t border-[hsl(220,10%,25%)] px-2 py-2 flex flex-wrap items-center justify-around gap-2 bg-[hsl(220,15%,12%)]">
+              <div className="text-center">
+                <p className="text-[9px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
+                <p className="text-base font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-green-400/80 uppercase tracking-wider">OK</p>
+                <p className="text-base font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-red-400/80 uppercase tracking-wider">NG</p>
+                <p className="text-base font-bold text-red-400">{origemData.totalNg.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
+                <p className="text-base font-bold text-[hsl(45,90%,60%)]">
+                  {origemData.totalOk > 0 ? ((origemData.totalNg / origemData.totalOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+                </p>
+              </div>
+            </div>
             {responsibilityFilter && (
               <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
                 <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
@@ -1031,7 +1056,7 @@ const ApontamentoDashboard = () => {
             </thead>
             <tbody>
               {supplierData.map((s, i) => {
-                const ppm = s.ok > 0 ? Math.round((s.ng / s.ok) * 1_000_000) : 0;
+                const ppm = s.ok > 0 ? (s.ng / s.ok) * 1_000_000 : 0;
                 return (
                   <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                     <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
@@ -1039,7 +1064,7 @@ const ApontamentoDashboard = () => {
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
                     {showPPM && (
-                      <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR')}</td>
+                      <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     )}
                   </tr>
                 );
@@ -1050,7 +1075,7 @@ const ApontamentoDashboard = () => {
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
                 {showPPM && (
-                  <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? Math.round((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR') : 0}</td>
+                  <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? ((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                 )}
               </tr>
             </tbody>

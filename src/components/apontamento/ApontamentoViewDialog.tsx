@@ -385,15 +385,30 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
-          <DataField label="ALC" value={(d?.alc_code && String(d.alc_code).trim()) || "N/A"} />
+          {(() => {
+            const specAlc = (d?.alc_expected && String(d.alc_expected).trim()) || (d?.alc_code && String(d.alc_code).trim()) || "N/A";
+            const isOk = d?.alc_validation_status === "ok";
+            const isErr = d?.alc_validation_status === "error";
+            return (
+              <DataField
+                label="Spec ALC"
+                value={specAlc}
+                valueClass={isOk ? "text-emerald-600 font-semibold" : isErr ? "text-destructive font-semibold" : "text-foreground"}
+              />
+            );
+          })()}
           {d?.alc_validation_method && (
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Validação ALC</p>
+            <DataField label="Validação ALC">
               <p className={`text-sm font-semibold ${d?.alc_validation_status === "ok" ? "text-emerald-600" : "text-destructive"}`}>
-                {d?.alc_validation_status === "ok" ? "✓ Validado OK" : "✗ Erro de ALC"} — {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+                {d?.alc_validation_status === "ok" ? "✓ Validado OK" : "✗ Erro de ALC"}
+                {d?.alc_code ? ` — ${d.alc_code}` : ""}
               </p>
-            </div>
+              <p className={`text-[11px] ${d?.alc_validation_status === "ok" ? "text-emerald-600/80" : "text-destructive/80"}`}>
+                {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+              </p>
+            </DataField>
           )}
+
           <DataField
             label="Responsabilidade"
             value={

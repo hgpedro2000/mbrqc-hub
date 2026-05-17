@@ -95,6 +95,8 @@ const ApontamentoForm = () => {
   const [showAlcMismatchDialog, setShowAlcMismatchDialog] = useState(false);
   const [alcMismatchScanned, setAlcMismatchScanned] = useState("");
   const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
+  const [showAlcValidateDialog, setShowAlcValidateDialog] = useState(false);
+  const [alcManualInput, setAlcManualInput] = useState("");
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
@@ -1126,16 +1128,68 @@ const ApontamentoForm = () => {
               projeto={projeto}
               onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
               onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
-              onPartDataChange={(d) => { setPartName(d.part_name); setModulo(d.line_module); setProjeto(d.project); setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; }); }}
+              onPartDataChange={(d) => {
+                setPartName(d.part_name);
+                setModulo(d.line_module);
+                setProjeto(d.project);
+                const exp = (d.alc_code || "").toUpperCase().trim();
+                setAlcExpected(exp);
+                if (!exp || exp === "N/A") {
+                  setAlcCode("N/A");
+                  setAlcStatus("idle");
+                } else {
+                  setAlcCode(exp);
+                  setAlcStatus("idle");
+                }
+                setValidationErrors((p) => { const n = new Set(p); n.delete("projeto"); return n; });
+              }}
             />
           </div>
 
-          {/* MÓDULO + RESPONSABILIDADE + ALC - linha simétrica de 3 colunas (Incoming) */}
+          {/* MÓDULO + ALC + RESPONSABILIDADE - linha simétrica de 3 colunas (Incoming) */}
           {isIncoming ? (
-            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-end">
               <div className="space-y-1.5">
                 <Label>Módulo</Label>
                 <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="flex items-center gap-2">
+                  <span>ALC</span>
+                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
+                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente</span>}
+                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={alcCode}
+                    readOnly
+                    placeholder="N/A"
+                    className={
+                      "bg-muted " + (
+                        alcStatus === "match"
+                          ? "border-emerald-500 ring-1 ring-emerald-500/40 text-emerald-700 font-semibold"
+                          : alcStatus === "mismatch"
+                          ? "border-destructive ring-1 ring-destructive/40 text-destructive font-semibold"
+                          : ""
+                      )
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0 whitespace-nowrap"
+                    disabled={!alcExpected || alcExpected === "N/A"}
+                    onClick={() => {
+                      setAlcManualInput("");
+                      setShowAlcValidateDialog(true);
+                    }}
+                    title={!alcExpected || alcExpected === "N/A" ? "Sem ALC cadastrado para este Part Number" : "Validar ALC manualmente"}
+                  >
+                    Validar ALC manual
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label>Responsabilidade</Label>
@@ -1152,31 +1206,6 @@ const ApontamentoForm = () => {
                   </Select>
                 )}
               </div>
-              <div className="space-y-1.5">
-                <Label className="flex items-center gap-2 flex-wrap">
-                  <span>ALC</span>
-                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
-                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente (esperado: {alcExpected || "—"})</span>}
-                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
-                </Label>
-                <Input
-                  value={alcCode}
-                  onChange={(e) => {
-                    const v = e.target.value.toUpperCase();
-                    setAlcCode(v);
-                    setAlcStatus("manual");
-                  }}
-                  onBlur={() => { if (!alcCode.trim()) setAlcCode("N/A"); }}
-                  placeholder="N/A"
-                  className={
-                    alcStatus === "match"
-                      ? "border-emerald-500 ring-1 ring-emerald-500/40"
-                      : alcStatus === "mismatch"
-                      ? "border-destructive ring-1 ring-destructive/40"
-                      : ""
-                  }
-                />
-              </div>
             </div>
           ) : (
             <div className="mt-3 sm:mt-4 space-y-1.5">
@@ -1191,9 +1220,9 @@ const ApontamentoForm = () => {
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                 <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
-                  <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-full sm:w-28"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nao">Não</SelectItem>
                     <SelectItem value="sim">Sim</SelectItem>
@@ -1202,27 +1231,28 @@ const ApontamentoForm = () => {
                 <Button
                   variant="outline"
                   type="button"
+                  size="sm"
                   onClick={() => {
                     if (temCoInspecao !== "sim") setTemCoInspecao("sim");
                     setShowCoInspetorDialog(true);
                   }}
-                  className="w-full sm:flex-1 gap-2"
+                  className="w-full sm:w-auto gap-2"
                 >
                   <Search className="w-4 h-4" /> Selecionar Co-Inspetores
                 </Button>
-              </div>
-              {temCoInspecao === "sim" && (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
+                {temCoInspecao === "sim" && coInspetores.length > 0 && (
+                  <div className="flex-1 flex flex-col gap-1.5">
                     {coInspetores.map((name) => (
-                      <Badge key={name} variant="secondary" className="gap-1">
-                        {name}
-                        <button type="button" onClick={() => removeCoInspetor(name)}><X className="w-3 h-3" /></button>
+                      <Badge key={name} variant="secondary" className="gap-1 justify-between w-full sm:w-auto sm:self-start px-2 py-1">
+                        <span className="truncate">{name}</span>
+                        <button type="button" onClick={() => removeCoInspetor(name)} className="shrink-0"><X className="w-3 h-3" /></button>
                       </Badge>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">Até 5 co-inspetores ({coInspetores.length}/5)</p>
-                </div>
+                )}
+              </div>
+              {temCoInspecao === "sim" && (
+                <p className="text-xs text-muted-foreground">Até 5 co-inspetores ({coInspetores.length}/5)</p>
               )}
             </div>
           </div>
@@ -1835,6 +1865,99 @@ const ApontamentoForm = () => {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manual ALC validation dialog (PC) */}
+      <Dialog open={showAlcValidateDialog} onOpenChange={setShowAlcValidateDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Validar ALC manual</DialogTitle>
+            <DialogDescription className="text-sm">
+              Digite o ALC lido fisicamente na etiqueta para comparar com o ALC esperado em Engenharia.
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const checked = alcManualInput.trim().toUpperCase();
+            const expected = (alcExpected || "").toUpperCase();
+            const hasInput = checked.length > 0;
+            const match = hasInput && checked === expected;
+            const mismatch = hasInput && !match;
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border p-3 space-y-1 bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
+                    <p className="text-[10px] font-semibold uppercase text-blue-700 dark:text-blue-300">ALC Esperado</p>
+                    <p className="font-mono text-base font-bold text-blue-700 dark:text-blue-300">{expected || "—"}</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 space-y-1 ${
+                    match ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950/30"
+                    : mismatch ? "bg-red-50 border-destructive dark:bg-red-950/30"
+                    : "bg-muted/30"
+                  }`}>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">ALC Checado</p>
+                    <Input
+                      value={alcManualInput}
+                      onChange={(e) => setAlcManualInput(e.target.value.toUpperCase())}
+                      placeholder="Digite o ALC"
+                      className={`font-mono text-base font-bold h-9 px-2 ${
+                        match ? "text-emerald-700 border-emerald-500"
+                        : mismatch ? "text-destructive border-destructive"
+                        : ""
+                      }`}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {match && (
+                  <div className="rounded-md border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-2 text-center">
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">✓ ALC confere com o cadastrado</p>
+                  </div>
+                )}
+                {mismatch && (
+                  <div className="rounded-md border border-destructive bg-red-50 dark:bg-red-950/30 p-2 text-center">
+                    <p className="text-sm font-semibold text-destructive">✗ ALC divergente</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 pt-1">
+                  {match && (
+                    <Button
+                      variant="default"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => {
+                        setAlcCode(checked);
+                        setAlcStatus("match");
+                        setShowAlcValidateDialog(false);
+                        toast.success("ALC validado com sucesso e registrado no checklist.");
+                      }}
+                    >
+                      Registrar no checklist
+                    </Button>
+                  )}
+                  {mismatch && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => {
+                        setAlcCode(checked);
+                        setAlcMismatchScanned(checked);
+                        setAlcMismatchAttempts(1);
+                        setShowAlcValidateDialog(false);
+                        handleAlcConfirmError();
+                      }}
+                    >
+                      Confirmar erro de ALC (abrir defeito NG)
+                    </Button>
+                  )}
+                  <Button variant="outline" className="w-full" onClick={() => setShowAlcValidateDialog(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

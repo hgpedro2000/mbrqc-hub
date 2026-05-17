@@ -1868,6 +1868,99 @@ const ApontamentoForm = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Manual ALC validation dialog (PC) */}
+      <Dialog open={showAlcValidateDialog} onOpenChange={setShowAlcValidateDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Validar ALC manual</DialogTitle>
+            <DialogDescription className="text-sm">
+              Digite o ALC lido fisicamente na etiqueta para comparar com o ALC esperado em Engenharia.
+            </DialogDescription>
+          </DialogHeader>
+          {(() => {
+            const checked = alcManualInput.trim().toUpperCase();
+            const expected = (alcExpected || "").toUpperCase();
+            const hasInput = checked.length > 0;
+            const match = hasInput && checked === expected;
+            const mismatch = hasInput && !match;
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-lg border p-3 space-y-1 bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
+                    <p className="text-[10px] font-semibold uppercase text-blue-700 dark:text-blue-300">ALC Esperado</p>
+                    <p className="font-mono text-base font-bold text-blue-700 dark:text-blue-300">{expected || "—"}</p>
+                  </div>
+                  <div className={`rounded-lg border p-3 space-y-1 ${
+                    match ? "bg-emerald-50 border-emerald-500 dark:bg-emerald-950/30"
+                    : mismatch ? "bg-red-50 border-destructive dark:bg-red-950/30"
+                    : "bg-muted/30"
+                  }`}>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">ALC Checado</p>
+                    <Input
+                      value={alcManualInput}
+                      onChange={(e) => setAlcManualInput(e.target.value.toUpperCase())}
+                      placeholder="Digite o ALC"
+                      className={`font-mono text-base font-bold h-9 px-2 ${
+                        match ? "text-emerald-700 border-emerald-500"
+                        : mismatch ? "text-destructive border-destructive"
+                        : ""
+                      }`}
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {match && (
+                  <div className="rounded-md border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 p-2 text-center">
+                    <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">✓ ALC confere com o cadastrado</p>
+                  </div>
+                )}
+                {mismatch && (
+                  <div className="rounded-md border border-destructive bg-red-50 dark:bg-red-950/30 p-2 text-center">
+                    <p className="text-sm font-semibold text-destructive">✗ ALC divergente</p>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2 pt-1">
+                  {match && (
+                    <Button
+                      variant="default"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      onClick={() => {
+                        setAlcCode(checked);
+                        setAlcStatus("match");
+                        setShowAlcValidateDialog(false);
+                        toast.success("ALC validado com sucesso e registrado no checklist.");
+                      }}
+                    >
+                      Registrar no checklist
+                    </Button>
+                  )}
+                  {mismatch && (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => {
+                        setAlcCode(checked);
+                        setAlcMismatchScanned(checked);
+                        setAlcMismatchAttempts(1);
+                        setShowAlcValidateDialog(false);
+                        handleAlcConfirmError();
+                      }}
+                    >
+                      Confirmar erro de ALC (abrir defeito NG)
+                    </Button>
+                  )}
+                  <Button variant="outline" className="w-full" onClick={() => setShowAlcValidateDialog(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Image Annotation Editor */}
       <ImageAnnotationEditor
         open={!!annotatingFile}

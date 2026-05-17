@@ -1948,6 +1948,7 @@ const ApontamentoForm = () => {
                       onClick={() => {
                         setAlcCode(checked);
                         setAlcStatus("match");
+                        setValidationErrors((p) => { const n = new Set(p); n.delete("alcCode"); return n; });
                         setShowAlcValidateDialog(false);
                         toast.success("ALC validado com sucesso e registrado no checklist.");
                       }}

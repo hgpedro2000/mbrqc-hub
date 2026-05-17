@@ -28,7 +28,7 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13,
 ];
 
-export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
+export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 

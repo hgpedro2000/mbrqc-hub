@@ -283,7 +283,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     return "Mobis Brasil";
   }, [creatorProfile]);
 
-  const identificationFields = [
+  const identificationFields: Array<{ key: string; label: string; colSpanClass?: string }> = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
     { key: "responsavel", label: "Apontado por" },
@@ -293,7 +293,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },
-    { key: "part_name", label: "Part Name" },
+    { key: "part_name", label: "Part Name", colSpanClass: "sm:col-span-3" },
   ];
 
   const renderInspectionSection = () => {

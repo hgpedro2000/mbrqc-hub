@@ -189,15 +189,20 @@ const ApontamentoDashboard = () => {
     if (pnFilter) list = list.filter((i) => (i.part_number || "—") === pnFilter);
     let partCount = 0;
     let sortingCount = 0;
+    let totalInspected = 0;
+    let totalOk = 0;
+    let totalNg = 0;
     list.forEach((i) => {
+      totalInspected += (i.quantidade_ok || 0) + (i.quantidade_ng || 0);
+      totalOk += (i.quantidade_ok || 0);
+      totalNg += (i.quantidade_ng || 0);
       const resp = i.responsabilidade_defeito;
       if (!resp) return;
       const displayResp = resp.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
       if (displayResp.includes("part")) partCount++;
       else if (displayResp.includes("sorting")) sortingCount++;
-      // otherwise: not counted
     });
-    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount };
+    return { part: partCount, sorting: sortingCount, total: partCount + sortingCount, totalInspected, totalOk, totalNg };
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
 
 

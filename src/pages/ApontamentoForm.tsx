@@ -408,6 +408,7 @@ const ApontamentoForm = () => {
             project: m.project || "",
             line_module: m.line_module || "",
             supplier_name: (m as any).suppliers?.name || "",
+            alc_code: (m as any).alc_code || "",
           }));
           setSuffixOptions(options);
           setSelectedSuffixPn("");

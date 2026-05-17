@@ -211,6 +211,9 @@ export type Database = {
           acao_corretiva: string | null
           acao_imediata: string | null
           alc_code: string | null
+          alc_expected: string | null
+          alc_validation_method: string | null
+          alc_validation_status: string | null
           analise_inicial: string | null
           causa_raiz: string | null
           co_inspetores: Json | null
@@ -264,6 +267,9 @@ export type Database = {
           acao_corretiva?: string | null
           acao_imediata?: string | null
           alc_code?: string | null
+          alc_expected?: string | null
+          alc_validation_method?: string | null
+          alc_validation_status?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
           co_inspetores?: Json | null
@@ -317,6 +323,9 @@ export type Database = {
           acao_corretiva?: string | null
           acao_imediata?: string | null
           alc_code?: string | null
+          alc_expected?: string | null
+          alc_validation_method?: string | null
+          alc_validation_status?: string | null
           analise_inicial?: string | null
           causa_raiz?: string | null
           co_inspetores?: Json | null

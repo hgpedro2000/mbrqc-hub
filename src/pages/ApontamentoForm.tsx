@@ -1271,7 +1271,7 @@ const ApontamentoForm = () => {
         {isIncoming && activeProfile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
             <h2 className="form-section-title">Co-Inspeção</h2>
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                 <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
                   <SelectTrigger className="w-full sm:w-28"><SelectValue /></SelectTrigger>
@@ -1292,19 +1292,19 @@ const ApontamentoForm = () => {
                 >
                   <Search className="w-4 h-4" /> Selecionar Co-Inspetores
                 </Button>
-                {temCoInspecao === "sim" && coInspetores.length > 0 && (
-                  <div className="flex-1 flex flex-col gap-1.5">
-                    {coInspetores.map((name) => (
-                      <Badge key={name} variant="secondary" className="gap-1 justify-between w-full sm:w-auto sm:self-start px-2 py-1">
-                        <span className="truncate">{name}</span>
-                        <button type="button" onClick={() => removeCoInspetor(name)} className="shrink-0"><X className="w-3 h-3" /></button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
               </div>
+              {temCoInspecao === "sim" && coInspetores.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {coInspetores.map((name) => (
+                    <Badge key={name} variant="secondary" className="gap-1 justify-between w-full px-2 py-1.5">
+                      <span className="truncate">{name}</span>
+                      <button type="button" onClick={() => removeCoInspetor(name)} className="shrink-0"><X className="w-3 h-3" /></button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
               {temCoInspecao === "sim" && (
-                <p className="text-xs text-muted-foreground">Até 5 co-inspetores ({coInspetores.length}/5)</p>
+                <p className="text-xs text-muted-foreground">Até 6 co-inspetores ({coInspetores.length}/6)</p>
               )}
             </div>
           </div>

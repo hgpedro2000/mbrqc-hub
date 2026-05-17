@@ -51,12 +51,13 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
   </div>
 );
 
-const DataField = ({ label, value, fullWidth }: { label: string; value: string; fullWidth?: boolean }) => (
-  <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : ""}`}>
+const DataField = ({ label, value, fullWidth, colSpanClass, valueClass, children }: { label: string; value?: string; fullWidth?: boolean; colSpanClass?: string; valueClass?: string; children?: React.ReactNode }) => (
+  <div className={`space-y-0.5 ${fullWidth ? "col-span-full" : (colSpanClass || "")}`}>
     <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">{label}</p>
-    <p className="text-sm font-medium text-foreground whitespace-pre-wrap break-words">{value}</p>
+    {children ?? <p className={`text-sm font-medium whitespace-pre-wrap break-words ${valueClass || "text-foreground"}`}>{value}</p>}
   </div>
 );
+
 
 /* ── TagBadgeInline ── */
 interface TagBadgeInlineProps {
@@ -282,7 +283,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     return "Mobis Brasil";
   }, [creatorProfile]);
 
-  const identificationFields = [
+  const identificationFields: Array<{ key: string; label: string; colSpanClass?: string }> = [
     { key: "numero", label: "Número" },
     { key: "data", label: "Data" },
     { key: "responsavel", label: "Apontado por" },
@@ -292,7 +293,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     { key: "projeto", label: "Projeto" },
     { key: "fornecedor", label: "Fornecedor" },
     { key: "part_number", label: "Part Number" },
-    { key: "part_name", label: "Part Name" },
+    { key: "part_name", label: "Part Name", colSpanClass: "sm:col-span-3" },
   ];
 
   const renderInspectionSection = () => {
@@ -372,7 +373,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} colSpanClass={f.colSpanClass} />)}
         </div>
       </div>
       {renderInspectionSection()}
@@ -384,15 +385,30 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           <DataField label="Qtd. NG" value={fmt("", d?.quantidade_ng)} />
           <DataField label="Qtd. OK" value={fmt("", d?.quantidade_ok)} />
           <DataField label="Lote Inspecionado" value={fmt("", d?.lote_inspecionado)} />
-          <DataField label="ALC" value={(d?.alc_code && String(d.alc_code).trim()) || "N/A"} />
+          {(() => {
+            const specAlc = (d?.alc_expected && String(d.alc_expected).trim()) || (d?.alc_code && String(d.alc_code).trim()) || "N/A";
+            const isOk = d?.alc_validation_status === "ok";
+            const isErr = d?.alc_validation_status === "error";
+            return (
+              <DataField
+                label="Spec ALC"
+                value={specAlc}
+                valueClass={isOk ? "text-emerald-600 font-semibold" : isErr ? "text-destructive font-semibold" : "text-foreground"}
+              />
+            );
+          })()}
           {d?.alc_validation_method && (
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest pdf-no-tracking">Validação ALC</p>
+            <DataField label="Validação ALC">
               <p className={`text-sm font-semibold ${d?.alc_validation_status === "ok" ? "text-emerald-600" : "text-destructive"}`}>
-                {d?.alc_validation_status === "ok" ? "✓ Validado OK" : "✗ Erro de ALC"} — {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+                {d?.alc_validation_status === "ok" ? "✓ Validado OK" : "✗ Erro de ALC"}
+                {d?.alc_code ? ` — ${d.alc_code}` : ""}
               </p>
-            </div>
+              <p className={`text-[11px] ${d?.alc_validation_status === "ok" ? "text-emerald-600/80" : "text-destructive/80"}`}>
+                {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+              </p>
+            </DataField>
           )}
+
           <DataField
             label="Responsabilidade"
             value={
@@ -415,7 +431,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} colSpanClass={f.colSpanClass} />)}
         </div>
       </div>
       <div data-pdf-section>
@@ -439,7 +455,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} colSpanClass={f.colSpanClass} />)}
           <DataField label="Linha" value={fmt("", d?.linha)} />
           <DataField label="Setor" value={fmt("", d?.setor)} />
         </div>
@@ -465,7 +481,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       <div data-pdf-section>
         <SectionHeader icon={FileText} title="Identificação" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 bg-card rounded-lg border border-border p-4">
-          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} />)}
+          {identificationFields.map(f => <DataField key={f.key} label={f.label} value={getFieldValue(f)} colSpanClass={f.colSpanClass} />)}
         </div>
       </div>
       <div data-pdf-section>

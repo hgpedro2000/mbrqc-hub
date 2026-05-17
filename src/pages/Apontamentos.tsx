@@ -350,7 +350,7 @@ const Apontamentos = () => {
                         const resp = item.responsabilidade_defeito;
                         const semDefeito = (item.quantidade_ng ?? 0) === 0 || item.descricao === "Sem defeito encontrado durante essa inspeção";
                         if (semDefeito) {
-                          return <Badge className="text-[9px] px-1.5 bg-muted text-muted-foreground border-border">N/A</Badge>;
+                          return null;
                         }
                         const loc = getInspectionLocation(item);
                         const displayResp = resp
@@ -536,7 +536,7 @@ const Apontamentos = () => {
                       const resp = item.responsabilidade_defeito;
                       const semDefeito = (item.quantidade_ng ?? 0) === 0 || item.descricao === "Sem defeito encontrado durante essa inspeção";
                       if (semDefeito) {
-                        return <Badge className="text-[9px] px-1.5 bg-muted text-muted-foreground border-border">N/A</Badge>;
+                        return null;
                       }
                       const loc = getInspectionLocation(item);
                       const displayResp = resp ? resp.replace(/^\d+\s*-\s*/, "").trim() : loc === "Sala do Audio" ? "Part" : "Sorting";

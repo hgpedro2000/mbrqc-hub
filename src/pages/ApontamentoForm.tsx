@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2, FileBarChart, Plus, Trash2, Camera, AlertTriangle, Search, X, Clock, Tag, ImagePlus } from "lucide-react";
-import { QRScannerButton } from "@/components/apontamento/QRScannerButton";
+import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";
 import { HyundaiQRData, extractAlcFromPartNumber } from "@/lib/parseHyundaiQR";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -94,6 +94,8 @@ const ApontamentoForm = () => {
   const [alcStatus, setAlcStatus] = useState<"idle" | "match" | "mismatch" | "manual">("idle");
   const [showAlcMismatchDialog, setShowAlcMismatchDialog] = useState(false);
   const [alcMismatchScanned, setAlcMismatchScanned] = useState("");
+  const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
+  const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
   const [quantidadeOk, setQuantidadeOk] = useState<number>(0);
@@ -302,6 +304,7 @@ const ApontamentoForm = () => {
             setAlcStatus("match");
           } else {
             setAlcStatus("mismatch");
+            setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
             setAlcMismatchScanned(scannedAlc);
             setShowAlcMismatchDialog(true);
           }
@@ -366,6 +369,7 @@ const ApontamentoForm = () => {
               setAlcStatus("match");
             } else {
               setAlcStatus("mismatch");
+              setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
               setAlcMismatchScanned(scannedAlc);
               setShowAlcMismatchDialog(true);
             }
@@ -1101,7 +1105,7 @@ const ApontamentoForm = () => {
           {/* QR Scanner - mobile only, Incoming only */}
           {isIncoming && (
             <div className="mt-3 sm:hidden">
-              <QRScannerButton onScan={handleQRScan} />
+              <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
             </div>
           )}
 
@@ -1749,13 +1753,28 @@ const ApontamentoForm = () => {
               <p className="font-mono text-sm">{partNumber || "—"}</p>
             </div>
             <div className="flex flex-col gap-2 pt-1">
-              <Button onClick={handleAlcManualKeep} variant="outline" className="w-full h-auto py-3 flex flex-col gap-0.5">
-                <span className="font-semibold">Registrar manualmente com foto</span>
-                <span className="text-[11px] text-muted-foreground font-normal">Mantém o ALC lido e exige foto da etiqueta</span>
-              </Button>
+              {alcMismatchAttempts < 3 && (
+                <Button
+                  onClick={() => {
+                    setShowAlcMismatchDialog(false);
+                    setTimeout(() => qrScannerRef.current?.openScanner(), 150);
+                  }}
+                  variant="outline"
+                  className="w-full h-auto py-3 flex flex-col gap-0.5"
+                >
+                  <span className="font-semibold">Ler QR Code novamente</span>
+                  <span className="text-[11px] text-muted-foreground font-normal">
+                    Tentativa {alcMismatchAttempts} de 2 — releia a etiqueta para confirmar
+                  </span>
+                </Button>
+              )}
               <Button onClick={handleAlcConfirmError} variant="destructive" className="w-full h-auto py-3 flex flex-col gap-0.5">
                 <span className="font-semibold">Confirmar erro de ALC</span>
-                <span className="text-[11px] font-normal opacity-90">Abre defeito NG e exige Modo de Falha</span>
+                <span className="text-[11px] font-normal opacity-90">
+                  {alcMismatchAttempts >= 3
+                    ? "Mesma divergência confirmada 3x — abrir defeito NG"
+                    : "Abre defeito NG e exige Modo de Falha"}
+                </span>
               </Button>
             </div>
           </div>

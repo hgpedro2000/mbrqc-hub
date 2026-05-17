@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +13,10 @@ interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
 }
 
+export interface QRScannerButtonHandle {
+  openScanner: () => void;
+}
+
 const READER_ID = "qr-reader-incoming";
 const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.QR_CODE,
@@ -24,7 +28,7 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13,
 ];
 
-export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
+export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
@@ -159,6 +163,8 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
       }
     }
   }, [createScanner, handleDecodedText, stopScanner]);
+
+  useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
 
   const loadImageElement = useCallback((file: File) => {
     return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -470,4 +476,5 @@ export const QRScannerButton = ({ onScan }: QRScannerButtonProps) => {
       </Dialog>
     </>
   );
-};
+});
+QRScannerButton.displayName = "QRScannerButton";

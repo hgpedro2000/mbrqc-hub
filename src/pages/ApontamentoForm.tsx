@@ -304,6 +304,7 @@ const ApontamentoForm = () => {
             setAlcStatus("match");
           } else {
             setAlcStatus("mismatch");
+            setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
             setAlcMismatchScanned(scannedAlc);
             setShowAlcMismatchDialog(true);
           }

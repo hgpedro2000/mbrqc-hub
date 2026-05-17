@@ -52,7 +52,7 @@ const SupplierPartSelector = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("id, part_number, part_name, project, line_module, supplier_id, suppliers(id, name, code)")
+        .select("id, part_number, part_name, project, line_module, alc_code, supplier_id, suppliers(id, name, code)")
         .eq("active", true)
         .order("part_number");
       if (error) throw error;

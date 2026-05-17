@@ -148,6 +148,7 @@ const SupplierPartSelector = ({
       part_name: part.part_name,
       project: part.project,
       line_module: part.line_module,
+      alc_code: part.alc_code || "",
     });
     // Also set supplier if not yet set
     if (!selectedSupplierId && part.suppliers) {
@@ -170,9 +171,10 @@ const SupplierPartSelector = ({
         part_name: match.part_name,
         project: match.project,
         line_module: match.line_module,
+        alc_code: match.alc_code || "",
       });
     } else {
-      onPartDataChange({ part_name: "", project: selectedProject, line_module: "" });
+      onPartDataChange({ part_name: "", project: selectedProject, line_module: "", alc_code: "" });
     }
   };
 

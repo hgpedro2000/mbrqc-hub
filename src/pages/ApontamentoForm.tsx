@@ -630,7 +630,10 @@ const ApontamentoForm = () => {
       setPartNumber(existing.part_number || "");
       setPartName(existing.part_name || "");
       setAlcCode((existing as any).alc_code || "N/A");
-      setAlcStatus("idle");
+      setAlcExpected((existing as any).alc_expected || "");
+      const savedStatus = (existing as any).alc_validation_status;
+      setAlcStatus(savedStatus === "ok" ? "match" : savedStatus === "error" ? "mismatch" : "idle");
+      setAlcValidatedVia((existing as any).alc_validation_method || null);
       setQuantidadeInspecionada(existing.quantidade_inspecionada || 0);
       setQuantidadeNg(existing.quantidade_ng || 0);
       setQuantidadeOk(existing.quantidade_ok || 0);

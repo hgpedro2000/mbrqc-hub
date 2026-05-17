@@ -986,6 +986,26 @@ const ApontamentoDashboard = () => {
                 <p className="text-[11px] text-[hsl(0,0%,50%)]">100%</p>
               </button>
             </div>
+            <div className="border-t border-[hsl(220,10%,25%)] px-2 py-2 flex flex-wrap items-center justify-around gap-2 bg-[hsl(220,15%,12%)]">
+              <div className="text-center">
+                <p className="text-[9px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
+                <p className="text-base font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-green-400/80 uppercase tracking-wider">OK</p>
+                <p className="text-base font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-red-400/80 uppercase tracking-wider">NG</p>
+                <p className="text-base font-bold text-red-400">{origemData.totalNg.toLocaleString('pt-BR')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[9px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
+                <p className="text-base font-bold text-[hsl(45,90%,60%)]">
+                  {origemData.totalOk > 0 ? ((origemData.totalNg / origemData.totalOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+                </p>
+              </div>
+            </div>
             {responsibilityFilter && (
               <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
                 <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">

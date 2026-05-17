@@ -1340,26 +1340,45 @@ const ApontamentoForm = () => {
               </div>
             </div>
 
-            {/* QUANTIDADES */}
+            {/* DADOS DE INSPEÇÃO */}
             <div className="form-section">
-              <h2 className="form-section-title">Quantidades</h2>
-              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+              <h2 className="form-section-title">Dados de Inspeção</h2>
+              <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-1.5">
-                  <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
-                  <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                  <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
+                  <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
                 </div>
-                <div className="space-y-1.5">
-                  <Label>NG *</Label>
-                  <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  <div className="space-y-1.5">
+                    <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
+                    <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>NG *</Label>
+                    <Input type="number" min={0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>OK</Label>
+                    <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label>OK</Label>
-                  <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
-                </div>
-              </div>
-              <div className="mt-3 sm:mt-4 space-y-1.5">
-                <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
-                <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
+                {quantidadeNg > 0 && (
+                  <div className="space-y-1.5">
+                    <Label>Responsabilidade *</Label>
+                    {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
+                      <Input value="Sorting" readOnly className="bg-muted" />
+                    ) : (
+                      <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          {responsibilities.map((r: any) => (
+                            <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

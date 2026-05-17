@@ -1103,7 +1103,7 @@ const ApontamentoForm = () => {
           {/* QR Scanner - mobile only, Incoming only */}
           {isIncoming && (
             <div className="mt-3 sm:hidden">
-              <QRScannerButton onScan={handleQRScan} />
+              <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
             </div>
           )}
 

@@ -1193,9 +1193,9 @@ const ApontamentoForm = () => {
             />
           </div>
 
-          {/* MÓDULO + ALC + RESPONSABILIDADE - linha simétrica de 3 colunas (Incoming) */}
+          {/* MÓDULO + ALC - Incoming (Responsabilidade movido p/ Dados de Inspeção) */}
           {isIncoming ? (
-            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 items-end">
+            <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-end">
               <div className="space-y-1.5">
                 <Label>Módulo</Label>
                 <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
@@ -1241,7 +1241,11 @@ const ApontamentoForm = () => {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className={`shrink-0 whitespace-nowrap ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
+                      className={`shrink-0 whitespace-nowrap ${
+                        alcExpected && alcExpected !== "N/A" && alcStatus !== "mismatch"
+                          ? "animate-pulse border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300"
+                          : ""
+                      } ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
                       disabled={!alcExpected || alcExpected === "N/A"}
                       onClick={() => {
                         setAlcManualInput("");
@@ -1253,21 +1257,6 @@ const ApontamentoForm = () => {
                     </Button>
                   )}
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Responsabilidade</Label>
-                {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
-                  <Input value="Sorting" readOnly className="bg-muted" />
-                ) : (
-                  <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {responsibilities.map((r: any) => (
-                        <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
             </div>
           ) : (

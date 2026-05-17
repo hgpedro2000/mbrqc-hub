@@ -905,8 +905,8 @@ const ApontamentoForm = () => {
         if (temCoInspecao === "sim" && coInspetores.length === 0) {
           errors.add("coInspetores"); msgs.push("Selecione ao menos 1 co-inspetor ou marque 'Não'");
         }
-        if (coInspetores.length > 5) {
-          errors.add("coInspetores"); msgs.push("Máximo 5 co-inspetores");
+        if (coInspetores.length > 6) {
+          errors.add("coInspetores"); msgs.push("Máximo 6 co-inspetores");
         }
         // Ensure all selected co-inspectors still exist in the loaded list
         if (coInspetores.length > 0 && allProfiles.length > 0) {

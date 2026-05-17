@@ -164,6 +164,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     }
   }, [createScanner, handleDecodedText, stopScanner]);
 
+  useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
+
   const loadImageElement = useCallback((file: File) => {
     return new Promise<HTMLImageElement>((resolve, reject) => {
       const url = URL.createObjectURL(file);

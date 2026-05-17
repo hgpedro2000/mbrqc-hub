@@ -825,6 +825,38 @@ const ApontamentoForm = () => {
   const adminEdit = isEdit && isAdmin && !impersonating;
   const today = getLocalDateString();
 
+  useEffect(() => {
+    const pn = partNumber.trim();
+    const currentExpected = (alcExpected || "").trim().toUpperCase();
+    if (!isIncoming || !pn || (currentExpected && currentExpected !== "N/A")) return;
+
+    let cancelled = false;
+    const restoreExpectedAlc = async () => {
+      try {
+        const pnNormalized = pn.replace(/-/g, "").toUpperCase();
+        const { data: activeParts, error } = await supabase
+          .from("part_numbers")
+          .select("part_number, alc_code")
+          .eq("active", true);
+        if (error || cancelled) return;
+        const match = (activeParts || []).find((p: any) => p.part_number?.replace(/-/g, "").toUpperCase() === pnNormalized);
+        const expected = ((match as any)?.alc_code || "").trim().toUpperCase();
+        if (!expected || expected === "N/A" || cancelled) return;
+
+        setAlcExpected(expected);
+        setAlcCode((prev) => {
+          const current = (prev || "").trim().toUpperCase();
+          return !current || current === "N/A" ? expected : prev;
+        });
+      } catch {
+        // Mantém o formulário restaurado; o usuário ainda pode selecionar a peça novamente.
+      }
+    };
+
+    void restoreExpectedAlc();
+    return () => { cancelled = true; };
+  }, [alcExpected, isIncoming, partNumber]);
+
   const calcDuration = (start: string, end: string): string => {
     if (!start || !end) return "0min";
     const [sh, sm] = start.split(":").map(Number);

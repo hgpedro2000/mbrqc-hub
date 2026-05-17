@@ -94,6 +94,8 @@ const ApontamentoForm = () => {
   const [alcStatus, setAlcStatus] = useState<"idle" | "match" | "mismatch" | "manual">("idle");
   const [showAlcMismatchDialog, setShowAlcMismatchDialog] = useState(false);
   const [alcMismatchScanned, setAlcMismatchScanned] = useState("");
+  const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
+  const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
   const [quantidadeOk, setQuantidadeOk] = useState<number>(0);

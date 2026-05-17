@@ -474,4 +474,5 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       </Dialog>
     </>
   );
-};
+});
+QRScannerButton.displayName = "QRScannerButton";

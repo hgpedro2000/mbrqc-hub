@@ -1753,13 +1753,28 @@ const ApontamentoForm = () => {
               <p className="font-mono text-sm">{partNumber || "—"}</p>
             </div>
             <div className="flex flex-col gap-2 pt-1">
-              <Button onClick={handleAlcManualKeep} variant="outline" className="w-full h-auto py-3 flex flex-col gap-0.5">
-                <span className="font-semibold">Registrar manualmente com foto</span>
-                <span className="text-[11px] text-muted-foreground font-normal">Mantém o ALC lido e exige foto da etiqueta</span>
-              </Button>
+              {alcMismatchAttempts < 3 && (
+                <Button
+                  onClick={() => {
+                    setShowAlcMismatchDialog(false);
+                    setTimeout(() => qrScannerRef.current?.openScanner(), 150);
+                  }}
+                  variant="outline"
+                  className="w-full h-auto py-3 flex flex-col gap-0.5"
+                >
+                  <span className="font-semibold">Ler QR Code novamente</span>
+                  <span className="text-[11px] text-muted-foreground font-normal">
+                    Tentativa {alcMismatchAttempts} de 2 — releia a etiqueta para confirmar
+                  </span>
+                </Button>
+              )}
               <Button onClick={handleAlcConfirmError} variant="destructive" className="w-full h-auto py-3 flex flex-col gap-0.5">
                 <span className="font-semibold">Confirmar erro de ALC</span>
-                <span className="text-[11px] font-normal opacity-90">Abre defeito NG e exige Modo de Falha</span>
+                <span className="text-[11px] font-normal opacity-90">
+                  {alcMismatchAttempts >= 3
+                    ? "Mesma divergência confirmada 3x — abrir defeito NG"
+                    : "Abre defeito NG e exige Modo de Falha"}
+                </span>
               </Button>
             </div>
           </div>

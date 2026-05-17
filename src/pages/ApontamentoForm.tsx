@@ -1718,7 +1718,7 @@ const ApontamentoForm = () => {
                 </Badge>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">{coInspetores.length}/5 selecionados</p>
+            <p className="text-xs text-muted-foreground">{coInspetores.length}/6 selecionados</p>
             <div className="border rounded-lg max-h-60 overflow-y-auto">
               {loadingCoInspetores ? (
                 <div className="px-3 py-6 text-sm text-muted-foreground text-center flex items-center justify-center gap-2">

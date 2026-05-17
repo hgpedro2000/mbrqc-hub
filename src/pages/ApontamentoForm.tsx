@@ -984,7 +984,7 @@ const ApontamentoForm = () => {
         parada_linha_tempo: paradaLinha === "sim" ? paradaLinhaTempo : null,
         local_deteccao: localDeteccao || null,
         vin_number: vinNumber || null,
-        responsabilidade_defeito: responsabilidadeDefeito || null,
+        responsabilidade_defeito: (isIncoming && (quantidadeNg === 0 || descricao === "Sem defeito encontrado durante essa inspeção")) ? null : (responsabilidadeDefeito || null),
         quantidade_detectado: quantidadeDetectado,
         lancamento: lancamento || null,
         analise_inicial: analiseInicial || null,

@@ -286,8 +286,8 @@ const SupplierPartSelector = ({
 
       {/* Search popup */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg md:max-w-3xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="bg-background z-10">
             <DialogTitle>{t("supplierSelector.searchParts")}</DialogTitle>
           </DialogHeader>
           <div className="relative">
@@ -301,12 +301,12 @@ const SupplierPartSelector = ({
             />
           </div>
           <div className="flex-1 overflow-auto border rounded-md mt-2">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 sticky top-0">
-                <tr>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">Part Number</th>
+            <table className="w-full text-sm table-fixed md:table-auto">
+              <thead className="bg-background sticky top-0 z-10 shadow-[0_1px_0_0_hsl(var(--border))]">
+                <tr className="bg-muted">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap md:w-44">Part Number</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground">Part Name</th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">{t("supplierSelector.module")}</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap md:w-24">{t("supplierSelector.module")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -324,9 +324,9 @@ const SupplierPartSelector = ({
                       onDoubleClick={() => selectPart(p)}
                       onClick={() => selectPart(p)}
                     >
-                      <td className="px-3 py-2 font-mono font-semibold">{p.part_number}</td>
-                      <td className="px-3 py-2">{p.part_name}</td>
-                      <td className="px-3 py-2 text-muted-foreground">{p.line_module}</td>
+                      <td className="px-3 py-2 font-mono font-semibold whitespace-nowrap">{p.part_number}</td>
+                      <td className="px-3 py-2 md:whitespace-nowrap md:truncate" title={p.part_name}>{p.part_name}</td>
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{p.line_module}</td>
                     </tr>
                   ))
                 )}

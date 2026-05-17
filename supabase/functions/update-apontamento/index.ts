@@ -59,6 +59,10 @@ const PayloadSchema = z.object({
   co_inspetores: z.array(z.unknown()).optional(),
   tempo_inspecao: nullableStr(255),
   numero_tag: nullableStr(100),
+  alc_code: nullableStr(100),
+  alc_expected: nullableStr(100),
+  alc_validation_method: nullableStr(20),
+  alc_validation_status: nullableStr(20),
 }).passthrough(); // we'll filter unknowns explicitly below
 
 const ALLOWED_KEYS = new Set(Object.keys(PayloadSchema.shape));

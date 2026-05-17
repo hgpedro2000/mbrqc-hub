@@ -180,6 +180,7 @@ const ApontamentoForm = () => {
       if (d.alcStatus) setAlcStatus(d.alcStatus);
       if (d.alcMismatchScanned) setAlcMismatchScanned(d.alcMismatchScanned);
       if (typeof d.alcMismatchAttempts === "number") setAlcMismatchAttempts(d.alcMismatchAttempts);
+      if (d.alcValidatedVia) setAlcValidatedVia(d.alcValidatedVia);
       if (typeof d.quantidadeInspecionada === "number") setQuantidadeInspecionada(d.quantidadeInspecionada);
       if (typeof d.quantidadeNg === "number") setQuantidadeNg(d.quantidadeNg);
       if (typeof d.quantidadeOk === "number") setQuantidadeOk(d.quantidadeOk);

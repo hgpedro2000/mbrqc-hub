@@ -234,7 +234,7 @@ const ApontamentoForm = () => {
   // Snapshot debounced em sessionStorage
   useFormAutosave(autosaveKey, {
     formTipo, data, turno, fase, projeto, fornecedor, partNumber, partName, modulo,
-    alcCode, alcExpected, alcStatus, alcMismatchScanned, alcMismatchAttempts,
+    alcCode, alcExpected, alcStatus, alcMismatchScanned, alcMismatchAttempts, alcValidatedVia,
     quantidadeInspecionada, quantidadeNg, quantidadeOk, loteInspecionado, modoFalha,
     paradaLinha, paradaLinhaTempo, descricao, localDeteccao, vinNumber,
     responsabilidadeDefeito, quantidadeDetectado, lancamento, analiseInicial,

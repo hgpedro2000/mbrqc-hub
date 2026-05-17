@@ -383,8 +383,10 @@ const ApontamentoForm = () => {
               setAlcStatus("manual");
             } else if (expectedAlc === scannedAlc) {
               setAlcStatus("match");
+              setAlcValidatedVia("qr");
             } else {
               setAlcStatus("mismatch");
+              setAlcValidatedVia("qr");
               setAlcMismatchAttempts((prev) => (alcMismatchScanned === scannedAlc ? prev + 1 : 1));
               setAlcMismatchScanned(scannedAlc);
               setShowAlcMismatchDialog(true);

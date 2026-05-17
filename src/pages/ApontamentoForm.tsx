@@ -410,7 +410,15 @@ const ApontamentoForm = () => {
     }
   };
 
+  const alcRescanInProgress = useRef(false);
+
   const handleQRScan = (qrData: HyundaiQRData) => {
+    // Bypass "Nova Leitura Detectada" when the rescan was triggered from the ALC mismatch flow
+    if (alcRescanInProgress.current) {
+      alcRescanInProgress.current = false;
+      void applyQRScan(qrData);
+      return;
+    }
     if (partNumber && partNumber.trim() !== "") {
       setPendingQRData(qrData);
       setShowRescanConfirm(true);

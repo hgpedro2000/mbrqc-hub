@@ -1798,6 +1798,7 @@ const ApontamentoForm = () => {
                 <Button
                   onClick={() => {
                     setShowAlcMismatchDialog(false);
+                    alcRescanInProgress.current = true;
                     setTimeout(() => qrScannerRef.current?.openScanner(), 150);
                   }}
                   variant="outline"

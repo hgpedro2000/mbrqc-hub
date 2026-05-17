@@ -1075,7 +1075,7 @@ const ApontamentoDashboard = () => {
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
                 {showPPM && (
-                  <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? Math.round((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR') : 0}</td>
+                  <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? ((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                 )}
               </tr>
             </tbody>

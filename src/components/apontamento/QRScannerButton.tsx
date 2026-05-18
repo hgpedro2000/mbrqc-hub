@@ -468,18 +468,22 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       </Button>
 
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
+        <DialogContent className="max-w-[96vw] sm:max-w-sm max-h-[92dvh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 pr-10">
               <QrCode className="w-5 h-5" />
               Escanear Etiqueta
             </DialogTitle>
-            <Button variant="ghost" size="icon" className="absolute right-3 top-3" onClick={closeScanner}>
-              <X className="w-4 h-4" />
-            </Button>
           </DialogHeader>
 
           <div className="space-y-3">
+            {scannerStarting ? (
+              <div className="flex items-center justify-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Abrindo câmera…
+              </div>
+            ) : null}
+
             {cameraError ? (
               <div className="flex flex-col items-center gap-3 py-4 text-center">
                 <AlertTriangle className="w-10 h-10 text-amber-500" />
@@ -487,7 +491,25 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               </div>
             ) : null}
 
-            <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
+            <div id={READER_ID} className="w-full min-h-[320px] rounded-lg overflow-hidden bg-muted [&_video]:!object-cover" />
+
+            {zoomOptions && zoomLevel !== null ? (
+              <div className="space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Zoom para QR pequeno</span>
+                  <span>{zoomLevel.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={zoomOptions.min}
+                  max={zoomOptions.max}
+                  step={zoomOptions.step}
+                  value={zoomLevel}
+                  onChange={(event) => void applyZoom(Number(event.target.value))}
+                  className="w-full accent-primary"
+                />
+              </div>
+            ) : null}
 
             <p className="text-xs text-muted-foreground text-center">
               Aponte a câmera para o código da etiqueta Hyundai Mobis.
@@ -506,13 +528,6 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
             </div>
 
             <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageSelected}
-            />
-            <input
               ref={galleryInputRef}
               type="file"
               accept="image/*"
@@ -522,6 +537,13 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           </div>
         </DialogContent>
       </Dialog>
+
+      <InAppCamera
+        open={cameraCaptureOpen}
+        initialStream={cameraCaptureStream}
+        onClose={closeCameraCapture}
+        onCapture={handleCameraCapture}
+      />
 
       <Dialog open={incompatibleOpen} onOpenChange={setIncompatibleOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-md">

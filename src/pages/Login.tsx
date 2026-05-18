@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logAction } from "@/lib/logAction";
+import { primeBeep } from "@/lib/beep";
 
 const Login = () => {
   const navigate = useNavigate();

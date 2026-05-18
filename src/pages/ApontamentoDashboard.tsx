@@ -209,6 +209,27 @@ const ApontamentoDashboard = () => {
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount, totalInspected, totalOk, totalNg };
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
 
+  // NG breakdown by responsabilidade (for the popup opened from NG)
+  const ngBreakdown = useMemo(() => {
+    const ngList = filtered.filter((i) => (i.quantidade_ng || 0) > 0);
+    const byResp = new Map<string, { qty: number; records: any[] }>();
+    let totalNg = 0;
+    ngList.forEach((i) => {
+      const qty = i.quantidade_ng || 0;
+      totalNg += qty;
+      const raw = (i.responsabilidade_defeito || "").replace(/^\d+\s*-\s*/, "").trim();
+      const key = raw || "Sem responsabilidade";
+      const e = byResp.get(key) || { qty: 0, records: [] };
+      e.qty += qty;
+      e.records.push(i);
+      byResp.set(key, e);
+    });
+    const groups = Array.from(byResp.entries())
+      .map(([name, { qty, records }]) => ({ name, qty, records, pct: totalNg > 0 ? (qty / totalNg) * 100 : 0 }))
+      .sort((a, b) => b.qty - a.qty);
+    return { totalNg, groups };
+  }, [filtered]);
+
 
   const total = filtered.length;
 

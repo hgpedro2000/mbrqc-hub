@@ -20,6 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";
@@ -130,6 +131,7 @@ const ApontamentoDashboard = () => {
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [ngBreakdownOpen, setNgBreakdownOpen] = useState(false);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
 
   const suppliersMap = useMemo(() => {
@@ -206,6 +208,27 @@ const ApontamentoDashboard = () => {
     });
     return { part: partCount, sorting: sortingCount, total: partCount + sortingCount, totalInspected, totalOk, totalNg };
   }, [baseList, dateFrom, dateTo, supplierFilter, projectFilter, moduleFilter, pnFilter]);
+
+  // NG breakdown by responsabilidade (for the popup opened from NG)
+  const ngBreakdown = useMemo(() => {
+    const ngList = filtered.filter((i) => (i.quantidade_ng || 0) > 0);
+    const byResp = new Map<string, { qty: number; records: any[] }>();
+    let totalNg = 0;
+    ngList.forEach((i) => {
+      const qty = i.quantidade_ng || 0;
+      totalNg += qty;
+      const raw = (i.responsabilidade_defeito || "").replace(/^\d+\s*-\s*/, "").trim();
+      const key = raw || "Sem responsabilidade";
+      const e = byResp.get(key) || { qty: 0, records: [] };
+      e.qty += qty;
+      e.records.push(i);
+      byResp.set(key, e);
+    });
+    const groups = Array.from(byResp.entries())
+      .map(([name, { qty, records }]) => ({ name, qty, records, pct: totalNg > 0 ? (qty / totalNg) * 100 : 0 }))
+      .sort((a, b) => b.qty - a.qty);
+    return { totalNg, groups };
+  }, [filtered]);
 
 
   const total = filtered.length;
@@ -962,59 +985,35 @@ const ApontamentoDashboard = () => {
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
-            <div className="flex gap-0">
-              <button
-                onClick={() => setResponsibilityFilter(responsibilityFilter === "part" ? null : "part")}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === "part" ? "bg-blue-600/20 ring-1 ring-blue-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Part</p>
-                <p className="text-lg font-bold text-blue-400">{origemData.part}</p>
-                <p className="text-[11px] text-blue-400/60">{origemData.total > 0 ? ((origemData.part / origemData.total) * 100).toFixed(1) : "0"}%</p>
-              </button>
-              <button
-                onClick={() => setResponsibilityFilter(responsibilityFilter === "sorting" ? null : "sorting")}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] border-x border-[hsl(220,10%,25%)] ${responsibilityFilter === "sorting" ? "bg-orange-600/20 ring-1 ring-orange-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Sorting</p>
-                <p className="text-lg font-bold text-orange-400">{origemData.sorting}</p>
-                <p className="text-[11px] text-orange-400/60">{origemData.total > 0 ? ((origemData.sorting / origemData.total) * 100).toFixed(1) : "0"}%</p>
-              </button>
-              <button
-                onClick={() => setResponsibilityFilter(null)}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === null ? "bg-[hsl(220,10%,22%)] ring-1 ring-[hsl(0,0%,50%)]" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-[hsl(0,0%,70%)] font-semibold uppercase tracking-wider">Total</p>
-                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.total}</p>
-                <p className="text-[11px] text-[hsl(0,0%,50%)]">100%</p>
-              </button>
-            </div>
-            <div className="border-t border-[hsl(220,10%,25%)] px-2 py-2 flex flex-wrap items-center justify-around gap-2 bg-[hsl(220,15%,12%)]">
+            <div className="px-3 py-3 grid grid-cols-4 gap-2 bg-[hsl(220,15%,12%)]">
               <div className="text-center">
-                <p className="text-[9px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
-                <p className="text-base font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(0,0%,50%)]">100%</p>
               </div>
               <div className="text-center">
-                <p className="text-[9px] text-green-400/80 uppercase tracking-wider">OK</p>
-                <p className="text-base font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-green-400/80 uppercase tracking-wider">OK</p>
+                <p className="text-lg font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-green-400/60">{origemData.totalInspected > 0 ? ((origemData.totalOk / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
               </div>
+              <button
+                type="button"
+                onClick={() => origemData.totalNg > 0 && setNgBreakdownOpen(true)}
+                className="text-center rounded-md hover:bg-red-500/10 transition-colors py-1"
+                title="Ver detalhamento por responsabilidade"
+              >
+                <p className="text-[10px] text-red-400/80 uppercase tracking-wider">NG</p>
+                <p className="text-lg font-bold text-red-400 underline-offset-2 hover:underline">{origemData.totalNg.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-red-400/60">{origemData.totalInspected > 0 ? ((origemData.totalNg / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
+              </button>
               <div className="text-center">
-                <p className="text-[9px] text-red-400/80 uppercase tracking-wider">NG</p>
-                <p className="text-base font-bold text-red-400">{origemData.totalNg.toLocaleString('pt-BR')}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[9px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
-                <p className="text-base font-bold text-[hsl(45,90%,60%)]">
+                <p className="text-[10px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
+                <p className="text-lg font-bold text-[hsl(45,90%,60%)]">
                   {origemData.totalOk > 0 ? ((origemData.totalNg / origemData.totalOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                 </p>
+                <p className="text-[10px] text-[hsl(45,90%,60%)]/40">&nbsp;</p>
               </div>
             </div>
-            {responsibilityFilter && (
-              <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
-                <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
-                  ✕ Filtro: {responsibilityFilter === "part" ? "Part" : "Sorting"}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1295,6 +1294,53 @@ const ApontamentoDashboard = () => {
         initialDateTo={dateTo || undefined}
       />
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
+
+      <Dialog open={ngBreakdownOpen} onOpenChange={setNgBreakdownOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>NG por Responsabilidade</span>
+              <span className="text-sm font-normal text-red-400">Total: {ngBreakdown.totalNg.toLocaleString('pt-BR')} peças NG</span>
+            </DialogTitle>
+          </DialogHeader>
+          {ngBreakdown.groups.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Sem registros NG no filtro atual.</p>
+          ) : (
+            <div className="space-y-4">
+              {ngBreakdown.groups.map((g) => (
+                <div key={g.name} className="border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-semibold text-foreground truncate">{g.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-sm">
+                      <span className="font-bold text-red-400">{g.qty}</span>
+                      <span className="text-muted-foreground">{g.pct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {g.records.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => { setNgBreakdownOpen(false); setViewTarget(r.id); }}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-[hsl(210,70%,60%)]">{r.numero || "S/N"}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {r.part_number || "—"} · {resolveName(r.fornecedor || "—")} · {r.data}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-red-400 shrink-0">{r.quantidade_ng}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

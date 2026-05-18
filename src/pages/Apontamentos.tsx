@@ -44,8 +44,11 @@ const Apontamentos = () => {
   const { impersonating } = useImpersonation();
   const { enabledModules } = useEnabledModules(impersonating?.id);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
-  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
+  const readSS = (k: string, fallback: any) => { try { const v = sessionStorage.getItem(`apontamentos:${k}`); return v != null ? JSON.parse(v) : fallback; } catch { return fallback; } };
+  const writeSS = (k: string, v: any) => { try { sessionStorage.setItem(`apontamentos:${k}`, JSON.stringify(v)); } catch {} };
+  const [activeTab, _setActiveTab] = useState<ApontamentoTipo>(() => readSS("activeTab", "incoming"));
+  const setActiveTab = (t: ApontamentoTipo) => { _setActiveTab(t); writeSS("activeTab", t); };
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -57,12 +60,15 @@ const Apontamentos = () => {
   const [showNgLocationDialog, setShowNgLocationDialog] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
   const [galleryPhotos, setGalleryPhotos] = useState<string[] | null>(null);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState<boolean>(() => readSS("filtersExpanded", false));
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
-  const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
+  const [incomingLocationFilter, _setIncomingLocationFilter] = useState<string | null>(() => readSS("incomingLocationFilter", null));
+  const setIncomingLocationFilter = (v: string | null) => { _setIncomingLocationFilter(v); writeSS("incomingLocationFilter", v); };
   const todayStr = getLocalDateString();
-  const [dateFrom, setDateFrom] = useState<string>(todayStr);
-  const [dateTo, setDateTo] = useState<string>(todayStr);
+  const [dateFrom, _setDateFrom] = useState<string>(() => readSS("dateFrom", todayStr));
+  const [dateTo, _setDateTo] = useState<string>(() => readSS("dateTo", todayStr));
+  const setDateFrom = (v: string) => { _setDateFrom(v); writeSS("dateFrom", v); };
+  const setDateTo = (v: string) => { _setDateTo(v); writeSS("dateTo", v); };
 
   // Which apontamento sub-types the user can see
   const visibleTypes = useMemo(() => {
@@ -633,9 +639,31 @@ const Apontamentos = () => {
 
         {/* Records section */}
         <div>
-          {/* Row 1: title + actions (Hoje/Filtros) + view toggle */}
-          <div className="flex items-center justify-between gap-2 mb-3 px-1">
-            <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">Registros</h2>
+          {/* Row 1: title + date range + actions (Hoje/Filtros/Limpar) + view toggle */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3 px-1">
+            <div className="flex items-center gap-2 shrink-0">
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">Registros</h2>
+              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0 hidden md:block" />
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-8 text-xs w-[140px] px-2 hidden md:block"
+                aria-label="Data de"
+              />
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-8 text-xs w-[140px] px-2 hidden md:block"
+                aria-label="Data até"
+              />
+              {(dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground shrink-0 hidden md:inline-flex" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
               {isAdmin && selectedIds.size > 0 && (
                 <Button variant="destructive" size="sm" className="gap-1.5 h-8 px-2" onClick={() => setBulkDeleteOpen(true)}>
@@ -657,14 +685,15 @@ const Apontamentos = () => {
                 variant={filtersExpanded ? "default" : "outline"}
                 size="sm"
                 className="gap-1 text-xs h-8 px-2 sm:px-3"
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
+                onClick={() => { const v = !filtersExpanded; setFiltersExpanded(v); writeSS("filtersExpanded", v); }}
               >
                 <Filter className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Filtros</span>
               </Button>
-              {Object.keys(filterValues).length > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 px-1.5" onClick={clearFilters}>
+              {(search || Object.values(filterValues).some((v) => v && v !== "all") || dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground h-8 px-2" onClick={() => { clearFilters(); setDateFrom(""); setDateTo(""); }}>
                   <X className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Limpar filtros</span>
                 </Button>
               )}
               <div className="flex items-center border rounded-lg overflow-hidden">
@@ -678,24 +707,11 @@ const Apontamentos = () => {
             </div>
           </div>
 
-          {/* Row 2: date range (full width on mobile) */}
-          <div className="flex items-center gap-2 mb-2 px-1">
-            <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0 hidden sm:block" />
-            <div className={`grid ${(dateFrom || dateTo) ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2"} gap-1.5 items-center flex-1 min-w-0 sm:flex sm:items-center sm:flex-none`}>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 text-xs w-full min-w-0 sm:w-[150px] px-2"
-                aria-label="Data de"
-              />
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 text-xs w-full min-w-0 sm:w-[150px] px-2"
-                aria-label="Data até"
-              />
+          {/* Mobile-only date row */}
+          <div className="flex items-center gap-2 mb-2 px-1 md:hidden">
+            <div className={`grid ${(dateFrom || dateTo) ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2"} gap-1.5 items-center flex-1 min-w-0`}>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data de" />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data até" />
               {(dateFrom || dateTo) && (
                 <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
                   <X className="w-4 h-4" />

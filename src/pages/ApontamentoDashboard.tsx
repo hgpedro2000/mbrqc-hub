@@ -33,6 +33,8 @@ const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const [activeType, setActiveType] = useState("incoming");
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
   const today = getLocalDateString();
 
   // Per-tab filter state — each tab keeps its own filters independently

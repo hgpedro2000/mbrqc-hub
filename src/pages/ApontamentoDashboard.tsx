@@ -962,59 +962,35 @@ const ApontamentoDashboard = () => {
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
-            <div className="flex gap-0">
-              <button
-                onClick={() => setResponsibilityFilter(responsibilityFilter === "part" ? null : "part")}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === "part" ? "bg-blue-600/20 ring-1 ring-blue-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-blue-400 font-semibold uppercase tracking-wider">Part</p>
-                <p className="text-lg font-bold text-blue-400">{origemData.part}</p>
-                <p className="text-[11px] text-blue-400/60">{origemData.total > 0 ? ((origemData.part / origemData.total) * 100).toFixed(1) : "0"}%</p>
-              </button>
-              <button
-                onClick={() => setResponsibilityFilter(responsibilityFilter === "sorting" ? null : "sorting")}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] border-x border-[hsl(220,10%,25%)] ${responsibilityFilter === "sorting" ? "bg-orange-600/20 ring-1 ring-orange-500" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-orange-400 font-semibold uppercase tracking-wider">Sorting</p>
-                <p className="text-lg font-bold text-orange-400">{origemData.sorting}</p>
-                <p className="text-[11px] text-orange-400/60">{origemData.total > 0 ? ((origemData.sorting / origemData.total) * 100).toFixed(1) : "0"}%</p>
-              </button>
-              <button
-                onClick={() => setResponsibilityFilter(null)}
-                className={`flex-1 py-3 px-2 text-center transition-colors min-h-[56px] ${responsibilityFilter === null ? "bg-[hsl(220,10%,22%)] ring-1 ring-[hsl(0,0%,50%)]" : "hover:bg-[hsl(220,15%,18%)]"}`}
-              >
-                <p className="text-[10px] text-[hsl(0,0%,70%)] font-semibold uppercase tracking-wider">Total</p>
-                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.total}</p>
-                <p className="text-[11px] text-[hsl(0,0%,50%)]">100%</p>
-              </button>
-            </div>
-            <div className="border-t border-[hsl(220,10%,25%)] px-2 py-2 flex flex-wrap items-center justify-around gap-2 bg-[hsl(220,15%,12%)]">
+            <div className="px-3 py-3 grid grid-cols-4 gap-2 bg-[hsl(220,15%,12%)]">
               <div className="text-center">
-                <p className="text-[9px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
-                <p className="text-base font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
+                <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(0,0%,50%)]">100%</p>
               </div>
               <div className="text-center">
-                <p className="text-[9px] text-green-400/80 uppercase tracking-wider">OK</p>
-                <p className="text-base font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-green-400/80 uppercase tracking-wider">OK</p>
+                <p className="text-lg font-bold text-green-400">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-green-400/60">{origemData.totalInspected > 0 ? ((origemData.totalOk / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
               </div>
+              <button
+                type="button"
+                onClick={() => origemData.totalNg > 0 && setNgBreakdownOpen(true)}
+                className="text-center rounded-md hover:bg-red-500/10 transition-colors py-1"
+                title="Ver detalhamento por responsabilidade"
+              >
+                <p className="text-[10px] text-red-400/80 uppercase tracking-wider">NG</p>
+                <p className="text-lg font-bold text-red-400 underline-offset-2 hover:underline">{origemData.totalNg.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-red-400/60">{origemData.totalInspected > 0 ? ((origemData.totalNg / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
+              </button>
               <div className="text-center">
-                <p className="text-[9px] text-red-400/80 uppercase tracking-wider">NG</p>
-                <p className="text-base font-bold text-red-400">{origemData.totalNg.toLocaleString('pt-BR')}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[9px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
-                <p className="text-base font-bold text-[hsl(45,90%,60%)]">
+                <p className="text-[10px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider">PPM</p>
+                <p className="text-lg font-bold text-[hsl(45,90%,60%)]">
                   {origemData.totalOk > 0 ? ((origemData.totalNg / origemData.totalOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
                 </p>
+                <p className="text-[10px] text-[hsl(45,90%,60%)]/40">&nbsp;</p>
               </div>
             </div>
-            {responsibilityFilter && (
-              <div className="px-2 py-1.5 border-t border-[hsl(220,10%,25%)]">
-                <button onClick={() => setResponsibilityFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
-                  ✕ Filtro: {responsibilityFilter === "part" ? "Part" : "Sorting"}
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}

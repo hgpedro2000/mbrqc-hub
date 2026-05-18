@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export interface QRScannerButtonHandle {

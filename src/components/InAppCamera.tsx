@@ -7,6 +7,7 @@ interface Props {
   open: boolean;
   onCapture: (file: File) => void;
   onClose: () => void;
+  initialStream?: MediaStream | null;
 }
 
 /**
@@ -14,7 +15,7 @@ interface Props {
  * is killed while the native camera Intent is open (capture="environment"),
  * which loses both the photo and the form state.
  */
-const InAppCamera = ({ open, onCapture, onClose }: Props) => {
+const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState<string>("");
@@ -67,10 +68,20 @@ const InAppCamera = ({ open, onCapture, onClose }: Props) => {
       setError("");
       return;
     }
+    if (initialStream) {
+      setError("");
+      setStarting(false);
+      streamRef.current = initialStream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = initialStream;
+        void videoRef.current.play().catch(() => {});
+      }
+      return () => { stop(); };
+    }
     void start(facing);
     return () => { stop(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, initialStream]);
 
   const handleSwitch = async () => {
     const next = facing === "environment" ? "user" : "environment";

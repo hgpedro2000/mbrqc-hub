@@ -404,7 +404,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 {d?.alc_code ? ` — ${d.alc_code}` : ""}
               </p>
               <p className={`text-[11px] ${d?.alc_validation_status === "ok" ? "text-emerald-600/80" : "text-destructive/80"}`}>
-                {d.alc_validation_method === "qr" ? "via QR Code" : "manual via PC"}
+                {d.alc_validation_method === "qr" ? "via QR Code" : d.alc_validation_method === "mobile" ? "manual via mobile" : "manual via PC"}
               </p>
             </DataField>
           )}

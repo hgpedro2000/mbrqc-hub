@@ -687,6 +687,15 @@ const Apontamentos = () => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 text-xs gap-1.5"
+                onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                Hoje
+              </Button>
+              <Button
                 variant={filtersExpanded ? "default" : "outline"}
                 size="sm"
                 className="gap-1.5 text-xs h-9 px-3"
@@ -701,19 +710,6 @@ const Apontamentos = () => {
                 </Button>
               )}
             </div>
-          </div>
-
-          {/* Row 3: Hoje shortcut */}
-          <div className="flex mb-2 px-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-3 text-xs gap-1.5"
-              onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              Hoje
-            </Button>
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

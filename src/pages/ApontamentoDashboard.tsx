@@ -132,6 +132,7 @@ const ApontamentoDashboard = () => {
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
   const [ngBreakdownOpen, setNgBreakdownOpen] = useState(false);
+  const [ngRespFilter, setNgRespFilter] = useState<string | null>(null);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
 
   const suppliersMap = useMemo(() => {
@@ -1295,7 +1296,7 @@ const ApontamentoDashboard = () => {
       />
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
 
-      <Dialog open={ngBreakdownOpen} onOpenChange={setNgBreakdownOpen}>
+      <Dialog open={ngBreakdownOpen} onOpenChange={(o) => { setNgBreakdownOpen(o); if (!o) setNgRespFilter(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between gap-3">
@@ -1307,7 +1308,30 @@ const ApontamentoDashboard = () => {
             <p className="text-center text-muted-foreground py-8">Sem registros NG no filtro atual.</p>
           ) : (
             <div className="space-y-4">
-              {ngBreakdown.groups.map((g) => (
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setNgRespFilter(null)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${ngRespFilter === null ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-foreground border-border hover:bg-muted'}`}
+                >
+                  Todas ({ngBreakdown.totalNg})
+                </button>
+                {ngBreakdown.groups.map((g) => {
+                  const active = ngRespFilter === g.name;
+                  return (
+                    <button
+                      key={g.name}
+                      onClick={() => setNgRespFilter(active ? null : g.name)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${active ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted/40 text-foreground border-border hover:bg-muted'}`}
+                    >
+                      {g.name} · <span className="font-bold">{g.qty}</span> · {g.pct.toFixed(1)}%
+                    </button>
+                  );
+                })}
+              </div>
+
+              {ngBreakdown.groups
+                .filter((g) => ngRespFilter === null || g.name === ngRespFilter)
+                .map((g) => (
                 <div key={g.name} className="border border-border rounded-lg overflow-hidden">
                   <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40">
                     <div className="flex items-center gap-2 min-w-0">

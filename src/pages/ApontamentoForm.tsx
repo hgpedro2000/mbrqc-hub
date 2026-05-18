@@ -98,7 +98,9 @@ const ApontamentoForm = () => {
   const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
   const [showAlcValidateDialog, setShowAlcValidateDialog] = useState(false);
   const [alcManualInput, setAlcManualInput] = useState("");
-  const [alcValidatedVia, setAlcValidatedVia] = useState<"pc" | "qr" | null>(null);
+  const [alcValidatedVia, setAlcValidatedVia] = useState<"pc" | "mobile" | "qr" | null>(null);
+  const isMobileDevice = useIsMobile();
+  const manualAlcMethod = (): "pc" | "mobile" => (isMobileDevice ? "mobile" : "pc");
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);

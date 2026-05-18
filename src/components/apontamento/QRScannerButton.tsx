@@ -345,18 +345,11 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     } satisfies HyundaiQRData;
   }, [fileToDataUrl]);
 
-  const handlePickCamera = useCallback(() => {
-    cameraInputRef.current?.click();
-  }, []);
-
   const handlePickGallery = useCallback(() => {
     galleryInputRef.current?.click();
   }, []);
 
-  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
+  const processImageFile = useCallback(async (file: File) => {
     if (!file) return;
 
     setCameraError(null);
@@ -400,6 +393,46 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       setIsProcessingImage(false);
     }
   }, [analyzePhotoLabel, buildImageVariants, createScanner, handleDecodedText, handleParsedLabel, stopScanner]);
+
+  const handlePickCamera = useCallback(async () => {
+    setCameraError(null);
+    await stopScanner();
+
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        });
+        setCameraCaptureStream(stream);
+      } catch {
+        setCameraCaptureStream(null);
+      }
+    }
+
+    setCameraCaptureOpen(true);
+  }, [stopScanner]);
+
+  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) await processImageFile(file);
+  }, [processImageFile]);
+
+  const handleCameraCapture = useCallback((file: File) => {
+    setCameraCaptureOpen(false);
+    setCameraCaptureStream(null);
+    void processImageFile(file);
+  }, [processImageFile]);
+
+  const closeCameraCapture = useCallback(() => {
+    setCameraCaptureOpen(false);
+    setCameraCaptureStream(null);
+  }, []);
 
   const handleSendReport = async () => {
     setSending(true);

@@ -80,17 +80,30 @@ const MasterListFilter = ({
 export default MasterListFilter;
 
 // Helper hook for filter logic
-export const useListFilters = (initialFilters: string[] = []) => {
-  const [search, setSearch] = useState("");
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+export const useListFilters = (initialFilters: string[] = [], storageKey?: string) => {
+  const readStored = () => {
+    if (!storageKey || typeof window === "undefined") return null;
+    try { const raw = sessionStorage.getItem(`listFilters:${storageKey}`); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  };
+  const stored = readStored();
+  const [search, setSearchState] = useState<string>(stored?.search ?? "");
+  const [filterValues, setFilterValuesState] = useState<Record<string, string>>(stored?.filterValues ?? {});
+
+  const persist = (s: string, fv: Record<string, string>) => {
+    if (!storageKey || typeof window === "undefined") return;
+    try { sessionStorage.setItem(`listFilters:${storageKey}`, JSON.stringify({ search: s, filterValues: fv })); } catch {}
+  };
+  const setSearch = (v: string) => { setSearchState(v); persist(v, filterValues); };
+  const setFilterValues = (v: Record<string, string>) => { setFilterValuesState(v); persist(search, v); };
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
+    setFilterValuesState((prev) => { const next = { ...prev, [key]: value }; persist(search, next); return next; });
   };
 
   const clearFilters = () => {
-    setSearch("");
-    setFilterValues({});
+    setSearchState("");
+    setFilterValuesState({});
+    persist("", {});
   };
 
   const matchesSearch = (item: Record<string, any>, fields: string[]) => {

@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QrCode, X, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
+import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";

@@ -20,6 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import pptxgen from "pptxgenjs";
 import { stripCode } from "@/lib/stripCode";
 import ApontamentoDailyReport from "@/components/apontamento/ApontamentoDailyReport";

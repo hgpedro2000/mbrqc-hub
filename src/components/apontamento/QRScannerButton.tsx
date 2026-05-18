@@ -1,13 +1,14 @@
 import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QrCode, X, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
+import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import InAppCamera from "@/components/InAppCamera";
 
 interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
@@ -30,16 +31,33 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13,
 ];
 
+const getScanConfig = (): Html5QrcodeCameraScanConfig => ({
+  fps: 20,
+  qrbox: (viewfinderWidth, viewfinderHeight) => {
+    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+    const size = Math.floor(Math.min(360, Math.max(220, minEdge * 0.82)));
+    return { width: size, height: size };
+  },
+  aspectRatio: 1,
+  disableFlip: false,
+});
+
+type ZoomOptions = { min: number; max: number; step: number };
+
 export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scannerStarting, setScannerStarting] = useState(false);
+  const [zoomOptions, setZoomOptions] = useState<ZoomOptions | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number | null>(null);
+  const [cameraCaptureOpen, setCameraCaptureOpen] = useState(false);
+  const [cameraCaptureStream, setCameraCaptureStream] = useState<MediaStream | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
@@ -93,78 +111,122 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     void stopScanner();
     setScannerOpen(false);
     setCameraError(null);
+    setScannerStarting(false);
+    setZoomOptions(null);
+    setZoomLevel(null);
     setIsProcessingImage(false);
   }, [stopScanner]);
 
   const createScanner = useCallback(() => {
     return new Html5Qrcode(READER_ID, {
       formatsToSupport: SUPPORTED_FORMATS,
+      useBarCodeDetectorIfSupported: true,
       verbose: false,
     });
+  }, []);
+
+  const tuneRunningCamera = useCallback(async (scanner: Html5Qrcode) => {
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as MediaTrackCapabilities & {
+        focusMode?: string[];
+        exposureMode?: string[];
+        zoom?: { min?: number; max?: number; step?: number };
+      };
+      const settings = scanner.getRunningTrackSettings() as MediaTrackSettings & { zoom?: number };
+      const advanced: Record<string, string | number | boolean> = {};
+
+      if (capabilities.focusMode?.includes("continuous")) advanced.focusMode = "continuous";
+      if (capabilities.exposureMode?.includes("continuous")) advanced.exposureMode = "continuous";
+
+      if (capabilities.zoom) {
+        const min = Number(capabilities.zoom.min ?? 1);
+        const max = Number(capabilities.zoom.max ?? min);
+        const step = Number(capabilities.zoom.step ?? 0.1);
+        if (max > min) {
+          const target = Math.min(max, Math.max(min, Number(settings.zoom ?? min), min + (max - min) * 0.35));
+          advanced.zoom = target;
+          setZoomOptions({ min, max, step });
+          setZoomLevel(target);
+        }
+      }
+
+      if (Object.keys(advanced).length > 0) {
+        await scanner.applyVideoConstraints({ advanced: [advanced as MediaTrackConstraintSet] });
+      }
+    } catch {
+      // Alguns navegadores não expõem foco/zoom; o scanner continua normalmente.
+    }
+  }, []);
+
+  const applyZoom = useCallback(async (value: number) => {
+    setZoomLevel(value);
+    try {
+      await scannerRef.current?.applyVideoConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
+    } catch {}
   }, []);
 
   const handleOpenScanner = useCallback(async () => {
     hasScanned.current = false;
     setCameraError(null);
+    setScannerStarting(true);
+    setZoomOptions(null);
+    setZoomLevel(null);
+
+    const warmCamera = navigator.mediaDevices?.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        }).catch(() => null)
+      : Promise.resolve(null);
+
     setScannerOpen(true);
+
+    const warmStream = await warmCamera;
+    warmStream?.getTracks().forEach((track) => track.stop());
 
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     if (!document.getElementById(READER_ID)) {
       setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+      setScannerStarting(false);
       return;
     }
 
-    try {
-      const scanner = createScanner();
-      scannerRef.current = scanner;
+    const onSuccess = (decoded: string) => {
+      if (hasScanned.current) return;
+      hasScanned.current = true;
+      void stopScanner();
+      setScannerOpen(false);
+      handleDecodedText(decoded);
+    };
 
-      await scanner.start(
-        {
-          facingMode: { exact: "environment" },
-        },
-        {
-          fps: 25,
-          qrbox: { width: 350, height: 350 },
-          aspectRatio: 1,
-          disableFlip: true,
-        },
-        (decoded) => {
-          if (hasScanned.current) return;
-          hasScanned.current = true;
-          void stopScanner();
-          setScannerOpen(false);
-          handleDecodedText(decoded);
-        },
-        () => {}
-      );
-    } catch {
+    const cameraOptions: MediaTrackConstraints[] = [
+      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      { facingMode: "environment" },
+      {},
+    ];
+
+    for (const constraints of cameraOptions) {
       try {
         const scanner = createScanner();
         scannerRef.current = scanner;
-
-        await scanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 25,
-            qrbox: { width: 350, height: 350 },
-            aspectRatio: 1,
-            disableFlip: true,
-          },
-          (decoded) => {
-            if (hasScanned.current) return;
-            hasScanned.current = true;
-            void stopScanner();
-            setScannerOpen(false);
-            handleDecodedText(decoded);
-          },
-          () => {}
-        );
-      } catch {
-        setCameraError("Não foi possível acessar ou decodificar pela câmera. Use a opção de tirar foto da etiqueta.");
+        await scanner.start(constraints, getScanConfig(), onSuccess, () => {});
+        await tuneRunningCamera(scanner);
+        setScannerStarting(false);
+        return;
+      } catch (err) {
+        await stopScanner();
       }
     }
-  }, [createScanner, handleDecodedText, stopScanner]);
+
+    setScannerStarting(false);
+    setCameraError("Não foi possível abrir a câmera deste aparelho. Toque em Tirar foto da etiqueta para usar a câmera interna do app.");
+  }, [createScanner, handleDecodedText, stopScanner, tuneRunningCamera]);
 
   useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
 
@@ -283,18 +345,11 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     } satisfies HyundaiQRData;
   }, [fileToDataUrl]);
 
-  const handlePickCamera = useCallback(() => {
-    cameraInputRef.current?.click();
-  }, []);
-
   const handlePickGallery = useCallback(() => {
     galleryInputRef.current?.click();
   }, []);
 
-  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-
+  const processImageFile = useCallback(async (file: File) => {
     if (!file) return;
 
     setCameraError(null);
@@ -339,6 +394,46 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     }
   }, [analyzePhotoLabel, buildImageVariants, createScanner, handleDecodedText, handleParsedLabel, stopScanner]);
 
+  const handlePickCamera = useCallback(async () => {
+    setCameraError(null);
+    let stream: MediaStream | null = null;
+    if (navigator.mediaDevices?.getUserMedia) {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        });
+      } catch {
+        stream = null;
+      }
+    }
+
+    await stopScanner();
+    setCameraCaptureStream(stream);
+    setCameraCaptureOpen(true);
+  }, [stopScanner]);
+
+  const handleImageSelected = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) await processImageFile(file);
+  }, [processImageFile]);
+
+  const handleCameraCapture = useCallback((file: File) => {
+    setCameraCaptureOpen(false);
+    setCameraCaptureStream(null);
+    void processImageFile(file);
+  }, [processImageFile]);
+
+  const closeCameraCapture = useCallback(() => {
+    setCameraCaptureOpen(false);
+    setCameraCaptureStream(null);
+  }, []);
+
   const handleSendReport = async () => {
     setSending(true);
     try {
@@ -373,18 +468,22 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       </Button>
 
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
+        <DialogContent className="max-w-[96vw] sm:max-w-sm max-h-[92dvh] overflow-y-auto p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 pr-10">
               <QrCode className="w-5 h-5" />
               Escanear Etiqueta
             </DialogTitle>
-            <Button variant="ghost" size="icon" className="absolute right-3 top-3" onClick={closeScanner}>
-              <X className="w-4 h-4" />
-            </Button>
           </DialogHeader>
 
           <div className="space-y-3">
+            {scannerStarting ? (
+              <div className="flex items-center justify-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Abrindo câmera…
+              </div>
+            ) : null}
+
             {cameraError ? (
               <div className="flex flex-col items-center gap-3 py-4 text-center">
                 <AlertTriangle className="w-10 h-10 text-amber-500" />
@@ -392,7 +491,25 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               </div>
             ) : null}
 
-            <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
+            <div id={READER_ID} className="w-full min-h-[320px] rounded-lg overflow-hidden bg-muted [&_video]:!object-cover" />
+
+            {zoomOptions && zoomLevel !== null ? (
+              <div className="space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Zoom para QR pequeno</span>
+                  <span>{zoomLevel.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min={zoomOptions.min}
+                  max={zoomOptions.max}
+                  step={zoomOptions.step}
+                  value={zoomLevel}
+                  onChange={(event) => void applyZoom(Number(event.target.value))}
+                  className="w-full accent-primary"
+                />
+              </div>
+            ) : null}
 
             <p className="text-xs text-muted-foreground text-center">
               Aponte a câmera para o código da etiqueta Hyundai Mobis.
@@ -411,13 +528,6 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
             </div>
 
             <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageSelected}
-            />
-            <input
               ref={galleryInputRef}
               type="file"
               accept="image/*"
@@ -427,6 +537,13 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           </div>
         </DialogContent>
       </Dialog>
+
+      <InAppCamera
+        open={cameraCaptureOpen}
+        initialStream={cameraCaptureStream}
+        onClose={closeCameraCapture}
+        onCapture={handleCameraCapture}
+      />
 
       <Dialog open={incompatibleOpen} onOpenChange={setIncompatibleOpen}>
         <DialogContent className="max-w-[95vw] sm:max-w-md">

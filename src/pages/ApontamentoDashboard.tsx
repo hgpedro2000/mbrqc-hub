@@ -1294,6 +1294,53 @@ const ApontamentoDashboard = () => {
         initialDateTo={dateTo || undefined}
       />
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
+
+      <Dialog open={ngBreakdownOpen} onOpenChange={setNgBreakdownOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span>NG por Responsabilidade</span>
+              <span className="text-sm font-normal text-red-400">Total: {ngBreakdown.totalNg.toLocaleString('pt-BR')} peças NG</span>
+            </DialogTitle>
+          </DialogHeader>
+          {ngBreakdown.groups.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Sem registros NG no filtro atual.</p>
+          ) : (
+            <div className="space-y-4">
+              {ngBreakdown.groups.map((g) => (
+                <div key={g.name} className="border border-border rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-semibold text-foreground truncate">{g.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0 text-sm">
+                      <span className="font-bold text-red-400">{g.qty}</span>
+                      <span className="text-muted-foreground">{g.pct.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {g.records.map((r) => (
+                      <button
+                        key={r.id}
+                        onClick={() => { setNgBreakdownOpen(false); setViewTarget(r.id); }}
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-[hsl(210,70%,60%)]">{r.numero || "S/N"}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {r.part_number || "—"} · {resolveName(r.fornecedor || "—")} · {r.data}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-red-400 shrink-0">{r.quantidade_ng}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

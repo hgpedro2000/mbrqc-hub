@@ -396,11 +396,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const handlePickCamera = useCallback(async () => {
     setCameraError(null);
-    await stopScanner();
-
+    let stream: MediaStream | null = null;
     if (navigator.mediaDevices?.getUserMedia) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
             width: { ideal: 1920 },
@@ -408,12 +407,13 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           },
           audio: false,
         });
-        setCameraCaptureStream(stream);
       } catch {
-        setCameraCaptureStream(null);
+        stream = null;
       }
     }
 
+    await stopScanner();
+    setCameraCaptureStream(stream);
     setCameraCaptureOpen(true);
   }, [stopScanner]);
 

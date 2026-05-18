@@ -363,8 +363,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       <Button
         type="button"
         variant="outline"
-        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10"
+        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
         onClick={handleOpenScanner}
+        disabled={disabled}
+        title={disabled ? (disabledReason || "Bloqueado") : undefined}
       >
         <QrCode className="w-5 h-5" />
         Ler Etiqueta QR

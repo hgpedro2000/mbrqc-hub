@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export interface QRScannerButtonHandle {
@@ -28,7 +30,7 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13,
 ];
 
-export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan }, ref) => {
+export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
@@ -361,8 +363,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       <Button
         type="button"
         variant="outline"
-        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10"
+        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
         onClick={handleOpenScanner}
+        disabled={disabled}
+        title={disabled ? (disabledReason || "Bloqueado") : undefined}
       >
         <QrCode className="w-5 h-5" />
         Ler Etiqueta QR

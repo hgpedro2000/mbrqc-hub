@@ -1179,7 +1179,12 @@ const ApontamentoForm = () => {
           {/* QR Scanner - mobile only, Incoming only */}
           {isIncoming && (
             <div className="mt-3 sm:hidden">
-              <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
+              <QRScannerButton
+                ref={qrScannerRef}
+                onScan={handleQRScan}
+                disabled={alcStatus === "mismatch" || alcMismatchAttempts >= 3}
+                disabledReason="Erro de ALC confirmado — leitura bloqueada para evitar entradas incorretas."
+              />
             </div>
           )}
 
@@ -1263,12 +1268,18 @@ const ApontamentoForm = () => {
                           ? "animate-pulse border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300"
                           : ""
                       } ${validationErrors.has("alcCode") ? "border-destructive text-destructive" : ""}`}
-                      disabled={!alcExpected || alcExpected === "N/A"}
+                      disabled={!alcExpected || alcExpected === "N/A" || alcStatus === "mismatch" || alcMismatchAttempts >= 3}
                       onClick={() => {
                         setAlcManualInput("");
                         setShowAlcValidateDialog(true);
                       }}
-                      title={!alcExpected || alcExpected === "N/A" ? "Sem ALC cadastrado para este Part Number" : "Validar ALC manualmente"}
+                      title={
+                        !alcExpected || alcExpected === "N/A"
+                          ? "Sem ALC cadastrado para este Part Number"
+                          : (alcStatus === "mismatch" || alcMismatchAttempts >= 3)
+                          ? "Erro de ALC confirmado — validação manual bloqueada."
+                          : "Validar ALC manualmente"
+                      }
                     >
                       Validar ALC manual
                     </Button>

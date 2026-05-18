@@ -955,8 +955,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   const handleNumberClick = (id: string) => {
     if (onViewRecord) {
-      onOpenChange(false);
-      setTimeout(() => onViewRecord(id), 200);
+      // Keep the report dialog open so the user can return to the list
+      // by simply closing the view dialog (overlay behavior).
+      onViewRecord(id);
     }
   };
 
@@ -1010,7 +1011,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
@@ -1036,6 +1037,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                 {mode === "ng" && (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -1207,6 +1209,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       <p className="text-[9px] text-muted-foreground mt-0.5 truncate">{pdfStage}</p>
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             </div>

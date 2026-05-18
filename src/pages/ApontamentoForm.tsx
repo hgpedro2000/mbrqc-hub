@@ -26,6 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 

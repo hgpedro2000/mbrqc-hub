@@ -131,6 +131,7 @@ const ApontamentoDashboard = () => {
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [ngBreakdownOpen, setNgBreakdownOpen] = useState(false);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
 
   const suppliersMap = useMemo(() => {

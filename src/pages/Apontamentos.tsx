@@ -633,83 +633,75 @@ const Apontamentos = () => {
 
         {/* Records section */}
         <div>
-          {/* Row 1: title + view toggle */}
-          <div className="flex items-center justify-between mb-3 px-1">
-            <h2 className="text-xl font-heading font-bold text-foreground">Registros</h2>
-            <div className="flex items-center gap-2">
+          {/* Row 1: title + actions (Hoje/Filtros) + view toggle */}
+          <div className="flex items-center justify-between gap-2 mb-3 px-1">
+            <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">Registros</h2>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
               {isAdmin && selectedIds.size > 0 && (
-                <Button variant="destructive" size="sm" className="gap-2" onClick={() => setBulkDeleteOpen(true)}>
+                <Button variant="destructive" size="sm" className="gap-1.5 h-8 px-2" onClick={() => setBulkDeleteOpen(true)}>
                   <Trash2 className="w-4 h-4" />
                   <span className="hidden sm:inline">Excluir {selectedIds.size}</span>
                   <span className="sm:hidden">{selectedIds.size}</span>
                 </Button>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 sm:px-3 text-xs gap-1"
+                onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Hoje</span>
+              </Button>
+              <Button
+                variant={filtersExpanded ? "default" : "outline"}
+                size="sm"
+                className="gap-1 text-xs h-8 px-2 sm:px-3"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+              >
+                <Filter className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Filtros</span>
+              </Button>
+              {Object.keys(filterValues).length > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8 px-1.5" onClick={clearFilters}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              )}
               <div className="flex items-center border rounded-lg overflow-hidden">
-                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2.5" onClick={() => setViewMode("detailed")}>
+                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("detailed")}>
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
-                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2.5" onClick={() => setViewMode("compact")}>
+                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("compact")}>
                   <LayoutList className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Row 2: date range (left) + Filtros (right) */}
-          <div className="flex items-center justify-between gap-3 flex-wrap mb-2 px-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
-              <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-muted-foreground shrink-0">De</span>
-                  <Input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(e) => setDateFrom(e.target.value)}
-                    className="h-9 text-xs w-full sm:w-[140px]"
-                  />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-muted-foreground shrink-0">Até</span>
-                  <Input
-                    type="date"
-                    value={dateTo}
-                    onChange={(e) => setDateTo(e.target.value)}
-                    className="h-9 text-xs w-full sm:w-[140px]"
-                  />
-                </div>
-              </div>
-              {(dateFrom || dateTo) && (
-                <Button variant="ghost" size="sm" className="h-9 px-2 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
+          {/* Row 2: date range (full width on mobile) */}
+          <div className="flex items-center gap-2 mb-2 px-1">
+            <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="grid grid-cols-2 gap-2 flex-1 min-w-0 sm:flex sm:items-center sm:flex-none">
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 text-xs w-full min-w-0 sm:w-[150px]"
+                aria-label="Data de"
+              />
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 text-xs w-full min-w-0 sm:w-[150px]"
+                aria-label="Data até"
+              />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 px-3 text-xs gap-1.5"
-                onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                Hoje
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" className="h-9 px-2 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                <X className="w-4 h-4" />
               </Button>
-              <Button
-                variant={filtersExpanded ? "default" : "outline"}
-                size="sm"
-                className="gap-1.5 text-xs h-9 px-3"
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                Filtros
-              </Button>
-              {Object.keys(filterValues).length > 0 && (
-                <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-9 px-2" onClick={clearFilters}>
-                  <X className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
+            )}
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

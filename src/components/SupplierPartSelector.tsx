@@ -301,12 +301,33 @@ const SupplierPartSelector = ({
             />
           </div>
           <div className="flex-1 overflow-auto border rounded-md mt-2">
-            <table className="w-full text-sm table-fixed md:table-auto">
+            {/* Mobile: card list (gives Part Name full width to breathe) */}
+            <ul className="md:hidden divide-y">
+              {searchResults.length === 0 ? (
+                <li className="px-3 py-6 text-center text-muted-foreground text-sm">{t("common.noResults")}</li>
+              ) : (
+                searchResults.map((p) => (
+                  <li
+                    key={p.id}
+                    className="px-3 py-2.5 cursor-pointer active:bg-accent/20 hover:bg-accent/10"
+                    onClick={() => selectPart(p)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-semibold text-sm">{p.part_number}</span>
+                      <span className="text-[11px] text-muted-foreground shrink-0">{p.line_module}</span>
+                    </div>
+                    <div className="text-xs text-foreground/80 mt-0.5">{p.part_name}</div>
+                  </li>
+                ))
+              )}
+            </ul>
+            {/* Desktop: table */}
+            <table className="hidden md:table w-full text-sm">
               <thead className="bg-background sticky top-0 z-10 shadow-[0_1px_0_0_hsl(var(--border))]">
                 <tr className="bg-muted">
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap md:w-44">Part Number</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap w-44">Part Number</th>
                   <th className="text-left px-3 py-2 font-medium text-muted-foreground">Part Name</th>
-                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap md:w-24">{t("supplierSelector.module")}</th>
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap w-24">{t("supplierSelector.module")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -325,7 +346,7 @@ const SupplierPartSelector = ({
                       onClick={() => selectPart(p)}
                     >
                       <td className="px-3 py-2 font-mono font-semibold whitespace-nowrap">{p.part_number}</td>
-                      <td className="px-3 py-2 md:whitespace-nowrap md:truncate" title={p.part_name}>{p.part_name}</td>
+                      <td className="px-3 py-2 whitespace-nowrap truncate" title={p.part_name}>{p.part_name}</td>
                       <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{p.line_module}</td>
                     </tr>
                   ))

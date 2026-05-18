@@ -33,6 +33,8 @@ const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const [activeType, setActiveType] = useState("incoming");
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
   const today = getLocalDateString();
 
   // Per-tab filter state — each tab keeps its own filters independently
@@ -896,7 +898,7 @@ const ApontamentoDashboard = () => {
         </div>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1">
-            <Popover>
+            <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("w-[130px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)] justify-start", !dateFrom && "text-[hsl(0,0%,50%)]")}>
                   <CalendarIcon className="w-3 h-3 mr-1" />
@@ -904,11 +906,11 @@ const ApontamentoDashboard = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined} onSelect={(d) => setDateFrom(d ? format(d, "yyyy-MM-dd") : "")} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+                <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined} onSelect={(d) => { setDateFrom(d ? format(d, "yyyy-MM-dd") : ""); setDateFromOpen(false); }} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
             <span className="text-[10px] text-[hsl(0,0%,50%)]">a</span>
-            <Popover>
+            <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("w-[130px] text-[10px] h-7 bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,80%)] justify-start", !dateTo && "text-[hsl(0,0%,50%)]")}>
                   <CalendarIcon className="w-3 h-3 mr-1" />
@@ -916,7 +918,7 @@ const ApontamentoDashboard = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => setDateTo(d ? format(d, "yyyy-MM-dd") : "")} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
+                <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => { setDateTo(d ? format(d, "yyyy-MM-dd") : ""); setDateToOpen(false); }} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
             {(dateFrom || dateTo) && (

@@ -26,6 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -97,7 +98,9 @@ const ApontamentoForm = () => {
   const [alcMismatchAttempts, setAlcMismatchAttempts] = useState(0);
   const [showAlcValidateDialog, setShowAlcValidateDialog] = useState(false);
   const [alcManualInput, setAlcManualInput] = useState("");
-  const [alcValidatedVia, setAlcValidatedVia] = useState<"pc" | "qr" | null>(null);
+  const [alcValidatedVia, setAlcValidatedVia] = useState<"pc" | "mobile" | "qr" | null>(null);
+  const isMobileDevice = useIsMobile();
+  const manualAlcMethod = (): "pc" | "mobile" => (isMobileDevice ? "mobile" : "pc");
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
   const [quantidadeInspecionada, setQuantidadeInspecionada] = useState<number>(0);
   const [quantidadeNg, setQuantidadeNg] = useState<number>(0);
@@ -484,7 +487,7 @@ const ApontamentoForm = () => {
   const handleAlcConfirmError = () => {
     setShowAlcMismatchDialog(false);
     setAlcStatus("mismatch");
-    setAlcValidatedVia((prev) => prev ?? "pc");
+    setAlcValidatedVia((prev) => prev ?? manualAlcMethod());
     // Force at least 1 NG and require modo_falha
     if (quantidadeInspecionada <= 0) setQuantidadeInspecionada(1);
     if (quantidadeNg < 1) setQuantidadeNg(1);
@@ -2013,7 +2016,7 @@ const ApontamentoForm = () => {
                       onClick={() => {
                         setAlcCode(checked);
                         setAlcStatus("match");
-                        setAlcValidatedVia("pc");
+                        setAlcValidatedVia(manualAlcMethod());
                         setValidationErrors((p) => { const n = new Set(p); n.delete("alcCode"); return n; });
                         setShowAlcValidateDialog(false);
                         toast.success("ALC validado com sucesso e registrado no checklist.");

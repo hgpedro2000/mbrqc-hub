@@ -1,0 +1,3 @@
+ALTER TABLE public.apontamentos DROP CONSTRAINT IF EXISTS apontamentos_alc_validation_method_check;
+ALTER TABLE public.apontamentos ADD CONSTRAINT apontamentos_alc_validation_method_check CHECK (alc_validation_method IS NULL OR alc_validation_method IN ('pc','mobile','qr'));
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.0.4.25','patch','Mobile fixes','Filtros mobile + popup peças mobile + ALC: distinguir manual via PC vs mobile + fechar calendário do Dashboard ao selecionar data.');

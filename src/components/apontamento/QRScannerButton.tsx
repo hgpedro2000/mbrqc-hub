@@ -110,6 +110,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     void stopScanner();
     setScannerOpen(false);
     setCameraError(null);
+    setScannerStarting(false);
+    setZoomOptions(null);
+    setZoomLevel(null);
     setIsProcessingImage(false);
   }, [stopScanner]);
 
@@ -120,68 +123,108 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     });
   }, []);
 
+  const tuneRunningCamera = useCallback(async (scanner: Html5Qrcode) => {
+    try {
+      const capabilities = scanner.getRunningTrackCapabilities() as MediaTrackCapabilities & {
+        focusMode?: string[];
+        exposureMode?: string[];
+        zoom?: { min?: number; max?: number; step?: number };
+      };
+      const settings = scanner.getRunningTrackSettings() as MediaTrackSettings & { zoom?: number };
+      const advanced: Record<string, string | number | boolean> = {};
+
+      if (capabilities.focusMode?.includes("continuous")) advanced.focusMode = "continuous";
+      if (capabilities.exposureMode?.includes("continuous")) advanced.exposureMode = "continuous";
+
+      if (capabilities.zoom) {
+        const min = Number(capabilities.zoom.min ?? 1);
+        const max = Number(capabilities.zoom.max ?? min);
+        const step = Number(capabilities.zoom.step ?? 0.1);
+        if (max > min) {
+          const target = Math.min(max, Math.max(min, Number(settings.zoom ?? min), min + (max - min) * 0.35));
+          advanced.zoom = target;
+          setZoomOptions({ min, max, step });
+          setZoomLevel(target);
+        }
+      }
+
+      if (Object.keys(advanced).length > 0) {
+        await scanner.applyVideoConstraints({ advanced: [advanced as MediaTrackConstraintSet] });
+      }
+    } catch {
+      // Alguns navegadores não expõem foco/zoom; o scanner continua normalmente.
+    }
+  }, []);
+
+  const applyZoom = useCallback(async (value: number) => {
+    setZoomLevel(value);
+    try {
+      await scannerRef.current?.applyVideoConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
+    } catch {}
+  }, []);
+
   const handleOpenScanner = useCallback(async () => {
     hasScanned.current = false;
     setCameraError(null);
+    setScannerStarting(true);
+    setZoomOptions(null);
+    setZoomLevel(null);
+
+    const warmCamera = navigator.mediaDevices?.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+          audio: false,
+        }).catch(() => null)
+      : Promise.resolve(null);
+
     setScannerOpen(true);
+
+    const warmStream = await warmCamera;
+    warmStream?.getTracks().forEach((track) => track.stop());
 
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
     if (!document.getElementById(READER_ID)) {
       setCameraError("Elemento do leitor não encontrado. Tente novamente.");
+      setScannerStarting(false);
       return;
     }
 
-    try {
-      const scanner = createScanner();
-      scannerRef.current = scanner;
+    const onSuccess = (decoded: string) => {
+      if (hasScanned.current) return;
+      hasScanned.current = true;
+      void stopScanner();
+      setScannerOpen(false);
+      handleDecodedText(decoded);
+    };
 
-      await scanner.start(
-        {
-          facingMode: { exact: "environment" },
-        },
-        {
-          fps: 25,
-          qrbox: { width: 350, height: 350 },
-          aspectRatio: 1,
-          disableFlip: true,
-        },
-        (decoded) => {
-          if (hasScanned.current) return;
-          hasScanned.current = true;
-          void stopScanner();
-          setScannerOpen(false);
-          handleDecodedText(decoded);
-        },
-        () => {}
-      );
-    } catch {
+    const cameraOptions: MediaTrackConstraints[] = [
+      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      { facingMode: "environment" },
+      {},
+    ];
+
+    for (const constraints of cameraOptions) {
       try {
         const scanner = createScanner();
         scannerRef.current = scanner;
-
-        await scanner.start(
-          { facingMode: "environment" },
-          {
-            fps: 25,
-            qrbox: { width: 350, height: 350 },
-            aspectRatio: 1,
-            disableFlip: true,
-          },
-          (decoded) => {
-            if (hasScanned.current) return;
-            hasScanned.current = true;
-            void stopScanner();
-            setScannerOpen(false);
-            handleDecodedText(decoded);
-          },
-          () => {}
-        );
-      } catch {
-        setCameraError("Não foi possível acessar ou decodificar pela câmera. Use a opção de tirar foto da etiqueta.");
+        await scanner.start(constraints, getScanConfig(), onSuccess, () => {});
+        await tuneRunningCamera(scanner);
+        setScannerStarting(false);
+        return;
+      } catch (err) {
+        await stopScanner();
       }
     }
-  }, [createScanner, handleDecodedText, stopScanner]);
+
+    setScannerStarting(false);
+    setCameraError("Não foi possível abrir a câmera deste aparelho. Toque em Tirar foto da etiqueta para usar a câmera interna do app.");
+  }, [createScanner, handleDecodedText, stopScanner, tuneRunningCamera]);
 
   useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
 

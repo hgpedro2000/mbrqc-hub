@@ -680,28 +680,28 @@ const Apontamentos = () => {
 
           {/* Row 2: date range (full width on mobile) */}
           <div className="flex items-center gap-2 mb-2 px-1">
-            <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />
-            <div className="grid grid-cols-2 gap-2 flex-1 min-w-0 sm:flex sm:items-center sm:flex-none">
+            <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0 hidden sm:block" />
+            <div className={`grid ${(dateFrom || dateTo) ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2"} gap-1.5 items-center flex-1 min-w-0 sm:flex sm:items-center sm:flex-none`}>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="h-9 text-xs w-full min-w-0 sm:w-[150px]"
+                className="h-9 text-xs w-full min-w-0 sm:w-[150px] px-2"
                 aria-label="Data de"
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="h-9 text-xs w-full min-w-0 sm:w-[150px]"
+                className="h-9 text-xs w-full min-w-0 sm:w-[150px] px-2"
                 aria-label="Data até"
               />
+              {(dateFrom || dateTo) && (
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" className="h-9 px-2 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
-                <X className="w-4 h-4" />
-              </Button>
-            )}
           </div>
           {filtersExpanded && (
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

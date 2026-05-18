@@ -48,6 +48,24 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Unlock AudioContext while we are inside a user gesture so subsequent
+    // scanner beeps are loud even on browsers that block autoplay.
+    primeBeep();
+    // Pre-request camera permission. Browsers REQUIRE a user gesture for the
+    // initial prompt — once granted, the permission is remembered and no
+    // future prompt is shown when opening the scanner.
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
+        });
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    } catch {
+      // Ignore — user may deny or device may have no camera. Scanner will
+      // re-prompt if needed.
+    }
     setLoading(true);
 
     try {

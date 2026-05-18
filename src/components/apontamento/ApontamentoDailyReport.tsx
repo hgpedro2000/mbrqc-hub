@@ -955,8 +955,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   const handleNumberClick = (id: string) => {
     if (onViewRecord) {
-      onOpenChange(false);
-      setTimeout(() => onViewRecord(id), 200);
+      // Keep the report dialog open so the user can return to the list
+      // by simply closing the view dialog (overlay behavior).
+      onViewRecord(id);
     }
   };
 

@@ -54,6 +54,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [zoomOptions, setZoomOptions] = useState<ZoomOptions | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number | null>(null);
   const [cameraCaptureOpen, setCameraCaptureOpen] = useState(false);
+  const [cameraCaptureStream, setCameraCaptureStream] = useState<MediaStream | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
@@ -119,6 +120,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const createScanner = useCallback(() => {
     return new Html5Qrcode(READER_ID, {
       formatsToSupport: SUPPORTED_FORMATS,
+      useBarCodeDetectorIfSupported: true,
       verbose: false,
     });
   }, []);

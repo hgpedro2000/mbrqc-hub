@@ -44,8 +44,11 @@ const Apontamentos = () => {
   const { impersonating } = useImpersonation();
   const { enabledModules } = useEnabledModules(impersonating?.id);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ApontamentoTipo>("incoming");
-  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
+  const readSS = (k: string, fallback: any) => { try { const v = sessionStorage.getItem(`apontamentos:${k}`); return v != null ? JSON.parse(v) : fallback; } catch { return fallback; } };
+  const writeSS = (k: string, v: any) => { try { sessionStorage.setItem(`apontamentos:${k}`, JSON.stringify(v)); } catch {} };
+  const [activeTab, _setActiveTab] = useState<ApontamentoTipo>(() => readSS("activeTab", "incoming"));
+  const setActiveTab = (t: ApontamentoTipo) => { _setActiveTab(t); writeSS("activeTab", t); };
+  const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -57,12 +60,15 @@ const Apontamentos = () => {
   const [showNgLocationDialog, setShowNgLocationDialog] = useState(false);
   const [photoLightbox, setPhotoLightbox] = useState<string | null>(null);
   const [galleryPhotos, setGalleryPhotos] = useState<string[] | null>(null);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState<boolean>(() => readSS("filtersExpanded", false));
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
-  const [incomingLocationFilter, setIncomingLocationFilter] = useState<string | null>(null);
+  const [incomingLocationFilter, _setIncomingLocationFilter] = useState<string | null>(() => readSS("incomingLocationFilter", null));
+  const setIncomingLocationFilter = (v: string | null) => { _setIncomingLocationFilter(v); writeSS("incomingLocationFilter", v); };
   const todayStr = getLocalDateString();
-  const [dateFrom, setDateFrom] = useState<string>(todayStr);
-  const [dateTo, setDateTo] = useState<string>(todayStr);
+  const [dateFrom, _setDateFrom] = useState<string>(() => readSS("dateFrom", todayStr));
+  const [dateTo, _setDateTo] = useState<string>(() => readSS("dateTo", todayStr));
+  const setDateFrom = (v: string) => { _setDateFrom(v); writeSS("dateFrom", v); };
+  const setDateTo = (v: string) => { _setDateTo(v); writeSS("dateTo", v); };
 
   // Which apontamento sub-types the user can see
   const visibleTypes = useMemo(() => {

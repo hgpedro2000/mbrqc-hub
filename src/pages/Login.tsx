@@ -101,6 +101,22 @@ const Login = () => {
         full_name: data.profile?.full_name,
       });
 
+      // Pre-request camera permission RIGHT AFTER successful auth. We are
+      // still inside the original submit user-gesture, so the browser will
+      // accept the prompt. Once the user grants it the first time, no future
+      // prompt is shown when the scanner opens.
+      try {
+        if (navigator.mediaDevices?.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false,
+          });
+          stream.getTracks().forEach((t) => t.stop());
+        }
+      } catch {
+        // User denied or no camera — scanner will prompt again when opened.
+      }
+
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));
       } else {

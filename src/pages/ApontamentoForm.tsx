@@ -1867,8 +1867,8 @@ const ApontamentoForm = () => {
       <Dialog
         open={showAlcMismatchDialog}
         onOpenChange={(open) => {
-          if (!open && alcMismatchAttempts >= 3) {
-            // 3ª tentativa: fechar no X descarta dados e volta para a tela de apontamentos
+          if (!open) {
+            // Fechar no X sempre descarta a leitura e volta para a tela de registros
             setShowAlcMismatchDialog(false);
             try { clearFormAutosave(autosaveKey); } catch {}
             toast.info("Leitura descartada. Reinicie o apontamento.");

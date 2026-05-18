@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, X, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
@@ -8,6 +8,7 @@ import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import InAppCamera from "@/components/InAppCamera";
 
 interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
@@ -30,16 +31,32 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_13,
 ];
 
+const getScanConfig = (): Html5QrcodeCameraScanConfig => ({
+  fps: 20,
+  qrbox: (viewfinderWidth, viewfinderHeight) => {
+    const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+    const size = Math.floor(Math.min(360, Math.max(220, minEdge * 0.82)));
+    return { width: size, height: size };
+  },
+  aspectRatio: 1,
+  disableFlip: false,
+});
+
+type ZoomOptions = { min: number; max: number; step: number };
+
 export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [scannerStarting, setScannerStarting] = useState(false);
+  const [zoomOptions, setZoomOptions] = useState<ZoomOptions | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number | null>(null);
+  const [cameraCaptureOpen, setCameraCaptureOpen] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);

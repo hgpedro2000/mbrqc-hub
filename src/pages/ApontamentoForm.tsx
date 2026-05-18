@@ -1179,7 +1179,12 @@ const ApontamentoForm = () => {
           {/* QR Scanner - mobile only, Incoming only */}
           {isIncoming && (
             <div className="mt-3 sm:hidden">
-              <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
+              <QRScannerButton
+                ref={qrScannerRef}
+                onScan={handleQRScan}
+                disabled={alcStatus === "mismatch" || alcMismatchAttempts >= 3}
+                disabledReason="Erro de ALC confirmado — leitura bloqueada para evitar entradas incorretas."
+              />
             </div>
           )}
 

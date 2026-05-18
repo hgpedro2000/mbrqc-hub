@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logAction } from "@/lib/logAction";
+import { primeBeep } from "@/lib/beep";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -47,6 +48,9 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Unlock AudioContext while we are inside a user gesture so subsequent
+    // scanner beeps are loud even on browsers that block autoplay.
+    primeBeep();
     setLoading(true);
 
     try {
@@ -96,6 +100,22 @@ const Login = () => {
         employee_number: employeeNumber.trim(),
         full_name: data.profile?.full_name,
       });
+
+      // Pre-request camera permission RIGHT AFTER successful auth. We are
+      // still inside the original submit user-gesture, so the browser will
+      // accept the prompt. Once the user grants it the first time, no future
+      // prompt is shown when the scanner opens.
+      try {
+        if (navigator.mediaDevices?.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false,
+          });
+          stream.getTracks().forEach((t) => t.stop());
+        }
+      } catch {
+        // User denied or no camera — scanner will prompt again when opened.
+      }
 
       if (data.profile?.must_change_password) {
         toast.info(t("login.mustChangePassword"));

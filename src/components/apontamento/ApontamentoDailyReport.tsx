@@ -1037,6 +1037,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                 {mode === "ng" && (
                   <Popover>
                     <PopoverTrigger asChild>

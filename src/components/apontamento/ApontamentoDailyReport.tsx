@@ -1210,6 +1210,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </div>
                   )}
                 </div>
+                </div>
               </div>
             </div>
           </div>

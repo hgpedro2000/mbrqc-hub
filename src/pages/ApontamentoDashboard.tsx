@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, CalendarIcon, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +36,7 @@ const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { impersonating } = useImpersonation();
   const [activeType, setActiveType] = useState("incoming");
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
@@ -118,8 +120,10 @@ const ApontamentoDashboard = () => {
     });
     return map;
   }, [profilesList]);
-  const isTerceira = profile?.empresa === "empresa_terceira";
-  const terceiraName = profile?.empresa_terceira || null;
+  const effEmpresa = impersonating ? impersonating.empresa : profile?.empresa;
+  const effEmpresaTerceira = impersonating ? impersonating.empresa_terceira : profile?.empresa_terceira;
+  const isTerceira = effEmpresa === "empresa_terceira";
+  const terceiraName = effEmpresaTerceira || null;
   const items = useMemo(() => {
     if (!isTerceira || !terceiraName) return rawItems;
     return (rawItems as any[]).filter((i) => i.created_by && empresaByUserId[i.created_by] === terceiraName);

@@ -133,8 +133,11 @@ const Apontamentos = () => {
   }, [profilesList]);
 
   // Terceira restriction: users from outsourced companies (IL/Trigo/etc.) only see their own company's records
-  const isTerceira = profile?.empresa === "empresa_terceira";
-  const terceiraName = profile?.empresa_terceira || null;
+  // When impersonating (engineering mode), use the impersonated user's empresa to scope the view
+  const effEmpresa = impersonating ? impersonating.empresa : profile?.empresa;
+  const effEmpresaTerceira = impersonating ? impersonating.empresa_terceira : profile?.empresa_terceira;
+  const isTerceira = effEmpresa === "empresa_terceira";
+  const terceiraName = effEmpresaTerceira || null;
   const scopedItems = useMemo(() => {
     if (!isTerceira || !terceiraName) return items;
     return items.filter((i: any) => i.created_by && empresaByUserId[i.created_by] === terceiraName);

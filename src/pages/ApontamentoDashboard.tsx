@@ -102,6 +102,29 @@ const ApontamentoDashboard = () => {
     },
   });
 
+  // Profiles for empresa-based scoping (terceira users only see their own company)
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-empresa-dash"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, empresa, empresa_terceira");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const empresaByUserId = useMemo(() => {
+    const map: Record<string, string> = {};
+    (profilesList as any[]).forEach((p: any) => {
+      map[p.id] = p.empresa === "empresa_terceira" ? (p.empresa_terceira || "Terceira") : "Mobis Brasil";
+    });
+    return map;
+  }, [profilesList]);
+  const isTerceira = profile?.empresa === "empresa_terceira";
+  const terceiraName = profile?.empresa_terceira || null;
+  const items = useMemo(() => {
+    if (!isTerceira || !terceiraName) return rawItems;
+    return (rawItems as any[]).filter((i) => i.created_by && empresaByUserId[i.created_by] === terceiraName);
+  }, [rawItems, isTerceira, terceiraName, empresaByUserId]);
+
   const { data: suppliersRaw = [] } = useQuery({
     queryKey: ["suppliers-dash"],
     queryFn: async () => {

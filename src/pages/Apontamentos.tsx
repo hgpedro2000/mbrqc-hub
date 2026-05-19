@@ -196,13 +196,13 @@ const Apontamentos = () => {
       baseFilters.push({ key: "empresa", label: "Empresa", options: empresas });
     }
     return baseFilters;
-  }, [items, activeTab, empresaByUserId]);
+  }, [scopedItems, activeTab, empresaByUserId]);
 
   const countByType = useMemo(() => {
     const counts: Record<string, number> = {};
-    TYPES.forEach((t) => { counts[t] = items.filter((i) => i.tipo === t).length; });
+    TYPES.forEach((t) => { counts[t] = scopedItems.filter((i) => i.tipo === t).length; });
     return counts;
-  }, [items]);
+  }, [scopedItems]);
 
   // Helper to get the inspection location from either local_deteccao or fase (retrocompat)
   const getInspectionLocation = (item: any): string | null => {

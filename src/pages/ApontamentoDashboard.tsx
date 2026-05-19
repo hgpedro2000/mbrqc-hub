@@ -79,7 +79,7 @@ const ApontamentoDashboard = () => {
 
   const [showPPM, setShowPPM] = useState(false);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: rawItems = [], isLoading } = useQuery({
     queryKey: ["apontamentos", "all"],
     queryFn: async () => {
       const PAGE = 1000;

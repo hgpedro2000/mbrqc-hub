@@ -37,7 +37,7 @@ const typeConfig: Record<ApontamentoTipo, { icon: any; label: string; descriptio
 
 const Apontamentos = () => {
   const { t } = useTranslation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();
@@ -132,6 +132,14 @@ const Apontamentos = () => {
     return map;
   }, [profilesList]);
 
+  // Terceira restriction: users from outsourced companies (IL/Trigo/etc.) only see their own company's records
+  const isTerceira = profile?.empresa === "empresa_terceira";
+  const terceiraName = profile?.empresa_terceira || null;
+  const scopedItems = useMemo(() => {
+    if (!isTerceira || !terceiraName) return items;
+    return items.filter((i: any) => i.created_by && empresaByUserId[i.created_by] === terceiraName);
+  }, [items, isTerceira, terceiraName, empresaByUserId]);
+
   const photosByItem = useMemo(() => {
     const map: Record<string, string[]> = {};
     allPhotos.forEach((p) => {
@@ -164,7 +172,7 @@ const Apontamentos = () => {
   const statusFilterOptions = ["draft", "submitted"];
 
   const filters: FilterConfig[] = useMemo(() => {
-    const typeItems = items.filter((i) => i.tipo === activeTab);
+    const typeItems = scopedItems.filter((i) => i.tipo === activeTab);
     const projetos = [...new Set(typeItems.map((i) => i.projeto).filter(Boolean))] as string[];
     const fornecedores = [...new Set(typeItems.map((i) => i.fornecedor).filter(Boolean))] as string[];
     const responsaveis = [...new Set(typeItems.map((i) => i.responsavel).filter(Boolean))] as string[];
@@ -188,13 +196,13 @@ const Apontamentos = () => {
       baseFilters.push({ key: "empresa", label: "Empresa", options: empresas });
     }
     return baseFilters;
-  }, [items, activeTab, empresaByUserId]);
+  }, [scopedItems, activeTab, empresaByUserId]);
 
   const countByType = useMemo(() => {
     const counts: Record<string, number> = {};
-    TYPES.forEach((t) => { counts[t] = items.filter((i) => i.tipo === t).length; });
+    TYPES.forEach((t) => { counts[t] = scopedItems.filter((i) => i.tipo === t).length; });
     return counts;
-  }, [items]);
+  }, [scopedItems]);
 
   // Helper to get the inspection location from either local_deteccao or fase (retrocompat)
   const getInspectionLocation = (item: any): string | null => {
@@ -204,7 +212,7 @@ const Apontamentos = () => {
   };
 
   const filtered = useMemo(() =>
-    items
+    scopedItems
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
         // Date range filter
@@ -235,7 +243,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
+    [scopedItems, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
   );
 
   const toggleSelect = useCallback((id: string) => {
@@ -800,10 +808,10 @@ const Apontamentos = () => {
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(open) => !open && setViewTarget(null)} apontamentoId={viewTarget} />
 
       {/* Daily report */}
-      <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={items} mode="daily" onViewRecord={(id) => setViewTarget(id)} />
+      <ApontamentoDailyReport open={dailyReportOpen} onOpenChange={setDailyReportOpen} items={scopedItems} mode="daily" onViewRecord={(id) => setViewTarget(id)} />
 
       {/* NG report */}
-      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={items} mode="ng" onViewRecord={(id) => setViewTarget(id)} locationFilter={ngLocationFilter} />
+      <ApontamentoDailyReport open={ngReportOpen} onOpenChange={setNgReportOpen} items={scopedItems} mode="ng" onViewRecord={(id) => setViewTarget(id)} locationFilter={ngLocationFilter} />
 
       {/* NG Location Dialog */}
       <Dialog open={showNgLocationDialog} onOpenChange={setShowNgLocationDialog}>

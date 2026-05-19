@@ -3,6 +3,7 @@ import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, CalendarIcon, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -33,6 +34,7 @@ const DONUT_COLORS = ["hsl(45, 80%, 55%)", "hsl(15, 70%, 45%)"];
 
 const ApontamentoDashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [activeType, setActiveType] = useState("incoming");
   const [dateFromOpen, setDateFromOpen] = useState(false);
   const [dateToOpen, setDateToOpen] = useState(false);
@@ -77,7 +79,7 @@ const ApontamentoDashboard = () => {
 
   const [showPPM, setShowPPM] = useState(false);
 
-  const { data: items = [], isLoading } = useQuery({
+  const { data: rawItems = [], isLoading } = useQuery({
     queryKey: ["apontamentos", "all"],
     queryFn: async () => {
       const PAGE = 1000;
@@ -99,6 +101,29 @@ const ApontamentoDashboard = () => {
       return all;
     },
   });
+
+  // Profiles for empresa-based scoping (terceira users only see their own company)
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-empresa-dash"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, empresa, empresa_terceira");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const empresaByUserId = useMemo(() => {
+    const map: Record<string, string> = {};
+    (profilesList as any[]).forEach((p: any) => {
+      map[p.id] = p.empresa === "empresa_terceira" ? (p.empresa_terceira || "Terceira") : "Mobis Brasil";
+    });
+    return map;
+  }, [profilesList]);
+  const isTerceira = profile?.empresa === "empresa_terceira";
+  const terceiraName = profile?.empresa_terceira || null;
+  const items = useMemo(() => {
+    if (!isTerceira || !terceiraName) return rawItems;
+    return (rawItems as any[]).filter((i) => i.created_by && empresaByUserId[i.created_by] === terceiraName);
+  }, [rawItems, isTerceira, terceiraName, empresaByUserId]);
 
   const { data: suppliersRaw = [] } = useQuery({
     queryKey: ["suppliers-dash"],

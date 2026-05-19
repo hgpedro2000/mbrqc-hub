@@ -243,7 +243,7 @@ const Apontamentos = () => {
           return String((i as any)[key]) === value;
         });
       }),
-    [items, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
+    [scopedItems, activeTab, search, filterValues, empresaByUserId, incomingLocationFilter, dateFrom, dateTo]
   );
 
   const toggleSelect = useCallback((id: string) => {

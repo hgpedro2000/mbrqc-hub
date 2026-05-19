@@ -120,8 +120,10 @@ const ApontamentoDashboard = () => {
     });
     return map;
   }, [profilesList]);
-  const isTerceira = profile?.empresa === "empresa_terceira";
-  const terceiraName = profile?.empresa_terceira || null;
+  const effEmpresa = impersonating ? impersonating.empresa : profile?.empresa;
+  const effEmpresaTerceira = impersonating ? impersonating.empresa_terceira : profile?.empresa_terceira;
+  const isTerceira = effEmpresa === "empresa_terceira";
+  const terceiraName = effEmpresaTerceira || null;
   const items = useMemo(() => {
     if (!isTerceira || !terceiraName) return rawItems;
     return (rawItems as any[]).filter((i) => i.created_by && empresaByUserId[i.created_by] === terceiraName);

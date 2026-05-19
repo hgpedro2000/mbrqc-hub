@@ -37,7 +37,7 @@ const typeConfig: Record<ApontamentoTipo, { icon: any; label: string; descriptio
 
 const Apontamentos = () => {
   const { t } = useTranslation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, profile } = useAuth();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const queryClient = useQueryClient();

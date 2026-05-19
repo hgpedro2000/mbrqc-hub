@@ -172,7 +172,7 @@ const Apontamentos = () => {
   const statusFilterOptions = ["draft", "submitted"];
 
   const filters: FilterConfig[] = useMemo(() => {
-    const typeItems = items.filter((i) => i.tipo === activeTab);
+    const typeItems = scopedItems.filter((i) => i.tipo === activeTab);
     const projetos = [...new Set(typeItems.map((i) => i.projeto).filter(Boolean))] as string[];
     const fornecedores = [...new Set(typeItems.map((i) => i.fornecedor).filter(Boolean))] as string[];
     const responsaveis = [...new Set(typeItems.map((i) => i.responsavel).filter(Boolean))] as string[];

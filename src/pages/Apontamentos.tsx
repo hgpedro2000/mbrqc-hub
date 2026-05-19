@@ -212,7 +212,7 @@ const Apontamentos = () => {
   };
 
   const filtered = useMemo(() =>
-    items
+    scopedItems
       .filter((i) => i.tipo === activeTab)
       .filter((i) => {
         // Date range filter

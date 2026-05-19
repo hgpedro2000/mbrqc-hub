@@ -132,6 +132,14 @@ const Apontamentos = () => {
     return map;
   }, [profilesList]);
 
+  // Terceira restriction: users from outsourced companies (IL/Trigo/etc.) only see their own company's records
+  const isTerceira = profile?.empresa === "empresa_terceira";
+  const terceiraName = profile?.empresa_terceira || null;
+  const scopedItems = useMemo(() => {
+    if (!isTerceira || !terceiraName) return items;
+    return items.filter((i: any) => i.created_by && empresaByUserId[i.created_by] === terceiraName);
+  }, [items, isTerceira, terceiraName, empresaByUserId]);
+
   const photosByItem = useMemo(() => {
     const map: Record<string, string[]> = {};
     allPhotos.forEach((p) => {

@@ -1307,7 +1307,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       </tr>
                     </thead>
                     <tbody>
-                      {records.map((r) => (
+                      {records.map((r) => {
+                        const tags = getTagsList(r);
+                        const descs = getDescList(r);
+                        const photos = allPhotosByItem[r.id] || [];
+                        const extraTags = Math.max(0, tags.length - 1);
+                        const extraDescs = Math.max(0, descs.length - 1);
+                        const extraPhotos = Math.max(0, photos.length - 1);
+                        const mainDesc = stripCode(r.modo_falha) || descs[0] || "—";
+                        const openMore = () => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags, descs, photos });
+                        return (
                         <tr key={r.id} className="border-b last:border-b-0 hover:bg-muted/20">
                           <td className="px-3 py-1.5 font-mono text-muted-foreground">
                             {r.numero ? (
@@ -1324,31 +1333,49 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                           <td className="px-3 py-1.5 text-right">{r.quantidade_ok || 0}</td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 whitespace-nowrap">
-                              {(r.numero_tag || r.tag_number) ? (
-                                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
-                              )}
+                              <div className="flex items-center gap-1">
+                                {tags.length > 0 ? (
+                                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {tags[0]}</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
+                                )}
+                                {extraTags > 0 && (
+                                  <button onClick={openMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold">+{extraTags}</button>
+                                )}
+                              </div>
                             </td>
                           )}
-                          <td className="px-3 py-1.5 max-w-[200px] truncate">{stripCode(r.modo_falha) || r.descricao || "—"}</td>
+                          <td className="px-3 py-1.5 max-w-[200px]">
+                            <div className="flex items-center gap-1">
+                              <span className="truncate flex-1">{mainDesc}</span>
+                              {extraDescs > 0 && (
+                                <button onClick={openMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold shrink-0">+{extraDescs}</button>
+                              )}
+                            </div>
+                          </td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
-                              {firstPhotoByItem[r.id] ? (
-                                <img
-                                  src={firstPhotoByItem[r.id]}
-                                  alt="Foto NG"
-                                  className="w-16 h-16 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                                  style={{ aspectRatio: "1/1" }}
-                                  onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
-                                />
+                              {photos[0] ? (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={photos[0]}
+                                    alt="Foto NG"
+                                    className="w-16 h-16 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                    style={{ aspectRatio: "1/1" }}
+                                    onClick={(e) => { e.stopPropagation(); setLightboxUrl(photos[0]); }}
+                                  />
+                                  {extraPhotos > 0 && (
+                                    <button onClick={openMore} className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full font-bold shadow">+{extraPhotos}</button>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-muted-foreground text-[10px]">—</span>
                               )}
                             </td>
                           )}
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

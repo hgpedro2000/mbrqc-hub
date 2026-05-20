@@ -1329,12 +1329,19 @@ const ApontamentoDashboard = () => {
         <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
           {pnFilter && (
-            <div className="px-3 pt-2">
+            <div className="px-3 pt-2 flex items-center gap-3 flex-wrap">
               <button onClick={() => setPnFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
                 ✕ Filtro PN: {pnFilter}
               </button>
+              <button
+                onClick={() => setAllNgPnTarget(pnFilter)}
+                className="text-[10px] px-2 py-0.5 rounded border border-[hsl(0,55%,40%)] bg-[hsl(0,55%,20%)] text-[hsl(0,80%,80%)] hover:bg-[hsl(0,55%,28%)]"
+              >
+                All NG Parts
+              </button>
             </div>
           )}
+
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">

@@ -178,6 +178,14 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  const { canInsertTag } = useTagPermission();
+
+  // Multi-TAG editor state (one TAG per failure mode)
+  const [multiTagOpen, setMultiTagOpen] = useState(false);
+  const [multiTagValues, setMultiTagValues] = useState<string[]>([]);
+  const [multiTagSaving, setMultiTagSaving] = useState(false);
+  const [multiTagFocusIdx, setMultiTagFocusIdx] = useState(0);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ["apontamento-view", apontamentoId],
@@ -263,6 +271,47 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.segundo_defeitos]);
 
+  const openMultiTagEditor = (focusIdx = 0) => {
+    setMultiTagValues(segundoDefeitos.map((x: any) => (x?.tag || "").toString()));
+    setMultiTagFocusIdx(focusIdx);
+    setMultiTagOpen(true);
+  };
+
+  const handleSaveMultiTags = async () => {
+    if (!d?.id) return;
+    const trimmed = multiTagValues.map(v => (v || "").trim());
+    if (trimmed.every(v => !v)) {
+      toast.error("Informe pelo menos um número de TAG");
+      return;
+    }
+    setMultiTagSaving(true);
+    try {
+      const updatedDefects = segundoDefeitos.map((def: any, i: number) => ({
+        ...def,
+        tag: trimmed[i] || null,
+      }));
+      const joined = trimmed.filter(Boolean).join(", ");
+      const { error } = await supabase
+        .from("apontamentos")
+        .update({
+          segundo_defeitos: updatedDefects,
+          numero_tag: joined || null,
+          tag_inserted_at: new Date().toISOString(),
+          tag_inserted_by: profile?.full_name || "",
+        } as any)
+        .eq("id", d.id);
+      if (error) throw error;
+      toast.success("TAGs salvas!");
+      setMultiTagOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar TAGs");
+    } finally {
+      setMultiTagSaving(false);
+    }
+  };
+
+
   const coInspetores = useMemo(() => {
     if (!d?.co_inspetores) return [];
     try {
@@ -343,11 +392,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                     <span className="text-sm font-semibold">{stripCode(def.modo_falha) || "—"}</span>
                     <Badge variant="outline" className="text-xs ml-auto">Qty: {def.qty || 0}</Badge>
                     {def.tag ? (
-                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-300 text-[10px] gap-1">
+                      <Badge
+                        className={`bg-emerald-500/15 text-emerald-700 border-emerald-300 text-[10px] gap-1 ${canInsertTag ? "cursor-pointer hover:bg-emerald-500/25" : ""}`}
+                        onClick={() => { if (canInsertTag) openMultiTagEditor(idx); }}
+                        title={canInsertTag ? "Clique para editar TAGs" : undefined}
+                      >
                         <Tag className="w-3 h-3" /> TAG: {def.tag}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 gap-1">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] text-amber-600 border-amber-300 gap-1 ${canInsertTag ? "cursor-pointer animate-pulse hover:bg-amber-50" : ""}`}
+                        onClick={() => { if (canInsertTag) openMultiTagEditor(idx); }}
+                        title={canInsertTag ? "Clique para inserir TAG" : "Aguardando número de TAG"}
+                      >
                         <Tag className="w-3 h-3" /> Sem TAG
                       </Badge>
                     )}
@@ -627,8 +685,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
 
-              {/* TAG Number section (only when not already shown per defect) */}
-              {(d?.quantidade_ng || 0) > 0 && !(hasMultipleFailureModes && segundoDefeitos.some((x: any) => x?.tag)) && (
+              {/* TAG Number section (only when not multi-failure-mode, which is handled per defect) */}
+              {(d?.quantidade_ng || 0) > 0 && !hasMultipleFailureModes && (
                 <div data-pdf-section className="px-0 sm:px-2">
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>
@@ -639,6 +697,19 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                       onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] })}
                       allowEdit={true}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Summary TAG line when multi failure modes (always shown so user can open editor) */}
+              {(d?.quantidade_ng || 0) > 0 && hasMultipleFailureModes && canInsertTag && (
+                <div data-pdf-section className="px-0 sm:px-2">
+                  <div className="flex items-center gap-2 py-2 flex-wrap">
+                    <span className="text-sm font-medium text-muted-foreground">TAGs:</span>
+                    <Button size="sm" variant="outline" onClick={() => openMultiTagEditor(0)}>
+                      <Tag className="w-3.5 h-3.5 mr-1" />
+                      Inserir/Editar TAGs ({segundoDefeitos.length})
+                    </Button>
                   </div>
                 </div>
               )}
@@ -707,6 +778,50 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
               <img src={lightboxUrl} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Multi-TAG editor (one TAG per failure mode) */}
+      <Dialog open={multiTagOpen} onOpenChange={setMultiTagOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Inserir TAGs por Modo de Falha
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Informe um número de TAG para cada modo de falha. Campos em branco serão ignorados.
+            </p>
+            {segundoDefeitos.map((def: any, idx: number) => (
+              <div key={idx} className="space-y-1">
+                <Label className="text-xs flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">{idx + 1}</span>
+                  <span className="font-semibold">{stripCode(def.modo_falha) || "—"}</span>
+                  <span className="text-muted-foreground">• Qty: {def.qty || 0}</span>
+                </Label>
+                <Input
+                  value={multiTagValues[idx] || ""}
+                  onChange={(e) => {
+                    const next = [...multiTagValues];
+                    next[idx] = e.target.value;
+                    setMultiTagValues(next);
+                  }}
+                  placeholder={`TAG do defeito ${idx + 1}`}
+                  autoFocus={idx === multiTagFocusIdx}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveMultiTags()}
+                  className="h-9 text-sm"
+                />
+              </div>
+            ))}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setMultiTagOpen(false)}>Cancelar</Button>
+              <Button size="sm" onClick={handleSaveMultiTags} disabled={multiTagSaving}>
+                {multiTagSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+                Salvar TAGs
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Dialog>

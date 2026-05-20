@@ -1388,16 +1388,17 @@ const ApontamentoDashboard = () => {
 
       <ApontamentoDailyReport
         open={ngReportOpen}
-        onOpenChange={(o) => { setNgReportOpen(o); if (!o) setNgReportFailureMode(null); }}
+        onOpenChange={(o) => { setNgReportOpen(o); if (!o) { setNgReportFailureMode(null); setNgReportAllDates(false); } }}
         items={items}
         mode="ng"
         onViewRecord={(id) => setViewTarget(id)}
         failureModeFilter={ngReportFailureMode}
         tipoFilter={activeType === "100days" ? "incoming" : activeType}
         pnSetFilter={activeType === "100days" ? bc4bPnSet : null}
-        initialDateFrom={dateFrom || undefined}
-        initialDateTo={dateTo || undefined}
+        initialDateFrom={ngReportAllDates ? "2000-01-01" : (dateFrom || undefined)}
+        initialDateTo={ngReportAllDates ? new Date().toISOString().slice(0, 10) : (dateTo || undefined)}
       />
+
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
 
       <Dialog open={!!infoTarget} onOpenChange={(o) => !o && setInfoTarget(null)}>

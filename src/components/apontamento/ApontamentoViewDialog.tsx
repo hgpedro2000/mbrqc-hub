@@ -304,6 +304,7 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
       toast.success("TAGs salvas!");
       setMultiTagOpen(false);
       queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] });
+      queryClient.invalidateQueries({ queryKey: ["apontamentos"] });
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar TAGs");
     } finally {

@@ -121,12 +121,14 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
       const hasLiveTrack = tracks.some((t) => t.readyState === "live" && t.enabled);
       if (hasLiveTrack) {
         setError("");
-        setStarting(false);
+        setStarting(true);
         streamRef.current = initialStream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = initialStream;
-          void videoRef.current.play().catch(() => {});
-        }
+        void attachStream(initialStream)
+          .catch((err) => {
+            console.warn("[InAppCamera] initialStream did not render, requesting fresh stream", err);
+            void start(facing);
+          })
+          .finally(() => setStarting(false));
         return () => { stop(); };
       }
       // Stream is dead (camera was busy) → start our own.
@@ -232,7 +234,7 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
               <button
                 type="button"
                 onClick={handleCapture}
-                disabled={starting || !!error}
+                disabled={starting || !!error || !videoReady}
                 aria-label="Capturar foto"
                 className="w-16 h-16 rounded-full bg-white border-4 border-white/40 active:scale-95 transition disabled:opacity-50"
               />

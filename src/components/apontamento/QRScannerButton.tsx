@@ -203,11 +203,15 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
     try {
       await scanner.stop();
-    } catch {}
+    } catch {
+      // Scanner may already be stopped by the browser when camera permission changes.
+    }
 
     try {
       await scanner.clear();
-    } catch {}
+    } catch {
+      // Safe cleanup fallback for browsers that already removed the video node.
+    }
   }, [stopLiveQrDetector]);
 
   const closeScanner = useCallback(() => {
@@ -265,7 +269,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setZoomLevel(value);
     try {
       await scannerRef.current?.applyVideoConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
-    } catch {}
+    } catch {
+      // Zoom is optional and not supported by all iOS/Android camera drivers.
+    }
   }, []);
 
   const handleOpenScanner = useCallback(async () => {
@@ -460,7 +466,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
         } catch {
           try {
             await scanner.clear();
-          } catch {}
+          } catch {
+            // Ignore scan-file cleanup failures; the next variant can still be tested.
+          }
         }
       }
 
@@ -514,12 +522,12 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setSending(true);
     try {
       await supabase.from("error_reports").insert({
-        user_id: user?.id,
+        user_id: user?.id ?? "",
         user_name: profile?.full_name || "",
         module: "Leitura QR Code — Apontamento Incoming",
         description: `QR Code incompatível detectado durante leitura de etiqueta.\n\nConteúdo capturado:\n${rawQR}\n\nAção do usuário: Optou por preencher manualmente.`,
         photos: [],
-      } as any);
+      });
       setReportSent(true);
       toast({ title: "Relatório enviado ao HelpDesk!", description: "Obrigado. Vamos analisar para melhorar o sistema." });
     } catch {

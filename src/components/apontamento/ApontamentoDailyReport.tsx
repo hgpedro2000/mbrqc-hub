@@ -1280,7 +1280,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                 <div className="block sm:hidden space-y-2">
                   {records.map((r) =>
                     mode === "ng" ? (
-                      <NgMobileCard key={r.id} r={r} photoUrl={firstPhotoByItem[r.id]} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} />
+                      <NgMobileCard key={r.id} r={r} photos={allPhotosByItem[r.id] || []} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} onMore={() => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags: getTagsList(r), descs: getDescList(r), photos: allPhotosByItem[r.id] || [] })} />
                     ) : (
                       <DailyMobileCard key={r.id} r={r} onNumberClick={handleNumberClick} />
                     )

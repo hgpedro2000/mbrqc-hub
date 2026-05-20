@@ -434,6 +434,29 @@ const ApontamentoDashboard = () => {
   }, [infoTarget, filtered]);
   const infoTotal = useMemo(() => infoRecords.reduce((s, r) => s + r.ng, 0), [infoRecords]);
 
+  // All NG Parts popup: aggregates all NG records for the currently filtered PN
+  const [allNgPnTarget, setAllNgPnTarget] = useState<string | null>(null);
+  const allNgPnRecords = useMemo(() => {
+    if (!allNgPnTarget) return [] as Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string; category: string }>;
+    const rows: Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string; category: string }> = [];
+    (filtered as any[]).forEach((d: any) => {
+      if ((d.part_number || "—") !== allNgPnTarget) return;
+      const ng = d.quantidade_ng || 0;
+      if (ng <= 0) return;
+      rows.push({
+        id: d.id,
+        numero: d.numero || null,
+        date: d.data || d.created_at || "",
+        ng,
+        supplier: resolveName(d.fornecedor || "—"),
+        category: stripCode(d.modo_falha || "—") || "—",
+      });
+    });
+    return rows.sort((a, b) => (b.date > a.date ? 1 : -1));
+  }, [allNgPnTarget, filtered]);
+  const allNgPnTotal = useMemo(() => allNgPnRecords.reduce((s, r) => s + r.ng, 0), [allNgPnRecords]);
+
+
   const chartConfig = {
     ok: { label: "OK", color: "hsl(140, 55%, 45%)" },
     ng: { label: "NG", color: "hsl(0, 55%, 50%)" },

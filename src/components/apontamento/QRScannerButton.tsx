@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
+import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
@@ -43,6 +44,50 @@ const getScanConfig = (): Html5QrcodeCameraScanConfig => ({
 });
 
 type ZoomOptions = { min: number; max: number; step: number };
+type QrMarkerPoint = { x: number; y: number };
+type QrMarker = { points: QrMarkerPoint[]; center: QrMarkerPoint };
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const buildQrMarker = (
+  location: QRCode["location"],
+  video: HTMLVideoElement,
+  container: HTMLElement,
+  canvasWidth: number,
+  canvasHeight: number
+): QrMarker | null => {
+  if (!video.videoWidth || !video.videoHeight || !canvasWidth || !canvasHeight) return null;
+
+  const videoRect = video.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const contentScale = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
+  const renderedWidth = video.videoWidth * contentScale;
+  const renderedHeight = video.videoHeight * contentScale;
+  const offsetX = videoRect.left - containerRect.left + (videoRect.width - renderedWidth) / 2;
+  const offsetY = videoRect.top - containerRect.top + (videoRect.height - renderedHeight) / 2;
+
+  const toPoint = (point: QrMarkerPoint) => {
+    const sourceX = (point.x / canvasWidth) * video.videoWidth;
+    const sourceY = (point.y / canvasHeight) * video.videoHeight;
+    return {
+      x: clamp(offsetX + sourceX * contentScale, 0, containerRect.width),
+      y: clamp(offsetY + sourceY * contentScale, 0, containerRect.height),
+    };
+  };
+
+  const points = [
+    toPoint(location.topLeftCorner),
+    toPoint(location.topRightCorner),
+    toPoint(location.bottomRightCorner),
+    toPoint(location.bottomLeftCorner),
+  ];
+  const center = points.reduce(
+    (acc, point) => ({ x: acc.x + point.x / points.length, y: acc.y + point.y / points.length }),
+    { x: 0, y: 0 }
+  );
+
+  return { points, center };
+};
 
 export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
   const { user, profile } = useAuth();
@@ -56,9 +101,14 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [cameraCaptureOpen, setCameraCaptureOpen] = useState(false);
   const [cameraCaptureStream, setCameraCaptureStream] = useState<MediaStream | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [qrMarker, setQrMarker] = useState<QrMarker | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const detectorCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const detectorFrameRef = useRef<number | null>(null);
+  const detectorLastRunRef = useRef(0);
+  const pendingDetectorDecodeRef = useRef<number | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
   const [rawQR, setRawQR] = useState("");

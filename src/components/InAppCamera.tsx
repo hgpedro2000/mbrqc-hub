@@ -41,7 +41,7 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
     video.srcObject = stream;
 
     await new Promise<void>((resolve) => {
-      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return resolve();
+      if (video.readyState >= 1) return resolve();
       const done = () => resolve();
       video.addEventListener("loadedmetadata", done, { once: true });
       window.setTimeout(done, 900);
@@ -52,7 +52,7 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
     await new Promise<void>((resolve, reject) => {
       const startedAt = Date.now();
       const check = () => {
-        if (video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        if (video.videoWidth > 0 && video.videoHeight > 0 && video.readyState >= 2) {
           resolve();
           return;
         }

@@ -112,11 +112,11 @@ const Apontamentos = () => {
 
   // Fetch profiles for empresa info
   const { data: profilesList = [] } = useQuery({
-    queryKey: ["profiles-empresa"],
+    queryKey: ["profiles-empresa-map"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("public_profiles").select("id, empresa, empresa_terceira");
+      const { data, error } = await (supabase as any).rpc("get_creator_empresa_map");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 

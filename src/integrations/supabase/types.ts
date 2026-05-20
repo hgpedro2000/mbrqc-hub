@@ -1672,6 +1672,14 @@ export type Database = {
           turno: string
         }[]
       }
+      get_creator_empresa_map: {
+        Args: never
+        Returns: {
+          empresa: string
+          empresa_terceira: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

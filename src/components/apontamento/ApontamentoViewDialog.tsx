@@ -351,11 +351,20 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                     <span className="text-sm font-semibold">{stripCode(def.modo_falha) || "—"}</span>
                     <Badge variant="outline" className="text-xs ml-auto">Qty: {def.qty || 0}</Badge>
                     {def.tag ? (
-                      <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-300 text-[10px] gap-1">
+                      <Badge
+                        className={`bg-emerald-500/15 text-emerald-700 border-emerald-300 text-[10px] gap-1 ${canInsertTag ? "cursor-pointer hover:bg-emerald-500/25" : ""}`}
+                        onClick={() => { if (canInsertTag) openMultiTagEditor(idx); }}
+                        title={canInsertTag ? "Clique para editar TAGs" : undefined}
+                      >
                         <Tag className="w-3 h-3" /> TAG: {def.tag}
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 gap-1">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] text-amber-600 border-amber-300 gap-1 ${canInsertTag ? "cursor-pointer animate-pulse hover:bg-amber-50" : ""}`}
+                        onClick={() => { if (canInsertTag) openMultiTagEditor(idx); }}
+                        title={canInsertTag ? "Clique para inserir TAG" : "Aguardando número de TAG"}
+                      >
                         <Tag className="w-3 h-3" /> Sem TAG
                       </Badge>
                     )}

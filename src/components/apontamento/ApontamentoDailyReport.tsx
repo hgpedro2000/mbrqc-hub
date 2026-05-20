@@ -1413,6 +1413,65 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </DialogContent>
         </Dialog>
       )}
+
+      {/* More info popup (multi tags / descriptions / photos) */}
+      <Dialog open={!!moreInfo} onOpenChange={(o) => !o && setMoreInfo(null)}>
+        <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto">
+          {moreInfo && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Registro</p>
+                <p className="text-base font-semibold">{moreInfo.numero ? `#${moreInfo.numero}` : ""} {moreInfo.part_number || ""}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">TAGs ({moreInfo.tags.length})</p>
+                {moreInfo.tags.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem TAG</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {moreInfo.tags.map((t, i) => (
+                      <Badge key={i} className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[11px]">TAG: {t}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Descrições ({moreInfo.descs.length})</p>
+                {moreInfo.descs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem descrição</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {moreInfo.descs.map((d, i) => (
+                      <li key={i} className="text-sm border border-border rounded p-2 bg-muted/30">{d}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Fotos ({moreInfo.photos.length})</p>
+                {moreInfo.photos.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem foto</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {moreInfo.photos.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`Foto ${i + 1}`}
+                        className="w-full aspect-square object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50"
+                        onClick={() => setLightboxUrl(url)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

@@ -1319,6 +1319,7 @@ const ApontamentoDashboard = () => {
                 <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Description</th>
                 <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Category</th>
                 <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">NG</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Information</th>
               </tr>
             </thead>
             <tbody>
@@ -1331,12 +1332,18 @@ const ApontamentoDashboard = () => {
                   >{issue.pn}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,55%,55%)] font-semibold">{issue.ng}</td>
+                  <td className="text-center px-3 py-1">
+                    <button
+                      className="text-[hsl(210,70%,60%)] hover:underline text-[11px]"
+                      onClick={() => setInfoTarget({ pn: issue.pn, category: issue.category })}
+                    >
+                      More details
+                    </button>
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={5} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
+                <tr><td colSpan={6} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
               )}
             </tbody>
           </table>

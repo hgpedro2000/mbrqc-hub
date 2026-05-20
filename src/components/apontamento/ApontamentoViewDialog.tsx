@@ -780,6 +780,50 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Multi-TAG editor (one TAG per failure mode) */}
+      <Dialog open={multiTagOpen} onOpenChange={setMultiTagOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Tag className="w-4 h-4" /> Inserir TAGs por Modo de Falha
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Informe um número de TAG para cada modo de falha. Campos em branco serão ignorados.
+            </p>
+            {segundoDefeitos.map((def: any, idx: number) => (
+              <div key={idx} className="space-y-1">
+                <Label className="text-xs flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive/10 text-destructive text-[10px] font-bold">{idx + 1}</span>
+                  <span className="font-semibold">{stripCode(def.modo_falha) || "—"}</span>
+                  <span className="text-muted-foreground">• Qty: {def.qty || 0}</span>
+                </Label>
+                <Input
+                  value={multiTagValues[idx] || ""}
+                  onChange={(e) => {
+                    const next = [...multiTagValues];
+                    next[idx] = e.target.value;
+                    setMultiTagValues(next);
+                  }}
+                  placeholder={`TAG do defeito ${idx + 1}`}
+                  autoFocus={idx === multiTagFocusIdx}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveMultiTags()}
+                  className="h-9 text-sm"
+                />
+              </div>
+            ))}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setMultiTagOpen(false)}>Cancelar</Button>
+              <Button size="sm" onClick={handleSaveMultiTags} disabled={multiTagSaving}>
+                {multiTagSaving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-1" />}
+                Salvar TAGs
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

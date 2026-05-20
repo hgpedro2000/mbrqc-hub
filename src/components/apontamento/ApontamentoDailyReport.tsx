@@ -44,6 +44,27 @@ const typeLabels: Record<string, string> = {
   incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM",
 };
 
+/* ── Helpers to aggregate multi-failure data per record ── */
+const getTagsList = (r: any): string[] => {
+  const out: string[] = [];
+  const main = r?.numero_tag ?? r?.tag_number;
+  if (main) String(main).split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean).forEach(t => out.push(t));
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => { const t = (d?.tag || "").toString().trim(); if (t) out.push(t); });
+  return Array.from(new Set(out));
+};
+
+const getDescList = (r: any): string[] => {
+  const out: string[] = [];
+  const norm = (v: any) => (v == null ? "" : String(v).trim());
+  const skipPlaceholder = (s: string) => s && s.toLowerCase() !== "sem descrição" && s.toLowerCase() !== "sem descricao";
+  const d0 = norm(r?.descricao);
+  if (skipPlaceholder(d0)) out.push(d0);
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => { const v = norm(d?.descricao); if (skipPlaceholder(v)) out.push(v); });
+  return out;
+};
+
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">

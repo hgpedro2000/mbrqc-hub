@@ -400,8 +400,10 @@ const ApontamentoDashboard = () => {
         return issues;
       })
       .flat()
+      .sort((a, b) => String(a.category).localeCompare(String(b.category), 'pt-BR', { sensitivity: 'base' }))
       .slice(0, 15);
   }, [filtered]);
+
 
   // Info popup: aggregate all INCs matching a given PN + category
   const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);

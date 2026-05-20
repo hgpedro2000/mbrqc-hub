@@ -134,7 +134,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
       const container = document.getElementById(READER_ID);
       const video = container?.querySelector("video") as HTMLVideoElement | null;
-      if (!container || !video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return;
+      if (!container || !video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
 
       const canvas = detectorCanvasRef.current ?? document.createElement("canvas");
       detectorCanvasRef.current = canvas;
@@ -275,21 +275,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setZoomOptions(null);
     setZoomLevel(null);
 
-    const warmCamera = navigator.mediaDevices?.getUserMedia
-      ? navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        }).catch(() => null)
-      : Promise.resolve(null);
-
     setScannerOpen(true);
-
-    const warmStream = await warmCamera;
-    warmStream?.getTracks().forEach((track) => track.stop());
 
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
@@ -308,8 +294,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     };
 
     const cameraOptions: MediaTrackConstraints[] = [
-      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       { facingMode: "environment" },
       {},
     ];

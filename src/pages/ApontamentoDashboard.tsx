@@ -434,6 +434,29 @@ const ApontamentoDashboard = () => {
   }, [infoTarget, filtered]);
   const infoTotal = useMemo(() => infoRecords.reduce((s, r) => s + r.ng, 0), [infoRecords]);
 
+  // All NG Parts popup: aggregates all NG records for the currently filtered PN
+  const [allNgPnTarget, setAllNgPnTarget] = useState<string | null>(null);
+  const allNgPnRecords = useMemo(() => {
+    if (!allNgPnTarget) return [] as Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string; category: string }>;
+    const rows: Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string; category: string }> = [];
+    (filtered as any[]).forEach((d: any) => {
+      if ((d.part_number || "—") !== allNgPnTarget) return;
+      const ng = d.quantidade_ng || 0;
+      if (ng <= 0) return;
+      rows.push({
+        id: d.id,
+        numero: d.numero || null,
+        date: d.data || d.created_at || "",
+        ng,
+        supplier: resolveName(d.fornecedor || "—"),
+        category: stripCode(d.modo_falha || "—") || "—",
+      });
+    });
+    return rows.sort((a, b) => (b.date > a.date ? 1 : -1));
+  }, [allNgPnTarget, filtered]);
+  const allNgPnTotal = useMemo(() => allNgPnRecords.reduce((s, r) => s + r.ng, 0), [allNgPnRecords]);
+
+
   const chartConfig = {
     ok: { label: "OK", color: "hsl(140, 55%, 45%)" },
     ng: { label: "NG", color: "hsl(0, 55%, 50%)" },
@@ -1306,12 +1329,19 @@ const ApontamentoDashboard = () => {
         <div className="lg:col-span-8 border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] overflow-x-auto rounded-lg">
           <SectionHeader>Main Issues</SectionHeader>
           {pnFilter && (
-            <div className="px-3 pt-2">
+            <div className="px-3 pt-2 flex items-center gap-3 flex-wrap">
               <button onClick={() => setPnFilter(null)} className="text-[10px] text-[hsl(210,70%,60%)] hover:underline">
                 ✕ Filtro PN: {pnFilter}
               </button>
+              <button
+                onClick={() => setAllNgPnTarget(pnFilter)}
+                className="text-[10px] px-2 py-0.5 rounded border border-[hsl(0,55%,40%)] bg-[hsl(0,55%,20%)] text-[hsl(0,80%,80%)] hover:bg-[hsl(0,55%,28%)]"
+              >
+                All NG Parts
+              </button>
             </div>
           )}
+
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-[hsl(220,10%,25%)]">
@@ -1398,6 +1428,40 @@ const ApontamentoDashboard = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!allNgPnTarget} onOpenChange={(o) => !o && setAllNgPnTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span className="text-sm">All NG Parts — <span className="text-muted-foreground">{allNgPnTarget}</span></span>
+              <span className="text-sm font-normal text-red-400">Total NG: {allNgPnTotal.toLocaleString('pt-BR')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {allNgPnRecords.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Sem registros.</p>
+          ) : (
+            <div className="divide-y divide-border rounded-md border">
+              {allNgPnRecords.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => { setAllNgPnTarget(null); setViewTarget(r.id); }}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-medium truncate">{r.supplier} · <span className="text-muted-foreground">{r.category}</span></span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.numero || 'S/N'}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-red-400 shrink-0">{r.ng}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
 
       <Dialog open={ngBreakdownOpen} onOpenChange={(o) => { setNgBreakdownOpen(o); if (!o) setNgRespFilter(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

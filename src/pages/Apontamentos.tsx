@@ -422,21 +422,12 @@ const Apontamentos = () => {
                             <span className="font-semibold text-destructive">{stripCode(def.modo_falha)}</span>
                             {def.descricao && <span className="text-muted-foreground">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
                             <span className="text-muted-foreground">(×{def.qty})</span>
-                            {def.tag ? (
-                              <DefectTagBadge
-                                apontamentoId={item.id}
-                                defects={defectDetails}
-                                defectIndex={idx}
-                                onSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
-                              />
-                            ) : (
-                              <DefectTagBadge
-                                apontamentoId={item.id}
-                                defects={defectDetails}
-                                defectIndex={idx}
-                                onSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
-                              />
-                            )}
+                            <DefectTagBadge
+                              apontamentoId={item.id}
+                              defects={defectDetails}
+                              defectIndex={idx}
+                              onSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
+                            />
                           </div>
                         ))}
                       </div>

@@ -406,8 +406,8 @@ const ApontamentoDashboard = () => {
   // Info popup: aggregate all INCs matching a given PN + category
   const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);
   const infoRecords = useMemo(() => {
-    if (!infoTarget) return [] as Array<{ id: string; date: string; ng: number; supplier: string }>;
-    const rows: Array<{ id: string; date: string; ng: number; supplier: string }> = [];
+    if (!infoTarget) return [] as Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string }>;
+    const rows: Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string }> = [];
     filtered.forEach((d: any) => {
       if ((d.part_number || "—") !== infoTarget.pn) return;
       let qty = 0;
@@ -423,6 +423,7 @@ const ApontamentoDashboard = () => {
       if (qty > 0) {
         rows.push({
           id: d.id,
+          numero: d.numero || null,
           date: d.data || d.created_at || "",
           ng: qty,
           supplier: resolveName(d.fornecedor || "—"),

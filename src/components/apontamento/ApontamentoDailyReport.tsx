@@ -44,6 +44,27 @@ const typeLabels: Record<string, string> = {
   incoming: "Incoming", peca: "Peça", processo: "Processo", oem: "OEM",
 };
 
+/* ── Helpers to aggregate multi-failure data per record ── */
+const getTagsList = (r: any): string[] => {
+  const out: string[] = [];
+  const main = r?.numero_tag ?? r?.tag_number;
+  if (main) String(main).split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean).forEach(t => out.push(t));
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => { const t = (d?.tag || "").toString().trim(); if (t) out.push(t); });
+  return Array.from(new Set(out));
+};
+
+const getDescList = (r: any): string[] => {
+  const out: string[] = [];
+  const norm = (v: any) => (v == null ? "" : String(v).trim());
+  const skipPlaceholder = (s: string) => s && s.toLowerCase() !== "sem descrição" && s.toLowerCase() !== "sem descricao";
+  const d0 = norm(r?.descricao);
+  if (skipPlaceholder(d0)) out.push(d0);
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => { const v = norm(d?.descricao); if (skipPlaceholder(v)) out.push(v); });
+  return out;
+};
+
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
@@ -68,7 +89,15 @@ const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: str
 );
 
 /* ── Mobile card for NG mode ── */
-const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; photoUrl?: string; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void }) => (
+const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: any; photos: string[]; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void; onMore: () => void }) => {
+  const tags = getTagsList(r);
+  const descs = getDescList(r);
+  const extraTags = Math.max(0, tags.length - 1);
+  const extraDescs = Math.max(0, descs.length - 1);
+  const extraPhotos = Math.max(0, photos.length - 1);
+  const firstDesc = stripCode(r.modo_falha) || descs[0] || "";
+  const photoUrl = photos[0];
+  return (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
     <div className="flex justify-between items-center mb-1">
       {r.numero ? (
@@ -84,31 +113,45 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
       <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
     </div>
-    <div className="flex justify-between items-center">
-      <div>
-        {(r.numero_tag || r.tag_number) ? (
-          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
+    <div className="flex justify-between items-center gap-2">
+      <div className="flex items-center gap-1 flex-wrap min-w-0">
+        {tags.length > 0 ? (
+          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {tags[0]}</Badge>
         ) : (
           <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
         )}
+        {extraTags > 0 && (
+          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold">+{extraTags}</button>
+        )}
       </div>
       {photoUrl ? (
-        <img
-          src={photoUrl}
-          alt="Foto NG"
-          className="w-16 h-16 object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-          style={{ aspectRatio: "1/1" }}
-          onClick={() => onPhotoClick(photoUrl)}
-        />
+        <div className="relative shrink-0">
+          <img
+            src={photoUrl}
+            alt="Foto NG"
+            className="w-16 h-16 object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+            style={{ aspectRatio: "1/1" }}
+            onClick={() => onPhotoClick(photoUrl)}
+          />
+          {extraPhotos > 0 && (
+            <button onClick={onMore} className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full font-bold shadow">+{extraPhotos}</button>
+          )}
+        </div>
       ) : (
         <span className="text-muted-foreground text-[10px]">—</span>
       )}
     </div>
-    {(stripCode(r.modo_falha) || r.descricao) && (
-      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+    {firstDesc && (
+      <div className="flex items-center gap-1 mt-1">
+        <p className="text-xs text-muted-foreground truncate flex-1">{firstDesc}</p>
+        {extraDescs > 0 && (
+          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold shrink-0">+{extraDescs}</button>
+        )}
+      </div>
     )}
   </div>
-);
+  );
+};
 
 /* ─────────────────────────── PDF DOCUMENT (react-pdf) ─────────────────────────── */
 
@@ -818,6 +861,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [dateFrom, setDateFrom] = useState(initialDateFrom ?? today);
   const [dateTo, setDateTo] = useState(initialDateTo ?? today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [moreInfo, setMoreInfo] = useState<{ numero?: any; part_number?: any; tags: string[]; descs: string[]; photos: string[] } | null>(null);
   const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
@@ -988,7 +1032,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto p-0 w-[95vw] [&>button:last-child]:hidden">
+      <DialogContent className="max-w-[98vw] w-[98vw] max-h-[95vh] overflow-y-auto p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute left-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
@@ -1237,7 +1281,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                 <div className="block sm:hidden space-y-2">
                   {records.map((r) =>
                     mode === "ng" ? (
-                      <NgMobileCard key={r.id} r={r} photoUrl={firstPhotoByItem[r.id]} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} />
+                      <NgMobileCard key={r.id} r={r} photos={allPhotosByItem[r.id] || []} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} onMore={() => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags: getTagsList(r), descs: getDescList(r), photos: allPhotosByItem[r.id] || [] })} />
                     ) : (
                       <DailyMobileCard key={r.id} r={r} onNumberClick={handleNumberClick} />
                     )
@@ -1264,7 +1308,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       </tr>
                     </thead>
                     <tbody>
-                      {records.map((r) => (
+                      {records.map((r) => {
+                        const tags = getTagsList(r);
+                        const descs = getDescList(r);
+                        const photos = allPhotosByItem[r.id] || [];
+                        const extraTags = Math.max(0, tags.length - 1);
+                        const extraDescs = Math.max(0, descs.length - 1);
+                        const extraPhotos = Math.max(0, photos.length - 1);
+                        const mainDesc = stripCode(r.modo_falha) || descs[0] || "—";
+                        const openMore = () => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags, descs, photos });
+                        return (
                         <tr key={r.id} className="border-b last:border-b-0 hover:bg-muted/20">
                           <td className="px-3 py-1.5 font-mono text-muted-foreground">
                             {r.numero ? (
@@ -1281,31 +1334,49 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                           <td className="px-3 py-1.5 text-right">{r.quantidade_ok || 0}</td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 whitespace-nowrap">
-                              {(r.numero_tag || r.tag_number) ? (
-                                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
-                              )}
+                              <div className="flex items-center gap-1">
+                                {tags.length > 0 ? (
+                                  <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {tags[0]}</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
+                                )}
+                                {extraTags > 0 && (
+                                  <button onClick={openMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold">+{extraTags}</button>
+                                )}
+                              </div>
                             </td>
                           )}
-                          <td className="px-3 py-1.5 max-w-[200px] truncate">{stripCode(r.modo_falha) || r.descricao || "—"}</td>
+                          <td className="px-3 py-1.5 max-w-[200px]">
+                            <div className="flex items-center gap-1">
+                              <span className="truncate flex-1">{mainDesc}</span>
+                              {extraDescs > 0 && (
+                                <button onClick={openMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold shrink-0">+{extraDescs}</button>
+                              )}
+                            </div>
+                          </td>
                           {mode === "ng" && (
                             <td className="px-3 py-1.5 text-center">
-                              {firstPhotoByItem[r.id] ? (
-                                <img
-                                  src={firstPhotoByItem[r.id]}
-                                  alt="Foto NG"
-                                  className="w-16 h-16 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-                                  style={{ aspectRatio: "1/1" }}
-                                  onClick={(e) => { e.stopPropagation(); setLightboxUrl(firstPhotoByItem[r.id]); }}
-                                />
+                              {photos[0] ? (
+                                <div className="relative inline-block">
+                                  <img
+                                    src={photos[0]}
+                                    alt="Foto NG"
+                                    className="w-16 h-16 object-cover rounded border border-border inline-block cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                                    style={{ aspectRatio: "1/1" }}
+                                    onClick={(e) => { e.stopPropagation(); setLightboxUrl(photos[0]); }}
+                                  />
+                                  {extraPhotos > 0 && (
+                                    <button onClick={openMore} className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full font-bold shadow">+{extraPhotos}</button>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-muted-foreground text-[10px]">—</span>
                               )}
                             </td>
                           )}
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1342,6 +1413,65 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </DialogContent>
         </Dialog>
       )}
+
+      {/* More info popup (multi tags / descriptions / photos) */}
+      <Dialog open={!!moreInfo} onOpenChange={(o) => !o && setMoreInfo(null)}>
+        <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] overflow-y-auto">
+          {moreInfo && (
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Registro</p>
+                <p className="text-base font-semibold">{moreInfo.numero ? `#${moreInfo.numero}` : ""} {moreInfo.part_number || ""}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">TAGs ({moreInfo.tags.length})</p>
+                {moreInfo.tags.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem TAG</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {moreInfo.tags.map((t, i) => (
+                      <Badge key={i} className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[11px]">TAG: {t}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Descrições ({moreInfo.descs.length})</p>
+                {moreInfo.descs.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem descrição</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {moreInfo.descs.map((d, i) => (
+                      <li key={i} className="text-sm border border-border rounded p-2 bg-muted/30">{d}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Fotos ({moreInfo.photos.length})</p>
+                {moreInfo.photos.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Sem foto</p>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    {moreInfo.photos.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt={`Foto ${i + 1}`}
+                        className="w-full aspect-square object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50"
+                        onClick={() => setLightboxUrl(url)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

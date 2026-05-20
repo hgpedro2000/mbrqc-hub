@@ -69,14 +69,20 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
       return;
     }
     if (initialStream) {
-      setError("");
-      setStarting(false);
-      streamRef.current = initialStream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = initialStream;
-        void videoRef.current.play().catch(() => {});
+      const tracks = initialStream.getVideoTracks();
+      const hasLiveTrack = tracks.some((t) => t.readyState === "live" && t.enabled);
+      if (hasLiveTrack) {
+        setError("");
+        setStarting(false);
+        streamRef.current = initialStream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = initialStream;
+          void videoRef.current.play().catch(() => {});
+        }
+        return () => { stop(); };
       }
-      return () => { stop(); };
+      // Stream is dead (camera was busy) → start our own.
+      console.warn("[InAppCamera] initialStream is inactive, requesting fresh stream");
     }
     void start(facing);
     return () => { stop(); };

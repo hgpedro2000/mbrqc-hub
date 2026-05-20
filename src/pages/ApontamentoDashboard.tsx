@@ -406,8 +406,8 @@ const ApontamentoDashboard = () => {
   // Info popup: aggregate all INCs matching a given PN + category
   const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);
   const infoRecords = useMemo(() => {
-    if (!infoTarget) return [] as Array<{ id: string; date: string; ng: number; supplier: string }>;
-    const rows: Array<{ id: string; date: string; ng: number; supplier: string }> = [];
+    if (!infoTarget) return [] as Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string }>;
+    const rows: Array<{ id: string; numero: string | null; date: string; ng: number; supplier: string }> = [];
     filtered.forEach((d: any) => {
       if ((d.part_number || "—") !== infoTarget.pn) return;
       let qty = 0;
@@ -423,6 +423,7 @@ const ApontamentoDashboard = () => {
       if (qty > 0) {
         rows.push({
           id: d.id,
+          numero: d.numero || null,
           date: d.data || d.created_at || "",
           ng: qty,
           supplier: resolveName(d.fornecedor || "—"),
@@ -1387,7 +1388,7 @@ const ApontamentoDashboard = () => {
                   <div className="flex flex-col">
                     <span className="text-xs font-medium">{r.supplier}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.id.slice(0, 8)}
+                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.numero || 'S/N'}
                     </span>
                   </div>
                   <span className="text-sm font-semibold text-red-400">{r.ng}</span>

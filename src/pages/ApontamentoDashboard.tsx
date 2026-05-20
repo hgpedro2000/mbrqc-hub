@@ -376,6 +376,7 @@ const ApontamentoDashboard = () => {
         const issues: any[] = [];
         if (d.modo_falha) {
           issues.push({
+            id: d.id,
             supplier: resolveName(d.fornecedor || "—"),
             pn: d.part_number || "—",
             description: d.part_name || d.descricao || "—",
@@ -387,6 +388,7 @@ const ApontamentoDashboard = () => {
         if (sd && Array.isArray(sd)) {
           sd.forEach((def: any) => {
             issues.push({
+              id: d.id,
               supplier: resolveName(d.fornecedor || "—"),
               pn: d.part_number || "—",
               description: d.part_name || "—",
@@ -400,6 +402,36 @@ const ApontamentoDashboard = () => {
       .flat()
       .slice(0, 15);
   }, [filtered]);
+
+  // Info popup: aggregate all INCs matching a given PN + category
+  const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);
+  const infoRecords = useMemo(() => {
+    if (!infoTarget) return [] as Array<{ id: string; date: string; ng: number; supplier: string }>;
+    const rows: Array<{ id: string; date: string; ng: number; supplier: string }> = [];
+    filtered.forEach((d: any) => {
+      if ((d.part_number || "—") !== infoTarget.pn) return;
+      let qty = 0;
+      if (d.modo_falha && stripCode(d.modo_falha) === infoTarget.category) {
+        qty += d.quantidade_ng || 0;
+      }
+      const sd = d.segundo_defeitos as any[] | null;
+      if (sd && Array.isArray(sd)) {
+        sd.forEach((def: any) => {
+          if (stripCode(def.modo_falha || "—") === infoTarget.category) qty += def.qty || 0;
+        });
+      }
+      if (qty > 0) {
+        rows.push({
+          id: d.id,
+          date: d.data || d.created_at || "",
+          ng: qty,
+          supplier: resolveName(d.fornecedor || "—"),
+        });
+      }
+    });
+    return rows.sort((a, b) => (b.date > a.date ? 1 : -1));
+  }, [infoTarget, filtered]);
+  const infoTotal = useMemo(() => infoRecords.reduce((s, r) => s + r.ng, 0), [infoRecords]);
 
   const chartConfig = {
     ok: { label: "OK", color: "hsl(140, 55%, 45%)" },
@@ -1287,6 +1319,7 @@ const ApontamentoDashboard = () => {
                 <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Description</th>
                 <th className="text-left px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Category</th>
                 <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">NG</th>
+                <th className="text-center px-3 py-1.5 text-[hsl(0,0%,70%)] font-medium">Information</th>
               </tr>
             </thead>
             <tbody>
@@ -1299,12 +1332,18 @@ const ApontamentoDashboard = () => {
                   >{issue.pn}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
                   <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.description}</td>
-                  <td className="px-3 py-1 text-[hsl(0,0%,80%)]">{issue.category}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,55%,55%)] font-semibold">{issue.ng}</td>
+                  <td className="text-center px-3 py-1">
+                    <button
+                      className="text-[hsl(210,70%,60%)] hover:underline text-[11px]"
+                      onClick={() => setInfoTarget({ pn: issue.pn, category: issue.category })}
+                    >
+                      More details
+                    </button>
+                  </td>
                 </tr>
               )) : (
-                <tr><td colSpan={5} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
+                <tr><td colSpan={6} className="text-center py-4 text-[hsl(0,0%,50%)]">Sem issues registrados.</td></tr>
               )}
             </tbody>
           </table>
@@ -1324,6 +1363,40 @@ const ApontamentoDashboard = () => {
         initialDateTo={dateTo || undefined}
       />
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
+
+      <Dialog open={!!infoTarget} onOpenChange={(o) => !o && setInfoTarget(null)}>
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span className="text-sm">
+                {infoTarget?.pn} — <span className="text-muted-foreground">{infoTarget?.category}</span>
+              </span>
+              <span className="text-sm font-normal text-red-400">Total NG: {infoTotal.toLocaleString('pt-BR')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {infoRecords.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Sem registros.</p>
+          ) : (
+            <div className="divide-y divide-border rounded-md border">
+              {infoRecords.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => { setInfoTarget(null); setViewTarget(r.id); }}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium">{r.supplier}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.id.slice(0, 8)}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-red-400">{r.ng}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={ngBreakdownOpen} onOpenChange={(o) => { setNgBreakdownOpen(o); if (!o) setNgRespFilter(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">

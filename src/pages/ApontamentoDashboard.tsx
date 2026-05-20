@@ -160,6 +160,8 @@ const ApontamentoDashboard = () => {
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [ngReportAllDates, setNgReportAllDates] = useState(false);
+
   const [ngBreakdownOpen, setNgBreakdownOpen] = useState(false);
   const [ngRespFilter, setNgRespFilter] = useState<string | null>(null);
   const [viewTarget, setViewTarget] = useState<string | null>(null);

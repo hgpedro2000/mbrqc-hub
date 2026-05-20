@@ -1429,6 +1429,40 @@ const ApontamentoDashboard = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!allNgPnTarget} onOpenChange={(o) => !o && setAllNgPnTarget(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span className="text-sm">All NG Parts — <span className="text-muted-foreground">{allNgPnTarget}</span></span>
+              <span className="text-sm font-normal text-red-400">Total NG: {allNgPnTotal.toLocaleString('pt-BR')}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {allNgPnRecords.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">Sem registros.</p>
+          ) : (
+            <div className="divide-y divide-border rounded-md border">
+              {allNgPnRecords.map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => { setAllNgPnTarget(null); setViewTarget(r.id); }}
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-medium truncate">{r.supplier} · <span className="text-muted-foreground">{r.category}</span></span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.numero || 'S/N'}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-red-400 shrink-0">{r.ng}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
+
       <Dialog open={ngBreakdownOpen} onOpenChange={(o) => { setNgBreakdownOpen(o); if (!o) setNgRespFilter(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>

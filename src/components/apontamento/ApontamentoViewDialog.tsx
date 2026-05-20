@@ -685,8 +685,8 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                 </div>
               )}
 
-              {/* TAG Number section (only when not already shown per defect) */}
-              {(d?.quantidade_ng || 0) > 0 && !(hasMultipleFailureModes && segundoDefeitos.some((x: any) => x?.tag)) && (
+              {/* TAG Number section (only when not multi-failure-mode, which is handled per defect) */}
+              {(d?.quantidade_ng || 0) > 0 && !hasMultipleFailureModes && (
                 <div data-pdf-section className="px-0 sm:px-2">
                   <div className="flex items-center gap-2 py-2">
                     <span className="text-sm font-medium text-muted-foreground">TAG:</span>
@@ -697,6 +697,19 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                       onTagSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] })}
                       allowEdit={true}
                     />
+                  </div>
+                </div>
+              )}
+
+              {/* Summary TAG line when multi failure modes (always shown so user can open editor) */}
+              {(d?.quantidade_ng || 0) > 0 && hasMultipleFailureModes && canInsertTag && (
+                <div data-pdf-section className="px-0 sm:px-2">
+                  <div className="flex items-center gap-2 py-2 flex-wrap">
+                    <span className="text-sm font-medium text-muted-foreground">TAGs:</span>
+                    <Button size="sm" variant="outline" onClick={() => openMultiTagEditor(0)}>
+                      <Tag className="w-3.5 h-3.5 mr-1" />
+                      Inserir/Editar TAGs ({segundoDefeitos.length})
+                    </Button>
                   </div>
                 </div>
               )}

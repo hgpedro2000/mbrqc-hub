@@ -89,7 +89,15 @@ const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: str
 );
 
 /* ── Mobile card for NG mode ── */
-const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; photoUrl?: string; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void }) => (
+const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: any; photos: string[]; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void; onMore: () => void }) => {
+  const tags = getTagsList(r);
+  const descs = getDescList(r);
+  const extraTags = Math.max(0, tags.length - 1);
+  const extraDescs = Math.max(0, descs.length - 1);
+  const extraPhotos = Math.max(0, photos.length - 1);
+  const firstDesc = stripCode(r.modo_falha) || descs[0] || "";
+  const photoUrl = photos[0];
+  return (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
     <div className="flex justify-between items-center mb-1">
       {r.numero ? (
@@ -105,31 +113,45 @@ const NgMobileCard = ({ r, photoUrl, onNumberClick, onPhotoClick }: { r: any; ph
       <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
     </div>
-    <div className="flex justify-between items-center">
-      <div>
-        {(r.numero_tag || r.tag_number) ? (
-          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {r.numero_tag || r.tag_number}</Badge>
+    <div className="flex justify-between items-center gap-2">
+      <div className="flex items-center gap-1 flex-wrap min-w-0">
+        {tags.length > 0 ? (
+          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {tags[0]}</Badge>
         ) : (
           <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
         )}
+        {extraTags > 0 && (
+          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold">+{extraTags}</button>
+        )}
       </div>
       {photoUrl ? (
-        <img
-          src={photoUrl}
-          alt="Foto NG"
-          className="w-16 h-16 object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
-          style={{ aspectRatio: "1/1" }}
-          onClick={() => onPhotoClick(photoUrl)}
-        />
+        <div className="relative shrink-0">
+          <img
+            src={photoUrl}
+            alt="Foto NG"
+            className="w-16 h-16 object-cover rounded border border-border cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+            style={{ aspectRatio: "1/1" }}
+            onClick={() => onPhotoClick(photoUrl)}
+          />
+          {extraPhotos > 0 && (
+            <button onClick={onMore} className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] px-1.5 rounded-full font-bold shadow">+{extraPhotos}</button>
+          )}
+        </div>
       ) : (
         <span className="text-muted-foreground text-[10px]">—</span>
       )}
     </div>
-    {(stripCode(r.modo_falha) || r.descricao) && (
-      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+    {firstDesc && (
+      <div className="flex items-center gap-1 mt-1">
+        <p className="text-xs text-muted-foreground truncate flex-1">{firstDesc}</p>
+        {extraDescs > 0 && (
+          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold shrink-0">+{extraDescs}</button>
+        )}
+      </div>
     )}
   </div>
-);
+  );
+};
 
 /* ─────────────────────────── PDF DOCUMENT (react-pdf) ─────────────────────────── */
 

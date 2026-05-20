@@ -486,11 +486,14 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
       setScannerOpen(false);
       handleDecodedText(decoded);
     } catch {
-      setCameraError("Não foi possível ler a etiqueta pela foto. Tente enquadrar mais de perto a etiqueta amarela e evitar reflexos fortes.");
+      const msg = "Não foi possível ler a etiqueta pela foto. Enquadre mais perto da etiqueta amarela, evite reflexos e tente novamente.";
+      setCameraError(msg);
+      setScannerOpen(true);
+      toast({ title: "Não conseguimos ler a etiqueta", description: msg, variant: "destructive" });
     } finally {
       setIsProcessingImage(false);
     }
-  }, [analyzePhotoLabel, buildImageVariants, createScanner, handleDecodedText, handleParsedLabel, stopScanner]);
+  }, [analyzePhotoLabel, buildImageVariants, createScanner, handleDecodedText, handleParsedLabel, stopScanner, toast]);
 
   const handlePickCamera = useCallback(async () => {
     setCameraError(null);

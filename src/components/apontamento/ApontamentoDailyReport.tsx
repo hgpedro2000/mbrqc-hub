@@ -861,6 +861,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [dateFrom, setDateFrom] = useState(initialDateFrom ?? today);
   const [dateTo, setDateTo] = useState(initialDateTo ?? today);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [moreInfo, setMoreInfo] = useState<{ numero?: any; part_number?: any; tags: string[]; descs: string[]; photos: string[] } | null>(null);
   const [selectedFornecedores, setSelectedFornecedores] = useState<string[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);

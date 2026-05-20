@@ -115,6 +115,58 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
+  const stopLiveQrDetector = useCallback(() => {
+    if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);
+    if (pendingDetectorDecodeRef.current !== null) window.clearTimeout(pendingDetectorDecodeRef.current);
+    detectorFrameRef.current = null;
+    pendingDetectorDecodeRef.current = null;
+    setQrMarker(null);
+  }, []);
+
+  const startLiveQrDetector = useCallback((onDetected: (decoded: string) => void) => {
+    stopLiveQrDetector();
+    detectorLastRunRef.current = 0;
+
+    const scanFrame = (timestamp: number) => {
+      detectorFrameRef.current = requestAnimationFrame(scanFrame);
+      if (timestamp - detectorLastRunRef.current < 140 || hasScanned.current) return;
+      detectorLastRunRef.current = timestamp;
+
+      const container = document.getElementById(READER_ID);
+      const video = container?.querySelector("video") as HTMLVideoElement | null;
+      if (!container || !video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA || !video.videoWidth || !video.videoHeight) return;
+
+      const canvas = detectorCanvasRef.current ?? document.createElement("canvas");
+      detectorCanvasRef.current = canvas;
+      const maxEdge = 720;
+      const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
+
+      if (!code) {
+        setQrMarker(null);
+        return;
+      }
+
+      setQrMarker(buildQrMarker(code.location, video, container, canvas.width, canvas.height));
+      if (!pendingDetectorDecodeRef.current) {
+        pendingDetectorDecodeRef.current = window.setTimeout(() => {
+          pendingDetectorDecodeRef.current = null;
+          onDetected(code.data);
+        }, 180);
+      }
+    };
+
+    detectorFrameRef.current = requestAnimationFrame(scanFrame);
+  }, [stopLiveQrDetector]);
+
   const handleParsedLabel = useCallback((parsed: HyundaiQRData, title = "Etiqueta lida!") => {
     playBeep();
     onScan(parsed);
@@ -143,6 +195,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   }, [handleParsedLabel]);
 
   const stopScanner = useCallback(async () => {
+    stopLiveQrDetector();
     const scanner = scannerRef.current;
     scannerRef.current = null;
 
@@ -155,7 +208,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     try {
       await scanner.clear();
     } catch {}
-  }, []);
+  }, [stopLiveQrDetector]);
 
   const closeScanner = useCallback(() => {
     void stopScanner();

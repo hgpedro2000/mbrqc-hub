@@ -577,18 +577,53 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
             <div className="relative w-full min-h-[320px] rounded-lg overflow-hidden bg-muted">
               <div id={READER_ID} className="w-full min-h-[320px] [&_video]:!object-cover" />
+
+              {/* Centering target frame */}
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+                <div
+                  className="relative rounded-xl transition-colors duration-150"
+                  style={{
+                    width: "70%",
+                    aspectRatio: "1 / 1",
+                    boxShadow: "0 0 0 9999px rgba(0,0,0,0.35)",
+                    border: qrMarker ? "3px solid #10b981" : "2px dashed rgba(255,255,255,0.85)",
+                  }}
+                >
+                  {/* Corner accents */}
+                  {(["top-0 left-0 border-t-4 border-l-4 rounded-tl-xl","top-0 right-0 border-t-4 border-r-4 rounded-tr-xl","bottom-0 left-0 border-b-4 border-l-4 rounded-bl-xl","bottom-0 right-0 border-b-4 border-r-4 rounded-br-xl"]).map((cls) => (
+                    <span
+                      key={cls}
+                      className={`absolute ${cls}`}
+                      style={{ width: 26, height: 26, borderColor: qrMarker ? "#10b981" : "#ffffff" }}
+                    />
+                  ))}
+                </div>
+              </div>
+
               {qrMarker ? (
-                <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+                <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full" aria-hidden="true">
                   <polygon
                     points={qrMarker.points.map((point) => `${point.x},${point.y}`).join(" ")}
-                    fill="hsl(var(--success) / 0.14)"
-                    stroke="hsl(var(--success))"
+                    fill="rgba(16,185,129,0.22)"
+                    stroke="#10b981"
                     strokeWidth="4"
                     strokeLinejoin="round"
                   />
-                  <circle cx={qrMarker.center.x} cy={qrMarker.center.y} r="5" fill="hsl(var(--success))" />
+                  <circle cx={qrMarker.center.x} cy={qrMarker.center.y} r="5" fill="#10b981" />
                 </svg>
               ) : null}
+
+              {/* On-screen instructions */}
+              <div className="pointer-events-none absolute left-2 right-2 top-2 z-20 flex justify-center">
+                <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-medium text-white">
+                  {qrMarker ? "QR detectado — segure firme" : "Centralize o QR dentro do quadro"}
+                </span>
+              </div>
+              <div className="pointer-events-none absolute bottom-2 left-2 right-2 z-20 flex justify-center">
+                <span className="rounded-md bg-black/55 px-2.5 py-1 text-[10px] leading-tight text-white text-center max-w-[90%]">
+                  Mantenha 10–20 cm de distância • boa iluminação • sem reflexos
+                </span>
+              </div>
             </div>
 
             {zoomOptions && zoomLevel !== null ? (

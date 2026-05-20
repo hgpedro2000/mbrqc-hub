@@ -271,6 +271,47 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
     } catch { return []; }
   }, [d?.segundo_defeitos]);
 
+  const openMultiTagEditor = (focusIdx = 0) => {
+    setMultiTagValues(segundoDefeitos.map((x: any) => (x?.tag || "").toString()));
+    setMultiTagFocusIdx(focusIdx);
+    setMultiTagOpen(true);
+  };
+
+  const handleSaveMultiTags = async () => {
+    if (!d?.id) return;
+    const trimmed = multiTagValues.map(v => (v || "").trim());
+    if (trimmed.every(v => !v)) {
+      toast.error("Informe pelo menos um número de TAG");
+      return;
+    }
+    setMultiTagSaving(true);
+    try {
+      const updatedDefects = segundoDefeitos.map((def: any, i: number) => ({
+        ...def,
+        tag: trimmed[i] || null,
+      }));
+      const joined = trimmed.filter(Boolean).join(", ");
+      const { error } = await supabase
+        .from("apontamentos")
+        .update({
+          segundo_defeitos: updatedDefects,
+          numero_tag: joined || null,
+          tag_inserted_at: new Date().toISOString(),
+          tag_inserted_by: profile?.full_name || "",
+        } as any)
+        .eq("id", d.id);
+      if (error) throw error;
+      toast.success("TAGs salvas!");
+      setMultiTagOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["apontamento-view", apontamentoId] });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar TAGs");
+    } finally {
+      setMultiTagSaving(false);
+    }
+  };
+
+
   const coInspetores = useMemo(() => {
     if (!d?.co_inspetores) return [];
     try {

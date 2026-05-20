@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanConfig } from "html5-qrcode";
+import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
@@ -43,6 +44,50 @@ const getScanConfig = (): Html5QrcodeCameraScanConfig => ({
 });
 
 type ZoomOptions = { min: number; max: number; step: number };
+type QrMarkerPoint = { x: number; y: number };
+type QrMarker = { points: QrMarkerPoint[]; center: QrMarkerPoint };
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+const buildQrMarker = (
+  location: QRCode["location"],
+  video: HTMLVideoElement,
+  container: HTMLElement,
+  canvasWidth: number,
+  canvasHeight: number
+): QrMarker | null => {
+  if (!video.videoWidth || !video.videoHeight || !canvasWidth || !canvasHeight) return null;
+
+  const videoRect = video.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+  const contentScale = Math.max(videoRect.width / video.videoWidth, videoRect.height / video.videoHeight);
+  const renderedWidth = video.videoWidth * contentScale;
+  const renderedHeight = video.videoHeight * contentScale;
+  const offsetX = videoRect.left - containerRect.left + (videoRect.width - renderedWidth) / 2;
+  const offsetY = videoRect.top - containerRect.top + (videoRect.height - renderedHeight) / 2;
+
+  const toPoint = (point: QrMarkerPoint) => {
+    const sourceX = (point.x / canvasWidth) * video.videoWidth;
+    const sourceY = (point.y / canvasHeight) * video.videoHeight;
+    return {
+      x: clamp(offsetX + sourceX * contentScale, 0, containerRect.width),
+      y: clamp(offsetY + sourceY * contentScale, 0, containerRect.height),
+    };
+  };
+
+  const points = [
+    toPoint(location.topLeftCorner),
+    toPoint(location.topRightCorner),
+    toPoint(location.bottomRightCorner),
+    toPoint(location.bottomLeftCorner),
+  ];
+  const center = points.reduce(
+    (acc, point) => ({ x: acc.x + point.x / points.length, y: acc.y + point.y / points.length }),
+    { x: 0, y: 0 }
+  );
+
+  return { points, center };
+};
 
 export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
   const { user, profile } = useAuth();
@@ -56,14 +101,71 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [cameraCaptureOpen, setCameraCaptureOpen] = useState(false);
   const [cameraCaptureStream, setCameraCaptureStream] = useState<MediaStream | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [qrMarker, setQrMarker] = useState<QrMarker | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const hasScanned = useRef(false);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
+  const detectorCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const detectorFrameRef = useRef<number | null>(null);
+  const detectorLastRunRef = useRef(0);
+  const pendingDetectorDecodeRef = useRef<number | null>(null);
 
   const [incompatibleOpen, setIncompatibleOpen] = useState(false);
   const [rawQR, setRawQR] = useState("");
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+
+  const stopLiveQrDetector = useCallback(() => {
+    if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);
+    if (pendingDetectorDecodeRef.current !== null) window.clearTimeout(pendingDetectorDecodeRef.current);
+    detectorFrameRef.current = null;
+    pendingDetectorDecodeRef.current = null;
+    setQrMarker(null);
+  }, []);
+
+  const startLiveQrDetector = useCallback((onDetected: (decoded: string) => void) => {
+    stopLiveQrDetector();
+    detectorLastRunRef.current = 0;
+
+    const scanFrame = (timestamp: number) => {
+      detectorFrameRef.current = requestAnimationFrame(scanFrame);
+      if (timestamp - detectorLastRunRef.current < 140 || hasScanned.current) return;
+      detectorLastRunRef.current = timestamp;
+
+      const container = document.getElementById(READER_ID);
+      const video = container?.querySelector("video") as HTMLVideoElement | null;
+      if (!container || !video || video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
+
+      const canvas = detectorCanvasRef.current ?? document.createElement("canvas");
+      detectorCanvasRef.current = canvas;
+      const maxEdge = 720;
+      const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
+      canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+      canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
+
+      if (!code) {
+        setQrMarker(null);
+        return;
+      }
+
+      setQrMarker(buildQrMarker(code.location, video, container, canvas.width, canvas.height));
+      if (!pendingDetectorDecodeRef.current) {
+        pendingDetectorDecodeRef.current = window.setTimeout(() => {
+          pendingDetectorDecodeRef.current = null;
+          onDetected(code.data);
+        }, 180);
+      }
+    };
+
+    detectorFrameRef.current = requestAnimationFrame(scanFrame);
+  }, [stopLiveQrDetector]);
 
   const handleParsedLabel = useCallback((parsed: HyundaiQRData, title = "Etiqueta lida!") => {
     playBeep();
@@ -93,6 +195,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   }, [handleParsedLabel]);
 
   const stopScanner = useCallback(async () => {
+    stopLiveQrDetector();
     const scanner = scannerRef.current;
     scannerRef.current = null;
 
@@ -100,12 +203,16 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
     try {
       await scanner.stop();
-    } catch {}
+    } catch {
+      // Scanner may already be stopped by the browser when camera permission changes.
+    }
 
     try {
       await scanner.clear();
-    } catch {}
-  }, []);
+    } catch {
+      // Safe cleanup fallback for browsers that already removed the video node.
+    }
+  }, [stopLiveQrDetector]);
 
   const closeScanner = useCallback(() => {
     void stopScanner();
@@ -162,7 +269,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setZoomLevel(value);
     try {
       await scannerRef.current?.applyVideoConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
-    } catch {}
+    } catch {
+      // Zoom is optional and not supported by all iOS/Android camera drivers.
+    }
   }, []);
 
   const handleOpenScanner = useCallback(async () => {
@@ -172,21 +281,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setZoomOptions(null);
     setZoomLevel(null);
 
-    const warmCamera = navigator.mediaDevices?.getUserMedia
-      ? navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        }).catch(() => null)
-      : Promise.resolve(null);
-
     setScannerOpen(true);
-
-    const warmStream = await warmCamera;
-    warmStream?.getTracks().forEach((track) => track.stop());
 
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
@@ -205,8 +300,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     };
 
     const cameraOptions: MediaTrackConstraints[] = [
-      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       { facingMode: "environment" },
       {},
     ];
@@ -217,6 +312,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
         scannerRef.current = scanner;
         await scanner.start(constraints, getScanConfig(), onSuccess, () => {});
         await tuneRunningCamera(scanner);
+        startLiveQrDetector(onSuccess);
         setScannerStarting(false);
         return;
       } catch (err) {
@@ -226,7 +322,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
     setScannerStarting(false);
     setCameraError("Não foi possível abrir a câmera deste aparelho. Toque em Tirar foto da etiqueta para usar a câmera interna do app.");
-  }, [createScanner, handleDecodedText, stopScanner, tuneRunningCamera]);
+  }, [createScanner, handleDecodedText, startLiveQrDetector, stopScanner, tuneRunningCamera]);
 
   useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
 
@@ -370,7 +466,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
         } catch {
           try {
             await scanner.clear();
-          } catch {}
+          } catch {
+            // Ignore scan-file cleanup failures; the next variant can still be tested.
+          }
         }
       }
 
@@ -396,35 +494,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const handlePickCamera = useCallback(async () => {
     setCameraError(null);
-
-    // CRITICAL: free the camera FIRST — the QR scanner is holding the only
-    // available video track. iOS Safari refuses a second getUserMedia while
-    // the scanner stream is alive, which causes the in-app camera to open
-    // with a black screen.
     await stopScanner();
-
-    let stream: MediaStream | null = null;
-    if (navigator.mediaDevices?.getUserMedia) {
-      // Small delay so iOS/Safari fully releases the previous track before we
-      // request a new one. Without this the next getUserMedia can resolve with
-      // an inactive stream.
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        });
-      } catch (err) {
-        console.warn("[QRScanner] getUserMedia for capture failed, will retry inside InAppCamera", err);
-        stream = null;
-      }
-    }
-
-    setCameraCaptureStream(stream);
+    setScannerOpen(false);
+    setCameraCaptureStream(null);
+    await new Promise((resolve) => setTimeout(resolve, 260));
     setCameraCaptureOpen(true);
   }, [stopScanner]);
 
@@ -449,12 +522,12 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setSending(true);
     try {
       await supabase.from("error_reports").insert({
-        user_id: user?.id,
+        user_id: user?.id ?? "",
         user_name: profile?.full_name || "",
         module: "Leitura QR Code — Apontamento Incoming",
         description: `QR Code incompatível detectado durante leitura de etiqueta.\n\nConteúdo capturado:\n${rawQR}\n\nAção do usuário: Optou por preencher manualmente.`,
         photos: [],
-      } as any);
+      });
       setReportSent(true);
       toast({ title: "Relatório enviado ao HelpDesk!", description: "Obrigado. Vamos analisar para melhorar o sistema." });
     } catch {
@@ -502,7 +575,21 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               </div>
             ) : null}
 
-            <div id={READER_ID} className="w-full min-h-[320px] rounded-lg overflow-hidden bg-muted [&_video]:!object-cover" />
+            <div className="relative w-full min-h-[320px] rounded-lg overflow-hidden bg-muted">
+              <div id={READER_ID} className="w-full min-h-[320px] [&_video]:!object-cover" />
+              {qrMarker ? (
+                <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+                  <polygon
+                    points={qrMarker.points.map((point) => `${point.x},${point.y}`).join(" ")}
+                    fill="hsl(var(--success) / 0.14)"
+                    stroke="hsl(var(--success))"
+                    strokeWidth="4"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx={qrMarker.center.x} cy={qrMarker.center.y} r="5" fill="hsl(var(--success))" />
+                </svg>
+              ) : null}
+            </div>
 
             {zoomOptions && zoomLevel !== null ? (
               <div className="space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2">

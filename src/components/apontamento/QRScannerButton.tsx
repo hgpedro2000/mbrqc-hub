@@ -581,7 +581,21 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               </div>
             ) : null}
 
-            <div id={READER_ID} className="w-full min-h-[320px] rounded-lg overflow-hidden bg-muted [&_video]:!object-cover" />
+            <div className="relative w-full min-h-[320px] rounded-lg overflow-hidden bg-muted">
+              <div id={READER_ID} className="w-full min-h-[320px] [&_video]:!object-cover" />
+              {qrMarker ? (
+                <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+                  <polygon
+                    points={qrMarker.points.map((point) => `${point.x},${point.y}`).join(" ")}
+                    fill="hsl(var(--success) / 0.14)"
+                    stroke="hsl(var(--success))"
+                    strokeWidth="4"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx={qrMarker.center.x} cy={qrMarker.center.y} r="5" fill="hsl(var(--success))" />
+                </svg>
+              ) : null}
+            </div>
 
             {zoomOptions && zoomLevel !== null ? (
               <div className="space-y-1.5 rounded-md border border-border bg-muted/30 px-3 py-2">

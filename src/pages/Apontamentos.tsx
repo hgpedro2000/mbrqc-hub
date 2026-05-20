@@ -423,13 +423,19 @@ const Apontamentos = () => {
                             {def.descricao && <span className="text-muted-foreground">— {def.descricao.substring(0, 40)}{def.descricao.length > 40 ? "..." : ""}</span>}
                             <span className="text-muted-foreground">(×{def.qty})</span>
                             {def.tag ? (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">
-                                <Tag className="w-2.5 h-2.5" />{def.tag}
-                              </span>
+                              <DefectTagBadge
+                                apontamentoId={item.id}
+                                defects={defectDetails}
+                                defectIndex={idx}
+                                onSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
+                              />
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                                <Tag className="w-2.5 h-2.5" />Sem TAG
-                              </span>
+                              <DefectTagBadge
+                                apontamentoId={item.id}
+                                defects={defectDetails}
+                                defectIndex={idx}
+                                onSaved={() => queryClient.invalidateQueries({ queryKey: ["apontamentos"] })}
+                              />
                             )}
                           </div>
                         ))}

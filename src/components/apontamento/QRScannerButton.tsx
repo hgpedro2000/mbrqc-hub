@@ -396,8 +396,19 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const handlePickCamera = useCallback(async () => {
     setCameraError(null);
+
+    // CRITICAL: free the camera FIRST — the QR scanner is holding the only
+    // available video track. iOS Safari refuses a second getUserMedia while
+    // the scanner stream is alive, which causes the in-app camera to open
+    // with a black screen.
+    await stopScanner();
+
     let stream: MediaStream | null = null;
     if (navigator.mediaDevices?.getUserMedia) {
+      // Small delay so iOS/Safari fully releases the previous track before we
+      // request a new one. Without this the next getUserMedia can resolve with
+      // an inactive stream.
+      await new Promise((resolve) => setTimeout(resolve, 120));
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
@@ -407,12 +418,12 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           },
           audio: false,
         });
-      } catch {
+      } catch (err) {
+        console.warn("[QRScanner] getUserMedia for capture failed, will retry inside InAppCamera", err);
         stream = null;
       }
     }
 
-    await stopScanner();
     setCameraCaptureStream(stream);
     setCameraCaptureOpen(true);
   }, [stopScanner]);

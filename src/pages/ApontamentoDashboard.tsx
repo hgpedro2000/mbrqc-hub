@@ -376,6 +376,7 @@ const ApontamentoDashboard = () => {
         const issues: any[] = [];
         if (d.modo_falha) {
           issues.push({
+            id: d.id,
             supplier: resolveName(d.fornecedor || "—"),
             pn: d.part_number || "—",
             description: d.part_name || d.descricao || "—",
@@ -387,6 +388,7 @@ const ApontamentoDashboard = () => {
         if (sd && Array.isArray(sd)) {
           sd.forEach((def: any) => {
             issues.push({
+              id: d.id,
               supplier: resolveName(d.fornecedor || "—"),
               pn: d.part_number || "—",
               description: d.part_name || "—",
@@ -400,6 +402,36 @@ const ApontamentoDashboard = () => {
       .flat()
       .slice(0, 15);
   }, [filtered]);
+
+  // Info popup: aggregate all INCs matching a given PN + category
+  const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);
+  const infoRecords = useMemo(() => {
+    if (!infoTarget) return [] as Array<{ id: string; date: string; ng: number; supplier: string }>;
+    const rows: Array<{ id: string; date: string; ng: number; supplier: string }> = [];
+    filtered.forEach((d: any) => {
+      if ((d.part_number || "—") !== infoTarget.pn) return;
+      let qty = 0;
+      if (d.modo_falha && stripCode(d.modo_falha) === infoTarget.category) {
+        qty += d.quantidade_ng || 0;
+      }
+      const sd = d.segundo_defeitos as any[] | null;
+      if (sd && Array.isArray(sd)) {
+        sd.forEach((def: any) => {
+          if (stripCode(def.modo_falha || "—") === infoTarget.category) qty += def.qty || 0;
+        });
+      }
+      if (qty > 0) {
+        rows.push({
+          id: d.id,
+          date: d.data || d.created_at || "",
+          ng: qty,
+          supplier: resolveName(d.fornecedor || "—"),
+        });
+      }
+    });
+    return rows.sort((a, b) => (b.date > a.date ? 1 : -1));
+  }, [infoTarget, filtered]);
+  const infoTotal = useMemo(() => infoRecords.reduce((s, r) => s + r.ng, 0), [infoRecords]);
 
   const chartConfig = {
     ok: { label: "OK", color: "hsl(140, 55%, 45%)" },

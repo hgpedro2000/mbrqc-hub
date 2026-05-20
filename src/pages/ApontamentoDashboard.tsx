@@ -1388,7 +1388,7 @@ const ApontamentoDashboard = () => {
                   <div className="flex flex-col">
                     <span className="text-xs font-medium">{r.supplier}</span>
                     <span className="text-[10px] text-muted-foreground">
-                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.id.slice(0, 8)}
+                      {r.date ? new Date(`${String(r.date).slice(0,10)}T12:00:00`).toLocaleDateString('pt-BR') : '—'} · INC {r.numero || 'S/N'}
                     </span>
                   </div>
                   <span className="text-sm font-semibold text-red-400">{r.ng}</span>

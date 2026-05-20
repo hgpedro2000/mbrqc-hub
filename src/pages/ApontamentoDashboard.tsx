@@ -106,9 +106,9 @@ const ApontamentoDashboard = () => {
 
   // Profiles for empresa-based scoping (terceira users only see their own company)
   const { data: profilesList = [] } = useQuery({
-    queryKey: ["profiles-empresa-dash"],
+    queryKey: ["profiles-empresa-map-dash"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("public_profiles").select("id, empresa, empresa_terceira");
+      const { data, error } = await (supabase as any).rpc("get_creator_empresa_map");
       if (error) throw error;
       return data || [];
     },

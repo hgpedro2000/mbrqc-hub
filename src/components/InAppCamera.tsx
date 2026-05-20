@@ -126,7 +126,7 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
         void attachStream(initialStream)
           .catch((err) => {
             console.warn("[InAppCamera] initialStream did not render, requesting fresh stream", err);
-            void start(facing);
+            return start(facing);
           })
           .finally(() => setStarting(false));
         return () => { stop(); };

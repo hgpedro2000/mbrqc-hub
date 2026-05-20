@@ -178,6 +178,14 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
   const contentRef = useRef<HTMLDivElement>(null);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  const { canInsertTag } = useTagPermission();
+
+  // Multi-TAG editor state (one TAG per failure mode)
+  const [multiTagOpen, setMultiTagOpen] = useState(false);
+  const [multiTagValues, setMultiTagValues] = useState<string[]>([]);
+  const [multiTagSaving, setMultiTagSaving] = useState(false);
+  const [multiTagFocusIdx, setMultiTagFocusIdx] = useState(0);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ["apontamento-view", apontamentoId],

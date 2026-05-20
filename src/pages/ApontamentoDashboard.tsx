@@ -160,6 +160,8 @@ const ApontamentoDashboard = () => {
   // NG report dialog state (opened from clicking a Problem Type row)
   const [ngReportOpen, setNgReportOpen] = useState(false);
   const [ngReportFailureMode, setNgReportFailureMode] = useState<string | null>(null);
+  const [ngReportAllDates, setNgReportAllDates] = useState(false);
+
   const [ngBreakdownOpen, setNgBreakdownOpen] = useState(false);
   const [ngRespFilter, setNgRespFilter] = useState<string | null>(null);
   const [viewTarget, setViewTarget] = useState<string | null>(null);
@@ -400,8 +402,10 @@ const ApontamentoDashboard = () => {
         return issues;
       })
       .flat()
+      .sort((a, b) => String(a.category).localeCompare(String(b.category), 'pt-BR', { sensitivity: 'base' }))
       .slice(0, 15);
   }, [filtered]);
+
 
   // Info popup: aggregate all INCs matching a given PN + category
   const [infoTarget, setInfoTarget] = useState<{ pn: string; category: string } | null>(null);
@@ -1310,10 +1314,11 @@ const ApontamentoDashboard = () => {
                 <tr
                   key={p.type}
                   className={`border-b border-[hsl(220,10%,20%)] cursor-pointer hover:bg-[hsl(220,15%,22%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}
-                  onClick={() => { setNgReportFailureMode(p.type); setNgReportOpen(true); }}
-                  title="Ver peças NG com este modo de falha"
+                  onClick={() => { setNgReportFailureMode(p.type); setNgReportAllDates(true); setNgReportOpen(true); }}
+                  title="Ver todas as peças NG com este modo de falha"
                 >
                   <td className="px-3 py-1 text-[hsl(210,70%,60%)] underline-offset-2 hover:underline">{p.type}</td>
+
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{p.qty}</td>
                   <td className="text-center px-3 py-1 text-[hsl(0,0%,80%)]">{problemTypes.total > 0 ? ((p.qty / problemTypes.total) * 100).toFixed(0) : 0}%</td>
                 </tr>
@@ -1383,16 +1388,17 @@ const ApontamentoDashboard = () => {
 
       <ApontamentoDailyReport
         open={ngReportOpen}
-        onOpenChange={(o) => { setNgReportOpen(o); if (!o) setNgReportFailureMode(null); }}
+        onOpenChange={(o) => { setNgReportOpen(o); if (!o) { setNgReportFailureMode(null); setNgReportAllDates(false); } }}
         items={items}
         mode="ng"
         onViewRecord={(id) => setViewTarget(id)}
         failureModeFilter={ngReportFailureMode}
         tipoFilter={activeType === "100days" ? "incoming" : activeType}
         pnSetFilter={activeType === "100days" ? bc4bPnSet : null}
-        initialDateFrom={dateFrom || undefined}
-        initialDateTo={dateTo || undefined}
+        initialDateFrom={ngReportAllDates ? "2000-01-01" : (dateFrom || undefined)}
+        initialDateTo={ngReportAllDates ? new Date().toISOString().slice(0, 10) : (dateTo || undefined)}
       />
+
       <ApontamentoViewDialog open={!!viewTarget} onOpenChange={(o) => !o && setViewTarget(null)} apontamentoId={viewTarget} />
 
       <Dialog open={!!infoTarget} onOpenChange={(o) => !o && setInfoTarget(null)}>

@@ -320,6 +320,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
         scannerRef.current = scanner;
         await scanner.start(constraints, getScanConfig(), onSuccess, () => {});
         await tuneRunningCamera(scanner);
+        startLiveQrDetector(onSuccess);
         setScannerStarting(false);
         return;
       } catch (err) {
@@ -329,7 +330,7 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
     setScannerStarting(false);
     setCameraError("Não foi possível abrir a câmera deste aparelho. Toque em Tirar foto da etiqueta para usar a câmera interna do app.");
-  }, [createScanner, handleDecodedText, stopScanner, tuneRunningCamera]);
+  }, [createScanner, handleDecodedText, startLiveQrDetector, stopScanner, tuneRunningCamera]);
 
   useImperativeHandle(ref, () => ({ openScanner: () => { void handleOpenScanner(); } }), [handleOpenScanner]);
 
@@ -499,35 +500,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const handlePickCamera = useCallback(async () => {
     setCameraError(null);
-
-    // CRITICAL: free the camera FIRST — the QR scanner is holding the only
-    // available video track. iOS Safari refuses a second getUserMedia while
-    // the scanner stream is alive, which causes the in-app camera to open
-    // with a black screen.
     await stopScanner();
-
-    let stream: MediaStream | null = null;
-    if (navigator.mediaDevices?.getUserMedia) {
-      // Small delay so iOS/Safari fully releases the previous track before we
-      // request a new one. Without this the next getUserMedia can resolve with
-      // an inactive stream.
-      await new Promise((resolve) => setTimeout(resolve, 120));
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          audio: false,
-        });
-      } catch (err) {
-        console.warn("[QRScanner] getUserMedia for capture failed, will retry inside InAppCamera", err);
-        stream = null;
-      }
-    }
-
-    setCameraCaptureStream(stream);
+    setScannerOpen(false);
+    setCameraCaptureStream(null);
+    await new Promise((resolve) => setTimeout(resolve, 260));
     setCameraCaptureOpen(true);
   }, [stopScanner]);
 

@@ -79,7 +79,7 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
       {},
     ];
 
-    let lastError: any = null;
+    let lastError: unknown = null;
     try {
       for (const videoConstraints of constraints) {
         try {
@@ -95,10 +95,11 @@ const InAppCamera = ({ open, onCapture, onClose, initialStream }: Props) => {
         }
       }
       throw lastError;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[InAppCamera] camera start failed", err);
+      const errorName = err instanceof DOMException ? err.name : "";
       setError(
-        err?.name === "NotAllowedError"
+        errorName === "NotAllowedError"
           ? "Permissão de câmera negada. Habilite nas configurações do navegador."
           : "Não foi possível abrir a câmera. Feche o leitor e tente novamente."
       );

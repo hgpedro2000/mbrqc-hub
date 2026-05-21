@@ -102,7 +102,19 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     // Fallback for keyboard-wedge readers that send bare tokens (GS/RS/EOT) or
     // a fully compact string, e.g. [)>RS06GSVBZWCGSP84705...GSSLL43GST260...
     const compact = normalizeCode(normalized);
-    const compactMatch = compact.match(/(?:^|06|GS)V([A-Z0-9]{4})(?:GS)?P([A-Z0-9]{9,15})(?:GS)?S([A-Z0-9]{2,8})(?:GS)?T(\d{6}[A-Z0-9]{2,50})/i);
+    const compactTokens = compact.split(/GS|RS|EOT/i).filter(Boolean);
+    compactTokens.forEach((segment) => {
+      if (segment.startsWith("V") && !vendorCode) vendorCode = segment.slice(1);
+      else if (segment.startsWith("P") && !partNumber) partNumber = segment.slice(1);
+      else if (segment.startsWith("S") && !sequenceCode) sequenceCode = segment.slice(1);
+      else if (segment.startsWith("T") && !lotNumber) lotNumber = segment.slice(1);
+    });
+    if (partNumber) {
+      const alc = sequenceCode || extractAlcFromPartNumber(partNumber);
+      return { vendorCode, partNumber, supplierCode, lotNumber, alc, raw: trimmed };
+    }
+
+    const compactMatch = compact.match(/(?:^|06)V([A-Z0-9]{4})P([A-Z0-9]{9,15})S([A-Z0-9]{2,8})T(\d{6}[A-Z0-9]{2,50})/i);
     if (compactMatch) {
       const [, compactVendor, compactPart, compactSequence, compactLot] = compactMatch;
       return {

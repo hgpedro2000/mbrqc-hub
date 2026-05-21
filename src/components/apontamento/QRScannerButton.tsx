@@ -837,15 +837,22 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               className="space-y-2"
             >
               <label className="text-xs font-medium text-muted-foreground">Conteúdo do leitor</label>
-              <Input
+              <Textarea
                 ref={usbInputRef}
                 value={usbBuffer}
-                onChange={(event) => setUsbBuffer(event.target.value)}
+                onChange={(event) => handleUsbBufferChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleUsbSubmit(usbBuffer);
+                  }
+                }}
                 placeholder="Aguardando leitura do scanner USB…"
                 autoFocus
                 autoComplete="off"
                 spellCheck={false}
-                className="font-mono text-sm"
+                rows={3}
+                className="font-mono text-sm resize-none"
               />
               <div className="flex gap-2 pt-1">
                 <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={() => { setUsbReaderOpen(false); setUsbBuffer(""); }}>

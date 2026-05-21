@@ -16,6 +16,8 @@ interface QRScannerButtonProps {
   onScan: (data: HyundaiQRData) => void;
   disabled?: boolean;
   disabledReason?: string;
+  /** "mobile" mostra apenas câmera; "desktop" mostra apenas leitor USB; "both" mostra os dois. Default: auto por viewport/UA. */
+  mode?: "mobile" | "desktop" | "both";
 }
 
 export interface QRScannerButtonHandle {

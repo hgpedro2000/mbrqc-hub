@@ -581,30 +581,44 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
-          onClick={handleOpenScanner}
-          disabled={disabled}
-          title={disabled ? (disabledReason || "Bloqueado") : undefined}
-        >
-          <QrCode className="w-5 h-5" />
-          Ler Etiqueta QR
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
-          onClick={handleOpenUsbReader}
-          disabled={disabled}
-          title={disabled ? (disabledReason || "Bloqueado") : "Use um leitor USB conectado ao PC"}
-        >
-          <ScanLine className="w-5 h-5" />
-          Capturar com Leitor
-        </Button>
-      </div>
+      {(() => {
+        const isMobileViewport = typeof window !== "undefined" && window.matchMedia?.("(max-width: 767px)").matches;
+        const isTouchUA = typeof navigator !== "undefined" && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(navigator.userAgent || "");
+        const auto: "mobile" | "desktop" = (isMobileViewport || isTouchUA) ? "mobile" : "desktop";
+        const effective = mode || auto;
+        const showCamera = effective === "mobile" || effective === "both";
+        const showUsb = effective === "desktop" || effective === "both";
+        return (
+          <div className={effective === "both" ? "flex flex-col sm:flex-row gap-2" : "w-full"}>
+            {showCamera && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+                onClick={handleOpenScanner}
+                disabled={disabled}
+                title={disabled ? (disabledReason || "Bloqueado") : undefined}
+              >
+                <QrCode className="w-5 h-5" />
+                Ler Etiqueta QR
+              </Button>
+            )}
+            {showUsb && (
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+                onClick={handleOpenUsbReader}
+                disabled={disabled}
+                title={disabled ? (disabledReason || "Bloqueado") : "Use um leitor de QR Code USB conectado ao PC"}
+              >
+                <ScanLine className="w-5 h-5" />
+                Capturar com Leitor USB
+              </Button>
+            )}
+          </div>
+        );
+      })()}
 
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
         <DialogContent className="max-w-[96vw] sm:max-w-sm max-h-[92dvh] overflow-y-auto p-3 sm:p-6">

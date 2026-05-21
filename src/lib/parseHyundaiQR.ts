@@ -65,7 +65,19 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     if (!trimmed) return null;
 
     const GS = "\x1d";
-    const parts = trimmed.split(GS);
+    // Some USB scanners (and copy/paste) replace control characters with their
+    // textual mnemonics like "<gs>", "<rs>", "<eot>" (case-insensitive, with or
+    // without angle brackets). Normalize them all to the real ASCII codes so the
+    // standard HKMC parser below works uniformly.
+    const normalized = trimmed
+      .replace(/<\s*gs\s*>/gi, "\x1d")
+      .replace(/<\s*rs\s*>/gi, "\x1e")
+      .replace(/<\s*eot\s*>/gi, "\x04")
+      .replace(/\{GS\}/gi, "\x1d")
+      .replace(/\{RS\}/gi, "\x1e")
+      .replace(/\{EOT\}/gi, "\x04");
+
+    const parts = normalized.split(GS);
     let vendorCode = "";
     let partNumber = "";
     let supplierCode = "";

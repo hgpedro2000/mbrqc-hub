@@ -116,6 +116,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
 
+  const [usbReaderOpen, setUsbReaderOpen] = useState(false);
+  const [usbBuffer, setUsbBuffer] = useState("");
+  const usbInputRef = useRef<HTMLInputElement | null>(null);
+
   const stopLiveQrDetector = useCallback(() => {
     if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);
     if (pendingDetectorDecodeRef.current !== null) window.clearTimeout(pendingDetectorDecodeRef.current);

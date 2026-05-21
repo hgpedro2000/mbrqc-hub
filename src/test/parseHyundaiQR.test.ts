@@ -45,4 +45,28 @@ describe("parseHyundaiQR", () => {
       lotNumber: "0200AWEZ1105260172",
     });
   });
+
+  it("accepts HKMC USB scanner labels with textual separator tokens", () => {
+    expect(parseHyundaiQR("[)><rs>06<gs>VBZWC<gs>P84705BP050YJT<gs>SLL43<gs>T260520IN04A0000000002<gs><rs><eot>")).toMatchObject({
+      vendorCode: "BZWC",
+      partNumber: "84705BP050YJT",
+      alc: "LL43",
+      lotNumber: "260520IN04A0000000002",
+    });
+    expect(parseHyundaiQR("[)><rs>06<gs>VBZWD<gs>P84795BP000YGN<gs>S2GAD<gs>T260519INTEPRBA8546YGN2311791<gs><rs><eot>")).toMatchObject({
+      vendorCode: "BZWD",
+      partNumber: "84795BP000YGN",
+      alc: "2GAD",
+      lotNumber: "260519INTEPRBA8546YGN2311791",
+    });
+  });
+
+  it("accepts compact HKMC payloads when the reader strips control characters", () => {
+    expect(parseHyundaiQR("[)>RS06GSVBZWCGSP84705BP050YJTGSSLL43GST260520IN04A0000000002GSRSEOT")).toMatchObject({
+      vendorCode: "BZWC",
+      partNumber: "84705BP050YJT",
+      alc: "LL43",
+      lotNumber: "260520IN04A0000000002",
+    });
+  });
 });

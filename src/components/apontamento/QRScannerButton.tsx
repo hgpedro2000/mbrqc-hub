@@ -4,7 +4,7 @@ import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus, ScanLine, Keyboard } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
@@ -120,7 +120,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const [usbReaderOpen, setUsbReaderOpen] = useState(false);
   const [usbBuffer, setUsbBuffer] = useState("");
-  const usbInputRef = useRef<HTMLInputElement | null>(null);
+  const usbInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const usbAutoSubmitRef = useRef<number | null>(null);
 
   const stopLiveQrDetector = useCallback(() => {
     if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);
@@ -536,6 +537,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   }, []);
 
   const handleUsbSubmit = useCallback((value: string) => {
+    if (usbAutoSubmitRef.current !== null) window.clearTimeout(usbAutoSubmitRef.current);
+    usbAutoSubmitRef.current = null;
     const decoded = value.trim();
     if (!decoded) return;
     const parsed = parseHyundaiQR(decoded);
@@ -559,6 +562,18 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setUsbBuffer("");
     setTimeout(() => usbInputRef.current?.focus(), 50);
   }, [onScan, toast]);
+
+  const handleUsbBufferChange = useCallback((value: string) => {
+    setUsbBuffer(value);
+    if (usbAutoSubmitRef.current !== null) window.clearTimeout(usbAutoSubmitRef.current);
+
+    const candidate = value.trim();
+    if (!candidate) return;
+
+    const shouldSubmitNow = /[\r\n]$/.test(value) || /(?:<|\[|\{)\s*eot\s*(?:>|\]|\})\s*$/i.test(candidate) || /EOT$/i.test(candidate);
+    const delay = shouldSubmitNow ? 20 : 420;
+    usbAutoSubmitRef.current = window.setTimeout(() => handleUsbSubmit(candidate), delay);
+  }, [handleUsbSubmit]);
 
   const handleSendReport = async () => {
     setSending(true);
@@ -822,15 +837,22 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
               className="space-y-2"
             >
               <label className="text-xs font-medium text-muted-foreground">Conteúdo do leitor</label>
-              <Input
+              <Textarea
                 ref={usbInputRef}
                 value={usbBuffer}
-                onChange={(event) => setUsbBuffer(event.target.value)}
+                onChange={(event) => handleUsbBufferChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleUsbSubmit(usbBuffer);
+                  }
+                }}
                 placeholder="Aguardando leitura do scanner USB…"
                 autoFocus
                 autoComplete="off"
                 spellCheck={false}
-                className="font-mono text-sm"
+                rows={3}
+                className="font-mono text-sm resize-none"
               />
               <div className="flex gap-2 pt-1">
                 <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={() => { setUsbReaderOpen(false); setUsbBuffer(""); }}>

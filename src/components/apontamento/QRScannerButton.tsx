@@ -3,7 +3,8 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanCon
 import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
+import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus, ScanLine, Keyboard } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";

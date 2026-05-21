@@ -538,10 +538,27 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const handleUsbSubmit = useCallback((value: string) => {
     const decoded = value.trim();
     if (!decoded) return;
-    setUsbReaderOpen(false);
+    const parsed = parseHyundaiQR(decoded);
+    if (parsed && !parsed.partial) {
+      // Sucesso: preenche e fecha automaticamente
+      playBeep();
+      onScan(parsed);
+      toast({ title: "Etiqueta lida!", description: `PN: ${parsed.partNumber}` });
+      setUsbReaderOpen(false);
+      setUsbBuffer("");
+      return;
+    }
+    // Falha/parcial: mantém o diálogo aberto para nova tentativa
+    toast({
+      title: parsed?.partial ? "Leitura parcial" : "Não foi possível ler",
+      description: parsed?.partial
+        ? "Apenas o lote foi capturado. Dispare o leitor novamente sobre o QR/DataMatrix 2D para o Part Number."
+        : "Conteúdo não reconhecido como etiqueta Hyundai Mobis. Tente novamente.",
+      variant: parsed?.partial ? "default" : "destructive",
+    });
     setUsbBuffer("");
-    handleDecodedText(decoded);
-  }, [handleDecodedText]);
+    setTimeout(() => usbInputRef.current?.focus(), 50);
+  }, [onScan, toast]);
 
   const handleSendReport = async () => {
     setSending(true);

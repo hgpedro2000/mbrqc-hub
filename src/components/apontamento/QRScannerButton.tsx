@@ -4,7 +4,7 @@ import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus, ScanLine, Keyboard } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
@@ -120,7 +120,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   const [usbReaderOpen, setUsbReaderOpen] = useState(false);
   const [usbBuffer, setUsbBuffer] = useState("");
-  const usbInputRef = useRef<HTMLInputElement | null>(null);
+  const usbInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const usbAutoSubmitRef = useRef<number | null>(null);
 
   const stopLiveQrDetector = useCallback(() => {
     if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);

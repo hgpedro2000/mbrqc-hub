@@ -537,6 +537,8 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   }, []);
 
   const handleUsbSubmit = useCallback((value: string) => {
+    if (usbAutoSubmitRef.current !== null) window.clearTimeout(usbAutoSubmitRef.current);
+    usbAutoSubmitRef.current = null;
     const decoded = value.trim();
     if (!decoded) return;
     const parsed = parseHyundaiQR(decoded);
@@ -560,6 +562,18 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setUsbBuffer("");
     setTimeout(() => usbInputRef.current?.focus(), 50);
   }, [onScan, toast]);
+
+  const handleUsbBufferChange = useCallback((value: string) => {
+    setUsbBuffer(value);
+    if (usbAutoSubmitRef.current !== null) window.clearTimeout(usbAutoSubmitRef.current);
+
+    const candidate = value.trim();
+    if (!candidate) return;
+
+    const shouldSubmitNow = /[\r\n]$/.test(value) || /(?:<|\[|\{)\s*eot\s*(?:>|\]|\})\s*$/i.test(candidate) || /EOT$/i.test(candidate);
+    const delay = shouldSubmitNow ? 20 : 420;
+    usbAutoSubmitRef.current = window.setTimeout(() => handleUsbSubmit(candidate), delay);
+  }, [handleUsbSubmit]);
 
   const handleSendReport = async () => {
     setSending(true);

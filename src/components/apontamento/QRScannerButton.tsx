@@ -526,6 +526,21 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setCameraCaptureStream(null);
   }, []);
 
+  const handleOpenUsbReader = useCallback(() => {
+    setCameraError(null);
+    setUsbBuffer("");
+    setUsbReaderOpen(true);
+    setTimeout(() => usbInputRef.current?.focus(), 80);
+  }, []);
+
+  const handleUsbSubmit = useCallback((value: string) => {
+    const decoded = value.trim();
+    if (!decoded) return;
+    setUsbReaderOpen(false);
+    setUsbBuffer("");
+    handleDecodedText(decoded);
+  }, [handleDecodedText]);
+
   const handleSendReport = async () => {
     setSending(true);
     try {

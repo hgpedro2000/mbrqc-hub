@@ -764,7 +764,55 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={usbReaderOpen} onOpenChange={(open) => { if (!open) { setUsbReaderOpen(false); setUsbBuffer(""); } }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanLine className="w-5 h-5" />
+              Capturar com Leitor USB
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
+              <Keyboard className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+              <span>
+                Mantenha esta janela aberta e dispare o leitor USB sobre a etiqueta. O conteúdo será capturado automaticamente ao receber Enter.
+              </span>
+            </div>
+
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleUsbSubmit(usbBuffer);
+              }}
+              className="space-y-2"
+            >
+              <label className="text-xs font-medium text-muted-foreground">Conteúdo do leitor</label>
+              <Input
+                ref={usbInputRef}
+                value={usbBuffer}
+                onChange={(event) => setUsbBuffer(event.target.value)}
+                placeholder="Aguardando leitura do scanner USB…"
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+                className="font-mono text-sm"
+              />
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={() => { setUsbReaderOpen(false); setUsbBuffer(""); }}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="flex-1 min-h-[44px]" disabled={!usbBuffer.trim()}>
+                  Processar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 });
 QRScannerButton.displayName = "QRScannerButton";

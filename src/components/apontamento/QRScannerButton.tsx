@@ -92,7 +92,7 @@ const buildQrMarker = (
   return { points, center };
 };
 
-export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason }, ref) => {
+export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButtonProps>(({ onScan, disabled, disabledReason, mode }, ref) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
 

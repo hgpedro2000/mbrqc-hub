@@ -562,17 +562,30 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
-        onClick={handleOpenScanner}
-        disabled={disabled}
-        title={disabled ? (disabledReason || "Bloqueado") : undefined}
-      >
-        <QrCode className="w-5 h-5" />
-        Ler Etiqueta QR
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+          onClick={handleOpenScanner}
+          disabled={disabled}
+          title={disabled ? (disabledReason || "Bloqueado") : undefined}
+        >
+          <QrCode className="w-5 h-5" />
+          Ler Etiqueta QR
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+          onClick={handleOpenUsbReader}
+          disabled={disabled}
+          title={disabled ? (disabledReason || "Bloqueado") : "Use um leitor USB conectado ao PC"}
+        >
+          <ScanLine className="w-5 h-5" />
+          Capturar com Leitor
+        </Button>
+      </div>
 
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
         <DialogContent className="max-w-[96vw] sm:max-w-sm max-h-[92dvh] overflow-y-auto p-3 sm:p-6">

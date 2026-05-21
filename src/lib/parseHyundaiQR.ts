@@ -33,6 +33,16 @@ export const SUPPLIER_LOG_LOT_REGEX = /(?:^|[^A-Z0-9])(\d{4}[-_\s.]?LOG[-_\s.]?\
 
 const normalizeCode = (value: string) => value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
+const normalizeHyundaiPayload = (value: string) =>
+  value
+    .replace(/\\x1D|\\u001D|%1D|␝/gi, "\x1d")
+    .replace(/\\x1E|\\u001E|%1E|␞/gi, "\x1e")
+    .replace(/\\x04|\\u0004|%04|␄/gi, "\x04")
+    .replace(/(?:<|\[|\{)\s*gs\s*(?:>|\]|\})/gi, "\x1d")
+    .replace(/(?:<|\[|\{)\s*rs\s*(?:>|\]|\})/gi, "\x1e")
+    .replace(/(?:<|\[|\{)\s*eot\s*(?:>|\]|\})/gi, "\x04")
+    .replace(/\r\n|\r|\n|\t/g, "\x1d");
+
 const extractPartNumber = (text: string) => {
   const candidates = [...text.toUpperCase().matchAll(HYUNDAI_PN_REGEX)]
     .map((match) => normalizeCode(match[1]))
@@ -65,17 +75,9 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     if (!trimmed) return null;
 
     const GS = "\x1d";
-    // Some USB scanners (and copy/paste) replace control characters with their
-    // textual mnemonics like "<gs>", "<rs>", "<eot>" (case-insensitive, with or
-    // without angle brackets). Normalize them all to the real ASCII codes so the
-    // standard HKMC parser below works uniformly.
-    const normalized = trimmed
-      .replace(/<\s*gs\s*>/gi, "\x1d")
-      .replace(/<\s*rs\s*>/gi, "\x1e")
-      .replace(/<\s*eot\s*>/gi, "\x04")
-      .replace(/\{GS\}/gi, "\x1d")
-      .replace(/\{RS\}/gi, "\x1e")
-      .replace(/\{EOT\}/gi, "\x04");
+    // USB scanners can emit HKMC separators as ASCII controls, text tokens
+    // (<gs>, [GS], \x1D), tabs/newlines, or sometimes strip them entirely.
+    const normalized = normalizeHyundaiPayload(trimmed);
 
     const parts = normalized.split(GS);
     let vendorCode = "";
@@ -95,6 +97,22 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
     if (partNumber) {
       const alc = sequenceCode || extractAlcFromPartNumber(partNumber);
       return { vendorCode, partNumber, supplierCode, lotNumber, alc, raw: trimmed };
+    }
+
+    // Fallback for keyboard-wedge readers that send bare tokens (GS/RS/EOT) or
+    // a fully compact string, e.g. [)>RS06GSVBZWCGSP84705...GSSLL43GST260...
+    const compact = normalizeCode(normalized);
+    const compactMatch = compact.match(/(?:^|06|GS)V([A-Z0-9]{4})(?:GS)?P([A-Z0-9]{9,15})(?:GS)?S([A-Z0-9]{2,8})(?:GS)?T(\d{6}[A-Z0-9]{2,50})/i);
+    if (compactMatch) {
+      const [, compactVendor, compactPart, compactSequence, compactLot] = compactMatch;
+      return {
+        vendorCode: compactVendor,
+        partNumber: compactPart,
+        supplierCode: "",
+        lotNumber: compactLot.replace(/(?:GS|RS|EOT)+$/i, ""),
+        alc: compactSequence || extractAlcFromPartNumber(compactPart),
+        raw: trimmed,
+      };
     }
 
     // Fallback 1: scanned the linear lot barcode only (HU…T) — accept as partial scan.

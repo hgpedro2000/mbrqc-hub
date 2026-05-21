@@ -3,7 +3,8 @@ import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeCameraScanCon
 import jsQR, { type QRCode } from "jsqr";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus } from "lucide-react";
+import { QrCode, AlertTriangle, Pencil, Send, Loader2, Camera, ImagePlus, ScanLine, Keyboard } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { playBeep } from "@/lib/beep";
 import { useToast } from "@/hooks/use-toast";
@@ -114,6 +115,10 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
   const [rawQR, setRawQR] = useState("");
   const [sending, setSending] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+
+  const [usbReaderOpen, setUsbReaderOpen] = useState(false);
+  const [usbBuffer, setUsbBuffer] = useState("");
+  const usbInputRef = useRef<HTMLInputElement | null>(null);
 
   const stopLiveQrDetector = useCallback(() => {
     if (detectorFrameRef.current !== null) cancelAnimationFrame(detectorFrameRef.current);
@@ -521,6 +526,21 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     setCameraCaptureStream(null);
   }, []);
 
+  const handleOpenUsbReader = useCallback(() => {
+    setCameraError(null);
+    setUsbBuffer("");
+    setUsbReaderOpen(true);
+    setTimeout(() => usbInputRef.current?.focus(), 80);
+  }, []);
+
+  const handleUsbSubmit = useCallback((value: string) => {
+    const decoded = value.trim();
+    if (!decoded) return;
+    setUsbReaderOpen(false);
+    setUsbBuffer("");
+    handleDecodedText(decoded);
+  }, [handleDecodedText]);
+
   const handleSendReport = async () => {
     setSending(true);
     try {
@@ -542,17 +562,30 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
-        onClick={handleOpenScanner}
-        disabled={disabled}
-        title={disabled ? (disabledReason || "Bloqueado") : undefined}
-      >
-        <QrCode className="w-5 h-5" />
-        Ler Etiqueta QR
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+          onClick={handleOpenScanner}
+          disabled={disabled}
+          title={disabled ? (disabledReason || "Bloqueado") : undefined}
+        >
+          <QrCode className="w-5 h-5" />
+          Ler Etiqueta QR
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="flex-1 gap-2 min-h-[44px] border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-60"
+          onClick={handleOpenUsbReader}
+          disabled={disabled}
+          title={disabled ? (disabledReason || "Bloqueado") : "Use um leitor USB conectado ao PC"}
+        >
+          <ScanLine className="w-5 h-5" />
+          Capturar com Leitor
+        </Button>
+      </div>
 
       <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
         <DialogContent className="max-w-[96vw] sm:max-w-sm max-h-[92dvh] overflow-y-auto p-3 sm:p-6">
@@ -731,7 +764,55 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={usbReaderOpen} onOpenChange={(open) => { if (!open) { setUsbReaderOpen(false); setUsbBuffer(""); } }}>
+        <DialogContent className="max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanLine className="w-5 h-5" />
+              Capturar com Leitor USB
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-muted-foreground flex items-start gap-2">
+              <Keyboard className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+              <span>
+                Mantenha esta janela aberta e dispare o leitor USB sobre a etiqueta. O conteúdo será capturado automaticamente ao receber Enter.
+              </span>
+            </div>
+
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleUsbSubmit(usbBuffer);
+              }}
+              className="space-y-2"
+            >
+              <label className="text-xs font-medium text-muted-foreground">Conteúdo do leitor</label>
+              <Input
+                ref={usbInputRef}
+                value={usbBuffer}
+                onChange={(event) => setUsbBuffer(event.target.value)}
+                placeholder="Aguardando leitura do scanner USB…"
+                autoFocus
+                autoComplete="off"
+                spellCheck={false}
+                className="font-mono text-sm"
+              />
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" className="flex-1 min-h-[44px]" onClick={() => { setUsbReaderOpen(false); setUsbBuffer(""); }}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="flex-1 min-h-[44px]" disabled={!usbBuffer.trim()}>
+                  Processar
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
+
   );
 });
 QRScannerButton.displayName = "QRScannerButton";

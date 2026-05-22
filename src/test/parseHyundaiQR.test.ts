@@ -59,6 +59,12 @@ describe("parseHyundaiQR", () => {
       alc: "2GAD",
       lotNumber: "260519INTEPRBA8546YGN2311791",
     });
+    expect(parseHyundaiQR("[)><rs>06<gs>VBZWD<gs>P84714BP000<gs>S<gs>T260519INTEPRBA8545NNB2339401<gs><rs><eot>")).toMatchObject({
+      vendorCode: "BZWD",
+      partNumber: "84714BP000",
+      alc: "",
+      lotNumber: "260519INTEPRBA8545NNB2339401",
+    });
   });
 
   it("accepts compact HKMC payloads when the reader strips control characters", () => {
@@ -67,6 +73,12 @@ describe("parseHyundaiQR", () => {
       partNumber: "84705BP050YJT",
       alc: "LL43",
       lotNumber: "260520IN04A0000000002",
+    });
+    expect(parseHyundaiQR("[)>RS06GSVBZWDGSP84714BP000GSSGST260519INTEPRBA8545NNB2339401GSRSEOT")).toMatchObject({
+      vendorCode: "BZWD",
+      partNumber: "84714BP000",
+      alc: "",
+      lotNumber: "260519INTEPRBA8545NNB2339401",
     });
   });
 });

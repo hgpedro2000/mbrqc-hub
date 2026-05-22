@@ -114,7 +114,7 @@ export function parseHyundaiQR(raw: string): HyundaiQRData | null {
       return { vendorCode, partNumber, supplierCode, lotNumber, alc, raw: trimmed };
     }
 
-    const compactMatch = compact.match(/(?:^|06)V([A-Z0-9]{4})P([A-Z0-9]{9,15})S([A-Z0-9]{2,8})T(\d{6}[A-Z0-9]{2,50})/i);
+    const compactMatch = compact.match(/(?:^|06)V([A-Z0-9]{4})P([A-Z0-9]{9,15})S([A-Z0-9]{0,8})T(\d{6}[A-Z0-9]{2,50})/i);
     if (compactMatch) {
       const [, compactVendor, compactPart, compactSequence, compactLot] = compactMatch;
       return {

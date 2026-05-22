@@ -570,7 +570,9 @@ export const QRScannerButton = forwardRef<QRScannerButtonHandle, QRScannerButton
     const candidate = value.trim();
     if (!candidate) return;
 
-    const shouldSubmitNow = /[\r\n]$/.test(value) || /(?:<|\[|\{)\s*eot\s*(?:>|\]|\})\s*$/i.test(candidate) || /EOT$/i.test(candidate);
+    // Muitos leitores USB configuram <GS>/<RS> como Enter. Não podemos enviar
+    // no primeiro \n, senão o app valida só o começo da etiqueta e acusa erro.
+    const shouldSubmitNow = /\x04\s*$/.test(value) || /(?:<|\[|\{)\s*eot\s*(?:>|\]|\})\s*$/i.test(candidate) || /EOT$/i.test(candidate);
     const delay = shouldSubmitNow ? 20 : 420;
     usbAutoSubmitRef.current = window.setTimeout(() => handleUsbSubmit(candidate), delay);
   }, [handleUsbSubmit]);

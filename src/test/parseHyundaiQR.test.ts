@@ -74,5 +74,11 @@ describe("parseHyundaiQR", () => {
       alc: "LL43",
       lotNumber: "260520IN04A0000000002",
     });
+    expect(parseHyundaiQR("[)>RS06GSVBZWDGSP84714BP000GSSGST260519INTEPRBA8545NNB2339401GSRSEOT")).toMatchObject({
+      vendorCode: "BZWD",
+      partNumber: "84714BP000",
+      alc: "",
+      lotNumber: "260519INTEPRBA8545NNB2339401",
+    });
   });
 });

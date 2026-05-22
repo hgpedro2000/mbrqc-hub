@@ -1,0 +1,1 @@
+UPDATE public.apontamentos SET responsabilidade_defeito = 'PART' WHERE numero IN ('INC-2282','INC-2202','INC-2115','INC-2045');

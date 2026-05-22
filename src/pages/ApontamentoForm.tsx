@@ -533,16 +533,26 @@ const ApontamentoForm = () => {
     if (!isEdit || !existing || !user) return;
     const effectiveUserId = impersonating?.id || user.id;
     const isOwner = existing.created_by === effectiveUserId;
-    const adminBypass = isAdmin && !impersonating;
-    if (!isOwner && !adminBypass) {
-      toast.error(
-        impersonating
-          ? "Modo teste: este apontamento não pertence ao usuário simulado."
-          : "Você só pode editar apontamentos que você mesmo criou."
-      );
+    if (isOwner) return;
+    if (impersonating) {
+      toast.error("Modo teste: este apontamento não pertence ao usuário simulado.");
       navigate("/apontamentos", { replace: true });
+      return;
     }
-  }, [isEdit, existing, user, isAdmin, impersonating, navigate]);
+    // Check elevated roles (admin/lider/engenharia/dono) — mirrors RLS policy
+    (async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const roles = (data || []).map((r: any) => r.role);
+      const canEdit = roles.some((r: string) => ["admin", "lider", "engenharia", "dono"].includes(r));
+      if (!canEdit) {
+        toast.error("Você só pode editar apontamentos que você mesmo criou.");
+        navigate("/apontamentos", { replace: true });
+      }
+    })();
+  }, [isEdit, existing, user, impersonating, navigate]);
 
 
   // Load defects for modo_falha

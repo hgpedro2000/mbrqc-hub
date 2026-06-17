@@ -166,6 +166,7 @@ const Hub = () => {
     queryFn: async () => {
       if (!isMobisForBadges) return 0;
       let q = supabase.from("apontamentos").select("id", { count: "exact", head: true })
+        .neq("status", "draft")
         .gt("quantidade_ng", 0).is("numero_tag" as any, null).is("tag_number" as any, null);
       if (!effectiveIsAdmin && activeProfileForBadges?.turno) q = q.eq("turno", activeProfileForBadges.turno);
       else if (!effectiveIsAdmin) return 0;

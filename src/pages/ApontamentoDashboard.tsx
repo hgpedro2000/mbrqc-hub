@@ -92,6 +92,7 @@ const ApontamentoDashboard = () => {
         const { data, error } = await supabase
           .from("apontamentos")
           .select("*")
+          .neq("status", "draft")
           .order("created_at", { ascending: false })
           .range(from, from + PAGE - 1);
         if (error) throw error;

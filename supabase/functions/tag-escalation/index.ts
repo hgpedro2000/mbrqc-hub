@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     const { data: overdue, error: fetchErr } = await supabase
       .from("apontamentos")
       .select("id, numero, part_number, part_name, fornecedor, data, responsavel, quantidade_ng, turno")
+      .neq("status", "draft")
       .gt("quantidade_ng", 0)
       .is("numero_tag", null)
       .lte("data", cutoffDate)

@@ -63,19 +63,23 @@ export default function SolicitarResetAdmin() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="employee_number">Matrícula</Label>
+              <Label htmlFor="employee_number">Matrícula / Código</Label>
               <Input
                 id="employee_number"
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoCorrect="off"
                 autoComplete="username"
                 required
                 value={employeeNumber}
-                onChange={(e) => setEmployeeNumber(e.target.value.replace(/\D/g, ""))}
-                placeholder="Ex.: 12345"
-                className="h-12 text-base"
+                onChange={(e) => setEmployeeNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                placeholder="Ex.: 12345 ou ABC123"
+                className="h-12 text-base tracking-wider font-mono"
               />
+              <p className="text-[11px] text-muted-foreground">
+                Use o mesmo código usado no login (números para colaboradores Mobis, código completo para terceiros).
+              </p>
             </div>
 
             <div className="space-y-2">

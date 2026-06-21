@@ -304,20 +304,20 @@ export const PendingTagsAlert = ({
 
 
 
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {pendingItems.length === 0 ? (
               <p className="text-center text-muted-foreground py-6">
                 Nenhum apontamento pendente de TAG.
               </p>
             ) : (
               pendingItems.map((item) => (
-                <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full min-w-0 max-w-full overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 min-w-0">
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           onClick={() => setViewTarget(item.id)}
-                          className="text-xs font-mono text-primary hover:underline bg-muted/30 px-1.5 py-0.5 rounded"
+                          className="text-xs font-mono text-primary hover:underline bg-muted/30 px-1.5 py-0.5 rounded max-w-full truncate"
                         >
                           #{item.numero}
                         </button>
@@ -341,9 +341,9 @@ export const PendingTagsAlert = ({
                           return <Badge className={`text-[10px] ${badgeClass}`}>{displayResp}</Badge>;
                         })()}
                       </div>
-                      <p className="text-sm font-semibold truncate">{item.part_number}</p>
-                      <p className="text-xs text-muted-foreground truncate">{item.part_name || "—"}</p>
-                      <p className="text-xs text-muted-foreground/70 truncate">
+                      <p className="text-sm font-semibold break-all">{item.part_number}</p>
+                      <p className="text-xs text-muted-foreground break-words">{item.part_name || "—"}</p>
+                      <p className="text-xs text-muted-foreground/70 break-words">
                         {item.fornecedor} • {item.responsavel}
                       </p>
                       <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground mt-1">

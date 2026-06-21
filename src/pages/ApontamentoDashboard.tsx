@@ -280,8 +280,8 @@ const ApontamentoDashboard = () => {
     });
     return Array.from(map.entries())
       .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
-      .sort((a, b) => b.total - a.total);
-  }, [filtered]);
+      .sort((a, b) => supplierSortBy === "ng" ? b.ng - a.ng : b.ok - a.ok);
+  }, [filtered, supplierSortBy]);
 
   // Project Status donuts (rate OK vs NG by project)
   const projectData = useMemo(() => {

@@ -43,6 +43,8 @@ const EmailAutomationTab = () => {
   const [form, setForm] = useState<AutomationConfig | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
   const [newCc, setNewCc] = useState("");
+  const [testEmail, setTestEmail] = useState("");
+  const [newCc, setNewCc] = useState("");
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["email_automation_config"],
@@ -317,6 +319,35 @@ const EmailAutomationTab = () => {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Send className="w-4 h-4" /> Teste de envio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              type="email"
+              placeholder="seu-email@empresa.com"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              onClick={() => sendTest.mutate(testEmail)}
+              disabled={sendTest.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {sendTest.isPending ? "Enviando…" : "Enviar teste"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Envia o relatório do dia atual apenas para este e-mail, sem atualizar a data do último envio agendado.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
           {form.last_sent_at ? (
@@ -336,7 +367,7 @@ const EmailAutomationTab = () => {
             onClick={() => sendNow.mutate()}
             disabled={sendNow.isPending || form.recipients.length === 0}
           >
-            <Send className="w-4 h-4 mr-2" /> Enviar agora
+            <Send className="w-4 h-4 mr-2" /> {sendNow.isPending ? "Enviando…" : "Enviar agora"}
           </Button>
           <Button onClick={() => save.mutate(form)} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-2" /> Salvar

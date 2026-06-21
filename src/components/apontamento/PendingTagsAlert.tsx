@@ -262,11 +262,11 @@ export const PendingTagsAlert = ({
       )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="w-[95vw] sm:w-full max-w-[640px] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto p-3 sm:p-6">
+        <DialogContent className="w-[95vw] sm:w-full max-w-[640px] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base break-words">
-              <Tag className="w-4 h-4 shrink-0" />
-              <span className="break-words">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${activeProfile?.turno}`}</span>
+            <DialogTitle className="flex items-start gap-2 text-sm sm:text-base break-words pr-8">
+              <Tag className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="break-words min-w-0 flex-1 text-left">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${activeProfile?.turno}`}</span>
             </DialogTitle>
           </DialogHeader>
 

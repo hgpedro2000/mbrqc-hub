@@ -70,8 +70,18 @@ const Apontamentos = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const readSS = (k: string, fallback: any) => { try { const v = sessionStorage.getItem(`apontamentos:${k}`); return v != null ? JSON.parse(v) : fallback; } catch { return fallback; } };
   const writeSS = (k: string, v: any) => { try { sessionStorage.setItem(`apontamentos:${k}`, JSON.stringify(v)); } catch {} };
-  const [activeTab, _setActiveTab] = useState<ApontamentoTipo>(() => readSS("activeTab", "incoming"));
-  const setActiveTab = (t: ApontamentoTipo) => { _setActiveTab(t); writeSS("activeTab", t); };
+  const [topTab, _setTopTab] = useState<TopTab>(() => readSS("topTab", "incoming"));
+  const setTopTab = (t: TopTab) => { _setTopTab(t); writeSS("topTab", t); };
+  const [procSub, _setProcSub] = useState<ProcSub>(() => readSS("procSub", "peca"));
+  const setProcSub = (s: ProcSub) => { _setProcSub(s); writeSS("procSub", s); };
+  const [showProcessSelectionDialog, setShowProcessSelectionDialog] = useState(false);
+  // Derived "active filter type" for list rendering. Placeholders fall back to "peca" but isPlaceholderSub blocks rendering.
+  const activeTab: ApontamentoTipo = useMemo(() => {
+    if (topTab === "incoming") return "incoming";
+    if (topTab === "oem") return "oem";
+    return procSubConfig[procSub].realType ?? "peca";
+  }, [topTab, procSub]);
+  const isPlaceholderSub = topTab === "processos" && !procSubConfig[procSub].realType;
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

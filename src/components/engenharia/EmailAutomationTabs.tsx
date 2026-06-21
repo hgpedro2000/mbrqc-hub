@@ -130,6 +130,10 @@ const EmailAutomationTabs = () => {
         <AlertaEmailTab />
       </TabsContent>
 
+      <TabsContent value="contencao" className="mt-4">
+        <ContencaoEmailTab />
+      </TabsContent>
+
       {COMING_SOON.map((t) => (
         <TabsContent key={t.value} value={t.value} className="mt-4">
           <ComingSoonCard tab={t} />

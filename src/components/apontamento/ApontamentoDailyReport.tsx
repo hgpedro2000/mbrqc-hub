@@ -1134,30 +1134,48 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                 </div>
               </div>
               <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 w-full max-w-[254px] sm:flex sm:w-auto sm:max-w-none">
+                <div className="flex items-center gap-1 w-full sm:w-auto sm:flex-none min-w-0">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("flex-1 sm:flex-none sm:w-[120px] min-w-0 text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
-                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}
+                        <span className="truncate">{dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}</span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar mode="single" selected={dateFrom ? new Date(dateFrom + "T12:00:00") : undefined} onSelect={(d) => setDateFrom(d ? format(d, "yyyy-MM-dd") : today)} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
-                  <span className="text-xs text-muted-foreground">a</span>
+                  <span className="text-xs text-muted-foreground shrink-0">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("flex-1 sm:flex-none sm:w-[120px] min-w-0 text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
-                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}
+                        <span className="truncate">{dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}</span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => setDateTo(d ? format(d, "yyyy-MM-dd") : today)} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
+                  {/* PDF button — inline on mobile, icon-only */}
+                  <div className="flex flex-col gap-1 sm:hidden shrink-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 h-8 w-8 p-0"
+                      disabled={generatingPdf}
+                      onClick={() => pdfButtonRef.current?.click()}
+                      title="Baixar PDF"
+                      aria-label="Baixar PDF"
+                    >
+                      {generatingPdf ? (
+                        <span className="text-[9px] font-semibold">{pdfProgress}%</span>
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1.5">
 

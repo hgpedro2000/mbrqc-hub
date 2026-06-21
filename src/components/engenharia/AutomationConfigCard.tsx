@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,61 +10,68 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, PlayCircle, Cog, CheckCircle2 } from "lucide-react";
-import { HistoryPanel } from "./EmailHistoryPanel";
+import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, CalendarClock, Bell } from "lucide-react";
 
-interface CtnConfig {
+const WEEKDAYS = [
+  { v: 1, l: "Seg" }, { v: 2, l: "Ter" }, { v: 3, l: "Qua" },
+  { v: 4, l: "Qui" }, { v: 5, l: "Sex" }, { v: 6, l: "Sáb" }, { v: 0, l: "Dom" },
+];
+
+export interface GenericConfig {
   id: string;
   name: string;
   modulo: string;
-  subtipo: "iniciada" | "em_andamento" | "concluida";
+  subtipo: string;
   enabled: boolean;
+  schedule_time: string;
+  timezone: string;
+  weekdays: number[];
   recipients: string[];
   error_notify_recipients: string[];
   subject_template: string;
   message_body: string;
   last_sent_at: string | null;
+  metadata: any;
 }
 
-const VARS = [
-  "numero", "titulo", "tipo", "status", "responsavel", "setor", "linha",
-  "part_number", "part_name", "fornecedor", "motivo", "acao_contencao",
-  "observacoes", "quantidade_contida", "quantidade_aprovada", "quantidade_rejeitada",
-  "data", "date", "evento", "link",
-];
+export interface AutomationConfigCardProps {
+  config: GenericConfig;
+  vars: string[];
+  scheduled: boolean;
+  senderFn: string;
+  queryKey: (string | number)[];
+  description?: string;
+  /** Optional: enable a numeric "dias_antecedencia" editor stored in metadata */
+  diasAntecedencia?: boolean;
+}
 
-const SUBTIPO_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  iniciada: PlayCircle,
-  em_andamento: Cog,
-  concluida: CheckCircle2,
-};
-
-const ConfigCard = ({ config }: { config: CtnConfig }) => {
+export const AutomationConfigCard = ({
+  config, vars, scheduled, senderFn, queryKey, description, diasAntecedencia,
+}: AutomationConfigCardProps) => {
   const qc = useQueryClient();
-  const [form, setForm] = useState<CtnConfig>(config);
+  const [form, setForm] = useState<GenericConfig>(config);
   const [newRecipient, setNewRecipient] = useState("");
   const [newErr, setNewErr] = useState("");
   const [testEmail, setTestEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ subject: string; html: string } | null>(null);
-  const Icon = SUBTIPO_ICONS[form.subtipo] ?? PlayCircle;
 
   useEffect(() => { setForm(config); }, [config]);
 
   const save = useMutation({
-    mutationFn: async (payload: Partial<CtnConfig>) => {
-      const { error } = await supabase.from("email_automation_config" as any).update(payload).eq("id", form.id);
+    mutationFn: async (payload: Partial<GenericConfig>) => {
+      const { error } = await supabase.from("email_automation_config" as any).update(payload as any).eq("id", form.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["email_automation_config", "contencao"] });
+      qc.invalidateQueries({ queryKey });
       toast.success("Configuração salva");
     },
     onError: (e: any) => toast.error(e.message),
   });
 
   const invokeSend = async (extra: Record<string, any> = {}) => {
-    const { data, error } = await supabase.functions.invoke("send-contencao-email", {
+    const { data, error } = await supabase.functions.invoke(senderFn, {
       body: { config_id: form.id, subtipo: form.subtipo, ...extra },
     });
     if (error) throw error;
@@ -85,7 +92,17 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
     },
     onSuccess: () => {
       toast.success(`Teste enviado para ${testEmail}`);
-      qc.invalidateQueries({ queryKey: ["email_automation_log", "contencao"] });
+      qc.invalidateQueries({ queryKey });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const manualMut = useMutation({
+    mutationFn: () => invokeSend({}),
+    onSuccess: (d: any) => {
+      if (d?.skipped) toast.info("Já existe um envio para hoje (idempotência).");
+      else toast.success(`Enfileirado para ${d?.queued ?? 0} destinatário(s).`);
+      qc.invalidateQueries({ queryKey });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -95,7 +112,7 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
       <CardHeader>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <Icon className="h-5 w-5 text-primary" />
+            {scheduled ? <CalendarClock className="h-5 w-5 text-primary" /> : <Bell className="h-5 w-5 text-primary" />}
             <CardTitle className="text-base">{form.name}</CardTitle>
             <Badge variant={form.enabled ? "default" : "secondary"}>
               {form.enabled ? "Ativa" : "Desativada"}
@@ -103,20 +120,55 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
           </div>
           <div className="flex items-center gap-2">
             <Label className="text-sm">Ativada</Label>
-            <Switch
-              checked={form.enabled}
-              onCheckedChange={(v) => { setForm({ ...form, enabled: v }); save.mutate({ enabled: v }); }}
-            />
+            <Switch checked={form.enabled}
+              onCheckedChange={(v) => { setForm({ ...form, enabled: v }); save.mutate({ enabled: v }); }} />
           </div>
         </div>
-        <CardDescription>
-          {form.subtipo === "iniciada" && "Disparado quando uma nova Contenção é criada."}
-          {form.subtipo === "em_andamento" && "Disparado quando o status muda para 'Em andamento'."}
-          {form.subtipo === "concluida" && "Disparado quando o status muda para 'Concluída'. Encerra o ciclo de notificações."}
-        </CardDescription>
+        {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {scheduled && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <Label>Horário</Label>
+              <Input type="time" value={form.schedule_time?.slice(0, 5) ?? "08:00"}
+                onChange={(e) => setForm({ ...form, schedule_time: e.target.value })} />
+            </div>
+            <div>
+              <Label>Fuso horário</Label>
+              <Input value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} />
+            </div>
+            <div>
+              <Label>Dias da semana</Label>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {WEEKDAYS.map((d) => {
+                  const on = form.weekdays?.includes(d.v);
+                  return (
+                    <Button key={d.v} type="button" size="sm" variant={on ? "default" : "outline"}
+                      onClick={() => setForm({
+                        ...form,
+                        weekdays: on ? form.weekdays.filter((x) => x !== d.v) : [...(form.weekdays ?? []), d.v],
+                      })}>{d.l}</Button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {diasAntecedencia && (
+          <div>
+            <Label>Dias de antecedência (a vencer)</Label>
+            <Input type="number" min={1} max={365}
+              value={Number(form.metadata?.dias_antecedencia ?? 30)}
+              onChange={(e) => setForm({
+                ...form,
+                metadata: { ...(form.metadata ?? {}), dias_antecedencia: Math.max(1, Number(e.target.value || 30)) },
+              })} />
+          </div>
+        )}
+
         <div>
           <Label>Destinatários ({form.recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
@@ -181,20 +233,27 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
           <Label>Mensagem</Label>
           <Textarea rows={6} value={form.message_body} onChange={(e) => setForm({ ...form, message_body: e.target.value })} />
           <div className="text-xs text-muted-foreground mt-1">
-            Variáveis: {VARS.map((v) => <code key={v} className="bg-muted px-1 mx-0.5 rounded">{`{{${v}}}`}</code>)}
+            Variáveis: {vars.map((v) => <code key={v} className="bg-muted px-1 mx-0.5 rounded">{`{{${v}}}`}</code>)}
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           <Button onClick={() => save.mutate({
+            schedule_time: form.schedule_time, timezone: form.timezone, weekdays: form.weekdays,
             recipients: form.recipients, error_notify_recipients: form.error_notify_recipients,
             subject_template: form.subject_template, message_body: form.message_body,
+            metadata: form.metadata,
           })} disabled={save.isPending}>
             <Save className="h-4 w-4 mr-2" /> Salvar
           </Button>
           <Button variant="outline" onClick={() => previewMut.mutate()} disabled={previewMut.isPending}>
             {previewMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />} Preview
           </Button>
+          {scheduled && (
+            <Button variant="outline" onClick={() => manualMut.mutate()} disabled={manualMut.isPending}>
+              {manualMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Enviar agora
+            </Button>
+          )}
           <div className="flex gap-2 ml-auto">
             <Input className="w-56" placeholder="teste@exemplo.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
             <Button variant="secondary" onClick={() => testMut.mutate()} disabled={testMut.isPending || !testEmail}>
@@ -220,45 +279,4 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
   );
 };
 
-const ContencaoEmailTab = () => {
-  const { data: configs = [], isLoading } = useQuery({
-    queryKey: ["email_automation_config", "contencao"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("email_automation_config" as any)
-        .select("*")
-        .eq("modulo", "contencao");
-      if (error) throw error;
-      const order = ["iniciada", "em_andamento", "concluida"];
-      return ((data as any[]) as CtnConfig[]).sort(
-        (a, b) => order.indexOf(a.subtipo) - order.indexOf(b.subtipo),
-      );
-    },
-  });
-
-  const { subtipoMap, nameMap } = useMemo(() => {
-    const s = new Map<string, string>();
-    const n = new Map<string, string>();
-    configs.forEach((c) => { s.set(c.id, c.subtipo); n.set(c.id, c.name); });
-    return { subtipoMap: s, nameMap: n };
-  }, [configs]);
-
-  if (isLoading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>;
-
-  return (
-    <div className="space-y-4">
-      {configs.map((c) => <ConfigCard key={c.id} config={c} />)}
-
-      <HistoryPanel
-        modulo="contencao"
-        senderFn="send-contencao-email"
-        configSubtipo={subtipoMap}
-        configName={nameMap}
-        title="Contenção"
-        buildResendBody={(log) => (log.entity_id ? { contencao_id: log.entity_id } : {})}
-      />
-    </div>
-  );
-};
-
-export default ContencaoEmailTab;
+export default AutomationConfigCard;

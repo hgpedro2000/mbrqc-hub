@@ -644,6 +644,30 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_email_overrides: {
+        Row: {
+          intro_html: string
+          subject: string
+          template_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          intro_html?: string
+          subject: string
+          template_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          intro_html?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       capsule_files: {
         Row: {
           created_at: string
@@ -775,6 +799,7 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          low_stock_alerted_at: string | null
           min_qty: number
           name: string
           stock_qty: number
@@ -785,6 +810,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          low_stock_alerted_at?: string | null
           min_qty?: number
           name: string
           stock_qty?: number
@@ -795,6 +821,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          low_stock_alerted_at?: string | null
           min_qty?: number
           name?: string
           stock_qty?: number

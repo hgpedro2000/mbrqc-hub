@@ -19,6 +19,7 @@ Deno.serve(async (req) => {
       .from('email_automation_config')
       .select('*')
       .eq('enabled', true)
+      .or('subtipo.eq.agendado,subtipo.is.null')
     if (error) throw error
 
     const triggered: string[] = []

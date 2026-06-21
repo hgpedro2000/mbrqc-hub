@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, CalendarClock, Bell } from "lucide-react";
+import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, CalendarClock, Bell, Users, Mail } from "lucide-react";
 
 const WEEKDAYS = [
   { v: 1, l: "Seg" }, { v: 2, l: "Ter" }, { v: 3, l: "Qua" },

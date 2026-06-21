@@ -646,18 +646,18 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
           <Page key={pageIdx} size="A4" orientation="landscape" style={{ paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, fontSize: 7, fontFamily: "Helvetica", color: "#1a1a2e" }}>
             <NgSharedHeader logoUrl={logoUrl} titleText={titleText} dateLabel={dateLabel} totals={totals} filtered={filtered} />
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 4 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignContent: "space-between", marginTop: 4, flexGrow: 1 }}>
             {pair.map((r, sub) => {
               const globalIdx = pageIdx * PER_PAGE + sub;
               if (!r) {
                 // Placeholder slot to keep 2×2 grid symmetric
-                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", borderColor: "transparent" }]} />;
+                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent" }]} />;
               }
               const modos = parseModos(r);
               const defectRows = getDefectRows(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%" }]} wrap={false}>
+                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"}</Text>
@@ -672,7 +672,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                   </View>
 
-                  <View style={[pdfStyles.ngDBody, { paddingVertical: 4, paddingHorizontal: 6, gap: 3 }]}>
+                  <View style={[pdfStyles.ngDBody, { paddingVertical: 4, paddingHorizontal: 6, gap: 3, flexGrow: 1 }]}>
                     <View style={[pdfStyles.ngDMetaGrid, { flexWrap: "wrap", paddingVertical: 3, paddingHorizontal: 4 }]}>
                       <View style={[pdfStyles.ngDMetaCol, { width: "33%", marginBottom: 2 }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>Local</Text>
@@ -734,11 +734,11 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
 
                     {photos.length > 0 && (
-                      <View wrap={false}>
+                      <View wrap={false} style={{ marginTop: "auto" }}>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                           {photos.slice(0, 4).map((url, i) => (
-                            <PdfImage key={i} src={url} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 3 }} />
+                            <PdfImage key={i} src={url} style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 3 }} />
                           ))}
                         </View>
                       </View>

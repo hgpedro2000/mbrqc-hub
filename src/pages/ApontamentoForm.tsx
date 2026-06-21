@@ -908,7 +908,7 @@ const ApontamentoForm = () => {
     return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, "0") + "min" : ""}` : `${m}min`;
   };
 
-  const validate = (): boolean => {
+  const validate = async (): Promise<boolean> => {
     const errors = new Set<string>();
     const msgs: string[] = [];
 
@@ -917,6 +917,34 @@ const ApontamentoForm = () => {
     if (!projeto) { errors.add("projeto"); msgs.push("Projeto"); }
     if (!fornecedor) { errors.add("fornecedor"); msgs.push("Fornecedor"); }
     if (!partNumber) { errors.add("partNumber"); msgs.push("Part Number"); }
+
+    // BLOQUEIO: Part Number digitado precisa existir no banco e pertencer ao fornecedor
+    if (partNumber && partNumber.trim()) {
+      try {
+        const pnNorm = partNumber.trim().replace(/-/g, "").toUpperCase();
+        const { data: parts } = await supabase
+          .from("part_numbers")
+          .select("part_number, suppliers(name)")
+          .eq("active", true);
+        const match = (parts || []).find((p: any) =>
+          (p.part_number || "").replace(/-/g, "").toUpperCase() === pnNorm
+        );
+        if (!match) {
+          errors.add("partNumber");
+          msgs.push(`Part Number "${partNumber}" não está cadastrado no banco. Selecione um PN válido na lista ou cadastre-o antes de salvar.`);
+        } else if (fornecedor) {
+          const supName = ((match as any).suppliers?.name || "").trim();
+          if (supName && supName !== fornecedor.trim()) {
+            errors.add("partNumber");
+            errors.add("fornecedor");
+            msgs.push(`Part Number "${partNumber}" pertence ao fornecedor "${supName}", incompatível com o fornecedor selecionado "${fornecedor}".`);
+          }
+        }
+      } catch {
+        // se a verificação falhar (offline), não bloqueia para não travar o usuário
+      }
+    }
+
 
     if (!isOem && !isIncoming && !fase) { errors.add("fase"); msgs.push("Fase"); }
     if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }

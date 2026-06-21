@@ -1753,7 +1753,7 @@ const ApontamentoForm = () => {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
-          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
+          <Button onClick={async () => { if (isEdit) { handleSave(false); } else { if (await validate()) setShowConfirmSaveDialog(true); } }} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>
           <Button variant="ghost" onClick={requestExit} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
         </div>

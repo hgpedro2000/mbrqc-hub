@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog } from "lucide-react";
+import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -213,6 +214,7 @@ const InventarioRequisicoes = () => {
   const qc = useQueryClient();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [stockListOpen, setStockListOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUnit, setNewUnit] = useState("un");
   const [newStock, setNewStock] = useState(0);
@@ -446,6 +448,9 @@ const InventarioRequisicoes = () => {
           </Button>
           {isAdmin && (
             <>
+              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1">
+                <UserCog className="w-4 h-4" /> Gerenciar Acessos
+              </Button>
               <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
                 <RotateCcw className="w-4 h-4" /> Atualizar Estoque
               </Button>
@@ -456,6 +461,8 @@ const InventarioRequisicoes = () => {
           )}
         </div>
       </div>
+
+      <ConsumiveisAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />
 
       {/* Stock list dialog */}
       <Dialog open={stockListOpen} onOpenChange={setStockListOpen}>

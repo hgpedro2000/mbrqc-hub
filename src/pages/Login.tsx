@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, AlertTriangle, RefreshCw } from "lucide-react";
+import { LogIn, AlertTriangle, RefreshCw, UserPlus, ArrowDown, X, Building2, Hash } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logAction } from "@/lib/logAction";
 import { primeBeep } from "@/lib/beep";
+
+const ONBOARDING_KEY = "terceiros_onboarding_seen_v1";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,6 +27,18 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   // Terceiros possuem letras no código — permite alternar para teclado alfanumérico.
   const [alphaKeyboard, setAlphaKeyboard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(ONBOARDING_KEY)) setShowOnboarding(true);
+    } catch { /* ignore */ }
+  }, []);
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    try { localStorage.setItem(ONBOARDING_KEY, "1"); } catch { /* ignore */ }
+  };
 
   // Whenever AuthContext finishes hydrating with a valid session/profile,
   // redirect away from /login. This handles BOTH:
@@ -152,38 +166,95 @@ const Login = () => {
           <p className="text-muted-foreground mt-0">{t("login.subtitle")}</p>
         </div>
 
+        {/* Mini onboarding (Terceiros) */}
+        {showOnboarding && (
+          <div className="mb-4 rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-accent/5 p-4 relative shadow-lg shadow-accent/5 animate-in fade-in slide-in-from-top-2">
+            <button
+              type="button"
+              onClick={dismissOnboarding}
+              aria-label="Fechar"
+              className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/40"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
+                <UserPlus className="w-5 h-5 text-accent" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-heading font-bold text-foreground">
+                  É a primeira vez? Veja onde clicar
+                </h3>
+                <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
+                  <li className="flex items-start gap-2">
+                    <Building2 className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                    <span><b>Mobis (funcionário):</b> use só números do seu N° de empregado.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Hash className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
+                    <span><b>Terceiro:</b> seu código tem letras — toque no botão laranja "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
             <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
             <Input
               id="employeeNumber"
-              type="text"
+              type={alphaKeyboard ? "text" : "tel"}
               required
               value={employeeNumber}
               onChange={(e) => {
                 const v = e.target.value;
                 setEmployeeNumber(alphaKeyboard ? v.toUpperCase().replace(/\s/g, "") : v.replace(/\D/g, ""));
               }}
-              placeholder=""
+              placeholder={alphaKeyboard ? "Ex: ABC123" : "Apenas números"}
               inputMode={alphaKeyboard ? "text" : "numeric"}
               pattern={alphaKeyboard ? undefined : "[0-9]*"}
               autoComplete="username"
               autoCapitalize={alphaKeyboard ? "characters" : "off"}
-              onFocus={(e) => e.target.placeholder = ""}
+              enterKeyHint="next"
+              onFocus={(e) => (e.target.placeholder = "")}
             />
-            <button
-              type="button"
-              onClick={() => setAlphaKeyboard((v) => !v)}
-              aria-pressed={alphaKeyboard}
-              className="mt-1 inline-flex items-center gap-2 w-full justify-center rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent hover:bg-accent/20 hover:border-accent/60 transition-colors"
-            >
-              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-accent/60 text-[10px] font-bold">
-                {alphaKeyboard ? "0" : "A"}
-              </span>
-              {alphaKeyboard
-                ? "Voltar para teclado numérico (Mobis)"
-                : "Sou Terceiro — meu código tem letras (toque aqui)"}
-            </button>
+
+            {/* Terceiros CTA — destacado */}
+            {!alphaKeyboard ? (
+              <button
+                type="button"
+                onClick={() => setAlphaKeyboard(true)}
+                aria-pressed={alphaKeyboard}
+                className="mt-2 group relative w-full flex items-center gap-3 rounded-xl border-2 border-accent/60 bg-accent/15 hover:bg-accent/25 hover:border-accent active:scale-[0.99] px-4 py-3 text-left transition-all shadow-md shadow-accent/10"
+              >
+                <div className="w-9 h-9 rounded-lg bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm shrink-0">
+                  Aa
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-heading font-bold text-foreground leading-tight">
+                    Sou Terceiro / Visitante
+                  </div>
+                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    Meu código tem letras — toque para liberar o teclado
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-accent group-hover:translate-x-0.5 transition-transform">
+                  Toque →
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAlphaKeyboard(false)}
+                aria-pressed={alphaKeyboard}
+                className="mt-2 inline-flex items-center gap-2 w-full justify-center rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              >
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] font-bold">0</span>
+                Voltar para teclado numérico (Mobis)
+              </button>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("login.password")}</Label>

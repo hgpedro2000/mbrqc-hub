@@ -101,6 +101,10 @@ const EmailAutomationTabs = () => {
             <ClipboardList className="h-4 w-4" />
             <span>Apontamentos</span>
           </TabsTrigger>
+          <TabsTrigger value="alerta" className="gap-2">
+            <Bell className="h-4 w-4" />
+            <span>Alerta de Qualidade</span>
+          </TabsTrigger>
           {COMING_SOON.map((t) => {
             const Icon = t.icon;
             return (
@@ -115,6 +119,10 @@ const EmailAutomationTabs = () => {
 
       <TabsContent value="apontamentos" className="mt-4">
         <EmailAutomationTab />
+      </TabsContent>
+
+      <TabsContent value="alerta" className="mt-4">
+        <AlertaEmailTab />
       </TabsContent>
 
       {COMING_SOON.map((t) => (

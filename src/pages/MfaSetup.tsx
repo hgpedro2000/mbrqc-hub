@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import AuthenticatorLauncher from "@/components/AuthenticatorLauncher";
 
 export default function MfaSetup() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export default function MfaSetup() {
   const [factorId, setFactorId] = useState<string | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [secret, setSecret] = useState<string | null>(null);
+  const [otpauthUri, setOtpauthUri] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
@@ -51,6 +53,14 @@ export default function MfaSetup() {
         setFactorId(data.id);
         setQrCode(data.totp.qr_code);
         setSecret(data.totp.secret);
+        // Build otpauth:// URI so the smart launcher can open the chosen app
+        // with this account pre-filled.
+        const issuer = encodeURIComponent("Quality Tools MBR");
+        const accLabel = encodeURIComponent(accountName);
+        setOtpauthUri(
+          (data.totp as any).uri ||
+            `otpauth://totp/${issuer}:${accLabel}?secret=${data.totp.secret}&issuer=${issuer}`
+        );
       } catch (err: any) {
         toast.error(err.message || "Erro ao iniciar MFA");
       } finally {
@@ -109,6 +119,7 @@ export default function MfaSetup() {
                   Código manual: <span className="font-mono">{secret}</span>
                 </div>
               )}
+              {otpauthUri && <AuthenticatorLauncher otpauthUri={otpauthUri} />}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Código de 6 dígitos</label>
                 <Input

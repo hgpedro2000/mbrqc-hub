@@ -65,11 +65,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update last_login_at
-    await supabaseAdmin
+    // Update last_login_at WITHOUT blocking the response.
+    // Awaiting this added ~100-400ms to every login. We hand it to the
+    // Edge runtime so the client gets the session back immediately.
+    const updateLastLogin = supabaseAdmin
       .from("profiles")
       .update({ last_login_at: new Date().toISOString() })
       .eq("id", profile.id);
+    // @ts-ignore — EdgeRuntime is provided by Supabase Edge Functions
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(updateLastLogin);
+    } else {
+      // Fallback: still fire-and-forget
+      updateLastLogin.then(() => {}).catch(() => {});
+    }
 
     return new Response(
       JSON.stringify({

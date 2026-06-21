@@ -365,7 +365,21 @@ const AdminPartNameFix = () => {
                           <td className="p-2 text-xs">{r.data}</td>
                           <td className="p-2 text-xs">{r.projeto || "—"}</td>
                           <td className="p-2 text-xs">{r.fornecedor || "—"}</td>
-                          <td className="p-2 font-mono text-xs">{r.part_number || "—"}</td>
+                          <td className="p-2 font-mono text-xs">
+                            <div className="flex items-center gap-1">
+                              <span className="flex-1">{r.part_number || "—"}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0"
+                                title="Buscar Part Number por Projeto/Fornecedor"
+                                onClick={() => openPicker(r.id)}
+                              >
+                                <Search className="w-3.5 h-3.5 text-blue-600" />
+                              </Button>
+                            </div>
+                          </td>
                           <td className="p-2">
                             <Input
                               value={value}

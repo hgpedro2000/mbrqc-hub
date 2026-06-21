@@ -14,7 +14,7 @@ import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import CapsuleTab from "@/components/engenharia/CapsuleTab";
 import PrivacyPolicyTab from "@/components/engenharia/PrivacyPolicyTab";
 import AuditLogsTab from "@/components/engenharia/AuditLogsTab";
-import EmailAutomationTab from "@/components/engenharia/EmailAutomationTab";
+import EmailAutomationTabs from "@/components/engenharia/EmailAutomationTabs";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -246,7 +246,7 @@ const Engenharia = () => {
           </TabsContent>
 
           <TabsContent value="emails" className="form-section">
-            <EmailAutomationTab />
+            <EmailAutomationTabs />
           </TabsContent>
 
           <TabsContent value="privacidade" className="form-section">

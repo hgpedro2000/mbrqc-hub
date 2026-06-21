@@ -227,9 +227,9 @@ const SupplierPartSelector = ({
     <>
       {/* 1. Projeto */}
       <div className="space-y-2">
-        <Label>{t("supplierSelector.project")} *</Label>
+        <Label className={projetoError ? "text-destructive font-semibold" : ""}>{t("supplierSelector.project")} *</Label>
         <Select value={selectedProject} onValueChange={handleProjectChange}>
-          <SelectTrigger>
+          <SelectTrigger className={cn(projetoError && "border-destructive ring-1 ring-destructive")}>
             <SelectValue placeholder={t("supplierSelector.selectProject")} />
           </SelectTrigger>
           <SelectContent>
@@ -242,13 +242,13 @@ const SupplierPartSelector = ({
 
       {/* 2. Fornecedor (filtered by project) */}
       <div className="space-y-2">
-        <Label>{t("common.supplier")} *</Label>
+        <Label className={fornecedorError ? "text-destructive font-semibold" : ""}>{t("common.supplier")} *</Label>
         <Select
           value={selectedSupplierId}
           onValueChange={handleSupplierChange}
           disabled={!selectedProject}
         >
-          <SelectTrigger>
+          <SelectTrigger className={cn(fornecedorError && "border-destructive ring-1 ring-destructive")}>
             <SelectValue placeholder={selectedProject ? t("supplierSelector.selectSupplier") : t("supplierSelector.selectProjectFirst")} />
           </SelectTrigger>
           <SelectContent>

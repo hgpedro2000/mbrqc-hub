@@ -264,6 +264,31 @@ const AdminPartNameFix = () => {
     refetch();
   };
 
+  const deleteOne = async (row: Row) => {
+    setSaving(true);
+    await supabase.from("checklist_photos").delete().eq("checklist_id", row.id);
+    const { error } = await supabase.from("apontamentos").delete().eq("id", row.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success(`Registro ${row.numero} excluído`);
+    setEdits((p) => {
+      const n = { ...p };
+      delete n[row.id];
+      return n;
+    });
+    setSelected((p) => {
+      const n = new Set(p);
+      n.delete(row.id);
+      return n;
+    });
+    setDeleteTarget(null);
+    qc.invalidateQueries({ queryKey: ["inc-blank-partname"] });
+    refetch();
+  };
+
   const pendingCount = Object.values(edits).filter((v) => v && v.trim()).length;
   const suggestionsAvailable = filtered.filter((r) => getSuggestion(r.part_number)).length;
 

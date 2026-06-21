@@ -325,11 +325,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden md:inline text-xs">Help Desk</span>
             {hasPendingAdmin ? (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
-                {pendingAdminCount}
+              <span data-testid="hd-indicator-red" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                {indicator.count}
               </span>
-            ) : hasNewResolved ? (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+            ) : hasNewResolvedIndicator ? (
+              <span data-testid="hd-indicator-green" className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
             ) : null}
           </Button>
         </DialogTrigger>

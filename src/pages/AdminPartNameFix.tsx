@@ -483,6 +483,60 @@ const AdminPartNameFix = () => {
           </>
         )}
       </main>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-500" />
+              Buscar Part Number
+            </DialogTitle>
+          </DialogHeader>
+          {pickerRow && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="secondary">Projeto: {pickerRow.projeto || "—"}</Badge>
+              <Badge variant="secondary">Fornecedor: {pickerRow.fornecedor || "—"}</Badge>
+              <Badge variant="outline" className="font-mono">PN atual: {pickerRow.part_number || "—"}</Badge>
+            </div>
+          )}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              placeholder="Filtrar por Part Number ou Part Name"
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {pickerResults.length} resultado(s) — filtrado por Projeto e Fornecedor da linha
+          </div>
+          <div className="flex-1 overflow-y-auto border rounded-md divide-y">
+            {pickerResults.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                Nenhum Part Number encontrado para este Projeto + Fornecedor.
+              </div>
+            ) : (
+              pickerResults.map((c: any, i: number) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => applyPickerSelection(c.part_number, c.part_name)}
+                  disabled={saving}
+                  className="w-full text-left p-2.5 hover:bg-muted transition-colors flex items-center gap-3 disabled:opacity-50"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono text-sm font-semibold">{c.part_number}</div>
+                    <div className="text-xs text-muted-foreground truncate">{c.part_name}</div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">{c.project}</Badge>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

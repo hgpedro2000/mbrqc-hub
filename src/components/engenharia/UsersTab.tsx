@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
+import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 
 const TURNOS = ["1T", "2T", "3T"];
-const EMPRESA_TERCEIRA_OPTIONS = ["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"];
+const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
   "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
   "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",

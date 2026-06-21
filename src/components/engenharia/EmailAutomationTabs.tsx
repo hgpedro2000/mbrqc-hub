@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, GraduationCap, ShieldAlert, Package, KeyRound, ClipboardList } from "lucide-react";
 import EmailAutomationTab from "./EmailAutomationTab";
 import AlertaEmailTab from "./AlertaEmailTab";
+import ContencaoEmailTab from "./ContencaoEmailTab";
 
 type SubTab = {
   value: string;

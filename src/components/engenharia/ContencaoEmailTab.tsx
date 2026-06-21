@@ -120,7 +120,7 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
         <div>
           <Label>Destinatários ({form.recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
-            <Input placeholder="email@exemplo.com" value={newRecipient}
+            <Input className="min-w-0 flex-1" placeholder="email@exemplo.com" value={newRecipient}
               onChange={(e) => setNewRecipient(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newRecipient) {
@@ -149,7 +149,7 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
         <div>
           <Label className="flex items-center gap-2"><AlertTriangle className="h-3 w-3" /> Alertas de falha ({form.error_notify_recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
-            <Input placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
+            <Input className="min-w-0 flex-1" placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newErr) {
                   setForm({ ...form, error_notify_recipients: [...(form.error_notify_recipients ?? []), newErr.trim()] });

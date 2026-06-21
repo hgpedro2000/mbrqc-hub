@@ -18,6 +18,13 @@ import { Toaster } from "sonner";
 
 // --- Mocks ---------------------------------------------------------------
 
+const { invokeMock, updateMock, updateEqMock } = vi.hoisted(() => ({
+  invokeMock: vi.fn(),
+  updateEqMock: vi.fn().mockResolvedValue({ error: null }),
+  updateMock: vi.fn(),
+}));
+updateMock.mockImplementation(() => ({ eq: updateEqMock }));
+
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({
     user: { id: "admin-uid" },
@@ -27,23 +34,6 @@ vi.mock("@/contexts/AuthContext", () => ({
     mfaStatus: "verified",
   }),
 }));
-
-const RESET_TICKET = {
-  id: "ticket-1",
-  numero: "HD-0001",
-  status: "pendente",
-  module: "Reset de Senha",
-  user_id: "user-to-reset",
-  user_name: "João Operador",
-  description: "Esqueci minha senha",
-  admin_notes: "",
-  created_at: new Date("2026-06-21T12:00:00Z").toISOString(),
-  photos: [],
-};
-
-const invokeMock: ReturnType<typeof vi.fn> = vi.fn();
-const updateEqMock: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ error: null });
-const updateMock: ReturnType<typeof vi.fn> = vi.fn(() => ({ eq: updateEqMock }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const RESET_TICKET = {

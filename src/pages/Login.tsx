@@ -153,24 +153,24 @@ const Login = () => {
           <p className="text-muted-foreground mt-0">{t("login.subtitle")}</p>
         </div>
 
-        {/* Mini onboarding (Terceiros) */}
+        {/* Ajuda (Terceiros) — botão discreto que abre a dica quando clicado */}
         {showOnboarding && (
-          <div className="mb-4 rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-accent/5 p-4 relative shadow-lg shadow-accent/5 animate-in fade-in slide-in-from-top-2">
+          <div className="mb-4 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 relative shadow-sm">
             <button
               type="button"
-              onClick={dismissOnboarding}
+              onClick={() => setShowOnboarding(false)}
               aria-label="Fechar"
               className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/40"
             >
               <X className="w-4 h-4" />
             </button>
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
-                <UserPlus className="w-5 h-5 text-accent" />
+              <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                <UserPlus className="w-4 h-4 text-accent" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-heading font-bold text-foreground">
-                  É a primeira vez? Veja onde clicar
+                  Primeira vez? Veja onde clicar
                 </h3>
                 <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
                   <li className="flex items-start gap-2">
@@ -179,7 +179,7 @@ const Login = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Hash className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
-                    <span><b>Terceiro:</b> seu código tem letras — toque no botão laranja "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
+                    <span><b>Terceiro:</b> seu código tem letras — toque em "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
                   </li>
                 </ul>
               </div>

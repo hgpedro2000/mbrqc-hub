@@ -64,7 +64,7 @@ export default function MfaVerify() {
   const slotBase =
     "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold text-foreground rounded-lg bg-background transition-all !border-2 !border-l-2 !border-r-2 !border-t-2 !border-b-2";
   const slotActive =
-    "data-[active=true]:!border-accent data-[active=true]:bg-accent/15 data-[active=true]:ring-2 data-[active=true]:ring-accent/30 data-[active=true]:shadow-md data-[active=true]:shadow-accent/20";
+    "data-[active=true]:!border-[hsl(220,60%,28%)] data-[active=true]:bg-background data-[active=true]:ring-2 data-[active=true]:ring-[hsl(220,60%,28%)] data-[active=true]:shadow-md data-[active=true]:shadow-[hsl(220,60%,28%)]/20";
   const slotInactive =
     "data-[active=false]:!border-foreground/25";
 

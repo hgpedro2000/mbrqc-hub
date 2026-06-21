@@ -7,6 +7,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { toast } from "sonner";
 import { ShieldCheck, LogOut, Loader2, Smartphone, KeyRound, Info } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
+import AuthenticatorLauncher from "@/components/AuthenticatorLauncher";
 
 export default function MfaVerify() {
   const navigate = useNavigate();

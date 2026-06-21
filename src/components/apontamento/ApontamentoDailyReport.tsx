@@ -138,23 +138,23 @@ const getCombinedRows = (r: any): Array<{ modo: string; tag: string; desc: strin
 
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
-  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
-    <div className="flex justify-between items-center mb-1">
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm min-w-0 w-full max-w-full overflow-hidden">
+    <div className="flex justify-between items-center gap-2 mb-1 min-w-0">
       {r.numero ? (
-        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline min-w-0 truncate">{r.numero}</button>
       ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
-      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+      <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
     </div>
-    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
-    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
-    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
-    <div className="flex gap-3 text-xs">
+    <p className="font-semibold text-sm break-all">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground break-words">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2 break-words">{r.fornecedor || "—"}</p>
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
       <span>Insp: {r.quantidade_inspecionada || 0}</span>
       <span className={`font-bold ${(r.quantidade_ng || 0) > 0 ? "text-destructive" : ""}`}>NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
     </div>
     {(stripCode(r.modo_falha) || r.descricao) && (
-      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+      <p className="text-xs text-muted-foreground mt-1 break-words">{stripCode(r.modo_falha) || r.descricao}</p>
     )}
   </div>
 );
@@ -165,17 +165,17 @@ const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: a
   const extraPhotos = Math.max(0, photos.length - 1);
   const photoUrl = photos[0];
   return (
-  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
-    <div className="flex justify-between items-center mb-1">
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm min-w-0 w-full max-w-full overflow-hidden">
+    <div className="flex justify-between items-center gap-2 mb-1 min-w-0">
       {r.numero ? (
-        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline min-w-0 truncate">{r.numero}</button>
       ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
-      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+      <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
     </div>
-    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
-    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
-    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
-    <div className="flex gap-3 text-xs mb-2">
+    <p className="font-semibold text-sm break-all">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground break-words">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2 break-words">{r.fornecedor || "—"}</p>
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs mb-2">
       <span>Insp: {r.quantidade_inspecionada || 0}</span>
       <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>

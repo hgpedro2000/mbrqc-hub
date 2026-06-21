@@ -406,6 +406,25 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
                     <UserPlus className="w-4 h-4" /> Criar Usuário a partir desta solicitação
                   </Button>
                 )}
+                {viewItem.module === "Reset de Senha" && viewItem.user_id && (
+                  <div className="mt-2 rounded-lg border border-orange-300/50 bg-orange-500/5 p-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <KeyRound className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                      <div className="text-xs text-foreground/80">
+                        <p className="font-semibold text-foreground">Reset de senha</p>
+                        <p className="mt-0.5">Escolha uma das opções para liberar o acesso do usuário. A senha será marcada como provisória e o usuário será solicitado a trocá-la no próximo login.</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <Button variant="secondary" className="gap-2" onClick={() => openReset("custom")}>
+                        <Pencil className="w-4 h-4" /> Senha provisória
+                      </Button>
+                      <Button variant="outline" className="gap-2 border-orange-400/50 text-orange-700 hover:bg-orange-500/10" onClick={() => openReset("default")}>
+                        <ShieldCheck className="w-4 h-4" /> Reset padrão (admin123*)
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

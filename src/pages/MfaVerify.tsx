@@ -78,8 +78,8 @@ export default function MfaVerify() {
         <div className="rounded-2xl border border-border/60 bg-card/85 backdrop-blur-md shadow-2xl shadow-black/30 overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-6 pb-5 flex flex-col items-center text-center border-b border-border/40 bg-gradient-to-b from-accent/5 to-transparent">
-            <div className="w-14 h-14 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center mb-3 shadow-lg shadow-accent/10">
-              <ShieldCheck className="w-7 h-7 text-accent" />
+            <div className="w-14 h-14 rounded-2xl bg-accent border border-accent flex items-center justify-center mb-3 shadow-lg shadow-accent/20">
+              <ShieldCheck className="w-7 h-7 text-accent-foreground" />
             </div>
             <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">
               Verificação em 2 etapas

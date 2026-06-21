@@ -960,6 +960,7 @@ const ApontamentoForm = () => {
       }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
+      if (quantidadeNg > 0 && descricao !== "Sem defeito encontrado durante essa inspeção" && !responsabilidadeDefeito) { errors.add("responsabilidadeDefeito"); msgs.push("Responsabilidade do Defeito"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
@@ -967,6 +968,8 @@ const ApontamentoForm = () => {
       if (ngMultiploDecisao === "diferente") {
         defeitosDetalhes.forEach((d, idx) => {
           if (!d.modo_falha) { errors.add(`defeito-${idx}-modoFalha`); msgs.push(`Defeito ${idx + 1}: Modo de Falha`); }
+          if (!d.descricao) { errors.add(`defeito-${idx}-descricao`); msgs.push(`Defeito ${idx + 1}: Descrição`); }
+          if (!d.qty_ng || d.qty_ng <= 0) { errors.add(`defeito-${idx}-qtyNg`); msgs.push(`Defeito ${idx + 1}: Qty NG`); }
         });
       }
       // Co-inspeção validation: only Mobis Brasil

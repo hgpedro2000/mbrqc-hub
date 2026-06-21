@@ -131,20 +131,33 @@ function exportToExcel(data: Record<string, any>) {
   logAction("export_excel", "apontamento", { tipo: data.tipo, numero: data.numero });
 }
 
-export const ApontamentoExportButtons = ({ data, photos, contentRef }: Props) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="outline" size="sm" className="gap-1.5" data-export-btn>
-        <Download className="w-4 h-4" /> Exportar
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem onClick={() => contentRef && exportToPdf(contentRef, data)} className="gap-2" disabled={!contentRef}>
-        <FileText className="w-4 h-4" /> PDF
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => exportToExcel(data)} className="gap-2">
-        <FileSpreadsheet className="w-4 h-4" /> Excel (.xlsx)
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+export const ApontamentoExportButtons = ({ data, photos, contentRef }: Props) => {
+  const { exportApontamentoPDF } = useExportPDF();
+  const isIncoming = data.tipo === "incoming";
+
+  const handlePdf = () => {
+    if (isIncoming) {
+      logAction("export_pdf", "apontamento", { tipo: data.tipo, numero: data.numero, engine: "react-pdf" });
+      return exportApontamentoPDF(data);
+    }
+    return contentRef && exportToPdf(contentRef, data);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1.5" data-export-btn>
+          <Download className="w-4 h-4" /> Exportar
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handlePdf} className="gap-2" disabled={!isIncoming && !contentRef}>
+          <FileText className="w-4 h-4" /> PDF
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => exportToExcel(data)} className="gap-2">
+          <FileSpreadsheet className="w-4 h-4" /> Excel (.xlsx)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

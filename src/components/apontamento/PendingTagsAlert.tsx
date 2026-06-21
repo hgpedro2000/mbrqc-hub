@@ -43,6 +43,8 @@ export const PendingTagsAlert = ({
   const [viewTarget, setViewTarget] = useState<string | null>(null);
   const [missingAlert, setMissingAlert] = useState<{ qty: number; missing: number } | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const activeProfile = impersonating || profile;
 
   const computeTagStatus = (item: any) => {

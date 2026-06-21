@@ -133,6 +133,7 @@ const ApontamentoForm = () => {
   // Multiple NG failure modes
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
+  const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
   const [tagNumber, setTagNumber] = useState("");
 

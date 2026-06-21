@@ -14,6 +14,8 @@ import { Plus, Pencil, Loader2, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
+import DropdownOptionsDialog from "./DropdownOptionsDialog";
+import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 
 const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Fornecedor (Código)", dbField: "supplier_code", label: "Fornecedor", required: true },

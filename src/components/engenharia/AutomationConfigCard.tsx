@@ -183,32 +183,23 @@ export const AutomationConfigCard = ({
           </div>
         )}
 
-        <div>
-          <Label>Destinatários ({form.recipients?.length ?? 0})</Label>
-          <div className="flex gap-2 mt-1">
-            <Input placeholder="email@exemplo.com" value={newRecipient}
-              onChange={(e) => setNewRecipient(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newRecipient) {
-                  setForm({ ...form, recipients: [...(form.recipients ?? []), newRecipient.trim()] });
-                  setNewRecipient("");
-                }
-              }} />
-            <Button type="button" size="icon" variant="outline" onClick={() => {
-              if (!newRecipient) return;
-              setForm({ ...form, recipients: [...(form.recipients ?? []), newRecipient.trim()] });
-              setNewRecipient("");
-            }}><Plus className="h-4 w-4" /></Button>
+        <div className="rounded-md border p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Users className="h-4 w-4 text-primary" />
+              Destinatários
+              <Badge variant="secondary">TO: {form.recipients?.length ?? 0}</Badge>
+              <Badge variant="secondary">CC: {ccList.length}</Badge>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={openRecipientsDialog}>
+              <Mail className="h-4 w-4 mr-2" /> Cadastrar destinatários
+            </Button>
           </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {(form.recipients ?? []).map((r, i) => (
-              <Badge key={i} variant="outline" className="gap-1">
-                {r}
-                <button type="button" onClick={() => setForm({ ...form, recipients: form.recipients.filter((_, j) => j !== i) })}>
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
+          <div className="text-xs text-muted-foreground break-all">
+            <span className="font-medium">TO:</span> {(form.recipients ?? []).join(", ") || "— nenhum —"}
+          </div>
+          <div className="text-xs text-muted-foreground break-all">
+            <span className="font-medium">CC:</span> {ccList.join(", ") || "— nenhum —"}
           </div>
         </div>
 

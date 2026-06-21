@@ -234,7 +234,8 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const recipients: string[] = test_to ? [test_to] : Array.from(new Set((config.recipients ?? []).filter(Boolean)))
+    const ccList: string[] = Array.isArray((config as any)?.metadata?.cc) ? (config as any).metadata.cc.filter(Boolean) : []
+    const recipients: string[] = test_to ? [test_to] : Array.from(new Set([...(config.recipients ?? []), ...ccList].filter(Boolean)))
     if (recipients.length === 0) throw new Error('Sem destinatários configurados')
 
     for (const to of recipients) {

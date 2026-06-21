@@ -1069,6 +1069,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   const totalNG = filtered.reduce((s, i) => s + (i.quantidade_ng || 0), 0);
   const totalInsp = filtered.reduce((s, i) => s + (i.quantidade_inspecionada || 0), 0);
+  const totalOk = filtered.reduce((s, i) => s + (i.quantidade_ok || 0), 0);
 
   const handleNumberClick = (id: string) => {
     if (onViewRecord) {

@@ -138,7 +138,7 @@ export const ApontamentoExportButtons = ({ data, photos, contentRef }: Props) =>
   const handlePdf = () => {
     if (isIncoming) {
       logAction("export_pdf", "apontamento", { tipo: data.tipo, numero: data.numero, engine: "react-pdf" });
-      return exportApontamentoPDF(data);
+      return exportApontamentoPDF(data, photos);
     }
     return contentRef && exportToPdf(contentRef, data);
   };

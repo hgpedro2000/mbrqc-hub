@@ -133,6 +133,7 @@ const ApontamentoForm = () => {
   // Multiple NG failure modes
   const [ngMultiploDecisao, setNgMultiploDecisao] = useState<"mesmo" | "diferente" | null>(null);
   const [showNgDecisionDialog, setShowNgDecisionDialog] = useState(false);
+  const [showConfirmSaveDialog, setShowConfirmSaveDialog] = useState(false);
   const [defeitosDetalhes, setDefeitosDetalhes] = useState<DefeitoDetalhe[]>([]);
   const [tagNumber, setTagNumber] = useState("");
 
@@ -1752,7 +1753,7 @@ const ApontamentoForm = () => {
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
-          <Button onClick={() => handleSave(false)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
+          <Button onClick={async () => { if (isEdit) { handleSave(false); } else { if (await validate()) setShowConfirmSaveDialog(true); } }} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? "Salvando..." : isEdit ? "Atualizar" : "Finalizar"}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">Salvar Rascunho</Button>
           <Button variant="ghost" onClick={requestExit} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
         </div>
@@ -1771,6 +1772,52 @@ const ApontamentoForm = () => {
           <Button onClick={() => setShowValidationDialog(false)} className="w-full mt-2">Entendi</Button>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Save Review Dialog */}
+      <Dialog open={showConfirmSaveDialog} onOpenChange={setShowConfirmSaveDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-500" />Revisar Apontamento</DialogTitle>
+            <DialogDescription>
+              {(() => { const fn = (activeProfile?.full_name || "Inspetor").trim().split(/\s+/)[0]; return `${fn}, confirme se as informações abaixo estão corretas antes de finalizar:`; })()}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border border-border p-3 space-y-2">
+              <div className="text-xs uppercase text-muted-foreground font-semibold">Quantidades</div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded bg-muted/50 p-2">
+                  <div className="text-[10px] text-muted-foreground">Inspecionada</div>
+                  <div className="text-lg font-bold text-primary">{quantidadeInspecionada}</div>
+                </div>
+                <div className="rounded bg-muted/50 p-2">
+                  <div className="text-[10px] text-muted-foreground">OK</div>
+                  <div className="text-lg font-bold text-green-500">{quantidadeOk}</div>
+                </div>
+                <div className="rounded bg-muted/50 p-2">
+                  <div className="text-[10px] text-muted-foreground">NG</div>
+                  <div className={`text-lg font-bold ${quantidadeNg > 0 ? "text-red-500" : "text-muted-foreground"}`}>{quantidadeNg}</div>
+                </div>
+              </div>
+            </div>
+            {(isIncoming && quantidadeNg > 0 && descricao !== "Sem defeito encontrado durante essa inspeção") && (
+              <div className="rounded-md border border-border p-3 space-y-2">
+                <div className="text-xs uppercase text-muted-foreground font-semibold">Responsabilidade</div>
+                <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold text-base tracking-wide">
+                  {responsabilidadeDefeito || "—"}
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">Se algo estiver incorreto, cancele e ajuste antes de finalizar.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowConfirmSaveDialog(false)} className="flex-1">Cancelar</Button>
+            <Button onClick={() => { setShowConfirmSaveDialog(false); handleSave(false); }} className="flex-1 gap-2"><Save className="w-4 h-4" />Confirmar e Salvar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* NG Decision Dialog */}
       <Dialog open={showNgDecisionDialog} onOpenChange={setShowNgDecisionDialog}>

@@ -70,7 +70,7 @@ const ForgotPassword = () => {
 
             <Link
               to="/solicitar-reset-admin"
-              className="block w-full text-center text-sm font-medium text-accent hover:underline"
+              className="flex items-center justify-center gap-2 w-full h-11 rounded-md border border-accent/40 bg-accent/5 px-3 text-sm font-semibold text-foreground hover:bg-accent/10 hover:border-accent transition-colors"
             >
               Não tenho e-mail cadastrado — solicitar ao administrador
             </Link>

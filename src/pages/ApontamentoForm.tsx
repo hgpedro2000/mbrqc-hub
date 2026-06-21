@@ -931,7 +931,7 @@ const ApontamentoForm = () => {
         );
         if (!match) {
           errors.add("partNumber");
-          msgs.push(`Part Number "${partNumber}" não está cadastrado no banco. Selecione um PN válido na lista ou cadastre-o antes de salvar.`);
+          msgs.push(`Esse Part Number "${partNumber}" não existe. Selecione um PN válido na lista pela Lupa de pesquisa.`);
         } else if (fornecedor) {
           const supName = ((match as any).suppliers?.name || "").trim();
           if (supName && supName !== fornecedor.trim()) {

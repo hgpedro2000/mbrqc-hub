@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Bell, GraduationCap, ShieldAlert, Package, KeyRound, ClipboardList } from "lucide-react";
 import EmailAutomationTab from "./EmailAutomationTab";
 import AlertaEmailTab from "./AlertaEmailTab";
+import ContencaoEmailTab from "./ContencaoEmailTab";
 
 type SubTab = {
   value: string;
@@ -28,15 +29,15 @@ const COMING_SOON: SubTab[] = [
     ],
   },
   {
-    value: "contencao",
-    label: "Contenção",
-    icon: ShieldAlert,
+    value: "consumiveis",
+    label: "Consumíveis",
+    icon: Package,
     description:
-      "E-mails por evento ao longo do ciclo de vida da contenção (Iniciada, Em Andamento, Finalizada).",
+      "Notificações para novas solicitações, contagem semanal de estoque e alerta de estoque mínimo.",
     bullets: [
-      "3 gatilhos por evento, reaproveitando o padrão de Apontamentos",
-      "Após 'Finalizada', o ciclo de notificações é encerrado para aquele registro",
-      "Variáveis dedicadas: número, descrição, part number, fornecedor, status, datas, VIN, responsável",
+      "Nova solicitação: dispara a cada requisição criada",
+      "Contagem semanal: tabela completa de itens com status OK/Baixo",
+      "Estoque mínimo: alerta com idempotência (não reenvia até subir e cair novamente, ou após intervalo configurável)",
     ],
   },
   {
@@ -105,6 +106,10 @@ const EmailAutomationTabs = () => {
             <Bell className="h-4 w-4" />
             <span>Alerta de Qualidade</span>
           </TabsTrigger>
+          <TabsTrigger value="contencao" className="gap-2">
+            <ShieldAlert className="h-4 w-4" />
+            <span>Contenção</span>
+          </TabsTrigger>
           {COMING_SOON.map((t) => {
             const Icon = t.icon;
             return (
@@ -123,6 +128,10 @@ const EmailAutomationTabs = () => {
 
       <TabsContent value="alerta" className="mt-4">
         <AlertaEmailTab />
+      </TabsContent>
+
+      <TabsContent value="contencao" className="mt-4">
+        <ContencaoEmailTab />
       </TabsContent>
 
       {COMING_SOON.map((t) => (

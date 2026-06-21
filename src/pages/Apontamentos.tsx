@@ -669,17 +669,18 @@ const Apontamentos = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-8 max-w-6xl w-full overflow-x-hidden" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
-        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleTypes.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-4"}`}>
-          {visibleTypes.map((tipo, i) => {
-            const cfg = typeConfig[tipo];
+        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleCards.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+          {visibleCards.map((tab, i) => {
+            const cfg = topTabConfig[tab];
             const Icon = cfg.icon;
+            const count = tab === "processos"
+              ? (countByType.peca || 0) + (countByType.processo || 0)
+              : (countByType[tab] || 0);
             return (
-              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
-                if (tipo === "incoming") {
-                  setShowInspectionLocationDialog(true);
-                } else {
-                  navigate(`/apontamentos/novo/${tipo}`);
-                }
+              <div key={tab} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
+                if (tab === "incoming") setShowInspectionLocationDialog(true);
+                else if (tab === "processos") setShowProcessSelectionDialog(true);
+                else navigate(`/apontamentos/novo/${tab}`);
               }}>
                 <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
                 <div className="relative">
@@ -687,7 +688,7 @@ const Apontamentos = () => {
                   <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{cfg.label}</h2>
                   <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{cfg.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{countByType[tipo]} registros</span>
+                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{count} registros</span>
                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   </div>
                 </div>

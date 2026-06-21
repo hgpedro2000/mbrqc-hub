@@ -1194,8 +1194,8 @@ const ApontamentoForm = () => {
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>
               {adminEdit ? (
-                <Select value={turno} onValueChange={setTurno}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
+                  <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               ) : (

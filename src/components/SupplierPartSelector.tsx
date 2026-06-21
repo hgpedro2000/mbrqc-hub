@@ -41,6 +41,7 @@ const SupplierPartSelector = ({
   onFornecedorChange,
   onPartNumberChange,
   onPartDataChange,
+  partNumberError,
   supplierFilter,
 }: SupplierPartSelectorProps) => {
   const { t } = useTranslation();

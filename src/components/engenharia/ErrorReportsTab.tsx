@@ -227,6 +227,22 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
         )}
       </div>
 
+      {/* Status overview — visual conferência do indicador */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-yellow-700">Pendente</div>
+          <div className="text-lg font-semibold text-yellow-700">{pendenteCount}</div>
+        </div>
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-blue-700">Em Andamento</div>
+          <div className="text-lg font-semibold text-blue-700">{emAndamentoCount}</div>
+        </div>
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-emerald-700">Fechado</div>
+          <div className="text-lg font-semibold text-emerald-700">{resolvedCount}</div>
+        </div>
+      </div>
+
       {/* Tabs: Em Aberto / Resolvido */}
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSelectedIds(new Set()); }}>
         <TabsList className="grid w-full grid-cols-2 h-auto">

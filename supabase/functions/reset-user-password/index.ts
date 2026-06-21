@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user_id } = await req.json();
+    const { user_id, new_password } = await req.json();
     if (!user_id) {
       return new Response(JSON.stringify({ error: "user_id é obrigatório" }), {
         status: 400,
@@ -45,7 +45,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    const tempPassword = crypto.randomUUID().replace(/-/g, "") + "!Aa1";
+    // If admin supplied a password, use it; otherwise generate a random temp one.
+    let tempPassword: string;
+    if (typeof new_password === "string" && new_password.length > 0) {
+      if (new_password.length < 6) {
+        return new Response(JSON.stringify({ error: "Senha deve ter ao menos 6 caracteres" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      tempPassword = new_password;
+    } else {
+      tempPassword = crypto.randomUUID().replace(/-/g, "") + "!Aa1";
+    }
+
     const { error: authError } = await admin.auth.admin.updateUserById(user_id, {
       password: tempPassword,
     });

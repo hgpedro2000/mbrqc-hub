@@ -92,24 +92,36 @@ const EmailAutomationTab = () => {
   const sendNow = useMutation({
     mutationFn: async () => {
       if (!form) return;
-      const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from("email_automation_log" as any)
-        .insert({
-          config_id: form.id,
-          triggered_by: userData.user?.id,
-          trigger_type: "manual",
-          recipients: form.recipients,
-          subject: form.subject_template.replace("{{date}}", new Date().toLocaleDateString("pt-BR")),
-          status: "queued",
-        });
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id },
+      });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Envio manual registrado. (Worker de envio será ativado em seguida.)");
+    onSuccess: (data: any) => {
+      toast.success(
+        `Enviado para ${data?.queued ?? 0} destinatário(s) — ${data?.ng_records ?? 0} registro(s) NG hoje`,
+      );
+      qc.invalidateQueries({ queryKey: ["email_automation_log"] });
+      qc.invalidateQueries({ queryKey: ["email_automation_config"] });
+    },
+    onError: (e: any) => toast.error("Erro: " + (e?.message ?? "falha no envio")),
+  });
+
+  const sendTest = useMutation({
+    mutationFn: async (testEmail: string) => {
+      if (!form) return;
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id, test_to: testEmail },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Teste enviado — ${data?.ng_records ?? 0} registro(s) NG no relatório`);
       qc.invalidateQueries({ queryKey: ["email_automation_log"] });
     },
-    onError: (e: any) => toast.error("Erro: " + e.message),
+    onError: (e: any) => toast.error("Erro no teste: " + (e?.message ?? "falha")),
   });
 
   if (isLoading || !form) {

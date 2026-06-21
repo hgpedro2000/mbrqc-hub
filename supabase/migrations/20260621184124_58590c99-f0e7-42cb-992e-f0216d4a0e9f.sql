@@ -1,0 +1,1 @@
+insert into public.app_changelog (version, change_type, title, description) values ('1.0.4.106', 'patch', 'Mobile: PDF inline com datas + Origem ajustado', 'Relatório Diário: botão PDF (apenas ícone) na mesma linha das datas no mobile. Dashboard Origem: textos/números reduzidos no mobile para evitar corte do PPM.');

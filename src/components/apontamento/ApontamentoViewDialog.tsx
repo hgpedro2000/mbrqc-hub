@@ -618,7 +618,22 @@ const ApontamentoViewDialog = ({ open, onOpenChange, apontamentoId }: Props) => 
                     </p>
                   </div>
                 </div>
-                <ApontamentoExportButtons data={d} photos={photos} contentRef={contentRef} />
+                <div className="flex items-center gap-2">
+                  {profile?.employee_number === "3501165" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        onOpenChange(false);
+                        window.location.assign(`/apontamentos/editar/${d.id}`);
+                      }}
+                      title="Editar apontamento"
+                    >
+                      <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+                    </Button>
+                  )}
+                  <ApontamentoExportButtons data={d} photos={photos} contentRef={contentRef} />
+                </div>
               </div>
             </div>
 

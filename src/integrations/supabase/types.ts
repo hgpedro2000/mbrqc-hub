@@ -1009,6 +1009,30 @@ export type Database = {
         }
         Relationships: []
       }
+      empresas_terceiras: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       error_reports: {
         Row: {
           admin_notes: string | null

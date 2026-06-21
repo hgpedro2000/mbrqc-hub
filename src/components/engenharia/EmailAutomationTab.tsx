@@ -380,7 +380,15 @@ const EmailAutomationTab = () => {
             </>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => loadPreview.mutate()}
+            disabled={loadPreview.isPending}
+          >
+            {loadPreview.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
+            Visualizar preview
+          </Button>
           <Button
             variant="outline"
             onClick={() => sendNow.mutate()}
@@ -438,6 +446,54 @@ const EmailAutomationTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] w-[95vw] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" /> Preview do e-mail
+            </DialogTitle>
+            <DialogDescription className="space-y-1">
+              <div className="text-xs">
+                <span className="font-medium text-foreground">Assunto:</span>{" "}
+                {previewData?.subject}
+              </div>
+              <div className="text-xs flex items-center gap-3 flex-wrap">
+                <span><span className="font-medium text-foreground">{previewData?.ng_records ?? 0}</span> registro(s) NG hoje</span>
+                <span>•</span>
+                <span><span className="font-medium text-foreground">{previewData?.total_ng ?? 0}</span> peças NG no total</span>
+                {previewData?.pdf_url && (
+                  <>
+                    <span>•</span>
+                    <a
+                      href={previewData.pdf_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Abrir PDF
+                    </a>
+                  </>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden p-4 bg-muted/30">
+            {previewData?.html ? (
+              <iframe
+                title="Preview do e-mail"
+                srcDoc={previewData.html}
+                sandbox=""
+                className="w-full h-full min-h-[60vh] rounded-md border bg-white"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                Sem conteúdo
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

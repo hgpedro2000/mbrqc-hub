@@ -110,12 +110,8 @@ const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: str
 
 /* ── Mobile card for NG mode ── */
 const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: any; photos: string[]; onNumberClick: (id: string) => void; onPhotoClick: (url: string) => void; onMore: () => void }) => {
-  const tags = getTagsList(r);
-  const descs = getDescList(r);
-  const extraTags = Math.max(0, tags.length - 1);
-  const extraDescs = Math.max(0, descs.length - 1);
+  const defectRows = getDefectRows(r);
   const extraPhotos = Math.max(0, photos.length - 1);
-  const firstDesc = stripCode(r.modo_falha) || descs[0] || "";
   const photoUrl = photos[0];
   return (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
@@ -133,15 +129,19 @@ const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: a
       <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
     </div>
-    <div className="flex justify-between items-center gap-2">
-      <div className="flex items-center gap-1 flex-wrap min-w-0">
-        {tags.length > 0 ? (
-          <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px]">TAG: {tags[0]}</Badge>
-        ) : (
-          <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Sem TAG</Badge>
-        )}
-        {extraTags > 0 && (
-          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold">+{extraTags}</button>
+    <div className="flex justify-between items-start gap-2">
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        {defectRows.length > 0 ? defectRows.map((d, i) => (
+          <div key={i} className="flex flex-col gap-0.5">
+            {d.tag ? (
+              <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-200 text-[10px] w-fit">TAG: {d.tag}</Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 w-fit">Sem TAG</Badge>
+            )}
+            {d.desc && <p className="text-xs text-destructive font-medium leading-tight">{d.desc}</p>}
+          </div>
+        )) : (
+          <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 w-fit">Sem TAG</Badge>
         )}
       </div>
       {photoUrl ? (
@@ -161,17 +161,10 @@ const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: a
         <span className="text-muted-foreground text-[10px]">—</span>
       )}
     </div>
-    {firstDesc && (
-      <div className="flex items-center gap-1 mt-1">
-        <p className="text-xs text-muted-foreground truncate flex-1">{firstDesc}</p>
-        {extraDescs > 0 && (
-          <button onClick={onMore} className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary hover:bg-primary/20 font-semibold shrink-0">+{extraDescs}</button>
-        )}
-      </div>
-    )}
   </div>
   );
 };
+
 
 /* ─────────────────────────── PDF DOCUMENT (react-pdf) ─────────────────────────── */
 

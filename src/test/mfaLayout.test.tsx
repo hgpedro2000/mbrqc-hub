@@ -42,9 +42,8 @@ describe("MfaVerify layout & UX", () => {
 
   it("renders 6 OTP slots split 3 + 3 with a separator", () => {
     const { container } = render(<MemoryRouter><MfaVerify /></MemoryRouter>);
-    const slots = container.querySelectorAll('[data-slot="input-otp-slot"]');
+    const slots = container.querySelectorAll('[data-active]');
     expect(slots.length).toBe(6);
-    // Separator character between the two groups
     expect(container.textContent).toMatch(/–/);
   });
 
@@ -56,7 +55,7 @@ describe("MfaVerify layout & UX", () => {
 
   it("OTP slots use the responsive size classes (mobile + sm breakpoint)", () => {
     const { container } = render(<MemoryRouter><MfaVerify /></MemoryRouter>);
-    const slot = container.querySelector('[data-slot="input-otp-slot"]') as HTMLElement;
+    const slot = container.querySelector('[data-active]') as HTMLElement;
     expect(slot.className).toMatch(/h-14/);
     expect(slot.className).toMatch(/sm:h-16/);
     expect(slot.className).toMatch(/font-mono/);

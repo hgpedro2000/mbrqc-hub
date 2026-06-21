@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 interface PartData {
   part_name: string;
@@ -25,6 +26,8 @@ interface SupplierPartSelectorProps {
   onFornecedorChange: (value: string) => void;
   onPartNumberChange: (value: string) => void;
   onPartDataChange: (data: PartData) => void;
+  /** Highlights the Part Number field as invalid */
+  partNumberError?: boolean;
   /** "mip" = only show ANFC - MOBIS BRASIL, "pecas_fornecedor" = exclude ANFC, undefined = show all */
   supplierFilter?: "mip" | "pecas_fornecedor";
 }
@@ -38,6 +41,7 @@ const SupplierPartSelector = ({
   onFornecedorChange,
   onPartNumberChange,
   onPartDataChange,
+  partNumberError,
   supplierFilter,
 }: SupplierPartSelectorProps) => {
   const { t } = useTranslation();
@@ -191,8 +195,13 @@ const SupplierPartSelector = ({
           <Input value={fornecedor} onChange={(e) => onFornecedorChange(e.target.value)} placeholder={t("common.supplier")} />
         </div>
         <div className="space-y-2">
-          <Label>Part Number</Label>
-          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" />
+          <Label className={partNumberError ? "text-destructive font-semibold" : ""}>Part Number</Label>
+          <Input
+            value={partNumber}
+            onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))}
+            placeholder="Ex: 86350BP000CA"
+            className={partNumberError ? "border-destructive ring-1 ring-destructive" : ""}
+          />
         </div>
         <div className="space-y-2">
           <Label>Part Name</Label>
@@ -248,14 +257,14 @@ const SupplierPartSelector = ({
 
       {/* 3. Part Number (manual + search) */}
       <div className="space-y-2">
-        <Label>Part Number *</Label>
+        <Label className={partNumberError ? "text-destructive font-semibold" : ""}>Part Number *</Label>
         <div className="flex gap-2">
           <Input
             value={partNumber}
             onChange={(e) => handleManualPartNumber(e.target.value)}
             placeholder={selectedSupplierId ? t("supplierSelector.typeOrSearch") : t("supplierSelector.selectSupplierFirst")}
             disabled={!selectedSupplierId}
-            className="flex-1"
+            className={cn("flex-1", partNumberError && "border-destructive ring-1 ring-destructive")}
           />
           <Button
             type="button"

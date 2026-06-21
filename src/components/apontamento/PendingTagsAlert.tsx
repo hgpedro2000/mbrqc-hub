@@ -89,6 +89,122 @@ export const PendingTagsAlert = ({
     if (canInsertTag) fetchPending();
   }, [canInsertTag, user, isAdmin]);
 
+  const handleExportExcel = () => {
+    if (pendingItems.length === 0) {
+      toast.info("Nenhum pendente para exportar");
+      return;
+    }
+    const rows = pendingItems.map((it) => {
+      const { missing } = computeTagStatus(it);
+      return {
+        Numero: it.numero || "",
+        "Part Number": it.part_number || "",
+        "Part Name": it.part_name || "",
+        Fornecedor: it.fornecedor || "",
+        "Qtd NG": it.quantidade_ng ?? 0,
+        Turno: it.turno || "",
+        Data: it.data ? formatLocalDateString(it.data) : "",
+        "TAGs Faltantes": missing,
+        "TAGs (separar por vírgula ou ponto-e-vírgula)": "",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 12 }, { wch: 18 }, { wch: 30 }, { wch: 18 },
+      { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 8 }, { wch: 40 },
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "TAGs Pendentes");
+    const now = new Date();
+    const ts = `${String(now.getDate()).padStart(2, "0")}-${String(now.getMonth() + 1).padStart(2, "0")}-${now.getFullYear()}_${String(now.getHours()).padStart(2, "0")}h${String(now.getMinutes()).padStart(2, "0")}`;
+    XLSX.writeFile(wb, `TAGs_Pendentes_${ts}.xlsx`);
+    toast.success(`${rows.length} pendente(s) exportado(s)`);
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setImporting(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+
+      if (jsonData.length === 0) {
+        toast.error("Planilha vazia");
+        return;
+      }
+
+      // Find the TAG column (flexible matching)
+      const sample = jsonData[0];
+      const headers = Object.keys(sample);
+      const numeroKey = headers.find((h) => h.toLowerCase().trim() === "numero" || h.toLowerCase().trim() === "número");
+      const tagsKey = headers.find((h) => h.toLowerCase().includes("tag") && !h.toLowerCase().includes("faltante"));
+
+      if (!numeroKey || !tagsKey) {
+        toast.error("Cabeçalhos não encontrados. Use o template (colunas 'Numero' e 'TAGs').");
+        return;
+      }
+
+      // Build lookup of pending items by numero
+      const pendingByNumero = new Map<string, any>();
+      pendingItems.forEach((it) => {
+        if (it.numero) pendingByNumero.set(String(it.numero).trim().toUpperCase(), it);
+      });
+
+      let success = 0;
+      let skipped = 0;
+      let errors = 0;
+      const errorMsgs: string[] = [];
+
+      for (const row of jsonData) {
+        const numero = String(row[numeroKey] ?? "").trim().toUpperCase();
+        const tagsRaw = String(row[tagsKey] ?? "").trim();
+        if (!numero || !tagsRaw) { skipped++; continue; }
+
+        const item = pendingByNumero.get(numero);
+        if (!item) { skipped++; continue; }
+
+        const tags = tagsRaw.split(/[,;]+/).map((t) => t.trim()).filter(Boolean);
+        const expected = getTagCount(item);
+        if (tags.length < expected) {
+          errors++;
+          errorMsgs.push(`${numero}: ${tags.length}/${expected} TAGs`);
+          continue;
+        }
+
+        try {
+          const { data, error } = await supabase.functions.invoke("insert-tag", {
+            body: {
+              id: item.id,
+              numero_tag: tags.slice(0, expected).join(", "),
+              impersonatedUserId: impersonating?.id || null,
+            },
+          });
+          if (error || data?.error) throw new Error(error?.message || data?.error);
+          success++;
+        } catch (err: any) {
+          errors++;
+          errorMsgs.push(`${numero}: ${err?.message || "erro"}`);
+        }
+      }
+
+      await fetchPending();
+
+      if (success > 0) toast.success(`${success} TAG(s) importada(s) com sucesso`);
+      if (skipped > 0) toast.info(`${skipped} linha(s) ignorada(s) (sem correspondência ou TAG vazia)`);
+      if (errors > 0) toast.error(`${errors} erro(s): ${errorMsgs.slice(0, 3).join(" | ")}${errorMsgs.length > 3 ? "..." : ""}`);
+    } catch (err: any) {
+      toast.error("Erro ao ler arquivo: " + (err?.message || ""));
+    } finally {
+      setImporting(false);
+    }
+  };
+
+
   const handleSaveTag = async (id: string, qty: number) => {
     const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
     const missing = trimmed.filter(t => !t).length;

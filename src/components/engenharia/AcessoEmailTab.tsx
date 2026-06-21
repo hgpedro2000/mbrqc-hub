@@ -116,12 +116,12 @@ const TemplateCard = ({ ov }: { ov: Override }) => {
       </CardContent>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-3xl h-[70vh] flex flex-col">
+        <DialogContent className="max-w-3xl w-[95vw] h-[80vh] sm:h-[70vh] flex flex-col p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Preview — {form.subject}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg break-words">Preview — {form.subject}</DialogTitle>
             <DialogDescription>Visualização aproximada do e-mail.</DialogDescription>
           </DialogHeader>
-          <iframe srcDoc={buildPreview(form.subject, form.intro_html)} className="flex-1 w-full border rounded" />
+          <iframe srcDoc={buildPreview(form.subject, form.intro_html)} className="flex-1 w-full border rounded min-h-0" />
         </DialogContent>
       </Dialog>
     </Card>

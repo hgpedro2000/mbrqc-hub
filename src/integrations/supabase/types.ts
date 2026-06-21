@@ -802,6 +802,7 @@ export type Database = {
           low_stock_alerted_at: string | null
           min_qty: number
           name: string
+          responsible_user_id: string | null
           stock_qty: number
           unit: string
           updated_at: string
@@ -813,6 +814,7 @@ export type Database = {
           low_stock_alerted_at?: string | null
           min_qty?: number
           name: string
+          responsible_user_id?: string | null
           stock_qty?: number
           unit?: string
           updated_at?: string
@@ -824,11 +826,27 @@ export type Database = {
           low_stock_alerted_at?: string | null
           min_qty?: number
           name?: string
+          responsible_user_id?: string | null
           stock_qty?: number
           unit?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consumable_items_responsible_user_id_fkey"
+            columns: ["responsible_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumable_items_responsible_user_id_fkey"
+            columns: ["responsible_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumable_requests: {
         Row: {

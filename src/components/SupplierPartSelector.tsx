@@ -257,14 +257,14 @@ const SupplierPartSelector = ({
 
       {/* 3. Part Number (manual + search) */}
       <div className="space-y-2">
-        <Label>Part Number *</Label>
+        <Label className={partNumberError ? "text-destructive font-semibold" : ""}>Part Number *</Label>
         <div className="flex gap-2">
           <Input
             value={partNumber}
             onChange={(e) => handleManualPartNumber(e.target.value)}
             placeholder={selectedSupplierId ? t("supplierSelector.typeOrSearch") : t("supplierSelector.selectSupplierFirst")}
             disabled={!selectedSupplierId}
-            className="flex-1"
+            className={cn("flex-1", partNumberError && "border-destructive ring-1 ring-destructive")}
           />
           <Button
             type="button"

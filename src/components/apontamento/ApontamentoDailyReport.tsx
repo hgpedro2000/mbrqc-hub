@@ -1320,7 +1320,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       }
                     }}
                   >
-                    <Download className="w-4 h-4" /> {generatingPdf ? `Gerando ${pdfProgress}%` : "PDF"}
+                    <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{generatingPdf ? `Gerando ${pdfProgress}%` : "PDF"}</span><span className="sm:hidden">{generatingPdf ? `${pdfProgress}%` : "PDF"}</span>
                   </Button>
                   {generatingPdf && (
                     <div className="w-full min-w-[140px]">

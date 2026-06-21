@@ -448,6 +448,9 @@ const InventarioRequisicoes = () => {
           </Button>
           {isAdmin && (
             <>
+              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1">
+                <UserCog className="w-4 h-4" /> Gerenciar Acessos
+              </Button>
               <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
                 <RotateCcw className="w-4 h-4" /> Atualizar Estoque
               </Button>
@@ -458,6 +461,8 @@ const InventarioRequisicoes = () => {
           )}
         </div>
       </div>
+
+      <ConsumiveisAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />
 
       {/* Stock list dialog */}
       <Dialog open={stockListOpen} onOpenChange={setStockListOpen}>

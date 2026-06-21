@@ -1117,18 +1117,18 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
         <div className="flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4">
+          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
-              <div className="flex items-center gap-4">
-                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-14 w-auto object-contain" />
-                <div>
-                  <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
+                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-14 w-auto object-contain shrink-0" />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {mode === "ng" && <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="w-3 h-3 mr-1" />Peças NG</Badge>}
                   </div>
-                  <h2 className="text-sm md:text-lg font-bold text-foreground">
+                  <h2 className="text-sm md:text-lg font-bold text-foreground break-words">
                     {mode === "daily" ? "Relatório Diário de Apontamentos" : "Relatório de Peças com Defeito (NG)"}
                   </h2>
-                  <p className="text-[10px] md:text-xs text-muted-foreground">
+                  <p className="text-[10px] md:text-xs text-muted-foreground break-words">
                     Data: {dateLabel} {` • ${filtered.length} registros`}
                   </p>
                 </div>

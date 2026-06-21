@@ -76,13 +76,28 @@ const AdminPartNameFix = () => {
       .filter((c) => {
         const cProj = (c.project || "").trim().toLowerCase();
         const cSupp = ((c.suppliers as any)?.name || "").trim().toLowerCase();
+        // When user types a query, do a BATCH search across the whole catalog
+        if (q) {
+          return (
+            (c.part_number || "").toLowerCase().includes(q) ||
+            (c.part_name || "").toLowerCase().includes(q) ||
+            cProj.includes(q) ||
+            cSupp.includes(q)
+          );
+        }
+        // Default: filter by the line's Projeto + Fornecedor
         if (proj && cProj !== proj) return false;
         if (supp && cSupp !== supp) return false;
-        if (!q) return true;
-        return (
-          (c.part_number || "").toLowerCase().includes(q) ||
-          (c.part_name || "").toLowerCase().includes(q)
-        );
+        return true;
+      })
+      .sort((a, b) => {
+        const aProj = (a.project || "").trim().toLowerCase();
+        const aSupp = ((a.suppliers as any)?.name || "").trim().toLowerCase();
+        const bProj = (b.project || "").trim().toLowerCase();
+        const bSupp = ((b.suppliers as any)?.name || "").trim().toLowerCase();
+        const aMatch = (aProj === proj ? 1 : 0) + (aSupp === supp ? 1 : 0);
+        const bMatch = (bProj === proj ? 1 : 0) + (bSupp === supp ? 1 : 0);
+        return bMatch - aMatch;
       })
       .slice(0, 200);
   }, [catalog, pickerRow, pickerQuery]);

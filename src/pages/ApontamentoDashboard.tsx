@@ -52,8 +52,9 @@ const ApontamentoDashboard = () => {
   const [pnFilterMap, setPnFilterMap] = useState<Record<string, string | null>>({});
   const [failureModeFilterMap, setFailureModeFilterMap] = useState<Record<string, string[]>>({});
 
-  const dateFrom = dateFromMap[activeType] ?? "";
-  const dateTo = dateToMap[activeType] ?? "";
+  const dateFrom = dateFromMap[activeType] ?? today;
+  const dateTo = dateToMap[activeType] ?? today;
+  const [supplierSortBy, setSupplierSortBy] = useState<"ng" | "ok">("ng");
   const supplierFilter = supplierFilterMap[activeType] ?? null;
   const responsibilityFilter = responsibilityFilterMap[activeType] ?? null;
   const projectFilter = projectFilterMap[activeType] ?? null;

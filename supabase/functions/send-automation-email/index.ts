@@ -28,7 +28,11 @@ function safe(v: unknown): string {
   return String(v)
 }
 function replaceVars(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? FALLBACK)
+  return template.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => {
+    const val = vars[k]
+    if (val === undefined || val === null || val === '') return FALLBACK
+    return val
+  })
 }
 
 interface NgRow {
@@ -58,9 +62,10 @@ interface ReportData {
   topFailures: Array<[string, number]>
   dateBR: string
   dateLong: string
+  periodLabel: string
 }
 
-function buildReportData(rows: NgRow[]): ReportData {
+function buildReportData(rows: NgRow[], periodLabel: string, dateBR: string, dateLong: string): ReportData {
   const totalNg = rows.reduce((s, r) => s + (r.quantidade_ng ?? 0), 0)
   const totalInsp = rows.reduce((s, r) => s + (r.quantidade_inspecionada ?? 0), 0)
   const ppm = totalInsp > 0 ? Math.round((totalNg / totalInsp) * 1_000_000) : 0
@@ -78,13 +83,12 @@ function buildReportData(rows: NgRow[]): ReportData {
     rows, totalNg, totalInsp, ppm,
     byType: [...byTypeMap.entries()],
     topFailures: [...byFailureMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5),
-    dateBR: fmtDate(new Date()),
-    dateLong: fmtDateLong(new Date()),
+    dateBR, dateLong, periodLabel,
   }
 }
 
 function buildDashboardHtml(data: ReportData, message: string, pdfUrl: string | null) {
-  const { rows, totalNg, totalInsp, ppm, byType, topFailures, dateLong, dateBR } = data
+  const { rows, totalNg, totalInsp, ppm, byType, topFailures, dateLong, dateBR, periodLabel } = data
   const rowsHtml = rows.length === 0
     ? `<tr><td colspan="7" style="padding:24px;text-align:center;color:#64748b;font-style:italic;">Sem registros NG no período.</td></tr>`
     : rows.slice(0, 50).map(r => `
@@ -114,18 +118,19 @@ function buildDashboardHtml(data: ReportData, message: string, pdfUrl: string | 
     <div style="background:#354052;color:#fff;border-radius:12px;padding:16px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.1em;">Anexo</div>
-        <div style="font-size:14px;font-weight:600;">Relatório NG ${escapeHtml(dateBR)} (PDF)</div>
+        <div style="font-size:14px;font-weight:600;">Relatório NG ${escapeHtml(periodLabel)} (PDF)</div>
       </div>
       <a href="${pdfUrl}" style="background:#fff;color:#354052;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">Baixar PDF</a>
     </div>` : ''
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Relatório NG ${dateBR}</title></head>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Relatório NG ${escapeHtml(periodLabel)}</title></head>
 <body style="margin:0;padding:0;background:#f1f5f9;font-family:'DM Sans',Arial,sans-serif;color:#0f172a;">
   <div style="max-width:760px;margin:0 auto;padding:24px;">
     <div style="background:#354052;color:#fff;border-radius:12px;padding:24px;">
       <div style="font-size:12px;opacity:.7;text-transform:uppercase;letter-spacing:.1em;">MBR Quality • Dashboard NG</div>
       <h1 style="margin:8px 0 4px;font-size:22px;font-weight:700;">Relatório de Peças NG</h1>
       <div style="font-size:13px;opacity:.85;">${escapeHtml(dateLong)}</div>
+      <div style="font-size:12px;opacity:.7;margin-top:4px;">Período: ${escapeHtml(periodLabel)}</div>
     </div>
     ${message ? `<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-top:16px;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(message)}</div>` : ''}
     ${pdfBanner}
@@ -177,26 +182,26 @@ function buildDashboardHtml(data: ReportData, message: string, pdfUrl: string | 
 }
 
 function buildPdf(data: ReportData): Uint8Array {
-  const { rows, totalNg, totalInsp, ppm, byType, topFailures, dateBR, dateLong } = data
+  const { rows, totalNg, totalInsp, ppm, byType, topFailures, dateBR, dateLong, periodLabel } = data
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
 
-  // Header band
   doc.setFillColor(53, 64, 82)
-  doc.rect(0, 0, pageW, 80, 'F')
+  doc.rect(0, 0, pageW, 90, 'F')
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(9)
-  doc.text('MBR QUALITY • DASHBOARD NG', 32, 30)
+  doc.text('MBR QUALITY • DASHBOARD NG', 32, 28)
   doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
-  doc.text('Relatório de Peças NG', 32, 52)
+  doc.text('Relatório de Peças NG', 32, 50)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
-  doc.text(dateLong, 32, 68)
+  doc.text(dateLong, 32, 66)
+  doc.setFontSize(9)
+  doc.text(`Período: ${periodLabel}`, 32, 80)
 
-  // Stats cards
   doc.setTextColor(15, 23, 42)
-  let y = 100
+  let y = 110
   const cardW = (pageW - 64 - 24) / 4
   const stats = [
     ['Total NG', String(totalNg), [220, 38, 38]],
@@ -220,14 +225,11 @@ function buildPdf(data: ReportData): Uint8Array {
   })
   y += 72
 
-  // NG por tipo
   doc.setTextColor(100, 116, 139)
   doc.setFontSize(10)
-  doc.text('NG POR TIPO', 32, y)
-  y += 6
+  doc.text('NG POR TIPO', 32, y); y += 6
   autoTable(doc, {
-    startY: y,
-    margin: { left: 32, right: 32 },
+    startY: y, margin: { left: 32, right: 32 },
     head: [['Tipo', 'Quantidade']],
     body: byType.length ? byType.map(([k, v]) => [TIPO_LABEL[k] ?? k, String(v)]) : [['—', '0']],
     styles: { fontSize: 9, cellPadding: 6 },
@@ -235,14 +237,10 @@ function buildPdf(data: ReportData): Uint8Array {
   })
   y = (doc as any).lastAutoTable.finalY + 16
 
-  // Top 5 falhas
-  doc.setTextColor(100, 116, 139)
-  doc.setFontSize(10)
-  doc.text('TOP 5 MODOS DE FALHA', 32, y)
-  y += 6
+  doc.setTextColor(100, 116, 139); doc.setFontSize(10)
+  doc.text('TOP 5 MODOS DE FALHA', 32, y); y += 6
   autoTable(doc, {
-    startY: y,
-    margin: { left: 32, right: 32 },
+    startY: y, margin: { left: 32, right: 32 },
     head: [['Modo de Falha', 'Qtd NG']],
     body: topFailures.length ? topFailures.map(([n, q]) => [n, String(q)]) : [['—', '0']],
     styles: { fontSize: 9, cellPadding: 6 },
@@ -251,24 +249,16 @@ function buildPdf(data: ReportData): Uint8Array {
   })
   y = (doc as any).lastAutoTable.finalY + 16
 
-  // Detalhado
-  doc.setTextColor(100, 116, 139)
-  doc.setFontSize(10)
-  doc.text('RELATÓRIO DETALHADO', 32, y)
-  y += 6
+  doc.setTextColor(100, 116, 139); doc.setFontSize(10)
+  doc.text('RELATÓRIO DETALHADO', 32, y); y += 6
   autoTable(doc, {
-    startY: y,
-    margin: { left: 32, right: 32 },
+    startY: y, margin: { left: 32, right: 32 },
     head: [['Nº', 'Tipo', 'Part Number', 'Fornecedor', 'Modo Falha', 'Qtd NG', 'Responsável']],
     body: rows.length
       ? rows.map(r => [
-          safe(r.numero),
-          safe(TIPO_LABEL[r.tipo ?? ''] ?? r.tipo),
-          safe(r.part_number),
-          safe(r.fornecedor),
-          safe(r.modo_falha),
-          String(r.quantidade_ng ?? 0),
-          safe(r.responsavel),
+          safe(r.numero), safe(TIPO_LABEL[r.tipo ?? ''] ?? r.tipo),
+          safe(r.part_number), safe(r.fornecedor), safe(r.modo_falha),
+          String(r.quantidade_ng ?? 0), safe(r.responsavel),
         ])
       : [['—', '—', '—', '—', 'Sem registros NG no período', '0', '—']],
     styles: { fontSize: 8, cellPadding: 4, overflow: 'linebreak' },
@@ -276,14 +266,55 @@ function buildPdf(data: ReportData): Uint8Array {
     columnStyles: { 5: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38] } },
     didDrawPage: () => {
       const pgH = doc.internal.pageSize.getHeight()
-      doc.setFontSize(8)
-      doc.setTextColor(148, 163, 184)
-      doc.text(`MBR Quality • ${dateBR}`, 32, pgH - 16)
+      doc.setFontSize(8); doc.setTextColor(148, 163, 184)
+      doc.text(`MBR Quality • ${dateBR} • ${periodLabel}`, 32, pgH - 16)
       doc.text(`Página ${doc.getNumberOfPages()}`, pageW - 64, pgH - 16)
     },
   })
 
   return new Uint8Array(doc.output('arraybuffer'))
+}
+
+async function notifyError(supabase: any, config: any, configId: string, reason: string, dayStr: string, logId: string | null) {
+  try {
+    const adminList: string[] = (config?.error_notify_recipients?.length ? config.error_notify_recipients : config?.recipients) ?? []
+    if (adminList.length === 0) return
+    const subject = `[MBR Quality] FALHA no envio do relatório NG — ${config?.name ?? configId}`
+    const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#f8fafc;padding:24px;color:#0f172a;">
+      <div style="max-width:600px;margin:0 auto;background:#fff;border:1px solid #fecaca;border-radius:12px;padding:24px;">
+        <div style="background:#dc2626;color:#fff;padding:12px;border-radius:8px;margin-bottom:16px;font-weight:600;">
+          ⚠️ Falha na automação de e-mails
+        </div>
+        <p><strong>Automação:</strong> ${escapeHtml(config?.name ?? '—')}</p>
+        <p><strong>Config ID:</strong> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">${escapeHtml(configId)}</code></p>
+        <p><strong>Data:</strong> ${escapeHtml(dayStr)}</p>
+        ${logId ? `<p><strong>Log ID:</strong> <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;">${escapeHtml(logId)}</code></p>` : ''}
+        <p><strong>Motivo:</strong></p>
+        <pre style="background:#fef2f2;color:#7f1d1d;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:12px;border:1px solid #fecaca;">${escapeHtml(reason)}</pre>
+        <p style="color:#64748b;font-size:12px;margin-top:16px;">Você pode reenviar manualmente na aba <strong>E-mails</strong> em Engenharia.</p>
+      </div>
+    </body></html>`
+    const senderDomain = Deno.env.get('SENDER_DOMAIN') ?? 'notify.mbrqc.com.br'
+    for (const to of adminList) {
+      await supabase.rpc('enqueue_email', {
+        queue_name: 'transactional_emails',
+        payload: {
+          to, from: 'informacao@mbrqc.com.br', sender_domain: senderDomain,
+          subject, html, purpose: 'transactional',
+          label: 'ng-automation-error',
+          idempotency_key: `err-${configId}-${dayStr}-${logId ?? 'noLog'}-${to}`,
+          message_id: crypto.randomUUID(),
+          queued_at: new Date().toISOString(),
+        },
+      })
+    }
+    if (logId) {
+      await supabase.from('email_automation_log')
+        .update({ error_notified: true }).eq('id', logId)
+    }
+  } catch (e) {
+    console.error('notifyError failed', e)
+  }
 }
 
 Deno.serve(async (req) => {
@@ -293,37 +324,55 @@ Deno.serve(async (req) => {
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY)
 
+  let body: any = {}
+  let configCached: any = null
+  let dayStrCached = ''
+  let logIdInProgress: string | null = null
+
   try {
-    const body = await req.json().catch(() => ({}))
-    const { config_id, log_id, test_to, preview } = body as {
-      config_id?: string
-      log_id?: string
-      test_to?: string
-      preview?: boolean
+    body = await req.json().catch(() => ({}))
+    const {
+      config_id, log_id, test_to, preview, draft, resend,
+      period_start, period_end,
+    } = body as {
+      config_id?: string; log_id?: string; test_to?: string;
+      preview?: boolean; draft?: boolean; resend?: boolean;
+      period_start?: string; period_end?: string;
     }
     if (!config_id) {
       return new Response(JSON.stringify({ error: 'config_id required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
+    logIdInProgress = log_id ?? null
 
     const { data: config, error: cfgErr } = await supabase
       .from('email_automation_config').select('*').eq('id', config_id).single()
     if (cfgErr || !config) throw new Error('Configuração não encontrada')
+    configCached = config
 
+    // Determine period
     const now = new Date()
     const tzDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
     const y = tzDate.getFullYear()
     const m = String(tzDate.getMonth() + 1).padStart(2, '0')
     const d = String(tzDate.getDate()).padStart(2, '0')
-    const dayStr = `${y}-${m}-${d}`
+    const todayStr = `${y}-${m}-${d}`
+    const pStart = period_start || todayStr
+    const pEnd = period_end || (period_start ? period_start : todayStr)
+    const dayStr = todayStr
+    dayStrCached = dayStr
     const dateBR = fmtDate(now)
+    const dateLong = fmtDateLong(now)
+    const periodLabel = pStart === pEnd
+      ? new Date(pStart + 'T12:00:00').toLocaleDateString('pt-BR')
+      : `${new Date(pStart + 'T12:00:00').toLocaleDateString('pt-BR')} a ${new Date(pEnd + 'T12:00:00').toLocaleDateString('pt-BR')}`
 
-    // Idempotency (skip for preview / test)
-    const isReal = !preview && !test_to
+    // Idempotency — skip for preview/test/draft/resend
+    const isReal = !preview && !test_to && !draft && !resend
     if (isReal) {
       const { data: existing } = await supabase
         .from('email_automation_log')
-        .select('id, status, pdf_url, subject')
+        .select('id, status')
         .eq('config_id', config.id)
         .eq('send_date', dayStr)
         .in('trigger_type', ['scheduled', 'manual'])
@@ -336,119 +385,205 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch today's NG rows
+    // Fetch NG rows for period
     const { data: rowsData } = await supabase
       .from('apontamentos')
       .select('numero, tipo, part_number, part_name, fornecedor, modo_falha, quantidade_ng, quantidade_inspecionada, responsavel, turno, created_at')
-      .gte('data', dayStr).lte('data', dayStr)
+      .gte('data', pStart).lte('data', pEnd)
       .gt('quantidade_ng', 0)
       .order('created_at', { ascending: false })
     const rows: NgRow[] = (rowsData ?? []) as NgRow[]
-    const data = buildReportData(rows)
+    const data = buildReportData(rows, periodLabel, dateBR, dateLong)
 
-    // Vars + subject + message
+    // Vars + subject + message (with fallback)
     const vars: Record<string, string> = {
-      date: dateBR, day: d, month: m, year: String(y),
+      date: dateBR, period: periodLabel,
+      day: d, month: m, year: String(y),
       total_ng: String(data.totalNg), total_records: String(rows.length),
       total_inspected: String(data.totalInsp), ppm: String(data.ppm),
     }
     const subject = replaceVars(config.subject_template || 'Relatório NG — {{date}}', vars)
     const messageBody = replaceVars(config.message_body || '', vars)
 
-    // Generate PDF + upload + signed URL
+    // Generate PDF (catch errors and notify)
     let pdfUrl: string | null = null
     let pdfPath: string | null = null
+    let pdfError: string | null = null
     if (config.include_ng_pdf !== false) {
       try {
         const pdfBytes = buildPdf(data)
-        pdfPath = `${config.id}/${dayStr}${test_to || preview ? `-preview-${Date.now()}` : ''}.pdf`
+        const suffix = draft ? `-draft-${Date.now()}` : (test_to ? `-test-${Date.now()}` : (preview ? `-preview-${Date.now()}` : (resend ? `-r${Date.now()}` : '')))
+        pdfPath = `${config.id}/${dayStr}${suffix}.pdf`
         const { error: upErr } = await supabase.storage
           .from('email-reports')
           .upload(pdfPath, pdfBytes, { contentType: 'application/pdf', upsert: true })
         if (upErr) throw upErr
-        // 30-day signed URL
         const { data: signed, error: signErr } = await supabase.storage
           .from('email-reports')
           .createSignedUrl(pdfPath, 60 * 60 * 24 * 30)
         if (signErr) throw signErr
         pdfUrl = signed?.signedUrl ?? null
       } catch (pdfErr) {
-        console.error('PDF generation/upload failed', pdfErr)
+        pdfError = pdfErr instanceof Error ? pdfErr.message : String(pdfErr)
+        console.error('PDF generation/upload failed', pdfError)
+        // For real sends, notify admins about the PDF failure but continue without PDF
+        if (isReal || resend) {
+          await notifyError(supabase, config, config.id, `Falha ao gerar/anexar PDF: ${pdfError}`, dayStr, log_id ?? null)
+        }
       }
     }
 
     const html = buildDashboardHtml(data, messageBody, pdfUrl)
 
-    // PREVIEW MODE — return without sending or logging
+    // PREVIEW MODE — never logs nor sends
     if (preview) {
       return new Response(JSON.stringify({
         ok: true, preview: true, subject, html, pdf_url: pdfUrl,
         ng_records: rows.length, total_ng: data.totalNg,
+        period_start: pStart, period_end: pEnd, pdf_error: pdfError,
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const recipients: string[] = test_to ? [test_to] : (config.recipients ?? [])
+    // DRAFT MODE — saves HTML+PDF in log, no send
+    if (draft) {
+      const { data: existingDraft } = await supabase
+        .from('email_automation_log')
+        .select('id').eq('config_id', config.id)
+        .eq('send_date', dayStr).eq('trigger_type', 'draft')
+        .maybeSingle()
+      let draftId = existingDraft?.id
+      if (draftId) {
+        await supabase.from('email_automation_log').update({
+          preview_html: html, preview_pdf_url: pdfUrl,
+          ng_count: rows.length, subject,
+          period_start: pStart, period_end: pEnd,
+          status: 'draft', error_message: pdfError,
+        }).eq('id', draftId)
+      } else {
+        const { data: ins } = await supabase.from('email_automation_log').insert({
+          config_id: config.id, trigger_type: 'draft', recipients: config.recipients ?? [],
+          subject, status: 'draft', ng_count: rows.length,
+          pdf_url: pdfUrl, preview_html: html, preview_pdf_url: pdfUrl,
+          period_start: pStart, period_end: pEnd, send_date: dayStr,
+          error_message: pdfError,
+        }).select('id').single()
+        draftId = ins?.id
+      }
+      return new Response(JSON.stringify({
+        ok: true, draft: true, draft_id: draftId,
+        subject, html, pdf_url: pdfUrl,
+        ng_records: rows.length, total_ng: data.totalNg, pdf_error: pdfError,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // Resolve recipients
+    const recipients: string[] = test_to
+      ? [test_to]
+      : Array.from(new Set((config.recipients ?? []).filter(Boolean)))
     if (recipients.length === 0) throw new Error('Sem destinatários configurados')
 
     const senderDomain = Deno.env.get('SENDER_DOMAIN') ?? 'notify.mbrqc.com.br'
     const fromAddr = 'informacao@mbrqc.com.br'
 
     const messageIds: string[] = []
+    const triggerSuffix = resend ? `-r${Date.now()}` : (test_to ? `-test-${Date.now()}` : '')
     for (const to of recipients) {
       const messageId = crypto.randomUUID()
-      const payload = {
-        to, from: fromAddr, sender_domain: senderDomain,
-        subject, html,
-        purpose: 'transactional' as const,
-        label: 'ng-daily-report',
-        idempotency_key: `${config.id}-${dayStr}-${to}${test_to ? '-test-' + Date.now() : ''}`,
-        message_id: messageId,
-        queued_at: new Date().toISOString(),
-      }
       const { error: enqErr } = await supabase.rpc('enqueue_email', {
-        queue_name: 'transactional_emails', payload,
+        queue_name: 'transactional_emails',
+        payload: {
+          to, from: fromAddr, sender_domain: senderDomain,
+          subject, html, purpose: 'transactional' as const,
+          label: 'ng-daily-report',
+          idempotency_key: `${config.id}-${dayStr}-${to}${triggerSuffix}`,
+          message_id: messageId, queued_at: new Date().toISOString(),
+        },
       })
       if (enqErr) throw enqErr
       messageIds.push(messageId)
     }
 
-    // Log (idempotent)
+    // Compute attempt number for resends
+    let attempt = 1
+    if (resend) {
+      const { count } = await supabase.from('email_automation_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('config_id', config.id).eq('send_date', dayStr)
+      attempt = (count ?? 0) + 1
+    }
+
+    // Logging
     if (log_id) {
       await supabase.from('email_automation_log').update({
         status: 'queued', ng_count: rows.length,
         recipients, subject, pdf_url: pdfUrl, send_date: dayStr,
+        period_start: pStart, period_end: pEnd,
       }).eq('id', log_id)
     } else if (test_to) {
       await supabase.from('email_automation_log').insert({
         config_id: config.id, trigger_type: 'test',
         recipients, subject, status: 'queued',
         ng_count: rows.length, pdf_url: pdfUrl,
-        send_date: dayStr,
+        send_date: dayStr, period_start: pStart, period_end: pEnd,
       })
     } else {
-      // Manual: upsert by (config_id, send_date)
+      const triggerType = resend ? 'manual' : 'manual'
       const { error: insErr } = await supabase.from('email_automation_log').insert({
-        config_id: config.id, trigger_type: 'manual',
+        config_id: config.id, trigger_type: triggerType,
         recipients, subject, status: 'queued',
         ng_count: rows.length, pdf_url: pdfUrl,
-        send_date: dayStr,
+        send_date: dayStr, period_start: pStart, period_end: pEnd,
+        attempt,
       })
-      if (insErr && !String(insErr.message).includes('duplicate')) throw insErr
+      if (insErr) {
+        // Idempotency conflict on resend? Only happens if there's already a queued/sent row
+        if (String(insErr.message).toLowerCase().includes('duplicate') && !resend) {
+          // existing row — ok
+        } else if (resend) {
+          // resend conflict (another row already queued/sent) — that's fine, the enqueue still happened
+          console.log('resend already had queued row, enqueued anyway')
+        } else {
+          throw insErr
+        }
+      }
     }
 
-    if (!test_to) {
+    if (!test_to && !resend) {
       await supabase.from('email_automation_config')
         .update({ last_sent_at: new Date().toISOString() }).eq('id', config.id)
     }
 
     return new Response(JSON.stringify({
       ok: true, queued: messageIds.length, ng_records: rows.length,
-      total_ng: data.totalNg, pdf_url: pdfUrl,
+      total_ng: data.totalNg, pdf_url: pdfUrl, attempt,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error('send-automation-email error', msg)
-    return new Response(JSON.stringify({ error: msg }),
+
+    // Record failure in log + notify admins
+    try {
+      if (logIdInProgress) {
+        await supabase.from('email_automation_log').update({
+          status: 'failed', error_message: msg.slice(0, 1000),
+        }).eq('id', logIdInProgress)
+      } else if (body?.config_id && !body?.preview && !body?.draft) {
+        await supabase.from('email_automation_log').insert({
+          config_id: body.config_id,
+          trigger_type: body?.test_to ? 'test' : (body?.resend ? 'manual' : 'manual'),
+          recipients: body?.test_to ? [body.test_to] : [],
+          status: 'failed', error_message: msg.slice(0, 1000),
+          send_date: dayStrCached || null,
+        })
+      }
+      if (configCached && body?.config_id && !body?.preview && !body?.draft) {
+        await notifyError(supabase, configCached, body.config_id, msg, dayStrCached, logIdInProgress)
+      }
+    } catch (logErr) {
+      console.error('failed to log error', logErr)
+    }
+
+    return new Response(JSON.stringify({ error: msg, config_id: body?.config_id ?? null }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })

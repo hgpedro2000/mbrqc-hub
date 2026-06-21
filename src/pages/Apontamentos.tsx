@@ -1058,6 +1058,42 @@ const Apontamentos = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Process Selection Dialog (sub-types inside Processos) */}
+      <Dialog open={showProcessSelectionDialog} onOpenChange={setShowProcessSelectionDialog}>
+        <DialogContent className="max-w-md max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Layers className="w-5 h-5 text-emerald-500" />Novo Apontamento — Processos</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione a área do processo:</p>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {PROC_SUBS.map((sub) => {
+              const cfg = procSubConfig[sub];
+              const Icon = cfg.icon;
+              const isReal = !!cfg.realType;
+              return (
+                <Button
+                  key={sub}
+                  variant="outline"
+                  className="h-auto py-4 flex flex-col gap-1.5"
+                  onClick={() => {
+                    setShowProcessSelectionDialog(false);
+                    if (isReal) {
+                      navigate(`/apontamentos/novo/${cfg.realType}`);
+                    } else {
+                      toast.info(`${cfg.label}: em breve`);
+                    }
+                  }}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-semibold text-sm">{cfg.label}</span>
+                  {!isReal && <span className="text-[10px] text-muted-foreground">em breve</span>}
+                </Button>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

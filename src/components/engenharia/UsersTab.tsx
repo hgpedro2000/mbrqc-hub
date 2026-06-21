@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
+import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 
 const TURNOS = ["1T", "2T", "3T"];
-const EMPRESA_TERCEIRA_OPTIONS = ["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"];
+const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
   "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
   "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
@@ -104,6 +105,20 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
       return data;
     },
   });
+
+  const { data: empresasTerceirasList = [] } = useQuery({
+    queryKey: ["empresas-terceiras-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("empresas_terceiras")
+        .select("name")
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
 
   const getRoleForUser = (userId: string) => {
     const r = roles.find((r: any) => r.user_id === userId);
@@ -316,7 +331,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
             <Select value={isResidente ? "Residente" : empTerc} onValueChange={(v) => { setEmpTerc(v); }}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {EMPRESA_TERCEIRA_OPTIONS.map((o) => (
+                {empresasTerceirasList.map((e: any) => (
+                  <SelectItem key={e.name} value={e.name}>{e.name}</SelectItem>
+                ))}
+                {EXTRA_EMPRESA_TERCEIRA_OPTIONS.map((o) => (
                   <SelectItem key={o} value={o}>{o}</SelectItem>
                 ))}
               </SelectContent>
@@ -359,6 +377,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
               <ModulePermissionsTab />
             </DialogContent>
           </Dialog>
+          <EmpresasTerceirasDialog />
           {pendingRequests.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 col-span-2 sm:col-span-1">
               <ClipboardList className="w-4 h-4" />

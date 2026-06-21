@@ -28,6 +28,10 @@ interface SupplierPartSelectorProps {
   onPartDataChange: (data: PartData) => void;
   /** Highlights the Part Number field as invalid */
   partNumberError?: boolean;
+  /** Highlights the Projeto field as invalid */
+  projetoError?: boolean;
+  /** Highlights the Fornecedor field as invalid */
+  fornecedorError?: boolean;
   /** "mip" = only show ANFC - MOBIS BRASIL, "pecas_fornecedor" = exclude ANFC, undefined = show all */
   supplierFilter?: "mip" | "pecas_fornecedor";
 }

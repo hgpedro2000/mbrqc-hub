@@ -36,7 +36,7 @@ const CARGOS = [
 ];
 
 const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const { impersonating } = useImpersonation();
   const targetUserId = impersonating?.id || user?.id;
   const [activeModule, setActiveModule] = useState(moduleName);
@@ -103,6 +103,22 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
 
   const newResolvedCount = myTickets.filter((t: any) => t.status === "resolvido" && !seenResolvedIds.includes(t.id)).length;
   const hasNewResolved = newResolvedCount > 0;
+
+  // Admin/Help Desk responsible: red indicator when there are pending tickets to handle
+  const { data: pendingAdminCount = 0 } = useQuery({
+    queryKey: ["pending-error-reports-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("error_reports")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["pendente", "em_andamento"]);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!isAdmin,
+    refetchInterval: 30000,
+  });
+  const hasPendingAdmin = isAdmin && pendingAdminCount > 0;
 
   // When user opens status dialog, mark current resolved tickets as seen
   const markResolvedAsSeen = useCallback(() => {
@@ -278,9 +294,13 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
           <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10 relative h-8 w-8 md:w-auto md:px-3 gap-1.5">
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden md:inline text-xs">Help Desk</span>
-            {hasNewResolved && (
+            {hasPendingAdmin ? (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                {pendingAdminCount}
+              </span>
+            ) : hasNewResolved ? (
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
-            )}
+            ) : null}
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-xs">

@@ -1528,9 +1528,9 @@ const ApontamentoForm = () => {
                       <span className="text-sm font-medium">Defeito {idx === 0 ? "Principal" : `#${idx + 1}`}</span>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Modo de Falha *</Label>
-                      <Select value={detalhe.modo_falha} onValueChange={(v) => updateDefeitoDetalhe(idx, "modo_falha", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>Modo de Falha *</Label>
+                      <Select value={detalhe.modo_falha} onValueChange={(v) => { updateDefeitoDetalhe(idx, "modo_falha", v); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-modoFalha`); return n; }); }}>
+                        <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>

@@ -58,6 +58,23 @@ const ForgotPassword = () => {
                 </>
               )}
             </Button>
+
+            <div className="relative py-1">
+              <div className="absolute inset-0 flex items-center" aria-hidden>
+                <span className="w-full border-t border-border/50" />
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-card px-2 text-[11px] uppercase tracking-wider text-muted-foreground">ou</span>
+              </div>
+            </div>
+
+            <Link
+              to="/solicitar-reset-admin"
+              className="block w-full text-center text-sm font-medium text-accent hover:underline"
+            >
+              Não tenho e-mail cadastrado — solicitar ao administrador
+            </Link>
+
             <Link to="/login" className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
               {t("forgotPassword.backToLogin")}

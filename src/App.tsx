@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import TryoutRegistros from "./pages/TryoutRegistros";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import SolicitarResetAdmin from "./pages/SolicitarResetAdmin";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import Engenharia from "./pages/Engenharia";
@@ -143,6 +144,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
+            <Route path="/solicitar-reset-admin" element={<SolicitarResetAdmin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/alterar-senha" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
             <Route path="/mfa-setup" element={<ProtectedRoute><MfaSetup /></ProtectedRoute>} />

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Bell, GraduationCap, ShieldAlert, Package, KeyRound, ClipboardList } from "lucide-react";
 import EmailAutomationTab from "./EmailAutomationTab";
+import AlertaEmailTab from "./AlertaEmailTab";
 
 type SubTab = {
   value: string;
@@ -14,18 +15,6 @@ type SubTab = {
 };
 
 const COMING_SOON: SubTab[] = [
-  {
-    value: "alerta",
-    label: "Alerta de Qualidade",
-    icon: Bell,
-    description:
-      "Notificações automáticas para novos alertas (disparo imediato) e resumo semanal de pendentes/vencidos.",
-    bullets: [
-      "Disparo imediato ao criar novo alerta, com variáveis do registro e lista de assinantes pendentes",
-      "Resumo semanal agendado de alertas pendentes de assinatura e vencidos",
-      "Listas de destinatários independentes por tipo de disparo",
-    ],
-  },
   {
     value: "matriz",
     label: "Matriz de Versatilidade",

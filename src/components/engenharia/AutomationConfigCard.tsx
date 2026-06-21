@@ -50,8 +50,6 @@ export const AutomationConfigCard = ({
 }: AutomationConfigCardProps) => {
   const qc = useQueryClient();
   const [form, setForm] = useState<GenericConfig>(config);
-  const [, setNewRecipient] = useState("");
-  void setNewRecipient;
   const [newErr, setNewErr] = useState("");
   const [testEmail, setTestEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);

@@ -189,7 +189,17 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
+              <button
+                type="button"
+                onClick={() => setShowOnboarding(true)}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-accent transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                Ajuda
+              </button>
+            </div>
             <Input
               id="employeeNumber"
               type={alphaKeyboard ? "text" : "tel"}
@@ -208,28 +218,16 @@ const Login = () => {
               onFocus={(e) => (e.target.placeholder = "")}
             />
 
-            {/* Terceiros CTA — destacado */}
+            {/* Terceiros CTA — discreto e minimalista */}
             {!alphaKeyboard ? (
               <button
                 type="button"
                 onClick={() => setAlphaKeyboard(true)}
                 aria-pressed={alphaKeyboard}
-                className="mt-2 group relative w-full flex items-center gap-3 rounded-xl border-2 border-accent/60 bg-accent/15 hover:bg-accent/25 hover:border-accent active:scale-[0.99] px-4 py-3 text-left transition-all shadow-md shadow-accent/10"
+                className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-background/60 hover:bg-muted/60 hover:border-accent/40 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <div className="w-9 h-9 rounded-lg bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm shrink-0">
-                  Aa
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-heading font-bold text-foreground leading-tight">
-                    Sou Terceiro / Visitante
-                  </div>
-                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                    Meu código tem letras — toque para liberar o teclado
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-accent group-hover:translate-x-0.5 transition-transform">
-                  Toque →
-                </span>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-current text-[10px] font-bold">Aa</span>
+                Sou Terceiro — meu código tem letras
               </button>
             ) : (
               <button

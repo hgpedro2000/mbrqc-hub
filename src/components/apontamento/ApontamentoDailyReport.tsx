@@ -556,7 +556,8 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
   if (mode === "ng") {
     // Build a flat sorted-by-input list (preserve filtered order). Each item gets index + page calculation.
     const list = filtered;
-    const pageOf = (i: number) => 2 + Math.floor(i / 2);
+    const PER_PAGE = 4;
+    const pageOf = (i: number) => 2 + Math.floor(i / PER_PAGE);
 
     // Helper: treat "Sem descrição" placeholder as empty
     const cleanDesc = (v: any) => {
@@ -566,26 +567,12 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
       return s;
     };
 
-    // Pair items into groups of 2 for detailed pages.
-    // Validation: ensure every detail page renders exactly 2 slots, padding with null when odd.
+    // Pair items into groups of 4 (2x2 grid) for detailed pages.
     const pairs: (any | null)[][] = [];
-    for (let i = 0; i < list.length; i += 2) {
-      const slice: (any | null)[] = list.slice(i, i + 2);
-      while (slice.length < 2) slice.push(null);
+    for (let i = 0; i < list.length; i += PER_PAGE) {
+      const slice: (any | null)[] = list.slice(i, i + PER_PAGE);
+      while (slice.length < PER_PAGE) slice.push(null);
       pairs.push(slice);
-    }
-
-    // Strict validation: every detail page MUST have exactly 2 slots before rendering.
-    pairs.forEach((p, idx) => {
-      if (p.length !== 2) {
-        console.error(`[NG PDF] Detail page ${idx + 1} has ${p.length} slots, expected exactly 2.`, p);
-        while (p.length < 2) p.push(null);
-        if (p.length > 2) p.length = 2;
-      }
-    });
-    const invalidPages = pairs.filter((p) => p.length !== 2);
-    if (invalidPages.length > 0) {
-      throw new Error(`[NG PDF] Validation failed: ${invalidPages.length} detail page(s) do not contain exactly 2 occurrences.`);
     }
 
     return (

@@ -1017,7 +1017,7 @@ const ApontamentoForm = () => {
   };
 
   const handleSave = async (asDraft: boolean) => {
-    if (!asDraft && !validate()) return;
+    if (!asDraft && !(await validate())) return;
     if (asDraft) setValidationErrors(new Set());
     setSaving(true);
     try {

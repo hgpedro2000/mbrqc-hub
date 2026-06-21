@@ -29,11 +29,34 @@ import { Input } from "@/components/ui/input";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 
+// Top-level grouping shown to the user
+type TopTab = "incoming" | "processos" | "oem";
+const TOP_TABS: TopTab[] = ["incoming", "processos", "oem"];
+
+// Sub-tabs inside "Processos" (placeholders + the legacy Peça/Processo)
+type ProcSub = "cockpit" | "bumper" | "chassis" | "injecao" | "pintura" | "peca" | "processo";
+const PROC_SUBS: ProcSub[] = ["cockpit", "bumper", "chassis", "injecao", "pintura", "peca", "processo"];
+const procSubConfig: Record<ProcSub, { label: string; icon: any; realType?: ApontamentoTipo }> = {
+  cockpit: { label: "Cockpit", icon: Gauge },
+  bumper: { label: "Bumper", icon: Shield },
+  chassis: { label: "Chassis", icon: Frame },
+  injecao: { label: "Injeção", icon: Zap },
+  pintura: { label: "Pintura", icon: Droplet },
+  peca: { label: "Peça", icon: Package, realType: "peca" },
+  processo: { label: "Processo", icon: Cog, realType: "processo" },
+};
+
 const typeConfig: Record<ApontamentoTipo, { icon: any; label: string; description: string; color: string; prefix: string }> = {
   incoming: { icon: BoxSelect, label: "Incoming", description: "Inspeção de peças recebidas de fornecedores com controle de lote e quantidade.", color: "from-blue-500/10 to-blue-600/5", prefix: "INC" },
   peca: { icon: Package, label: "Peça", description: "Registro de defeitos encontrados em peças durante o processo produtivo.", color: "from-amber-500/10 to-orange-500/5", prefix: "PCA" },
   processo: { icon: Cog, label: "Processo", description: "Apontamento de falhas e não-conformidades no processo de produção.", color: "from-emerald-500/10 to-green-500/5", prefix: "PRC" },
   oem: { icon: Car, label: "OEM", description: "Registros de reclamações e defeitos detectados pela montadora (OEM).", color: "from-violet-500/10 to-purple-500/5", prefix: "OEM" },
+};
+
+const topTabConfig: Record<TopTab, { icon: any; label: string; description: string; color: string }> = {
+  incoming: { icon: BoxSelect, label: "Incoming", description: "Inspeção de peças recebidas de fornecedores com controle de lote e quantidade.", color: "from-blue-500/10 to-blue-600/5" },
+  processos: { icon: Layers, label: "Processos", description: "Apontamentos por área: Cockpit, Bumper, Chassis, Injeção e Pintura.", color: "from-emerald-500/10 to-green-500/5" },
+  oem: { icon: Car, label: "OEM", description: "Registros de reclamações e defeitos detectados pela montadora (OEM).", color: "from-violet-500/10 to-purple-500/5" },
 };
 
 const Apontamentos = () => {

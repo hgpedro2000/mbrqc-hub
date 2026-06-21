@@ -10,6 +10,7 @@ import jsPDF from "jspdf";
 import { formatLocalDateString } from "@/lib/localDate";
 import { stripCode } from "@/lib/stripCode";
 import { logAction } from "@/lib/logAction";
+import { useExportPDF } from "@/hooks/useExportPDF";
 
 interface Props {
   data: Record<string, any>;

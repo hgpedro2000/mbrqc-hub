@@ -126,6 +126,25 @@ const EmailAutomationTab = () => {
     onError: (e: any) => toast.error("Erro no teste: " + (e?.message ?? "falha")),
   });
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ html: string; subject: string; pdf_url: string | null; ng_records: number; total_ng: number } | null>(null);
+
+  const loadPreview = useMutation({
+    mutationFn: async () => {
+      if (!form) return null;
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id, preview: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      setPreviewData(data);
+      setPreviewOpen(true);
+    },
+    onError: (e: any) => toast.error("Erro ao gerar preview: " + (e?.message ?? "falha")),
+  });
+
   if (isLoading || !form) {
     return <div className="text-center py-8 text-muted-foreground">Carregando…</div>;
   }

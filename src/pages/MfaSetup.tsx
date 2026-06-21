@@ -119,6 +119,7 @@ export default function MfaSetup() {
                   Código manual: <span className="font-mono">{secret}</span>
                 </div>
               )}
+              {otpauthUri && <AuthenticatorLauncher otpauthUri={otpauthUri} />}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Código de 6 dígitos</label>
                 <Input

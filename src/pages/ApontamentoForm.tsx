@@ -1512,11 +1512,12 @@ const ApontamentoForm = () => {
                     {totalDefeitosQty}/{quantidadeNg} NG
                   </Badge>
                 </div>
-                {defeitosDetalhes.map((detalhe, idx) => (
+                {defeitosDetalhes.map((detalhe, idx) => {
+                  const isPrincipalSolo = idx === 0 && defeitosDetalhes.length === 1;
+                  return (
                   <div key={idx} className="border rounded-lg p-3 space-y-3 bg-muted/10">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Defeito {idx === 0 ? "Principal" : `#${idx + 1}`}</span>
-                      {idx >= 2 && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeDefeitoDetalhe(idx)}><Trash2 className="w-4 h-4" /></Button>}
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modo de Falha *</Label>
@@ -1529,22 +1530,35 @@ const ApontamentoForm = () => {
                       <Label className="text-xs">Descrição *</Label>
                       <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5 w-full">
-                        <Label className="text-xs">Qty NG *</Label>
-                        <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
+                    {!isPrincipalSolo && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5 w-full">
+                          <Label className="text-xs">Qty NG *</Label>
+                          <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
+                        </div>
+                        <div className="space-y-1.5 w-full">
+                          <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
+                          <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
+                        </div>
                       </div>
-                      <div className="space-y-1.5 w-full">
-                        <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
-                        <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
-                      </div>
-                    </div>
+                    )}
+                    {isPrincipalSolo && (
+                      <p className="text-xs text-muted-foreground">Qty NG = {quantidadeNg} (total). A TAG é preenchida na seção "Número da TAG" abaixo.</p>
+                    )}
                   </div>
-                ))}
-                {defeitosDetalhes.length < quantidadeNg && (
-                  <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
-                )}
-                {totalDefeitosQty !== quantidadeNg && (
+                  );
+                })}
+                <div className="flex flex-wrap gap-2">
+                  {defeitosDetalhes.length < quantidadeNg && (
+                    <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
+                  )}
+                  {defeitosDetalhes.length > 1 && (
+                    <Button variant="outline" size="sm" onClick={removeLastDefeitoDetalhe} className="gap-2 w-full sm:w-auto text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" /> Excluir Defeito #{defeitosDetalhes.length}
+                    </Button>
+                  )}
+                </div>
+                {defeitosDetalhes.length > 1 && totalDefeitosQty !== quantidadeNg && (
                   <p className="text-xs text-destructive font-medium">⚠ A soma dos NG ({totalDefeitosQty}) deve ser igual ao total NG ({quantidadeNg})</p>
                 )}
               </div>

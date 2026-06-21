@@ -32,6 +32,7 @@ const AdminPartNameFix = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
 
   // Load INC records with blank part_name
   const { data: rows = [], isLoading, refetch } = useQuery({

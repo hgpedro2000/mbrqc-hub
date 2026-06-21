@@ -102,20 +102,17 @@ const Login = () => {
         full_name: data.profile?.full_name,
       });
 
-      // Pre-request camera permission RIGHT AFTER successful auth. We are
-      // still inside the original submit user-gesture, so the browser will
-      // accept the prompt. Once the user grants it the first time, no future
-      // prompt is shown when the scanner opens.
-      try {
-        if (navigator.mediaDevices?.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" } },
-            audio: false,
-          });
-          stream.getTracks().forEach((t) => t.stop());
-        }
-      } catch {
-        // User denied or no camera — scanner will prompt again when opened.
+      // Pre-request camera permission in the BACKGROUND (do not await).
+      // We are still inside the original submit user-gesture, so the browser
+      // accepts the prompt. Awaiting this was the main reason login felt
+      // slow on mobile — the redirect waited for the camera permission
+      // dialog. Fire-and-forget keeps the priming behavior without delaying
+      // the navigation to the app.
+      if (navigator.mediaDevices?.getUserMedia) {
+        navigator.mediaDevices
+          .getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false })
+          .then((stream) => stream.getTracks().forEach((t) => t.stop()))
+          .catch(() => { /* denied or no camera — scanner will prompt later */ });
       }
 
       if (data.profile?.must_change_password) {

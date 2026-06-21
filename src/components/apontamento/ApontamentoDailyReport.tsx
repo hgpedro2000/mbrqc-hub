@@ -745,28 +745,33 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
 
                     <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha • TAG • Descrição</Text>
+                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha • TAG • Descrição • QTY NG</Text>
                       {/* Header row */}
                       <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingBottom: 2, gap: 4 }}>
                         <Text style={{ width: 14, fontSize: 5, color: "#9ca3af", textTransform: "uppercase" }}> </Text>
-                        <Text style={{ flex: 4, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Modo de Falha</Text>
-                        <Text style={{ flex: 2, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>TAG</Text>
-                        <Text style={{ flex: 5, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Descrição</Text>
+                        <Text style={{ flex: 3.5, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Modo de Falha</Text>
+                        <Text style={{ flex: 1.5, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>TAG</Text>
+                        <Text style={{ flex: 4, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Descrição</Text>
+                        <Text style={{ flex: 1, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>QTY NG</Text>
                       </View>
                       {combined.length > 0 ? (
                         combined.map((row, idx) => (
                           <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 2, paddingHorizontal: 4, marginBottom: 2 }}>
                             <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
-                            <View style={{ flex: 4, flexDirection: "row", alignItems: "center", gap: 3 }}>
+                            <View style={{ flex: 3.5, flexDirection: "row", alignItems: "center", gap: 3 }}>
                               <Text style={{ fontSize: 6, fontWeight: 700, color: "#1a1a2e", flex: 1 }}>{row.modo || "—"}</Text>
-                              {row.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {row.qty}</Text> : null}
                             </View>
-                            <View style={{ flex: 2, alignItems: "center" }}>
+                            <View style={{ flex: 1.5, alignItems: "center" }}>
                               {row.tag
                                 ? <Text style={pdfStyles.ngDTagOk}>{row.tag}</Text>
                                 : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
                             </View>
-                            <Text style={{ flex: 5, fontSize: 6, color: "#374151" }}>{row.desc || "—"}</Text>
+                            <Text style={{ flex: 4, fontSize: 6, color: "#374151" }}>{row.desc || "—"}</Text>
+                            <View style={{ flex: 1, alignItems: "center" }}>
+                              {row.qty != null
+                                ? <Text style={pdfStyles.ngDFalhaQty}>{row.qty}</Text>
+                                : <Text style={{ fontSize: 6, color: "#9ca3af" }}>—</Text>}
+                            </View>
                           </View>
                         ))
                       ) : (

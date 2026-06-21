@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, AlertTriangle, RefreshCw, UserPlus, ArrowDown, X, Building2, Hash } from "lucide-react";
+import { LogIn, AlertTriangle, RefreshCw, HelpCircle, UserPlus, ArrowDown, X, Building2, Hash } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -13,8 +13,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logAction } from "@/lib/logAction";
 import { primeBeep } from "@/lib/beep";
-
-const ONBOARDING_KEY = "terceiros_onboarding_seen_v1";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,17 +26,6 @@ const Login = () => {
   // Terceiros possuem letras no código — permite alternar para teclado alfanumérico.
   const [alphaKeyboard, setAlphaKeyboard] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(ONBOARDING_KEY)) setShowOnboarding(true);
-    } catch { /* ignore */ }
-  }, []);
-
-  const dismissOnboarding = () => {
-    setShowOnboarding(false);
-    try { localStorage.setItem(ONBOARDING_KEY, "1"); } catch { /* ignore */ }
-  };
 
   // Whenever AuthContext finishes hydrating with a valid session/profile,
   // redirect away from /login. This handles BOTH:
@@ -166,24 +153,24 @@ const Login = () => {
           <p className="text-muted-foreground mt-0">{t("login.subtitle")}</p>
         </div>
 
-        {/* Mini onboarding (Terceiros) */}
+        {/* Ajuda (Terceiros) — botão discreto que abre a dica quando clicado */}
         {showOnboarding && (
-          <div className="mb-4 rounded-2xl border border-accent/40 bg-gradient-to-br from-accent/10 to-accent/5 p-4 relative shadow-lg shadow-accent/5 animate-in fade-in slide-in-from-top-2">
+          <div className="mb-4 rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 relative shadow-sm">
             <button
               type="button"
-              onClick={dismissOnboarding}
+              onClick={() => setShowOnboarding(false)}
               aria-label="Fechar"
               className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/40"
             >
               <X className="w-4 h-4" />
             </button>
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-accent/20 border border-accent/30 flex items-center justify-center shrink-0">
-                <UserPlus className="w-5 h-5 text-accent" />
+              <div className="w-8 h-8 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                <UserPlus className="w-4 h-4 text-accent" />
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-heading font-bold text-foreground">
-                  É a primeira vez? Veja onde clicar
+                  Primeira vez? Veja onde clicar
                 </h3>
                 <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
                   <li className="flex items-start gap-2">
@@ -192,7 +179,7 @@ const Login = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <Hash className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
-                    <span><b>Terceiro:</b> seu código tem letras — toque no botão laranja "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
+                    <span><b>Terceiro:</b> seu código tem letras — toque em "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
                   </li>
                 </ul>
               </div>
@@ -202,7 +189,17 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="form-section space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="employeeNumber">{t("login.employeeNumber")}</Label>
+              <button
+                type="button"
+                onClick={() => setShowOnboarding(true)}
+                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-accent transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                Ajuda
+              </button>
+            </div>
             <Input
               id="employeeNumber"
               type={alphaKeyboard ? "text" : "tel"}
@@ -221,28 +218,16 @@ const Login = () => {
               onFocus={(e) => (e.target.placeholder = "")}
             />
 
-            {/* Terceiros CTA — destacado */}
+            {/* Terceiros CTA — discreto e minimalista */}
             {!alphaKeyboard ? (
               <button
                 type="button"
                 onClick={() => setAlphaKeyboard(true)}
                 aria-pressed={alphaKeyboard}
-                className="mt-2 group relative w-full flex items-center gap-3 rounded-xl border-2 border-accent/60 bg-accent/15 hover:bg-accent/25 hover:border-accent active:scale-[0.99] px-4 py-3 text-left transition-all shadow-md shadow-accent/10"
+                className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-background/60 hover:bg-muted/60 hover:border-accent/40 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
-                <div className="w-9 h-9 rounded-lg bg-accent text-accent-foreground flex items-center justify-center font-bold text-sm shrink-0">
-                  Aa
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-heading font-bold text-foreground leading-tight">
-                    Sou Terceiro / Visitante
-                  </div>
-                  <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-                    Meu código tem letras — toque para liberar o teclado
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-accent group-hover:translate-x-0.5 transition-transform">
-                  Toque →
-                </span>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-current text-[10px] font-bold">Aa</span>
+                Sou Terceiro — meu código tem letras
               </button>
             ) : (
               <button

@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { toast } from "sonner";
-import { ShieldCheck, LogOut, Loader2 } from "lucide-react";
+import { ShieldCheck, LogOut, Loader2, Smartphone, KeyRound, Info } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
 export default function MfaVerify() {
@@ -56,28 +56,56 @@ export default function MfaVerify() {
     }
   };
 
+  const activeIndex = Math.min(code.length, 5);
+  const slotBase =
+    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold rounded-lg border-2 border-border/60 bg-background/60 transition-all";
+  const slotActive =
+    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/5";
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* subtle ambient glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--accent)/0.12),transparent_60%)]" />
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* ambient glow */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--accent)/0.14),transparent_60%)]" />
+      <div className="pointer-events-none absolute -bottom-32 left-1/2 -translate-x-1/2 w-[480px] h-[480px] rounded-full bg-accent/5 blur-3xl" />
 
       <div className="relative w-full max-w-md">
-        <div className="text-center mb-6">
-          <img src={logo} alt="Hyundai Mobis" className="h-20 mx-auto object-contain mb-3" />
+        <div className="text-center mb-5">
+          <img src={logo} alt="Hyundai Mobis" className="h-16 sm:h-20 mx-auto object-contain" />
         </div>
 
-        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-xl shadow-black/20 overflow-hidden">
-          <div className="px-6 pt-6 pb-4 flex flex-col items-center text-center border-b border-border/40">
-            <div className="w-14 h-14 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center mb-3">
+        <div className="rounded-2xl border border-border/60 bg-card/85 backdrop-blur-md shadow-2xl shadow-black/30 overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-5 flex flex-col items-center text-center border-b border-border/40 bg-gradient-to-b from-accent/5 to-transparent">
+            <div className="w-14 h-14 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center mb-3 shadow-lg shadow-accent/10">
               <ShieldCheck className="w-7 h-7 text-accent" />
             </div>
-            <h1 className="text-xl font-heading font-bold text-foreground">Verificação em duas etapas</h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-[28ch]">
-              Abra seu app autenticador e insira o código de 6 dígitos.
+            <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">
+              Verificação em 2 etapas
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1.5 max-w-[32ch]">
+              Para sua segurança, confirme o código de 6 dígitos gerado no seu app autenticador.
             </p>
           </div>
 
-          <div className="px-6 py-6 space-y-5">
+          {/* Contextual hint */}
+          <div className="px-6 pt-5">
+            <div className="rounded-xl border border-accent/25 bg-accent/5 p-3 flex gap-3">
+              <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
+              <div className="text-xs text-foreground/80 leading-relaxed space-y-1">
+                <p className="flex items-center gap-1.5">
+                  <Smartphone className="w-3.5 h-3.5 text-accent" />
+                  <span><b className="text-foreground">1.</b> Abra Google Authenticator, Microsoft Authenticator ou similar.</span>
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5 text-accent" />
+                  <span><b className="text-foreground">2.</b> Digite os 6 dígitos abaixo — o login é automático.</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* OTP */}
+          <div className="px-4 sm:px-6 py-6 space-y-5">
             <div className="flex justify-center">
               <InputOTP
                 maxLength={6}
@@ -89,25 +117,42 @@ export default function MfaVerify() {
                 }}
                 autoFocus
                 disabled={verifying}
+                inputMode="numeric"
               >
-                <InputOTPGroup className="gap-1.5">
-                  <InputOTPSlot index={0} className="h-12 w-11 text-lg font-mono rounded-md border" />
-                  <InputOTPSlot index={1} className="h-12 w-11 text-lg font-mono rounded-md border" />
-                  <InputOTPSlot index={2} className="h-12 w-11 text-lg font-mono rounded-md border" />
+                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                  {[0, 1, 2].map((i) => (
+                    <InputOTPSlot
+                      key={i}
+                      index={i}
+                      data-active={activeIndex === i}
+                      className={`${slotBase} ${slotActive}`}
+                    />
+                  ))}
                 </InputOTPGroup>
-                <span className="mx-1 text-muted-foreground/60 font-bold select-none">·</span>
-                <InputOTPGroup className="gap-1.5">
-                  <InputOTPSlot index={3} className="h-12 w-11 text-lg font-mono rounded-md border" />
-                  <InputOTPSlot index={4} className="h-12 w-11 text-lg font-mono rounded-md border" />
-                  <InputOTPSlot index={5} className="h-12 w-11 text-lg font-mono rounded-md border" />
+                <span className="mx-1 sm:mx-2 text-accent/70 font-bold text-2xl select-none" aria-hidden>
+                  –
+                </span>
+                <InputOTPGroup className="gap-1 sm:gap-1.5">
+                  {[3, 4, 5].map((i) => (
+                    <InputOTPSlot
+                      key={i}
+                      index={i}
+                      data-active={activeIndex === i}
+                      className={`${slotBase} ${slotActive}`}
+                    />
+                  ))}
                 </InputOTPGroup>
               </InputOTP>
             </div>
 
+            <p className="text-center text-[11px] text-muted-foreground -mt-2">
+              O código muda a cada 30 segundos.
+            </p>
+
             <Button
               onClick={() => handleVerify()}
               disabled={code.length !== 6 || verifying}
-              className="w-full h-11 bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold"
+              className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold text-base shadow-lg shadow-accent/20"
             >
               {verifying ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Verificando...</>
@@ -127,7 +172,7 @@ export default function MfaVerify() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground mt-4">
+        <p className="text-center text-xs text-muted-foreground mt-4 px-4">
           Não consegue acessar o app autenticador? Contate o administrador.
         </p>
       </div>

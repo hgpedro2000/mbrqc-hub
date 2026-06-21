@@ -697,9 +697,9 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                 // Placeholder slot to keep 2×2 grid symmetric
                 return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent", overflow: "hidden" }]} />;
               }
-              const modos = parseModos(r);
-              const defectRows = getDefectRows(r);
+              const combined = getCombinedRows(r);
               const photos = photoMap?.[r.id] || [];
+
               return (
                 <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", overflow: "hidden" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>

@@ -1110,34 +1110,34 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
+      <DialogContent className="!max-w-[calc(100dvw-16px)] w-[calc(100dvw-16px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95dvh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
 
         <div className="flex flex-col">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-14 w-auto object-contain shrink-0" />
+          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-3 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6 overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
+                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-8 sm:h-10 md:h-14 w-auto object-contain shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {mode === "ng" && <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="w-3 h-3 mr-1" />Peças NG</Badge>}
                   </div>
-                  <h2 className="text-sm md:text-lg font-bold text-foreground break-words">
+                  <h2 className="text-[13px] sm:text-sm md:text-lg font-bold text-foreground break-words leading-tight">
                     {mode === "daily" ? "Relatório Diário de Apontamentos" : "Relatório de Peças com Defeito (NG)"}
                   </h2>
-                  <p className="text-[10px] md:text-xs text-muted-foreground break-words">
+                  <p className="text-[10px] md:text-xs text-muted-foreground break-words leading-tight">
                     Data: {dateLabel} {` • ${filtered.length} registros`}
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto">
-                <div className="flex items-center gap-1">
+              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 w-full max-w-[254px] sm:flex sm:w-auto sm:max-w-none">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
                         {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}
                       </Button>
@@ -1149,7 +1149,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <span className="text-xs text-muted-foreground">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
                         {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}
                       </Button>

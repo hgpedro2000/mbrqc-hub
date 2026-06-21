@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Wand2, Search, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Wand2, Search, CheckCircle2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 

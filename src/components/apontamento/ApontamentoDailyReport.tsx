@@ -1110,7 +1110,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[calc(100dvw-16px)] w-[calc(100dvw-16px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95dvh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
+      <DialogContent className="!max-w-[calc(100dvw-24px)] w-[calc(100dvw-24px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95dvh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
@@ -1341,7 +1341,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
           {/* Summary cards */}
           <div className="px-3 md:px-6 py-3 overflow-hidden">
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Inspecionadas</p></div>
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-destructive">{totalNG}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total NG</p></div>

@@ -152,10 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session, checkMFAStatus, fetchAdminRole]);
 
   const hydrateAuthState = useCallback(async (nextSession: Session | null, isInitial = false) => {
-    setSession((prev) => {
-      // If just a token refresh for the same user, don't trigger a full reload.
-      return nextSession;
-    });
+    setSession(nextSession);
 
     if (!nextSession?.user) {
       setProfile(null);
@@ -165,12 +162,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Only show full-screen loading on initial hydration or when the user changes.
-    // Token refreshes (alt+tab) must NOT remount the route tree.
+    // Show "checking" on initial hydration AND on user-identity changes
+    // (fresh login). Without this, mfaStatus keeps the previous value
+    // ("verified"/"not-required") for a tick, ProtectedRoute lets the Hub
+    // render, then mfaStatus flips to "needs-verify" and bounces back to
+    // /mfa-verify — the flash the user reported.
     if (isInitial) {
       setLoading(true);
-      setMfaStatus("checking");
     }
+    setMfaStatus("checking");
 
     await fetchProfile(nextSession.user.id);
     const adminFlag = await fetchAdminRole(nextSession.user.id);
@@ -182,10 +182,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Re-evaluate MFA on every real hydrate (initial load AND new logins).
-    // Previously this was gated to `isInitial`, which meant a fresh login
-    // never recomputed the MFA status — combined with the SIGNED_IN guard
-    // above, that left the user stuck on /login.
     const status = await checkMFAStatus(adminFlag);
     setMfaStatus(status);
     setLoading(false);

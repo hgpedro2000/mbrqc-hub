@@ -174,11 +174,15 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setAlphaKeyboard((v) => !v)}
-              className="text-xs text-muted-foreground hover:text-accent transition-colors underline-offset-2 hover:underline"
+              aria-pressed={alphaKeyboard}
+              className="mt-1 inline-flex items-center gap-2 w-full justify-center rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-xs font-semibold text-accent hover:bg-accent/20 hover:border-accent/60 transition-colors"
             >
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-accent/60 text-[10px] font-bold">
+                {alphaKeyboard ? "0" : "A"}
+              </span>
               {alphaKeyboard
-                ? "Usar teclado numérico"
-                : "Meu código tem letras (terceiros) — usar teclado alfanumérico"}
+                ? "Voltar para teclado numérico (Mobis)"
+                : "Sou Terceiro — meu código tem letras (toque aqui)"}
             </button>
           </div>
           <div className="space-y-2">

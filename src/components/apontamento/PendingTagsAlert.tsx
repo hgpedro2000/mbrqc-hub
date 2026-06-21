@@ -47,12 +47,11 @@ export const PendingTagsAlert = ({
   const computeTagStatus = (item: any) => {
     const sd = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos : [];
     const hasMainModo = !!(item?.modo_falha && String(item.modo_falha).trim());
-    const mainTagFilled = !!(item?.numero_tag && String(item.numero_tag).trim()) || !!(item?.tag_number && String(item.tag_number).trim());
+    const mainTagRaw = String(item?.numero_tag || item?.tag_number || "").trim();
+    const mainTagsCount = mainTagRaw ? mainTagRaw.split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean).length : 0;
     const sdTagsFilled = sd.filter((d: any) => d?.tag && String(d.tag).trim()).length;
-    // Slots: each main modo (if any) + each secondary defect; at least 1 if NG > 0
     const expected = Math.max((item?.quantidade_ng || 0) > 0 ? 1 : 0, (hasMainModo ? 1 : 0) + sd.length);
-    const mainCounts = hasMainModo || sd.length === 0;
-    const filled = (mainCounts && mainTagFilled ? 1 : 0) + sdTagsFilled;
+    const filled = mainTagsCount + sdTagsFilled;
     return { expected, filled, missing: Math.max(0, expected - filled) };
   };
 

@@ -608,7 +608,7 @@ const Apontamentos = () => {
               <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
                 <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">NG</span>
               </Button>
-              {isAdmin && (
+              {isAdmin && profile?.employee_number === "3501165" && (
                 <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Corrigir Part Name (INC)">
                   <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Corrigir PN</span>
                 </Button>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench, Layers, Gauge, Shield, Frame, Zap, Droplet } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,11 +29,34 @@ import { Input } from "@/components/ui/input";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 
+// Top-level grouping shown to the user
+type TopTab = "incoming" | "processos" | "oem";
+const TOP_TABS: TopTab[] = ["incoming", "processos", "oem"];
+
+// Sub-tabs inside "Processos" (placeholders + the legacy Peça/Processo)
+type ProcSub = "cockpit" | "bumper" | "chassis" | "injecao" | "pintura" | "peca" | "processo";
+const PROC_SUBS: ProcSub[] = ["cockpit", "bumper", "chassis", "injecao", "pintura", "peca", "processo"];
+const procSubConfig: Record<ProcSub, { label: string; icon: any; realType?: ApontamentoTipo }> = {
+  cockpit: { label: "Cockpit", icon: Gauge },
+  bumper: { label: "Bumper", icon: Shield },
+  chassis: { label: "Chassis", icon: Frame },
+  injecao: { label: "Injeção", icon: Zap },
+  pintura: { label: "Pintura", icon: Droplet },
+  peca: { label: "Peça", icon: Package, realType: "peca" },
+  processo: { label: "Processo", icon: Cog, realType: "processo" },
+};
+
 const typeConfig: Record<ApontamentoTipo, { icon: any; label: string; description: string; color: string; prefix: string }> = {
   incoming: { icon: BoxSelect, label: "Incoming", description: "Inspeção de peças recebidas de fornecedores com controle de lote e quantidade.", color: "from-blue-500/10 to-blue-600/5", prefix: "INC" },
   peca: { icon: Package, label: "Peça", description: "Registro de defeitos encontrados em peças durante o processo produtivo.", color: "from-amber-500/10 to-orange-500/5", prefix: "PCA" },
   processo: { icon: Cog, label: "Processo", description: "Apontamento de falhas e não-conformidades no processo de produção.", color: "from-emerald-500/10 to-green-500/5", prefix: "PRC" },
   oem: { icon: Car, label: "OEM", description: "Registros de reclamações e defeitos detectados pela montadora (OEM).", color: "from-violet-500/10 to-purple-500/5", prefix: "OEM" },
+};
+
+const topTabConfig: Record<TopTab, { icon: any; label: string; description: string; color: string }> = {
+  incoming: { icon: BoxSelect, label: "Incoming", description: "Inspeção de peças recebidas de fornecedores com controle de lote e quantidade.", color: "from-blue-500/10 to-blue-600/5" },
+  processos: { icon: Layers, label: "Processos", description: "Apontamentos por área: Cockpit, Bumper, Chassis, Injeção e Pintura.", color: "from-emerald-500/10 to-green-500/5" },
+  oem: { icon: Car, label: "OEM", description: "Registros de reclamações e defeitos detectados pela montadora (OEM).", color: "from-violet-500/10 to-purple-500/5" },
 };
 
 const Apontamentos = () => {
@@ -47,8 +70,18 @@ const Apontamentos = () => {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const readSS = (k: string, fallback: any) => { try { const v = sessionStorage.getItem(`apontamentos:${k}`); return v != null ? JSON.parse(v) : fallback; } catch { return fallback; } };
   const writeSS = (k: string, v: any) => { try { sessionStorage.setItem(`apontamentos:${k}`, JSON.stringify(v)); } catch {} };
-  const [activeTab, _setActiveTab] = useState<ApontamentoTipo>(() => readSS("activeTab", "incoming"));
-  const setActiveTab = (t: ApontamentoTipo) => { _setActiveTab(t); writeSS("activeTab", t); };
+  const [topTab, _setTopTab] = useState<TopTab>(() => readSS("topTab", "incoming"));
+  const setTopTab = (t: TopTab) => { _setTopTab(t); writeSS("topTab", t); };
+  const [procSub, _setProcSub] = useState<ProcSub>(() => readSS("procSub", "peca"));
+  const setProcSub = (s: ProcSub) => { _setProcSub(s); writeSS("procSub", s); };
+  const [showProcessSelectionDialog, setShowProcessSelectionDialog] = useState(false);
+  // Derived "active filter type" for list rendering. Placeholders fall back to "peca" but isPlaceholderSub blocks rendering.
+  const activeTab: ApontamentoTipo = useMemo(() => {
+    if (topTab === "incoming") return "incoming";
+    if (topTab === "oem") return "oem";
+    return procSubConfig[procSub].realType ?? "peca";
+  }, [topTab, procSub]);
+  const isPlaceholderSub = topTab === "processos" && !procSubConfig[procSub].realType;
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -77,6 +110,16 @@ const Apontamentos = () => {
   const visibleTypes = useMemo(() => {
     if (isAdmin) return [...TYPES];
     return TYPES.filter((t) => enabledModules.includes(`apontamentos_${t}` as any));
+  }, [isAdmin, enabledModules]);
+
+  // Top-level cards/tabs (Incoming, Processos, OEM) — "Processos" groups peca + processo
+  const visibleCards = useMemo<TopTab[]>(() => {
+    if (isAdmin) return [...TOP_TABS];
+    const out: TopTab[] = [];
+    if (enabledModules.includes("apontamentos_incoming" as any)) out.push("incoming");
+    if (enabledModules.includes("apontamentos_peca" as any) || enabledModules.includes("apontamentos_processo" as any)) out.push("processos");
+    if (enabledModules.includes("apontamentos_oem" as any)) out.push("oem");
+    return out;
   }, [isAdmin, enabledModules]);
 
   const { data: items = [], isLoading } = useQuery({
@@ -626,17 +669,18 @@ const Apontamentos = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-8 max-w-6xl w-full overflow-x-hidden" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
-        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleTypes.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-4"}`}>
-          {visibleTypes.map((tipo, i) => {
-            const cfg = typeConfig[tipo];
+        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleCards.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+          {visibleCards.map((tab, i) => {
+            const cfg = topTabConfig[tab];
             const Icon = cfg.icon;
+            const count = tab === "processos"
+              ? (countByType.peca || 0) + (countByType.processo || 0)
+              : (countByType[tab] || 0);
             return (
-              <div key={tipo} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
-                if (tipo === "incoming") {
-                  setShowInspectionLocationDialog(true);
-                } else {
-                  navigate(`/apontamentos/novo/${tipo}`);
-                }
+              <div key={tab} className="module-card opacity-0 animate-fade-in" style={{ animationDelay: `${i * 100}ms` }} onClick={() => {
+                if (tab === "incoming") setShowInspectionLocationDialog(true);
+                else if (tab === "processos") setShowProcessSelectionDialog(true);
+                else navigate(`/apontamentos/novo/${tab}`);
               }}>
                 <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
                 <div className="relative">
@@ -644,7 +688,7 @@ const Apontamentos = () => {
                   <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{cfg.label}</h2>
                   <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{cfg.description}</p>
                   <div className="flex items-center justify-between">
-                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{countByType[tipo]} registros</span>
+                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{count} registros</span>
                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   </div>
                 </div>
@@ -739,23 +783,26 @@ const Apontamentos = () => {
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
-            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleTypes.length}, 1fr)` }}>
-              {visibleTypes.map((tipo) => {
-                const cfg = typeConfig[tipo];
+          <Tabs value={topTab} onValueChange={(v) => { setTopTab(v as TopTab); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
+            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleCards.length}, 1fr)` }}>
+              {visibleCards.map((tab) => {
+                const cfg = topTabConfig[tab];
                 const Icon = cfg.icon;
+                const count = tab === "processos"
+                  ? (countByType.peca || 0) + (countByType.processo || 0)
+                  : (countByType[tab] || 0);
                 return (
-                  <TabsTrigger key={tipo} value={tipo} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+                  <TabsTrigger key={tab} value={tab} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
                     <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                     <span className="hidden sm:inline truncate">{cfg.label}</span>
-                    <span className="text-xs">({countByType[tipo]})</span>
+                    <span className="text-xs">({count})</span>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
             {/* Location filter buttons for INCOMING tab */}
-            {activeTab === "incoming" && (
+            {topTab === "incoming" && (
               <div className="flex items-center gap-2 mt-3">
                 <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                 <Button
@@ -785,10 +832,41 @@ const Apontamentos = () => {
               </div>
             )}
 
-            {TYPES.map((tipo) => (
-              <TabsContent key={tipo} value={tipo} className="mt-4">
+            {/* Sub-tabs for PROCESSOS group */}
+            {topTab === "processos" && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {PROC_SUBS.map((sub) => {
+                  const cfg = procSubConfig[sub];
+                  const Icon = cfg.icon;
+                  const active = procSub === sub;
+                  const subCount = cfg.realType ? (countByType[cfg.realType] || 0) : 0;
+                  return (
+                    <Button
+                      key={sub}
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      className="text-xs h-8 gap-1.5"
+                      onClick={() => { setProcSub(sub); clearFilters(); setSelectedIds(new Set()); }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{cfg.label}</span>
+                      {cfg.realType && <span className="text-[10px] opacity-80">({subCount})</span>}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+
+            {TOP_TABS.map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-4">
                 {isLoading ? (
                   <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+                ) : tab === "processos" && isPlaceholderSub ? (
+                  <div className="border border-dashed rounded-lg py-16 text-center text-muted-foreground">
+                    <Layers className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">Em breve: {procSubConfig[procSub].label}</p>
+                    <p className="text-xs mt-1">Esta área será habilitada em uma próxima atualização.</p>
+                  </div>
                 ) : viewMode === "detailed" ? renderDetailedList() : renderCompactList()}
               </TabsContent>
             ))}
@@ -977,6 +1055,42 @@ const Apontamentos = () => {
               <span className="font-semibold text-base">⚙️ Apontamento de Outras Peças</span>
               <span className="text-xs text-muted-foreground">Responsabilidade: Sorting</span>
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Process Selection Dialog (sub-types inside Processos) */}
+      <Dialog open={showProcessSelectionDialog} onOpenChange={setShowProcessSelectionDialog}>
+        <DialogContent className="max-w-md max-w-[95vw] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Layers className="w-5 h-5 text-emerald-500" />Novo Apontamento — Processos</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione a área do processo:</p>
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            {PROC_SUBS.map((sub) => {
+              const cfg = procSubConfig[sub];
+              const Icon = cfg.icon;
+              const isReal = !!cfg.realType;
+              return (
+                <Button
+                  key={sub}
+                  variant="outline"
+                  className="h-auto py-4 flex flex-col gap-1.5"
+                  onClick={() => {
+                    setShowProcessSelectionDialog(false);
+                    if (isReal) {
+                      navigate(`/apontamentos/novo/${cfg.realType}`);
+                    } else {
+                      toast.info(`${cfg.label}: em breve`);
+                    }
+                  }}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-semibold text-sm">{cfg.label}</span>
+                  {!isReal && <span className="text-[10px] text-muted-foreground">em breve</span>}
+                </Button>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>

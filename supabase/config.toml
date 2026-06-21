@@ -1,21 +1,19 @@
 project_id = "fjsayyuuukmedrjmvexj"
 
-[functions.auth-login-by-number]
-verify_jwt = false
-
-[functions.create-user-admin]
-verify_jwt = false
-
-[functions.reset-user-password]
-verify_jwt = false
-
-[functions.delete-user-admin]
-verify_jwt = false
-
-[functions.extract-label-data]
-verify_jwt = false
-
-[functions.tag-escalation]
-verify_jwt = false
-[functions.process-email-queue]
-verify_jwt = true
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.auth-login-by-number]
+    verify_jwt = false
+  [functions.create-user-admin]
+    verify_jwt = false
+  [functions.delete-user-admin]
+    verify_jwt = false
+  [functions.extract-label-data]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.reset-user-password]
+    verify_jwt = false
+  [functions.tag-escalation]
+    verify_jwt = false

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, AlertTriangle, RefreshCw } from "lucide-react";
+import { LogIn, AlertTriangle, RefreshCw, UserPlus, ArrowDown, X, Building2, Hash } from "lucide-react";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { toast } from "sonner";
 import LanguageToggle from "@/components/LanguageToggle";
@@ -13,6 +13,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { logAction } from "@/lib/logAction";
 import { primeBeep } from "@/lib/beep";
+
+const ONBOARDING_KEY = "terceiros_onboarding_seen_v1";
 
 const Login = () => {
   const navigate = useNavigate();

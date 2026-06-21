@@ -53,6 +53,14 @@ export default function MfaSetup() {
         setFactorId(data.id);
         setQrCode(data.totp.qr_code);
         setSecret(data.totp.secret);
+        // Build otpauth:// URI so the smart launcher can open the chosen app
+        // with this account pre-filled.
+        const issuer = encodeURIComponent("Quality Tools MBR");
+        const accLabel = encodeURIComponent(accountName);
+        setOtpauthUri(
+          (data.totp as any).uri ||
+            `otpauth://totp/${issuer}:${accLabel}?secret=${data.totp.secret}&issuer=${issuer}`
+        );
       } catch (err: any) {
         toast.error(err.message || "Erro ao iniciar MFA");
       } finally {

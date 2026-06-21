@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -84,6 +84,24 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
     },
   });
 
+  // Realtime: refetch ticket list instantly on any change
+  useEffect(() => {
+    const channel = supabase
+      .channel("error-reports-tab")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "error_reports" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["error-reports"] });
+          qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const filtered = useMemo(() => {
     let list = reports;
     // Tab filter
@@ -105,7 +123,9 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
     );
   }, [reports, searchTerm, moduleFilter, activeTab]);
 
-  const pendingCount = reports.filter((r: any) => r.status === "pendente" || r.status === "em_andamento").length;
+  const pendenteCount = reports.filter((r: any) => r.status === "pendente").length;
+  const emAndamentoCount = reports.filter((r: any) => r.status === "em_andamento").length;
+  const pendingCount = pendenteCount + emAndamentoCount;
   const resolvedCount = reports.filter((r: any) => r.status === "resolvido").length;
 
   const openView = (item: any) => {
@@ -223,6 +243,22 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Status overview — visual conferência do indicador */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-yellow-700">Pendente</div>
+          <div className="text-lg font-semibold text-yellow-700">{pendenteCount}</div>
+        </div>
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-blue-700">Em Andamento</div>
+          <div className="text-lg font-semibold text-blue-700">{emAndamentoCount}</div>
+        </div>
+        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-center">
+          <div className="text-[10px] uppercase tracking-wide text-emerald-700">Fechado</div>
+          <div className="text-lg font-semibold text-emerald-700">{resolvedCount}</div>
+        </div>
       </div>
 
       {/* Tabs: Em Aberto / Resolvido */}

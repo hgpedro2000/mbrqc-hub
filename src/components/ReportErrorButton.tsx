@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getHelpDeskIndicator } from "@/lib/helpDeskIndicator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,7 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   const hasNewResolved = newResolvedCount > 0;
 
   // Admin/Help Desk responsible: red indicator when there are pending tickets to handle
+  const qc = useQueryClient();
   const { data: pendingAdminCount = 0 } = useQuery({
     queryKey: ["pending-error-reports-count"],
     queryFn: async () => {
@@ -118,7 +120,35 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
     enabled: !!isAdmin,
     refetchInterval: 30000,
   });
-  const hasPendingAdmin = isAdmin && pendingAdminCount > 0;
+
+  // Realtime: react instantly to any error_reports change so the badge updates
+  // without a page reload (covers close, reopen, new ticket, deletion).
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`help-desk-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "error_reports" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+          qc.invalidateQueries({ queryKey: ["my-error-reports", targetUserId] });
+          qc.invalidateQueries({ queryKey: ["error-reports"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, targetUserId, qc]);
+
+  const indicator = getHelpDeskIndicator({
+    isAdmin: !!isAdmin,
+    pendingAdminCount: pendingAdminCount || 0,
+    newResolvedCount,
+  });
+  const hasPendingAdmin = indicator.color === "red";
+  const hasNewResolvedIndicator = indicator.color === "green";
 
   // When user opens status dialog, mark current resolved tickets as seen
   const markResolvedAsSeen = useCallback(() => {
@@ -295,11 +325,11 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
             <AlertTriangle className="w-4 h-4" />
             <span className="hidden md:inline text-xs">Help Desk</span>
             {hasPendingAdmin ? (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
-                {pendingAdminCount}
+              <span data-testid="hd-indicator-red" className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                {indicator.count}
               </span>
-            ) : hasNewResolved ? (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
+            ) : hasNewResolvedIndicator ? (
+              <span data-testid="hd-indicator-green" className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background animate-pulse" />
             ) : null}
           </Button>
         </DialogTrigger>

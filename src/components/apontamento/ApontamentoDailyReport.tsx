@@ -103,25 +103,32 @@ const getCombinedRows = (r: any): Array<{ modo: string; tag: string; desc: strin
   const mainTag = norm(r?.numero_tag ?? r?.tag_number);
   const mainDescRaw = norm(r?.descricao);
   const mainDesc = skipPlaceholder(mainDescRaw) ? mainDescRaw : "";
+  const totalNg = Number(r?.quantidade_ng) || 0;
+  const sd = (r?.segundo_defeitos || []) as any[];
+  const sdHasQty = Array.isArray(sd) && sd.some((d: any) => Number(d?.qty) > 0);
   if (mainModos.length > 0) {
     mainModos.forEach((m: string, i: number) => {
+      let qty = qtyOf(m);
+      // Fallback: if only one main modo and no sd qty, use total NG
+      if (qty == null && mainModos.length === 1 && !sdHasQty && totalNg > 0) qty = totalNg;
       rows.push({
         modo: m,
         tag: i === 0 ? mainTag : "",
         desc: i === 0 ? mainDesc : "",
-        qty: qtyOf(m),
+        qty,
       });
     });
   } else if (mainTag || mainDesc) {
-    rows.push({ modo: "", tag: mainTag, desc: mainDesc });
+    rows.push({ modo: "", tag: mainTag, desc: mainDesc, qty: totalNg > 0 && !sdHasQty ? totalNg : undefined });
   }
-  const sd = (r?.segundo_defeitos || []) as any[];
   if (Array.isArray(sd)) sd.forEach((d: any) => {
     const modo = stripCode(norm(d?.modo_falha));
     const tag = norm(d?.tag);
     const descRaw = norm(d?.descricao);
     const desc = skipPlaceholder(descRaw) ? descRaw : "";
-    if (modo || tag || desc) rows.push({ modo, tag, desc });
+    const qtyRaw = Number(d?.qty);
+    const qty = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : undefined;
+    if (modo || tag || desc) rows.push({ modo, tag, desc, qty });
   });
   return rows;
 };

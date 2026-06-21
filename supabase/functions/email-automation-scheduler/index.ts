@@ -58,17 +58,41 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Create a log row up-front so we can update it
-      const { data: logRow } = await supabase
+      // Already sent today? (defensive — send-automation-email also checks)
+      const dayY = nowLocal.getFullYear()
+      const dayM = String(nowLocal.getMonth() + 1).padStart(2, '0')
+      const dayD = String(nowLocal.getDate()).padStart(2, '0')
+      const dayStr = `${dayY}-${dayM}-${dayD}`
+      const { data: existing } = await supabase
+        .from('email_automation_log')
+        .select('id')
+        .eq('config_id', cfg.id)
+        .eq('send_date', dayStr)
+        .in('trigger_type', ['scheduled', 'manual'])
+        .in('status', ['queued', 'sent', 'pending'])
+        .maybeSingle()
+      if (existing) {
+        skipped.push({ id: cfg.id, reason: 'already_sent_today' })
+        continue
+      }
+
+      // Create a log row up-front (idempotency index prevents duplicates)
+      const { data: logRow, error: logErr } = await supabase
         .from('email_automation_log')
         .insert({
           config_id: cfg.id,
           trigger_type: 'scheduled',
           recipients: cfg.recipients ?? [],
           status: 'pending',
+          send_date: dayStr,
         })
         .select('id')
         .single()
+
+      if (logErr) {
+        skipped.push({ id: cfg.id, reason: `log_insert: ${logErr.message.slice(0, 200)}` })
+        continue
+      }
 
       // Invoke sender (fire and forget)
       const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-automation-email`, {

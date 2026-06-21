@@ -48,18 +48,58 @@ const AdminPartNameFix = () => {
     },
   });
 
-  // Load part_numbers catalog for suggestions
+  // Load part_numbers catalog for suggestions (with project + supplier)
   const { data: catalog = [] } = useQuery({
     queryKey: ["part-numbers-catalog-all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number,part_name")
+        .select("part_number,part_name,project,suppliers(name)")
         .eq("active", true);
       if (error) throw error;
       return data || [];
     },
   });
+
+  // Picker dialog state
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRowId, setPickerRowId] = useState<string | null>(null);
+  const [pickerQuery, setPickerQuery] = useState("");
+  const pickerRow = useMemo(() => rows.find((r) => r.id === pickerRowId) || null, [rows, pickerRowId]);
+
+  const pickerResults = useMemo(() => {
+    if (!pickerRow) return [];
+    const proj = (pickerRow.projeto || "").trim().toLowerCase();
+    const supp = (pickerRow.fornecedor || "").trim().toLowerCase();
+    const q = pickerQuery.trim().toLowerCase();
+    return (catalog as any[])
+      .filter((c) => {
+        const cProj = (c.project || "").trim().toLowerCase();
+        const cSupp = ((c.suppliers as any)?.name || "").trim().toLowerCase();
+        if (proj && cProj !== proj) return false;
+        if (supp && cSupp !== supp) return false;
+        if (!q) return true;
+        return (
+          (c.part_number || "").toLowerCase().includes(q) ||
+          (c.part_name || "").toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 200);
+  }, [catalog, pickerRow, pickerQuery]);
+
+  const openPicker = (rowId: string) => {
+    setPickerRowId(rowId);
+    setPickerQuery("");
+    setPickerOpen(true);
+  };
+
+  const applyPickerSelection = (part_number: string, part_name: string) => {
+    if (!pickerRowId) return;
+    setEdits((p) => ({ ...p, [pickerRowId]: part_name }));
+    // Also update the part_number on the row in DB later via a separate save action — for now keep PN as-is.
+    setPickerOpen(false);
+    toast.success(`Selecionado: ${part_name}`);
+  };
 
   const suggestionByPN = useMemo(() => {
     const map: Record<string, string> = {};

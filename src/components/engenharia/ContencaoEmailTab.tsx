@@ -185,19 +185,21 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <Button onClick={() => save.mutate({
-            recipients: form.recipients, error_notify_recipients: form.error_notify_recipients,
-            subject_template: form.subject_template, message_body: form.message_body,
-          })} disabled={save.isPending}>
-            <Save className="h-4 w-4 mr-2" /> Salvar
-          </Button>
-          <Button variant="outline" onClick={() => previewMut.mutate()} disabled={previewMut.isPending}>
-            {previewMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />} Preview
-          </Button>
-          <div className="flex gap-2 ml-auto">
-            <Input className="w-56" placeholder="teste@exemplo.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
-            <Button variant="secondary" onClick={() => testMut.mutate()} disabled={testMut.isPending || !testEmail}>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => save.mutate({
+              recipients: form.recipients, error_notify_recipients: form.error_notify_recipients,
+              subject_template: form.subject_template, message_body: form.message_body,
+            })} disabled={save.isPending} className="flex-1 sm:flex-none">
+              <Save className="h-4 w-4 mr-2" /> Salvar
+            </Button>
+            <Button variant="outline" onClick={() => previewMut.mutate()} disabled={previewMut.isPending} className="flex-1 sm:flex-none">
+              {previewMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />} Preview
+            </Button>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+            <Input className="flex-1 sm:w-56 min-w-0" placeholder="teste@exemplo.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
+            <Button variant="secondary" onClick={() => testMut.mutate()} disabled={testMut.isPending || !testEmail} className="shrink-0">
               {testMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Teste
             </Button>
           </div>

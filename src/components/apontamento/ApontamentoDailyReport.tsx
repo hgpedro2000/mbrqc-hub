@@ -84,6 +84,50 @@ const getDefectRows = (r: any): Array<{ tag: string; desc: string }> => {
   return rows;
 };
 
+/* Combined per-defect rows: modo de falha + tag + descrição aligned. */
+const getCombinedRows = (r: any): Array<{ modo: string; tag: string; desc: string; qty?: number }> => {
+  const norm = (v: any) => (v == null ? "" : String(v).trim());
+  const skipPlaceholder = (s: string) => !!s && s.toLowerCase() !== "sem descrição" && s.toLowerCase() !== "sem descricao";
+  const rows: Array<{ modo: string; tag: string; desc: string; qty?: number }> = [];
+  // Main modos (split by , or ;)
+  const mainModosRaw = norm(r?.modo_falha);
+  const mainModos = mainModosRaw ? mainModosRaw.split(/[,;]+/).map((s: string) => stripCode(s.trim())).filter(Boolean) : [];
+  const detalhes = (r?.detalhes_modo_falha && typeof r.detalhes_modo_falha === "object") ? r.detalhes_modo_falha : null;
+  const qtyOf = (nome: string) => {
+    if (!detalhes) return undefined;
+    const v = (detalhes as any)[nome] ?? (detalhes as any)[stripCode(nome)];
+    if (typeof v === "number") return v;
+    if (v && typeof v === "object" && v.qty != null) return Number(v.qty);
+    return undefined;
+  };
+  const mainTag = norm(r?.numero_tag ?? r?.tag_number);
+  const mainDescRaw = norm(r?.descricao);
+  const mainDesc = skipPlaceholder(mainDescRaw) ? mainDescRaw : "";
+  if (mainModos.length > 0) {
+    mainModos.forEach((m: string, i: number) => {
+      rows.push({
+        modo: m,
+        tag: i === 0 ? mainTag : "",
+        desc: i === 0 ? mainDesc : "",
+        qty: qtyOf(m),
+      });
+    });
+  } else if (mainTag || mainDesc) {
+    rows.push({ modo: "", tag: mainTag, desc: mainDesc });
+  }
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => {
+    const modo = stripCode(norm(d?.modo_falha));
+    const tag = norm(d?.tag);
+    const descRaw = norm(d?.descricao);
+    const desc = skipPlaceholder(descRaw) ? descRaw : "";
+    if (modo || tag || desc) rows.push({ modo, tag, desc });
+  });
+  return rows;
+};
+
+
+
 
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
@@ -653,9 +697,9 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                 // Placeholder slot to keep 2×2 grid symmetric
                 return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent", overflow: "hidden" }]} />;
               }
-              const modos = parseModos(r);
-              const defectRows = getDefectRows(r);
+              const combined = getCombinedRows(r);
               const photos = photoMap?.[r.id] || [];
+
               return (
                 <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", overflow: "hidden" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
@@ -701,13 +745,28 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
 
                     <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
-                      {modos.length > 0 ? (
-                        modos.map((m, idx) => (
-                          <View key={idx} style={[pdfStyles.ngDFalhaItem, { paddingVertical: 2, marginBottom: 2 }]}>
+                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha • TAG • Descrição</Text>
+                      {/* Header row */}
+                      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingBottom: 2, gap: 4 }}>
+                        <Text style={{ width: 14, fontSize: 5, color: "#9ca3af", textTransform: "uppercase" }}> </Text>
+                        <Text style={{ flex: 4, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Modo de Falha</Text>
+                        <Text style={{ flex: 2, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>TAG</Text>
+                        <Text style={{ flex: 5, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Descrição</Text>
+                      </View>
+                      {combined.length > 0 ? (
+                        combined.map((row, idx) => (
+                          <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 2, paddingHorizontal: 4, marginBottom: 2 }}>
                             <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
-                            <Text style={pdfStyles.ngDFalhaName}>{m.nome}</Text>
-                            {m.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {m.qty}</Text> : null}
+                            <View style={{ flex: 4, flexDirection: "row", alignItems: "center", gap: 3 }}>
+                              <Text style={{ fontSize: 6, fontWeight: 700, color: "#1a1a2e", flex: 1 }}>{row.modo || "—"}</Text>
+                              {row.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {row.qty}</Text> : null}
+                            </View>
+                            <View style={{ flex: 2, alignItems: "center" }}>
+                              {row.tag
+                                ? <Text style={pdfStyles.ngDTagOk}>{row.tag}</Text>
+                                : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
+                            </View>
+                            <Text style={{ flex: 5, fontSize: 6, color: "#374151" }}>{row.desc || "—"}</Text>
                           </View>
                         ))
                       ) : (
@@ -717,21 +776,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       )}
                     </View>
 
-                    <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Tags & Descrição</Text>
-                      {defectRows.length > 0 ? (
-                        defectRows.map((d, i) => (
-                          <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, marginBottom: 2 }}>
-                            {d.tag
-                              ? <Text style={pdfStyles.ngDTagOk}>TAG: {d.tag}</Text>
-                              : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
-                            <Text style={{ fontSize: 6, color: "#1a1a2e", flex: 1 }}>{d.desc || "—"}</Text>
-                          </View>
-                        ))
-                      ) : (
-                        <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>
-                      )}
-                    </View>
+
 
                     {photos.length > 0 && (
                       <View wrap={false} style={{ marginTop: "auto" }}>

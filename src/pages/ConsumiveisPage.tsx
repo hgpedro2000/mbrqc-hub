@@ -214,6 +214,7 @@ const InventarioRequisicoes = () => {
   const qc = useQueryClient();
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [stockListOpen, setStockListOpen] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUnit, setNewUnit] = useState("un");
   const [newStock, setNewStock] = useState(0);

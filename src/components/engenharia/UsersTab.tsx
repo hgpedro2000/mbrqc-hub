@@ -377,6 +377,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
               <ModulePermissionsTab />
             </DialogContent>
           </Dialog>
+          <EmpresasTerceirasDialog />
           {pendingRequests.length > 0 && (
             <Button size="sm" variant="outline" onClick={() => setPendingListOpen(true)} className="gap-1 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100 col-span-2 sm:col-span-1">
               <ClipboardList className="w-4 h-4" />

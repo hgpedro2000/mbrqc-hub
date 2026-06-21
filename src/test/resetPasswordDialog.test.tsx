@@ -46,6 +46,18 @@ const updateEqMock: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ error
 const updateMock: ReturnType<typeof vi.fn> = vi.fn(() => ({ eq: updateEqMock }));
 
 vi.mock("@/integrations/supabase/client", () => {
+  const RESET_TICKET = {
+    id: "ticket-1",
+    numero: "HD-0001",
+    status: "pendente",
+    module: "Reset de Senha",
+    user_id: "user-to-reset",
+    user_name: "João Operador",
+    description: "Esqueci minha senha",
+    admin_notes: "",
+    created_at: new Date("2026-06-21T12:00:00Z").toISOString(),
+    photos: [],
+  };
   const orderMock = vi
     .fn()
     .mockResolvedValue({ data: [RESET_TICKET], error: null });

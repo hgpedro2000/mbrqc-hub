@@ -182,35 +182,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    if (isInitial) {
-      const status = await checkMFAStatus(adminFlag);
-      setMfaStatus(status);
-    }
+    // Re-evaluate MFA on every real hydrate (initial load AND new logins).
+    // Previously this was gated to `isInitial`, which meant a fresh login
+    // never recomputed the MFA status — combined with the SIGNED_IN guard
+    // above, that left the user stuck on /login.
+    const status = await checkMFAStatus(adminFlag);
+    setMfaStatus(status);
     setLoading(false);
   }, [checkMFAStatus, checkMinVersion, fetchProfile, fetchAdminRole]);
 
   useEffect(() => {
     setLoading(true);
     let initialized = false;
+    let currentUserId: string | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      // Ignore token refreshes — they fire when the tab regains focus and would
-      // otherwise remount the entire route tree and wipe in-progress form state.
+      // Token refreshes (focus/visibility changes) must NOT remount the tree.
       if (event === "TOKEN_REFRESHED") {
         setSession(nextSession);
         return;
       }
-      // SIGNED_IN fires on every getSession after focus too; only re-hydrate
-      // if the user actually changed.
-      if (event === "SIGNED_IN" && initialized) {
-        setSession(nextSession);
+
+      const nextUserId = nextSession?.user?.id ?? null;
+
+      // SIGNED_IN: re-hydrate when the user identity actually changes
+      // (login from /login, account switch, MFA upgrade). Without this,
+      // logging in from the form would leave profile=null forever and
+      // the redirect useEffect in Login would never fire — the user
+      // would be stuck on "Aguarde...".
+      if (event === "SIGNED_IN") {
+        if (initialized && nextUserId === currentUserId) {
+          // Same user, just a session re-emit — don't reload the tree.
+          setSession(nextSession);
+          return;
+        }
+        currentUserId = nextUserId;
+        void hydrateAuthState(nextSession, !initialized);
+        initialized = true;
         return;
       }
+
+      currentUserId = nextUserId;
       void hydrateAuthState(nextSession, !initialized);
       initialized = true;
     });
 
     void supabase.auth.getSession().then(({ data: { session } }) => {
+      currentUserId = session?.user?.id ?? null;
       void hydrateAuthState(session, !initialized);
       initialized = true;
     });

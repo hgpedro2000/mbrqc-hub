@@ -57,10 +57,12 @@ export default function MfaVerify() {
   };
 
   const activeIndex = Math.min(code.length, 5);
+  // Use SOLID colors here — semi-transparent borders/bg disappear in light mode
+  // and the slots end up looking empty (as reported on iOS Safari).
   const slotBase =
-    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold rounded-lg border-2 border-border/60 bg-background/60 transition-all";
+    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold text-foreground rounded-lg border-2 border-input bg-background transition-all";
   const slotActive =
-    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/5";
+    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/10";
 
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-hidden">
@@ -76,8 +78,8 @@ export default function MfaVerify() {
         <div className="rounded-2xl border border-border/60 bg-card/85 backdrop-blur-md shadow-2xl shadow-black/30 overflow-hidden">
           {/* Header */}
           <div className="px-6 pt-6 pb-5 flex flex-col items-center text-center border-b border-border/40 bg-gradient-to-b from-accent/5 to-transparent">
-            <div className="w-14 h-14 rounded-2xl bg-accent/15 border border-accent/30 flex items-center justify-center mb-3 shadow-lg shadow-accent/10">
-              <ShieldCheck className="w-7 h-7 text-accent" />
+            <div className="w-14 h-14 rounded-2xl bg-accent border border-accent flex items-center justify-center mb-3 shadow-lg shadow-accent/20">
+              <ShieldCheck className="w-7 h-7 text-accent-foreground" />
             </div>
             <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground">
               Verificação em 2 etapas

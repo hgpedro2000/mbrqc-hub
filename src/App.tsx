@@ -179,6 +179,7 @@ const App = () => (
             <Route path="/apontamentos/editar/:id" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
             <Route path="/apontamentos/ver/:id" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
             <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ApontamentoDashboard /></ProtectedRoute>} />
+            <Route path="/apontamentos/admin/part-name" element={<ProtectedRoute><AdminRoute><AdminPartNameFix /></AdminRoute></ProtectedRoute>} />
             
             {/* Alertas de Qualidade */}
             <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />

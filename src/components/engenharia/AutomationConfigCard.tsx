@@ -226,7 +226,7 @@ export const AutomationConfigCard = ({
         <div>
           <Label className="flex items-center gap-2"><AlertTriangle className="h-3 w-3" /> Alertas de falha ({form.error_notify_recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
-            <Input placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
+            <Input className="min-w-0 flex-1" placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newErr) {
                   setForm({ ...form, error_notify_recipients: [...(form.error_notify_recipients ?? []), newErr.trim()] });
@@ -262,26 +262,28 @@ export const AutomationConfigCard = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <Button onClick={() => save.mutate({
-            schedule_time: form.schedule_time, timezone: form.timezone, weekdays: form.weekdays,
-            recipients: form.recipients, error_notify_recipients: form.error_notify_recipients,
-            subject_template: form.subject_template, message_body: form.message_body,
-            metadata: form.metadata,
-          })} disabled={save.isPending}>
-            <Save className="h-4 w-4 mr-2" /> Salvar
-          </Button>
-          <Button variant="outline" onClick={() => previewMut.mutate()} disabled={previewMut.isPending}>
-            {previewMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />} Preview
-          </Button>
-          {scheduled && (
-            <Button variant="outline" onClick={() => manualMut.mutate()} disabled={manualMut.isPending}>
-              {manualMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Enviar agora
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 pt-2 border-t">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => save.mutate({
+              schedule_time: form.schedule_time, timezone: form.timezone, weekdays: form.weekdays,
+              recipients: form.recipients, error_notify_recipients: form.error_notify_recipients,
+              subject_template: form.subject_template, message_body: form.message_body,
+              metadata: form.metadata,
+            })} disabled={save.isPending} className="flex-1 sm:flex-none">
+              <Save className="h-4 w-4 mr-2" /> Salvar
             </Button>
-          )}
-          <div className="flex gap-2 ml-auto">
-            <Input className="w-56" placeholder="teste@exemplo.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
-            <Button variant="secondary" onClick={() => testMut.mutate()} disabled={testMut.isPending || !testEmail}>
+            <Button variant="outline" onClick={() => previewMut.mutate()} disabled={previewMut.isPending} className="flex-1 sm:flex-none">
+              {previewMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />} Preview
+            </Button>
+            {scheduled && (
+              <Button variant="outline" onClick={() => manualMut.mutate()} disabled={manualMut.isPending} className="flex-1 sm:flex-none">
+                {manualMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Enviar agora
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+            <Input className="flex-1 sm:w-56 min-w-0" placeholder="teste@exemplo.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
+            <Button variant="secondary" onClick={() => testMut.mutate()} disabled={testMut.isPending || !testEmail} className="shrink-0">
               {testMut.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />} Teste
             </Button>
           </div>
@@ -292,20 +294,20 @@ export const AutomationConfigCard = ({
       </CardContent>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] sm:h-[80vh] flex flex-col p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Preview — {previewData?.subject}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg break-words">Preview — {previewData?.subject}</DialogTitle>
             <DialogDescription>Renderização exata do e-mail que será enviado.</DialogDescription>
           </DialogHeader>
-          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded" />
+          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded min-h-0" />
         </DialogContent>
       </Dialog>
 
       <Dialog open={recipientsOpen} onOpenChange={setRecipientsOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Cadastrar destinatários — {form.name}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg break-words">Cadastrar destinatários — {form.name}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Informe os e-mails separados por vírgula, ponto-e-vírgula, espaço ou nova linha.
               Endereços são normalizados (domínio em minúsculas) e duplicados são removidos automaticamente.
               TO recebe diretamente; CC recebe em cópia.

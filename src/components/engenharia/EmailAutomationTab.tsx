@@ -279,9 +279,10 @@ const EmailAutomationTab = () => {
             <Label className="text-xs">Para</Label>
             <div className="flex gap-2">
               <Input value={newRecipient} onChange={(e) => setNewRecipient(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="email@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("recipients", newRecipient, () => setNewRecipient("")))} />
-              <Button size="sm" onClick={() => addEmail("recipients", newRecipient, () => setNewRecipient(""))}>
+              <Button size="sm" onClick={() => addEmail("recipients", newRecipient, () => setNewRecipient(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -297,9 +298,10 @@ const EmailAutomationTab = () => {
             <Label className="text-xs">CC (cópia)</Label>
             <div className="flex gap-2">
               <Input value={newCc} onChange={(e) => setNewCc(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="email@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("cc_recipients", newCc, () => setNewCc("")))} />
-              <Button size="sm" onClick={() => addEmail("cc_recipients", newCc, () => setNewCc(""))}>
+              <Button size="sm" onClick={() => addEmail("cc_recipients", newCc, () => setNewCc(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -317,9 +319,10 @@ const EmailAutomationTab = () => {
             </Label>
             <div className="flex gap-2">
               <Input value={newErr} onChange={(e) => setNewErr(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="admin@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("error_notify_recipients", newErr, () => setNewErr("")))} />
-              <Button size="sm" onClick={() => addEmail("error_notify_recipients", newErr, () => setNewErr(""))}>
+              <Button size="sm" onClick={() => addEmail("error_notify_recipients", newErr, () => setNewErr(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -396,8 +399,10 @@ const EmailAutomationTab = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Input type="email" placeholder="email@empresa.com (apenas para 'Enviar teste')"
+              className="min-w-0 flex-1"
               value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
             <Button variant="outline" onClick={() => sendTest.mutate()}
+              className="w-full sm:w-auto shrink-0"
               disabled={sendTest.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)}>
               <Send className="w-4 h-4 mr-2" />
               {sendTest.isPending ? "Enviando…" : "Enviar teste"}
@@ -419,20 +424,20 @@ const EmailAutomationTab = () => {
         </CardContent>
       </Card>
 
-      <div className="flex flex-wrap items-center gap-3 justify-between">
-        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:justify-between">
+        <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-w-0">
           {form.last_sent_at ? (
-            <><Clock className="w-3 h-3" /> Último envio: {new Date(form.last_sent_at).toLocaleString("pt-BR")}</>
+            <><Clock className="w-3 h-3 shrink-0" /> <span className="truncate">Último envio: {new Date(form.last_sent_at).toLocaleString("pt-BR")}</span></>
           ) : (
-            <><AlertCircle className="w-3 h-3" /> Nenhum envio realizado ainda</>
+            <><AlertCircle className="w-3 h-3 shrink-0" /> Nenhum envio realizado ainda</>
           )}
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => sendNow.mutate()}
+          <Button variant="outline" onClick={() => sendNow.mutate()} className="flex-1 sm:flex-none"
             disabled={sendNow.isPending || form.recipients.length === 0}>
             <Send className="w-4 h-4 mr-2" /> {sendNow.isPending ? "Enviando…" : "Enviar agora"}
           </Button>
-          <Button onClick={() => save.mutate(form)} disabled={save.isPending}>
+          <Button onClick={() => save.mutate(form)} disabled={save.isPending} className="flex-1 sm:flex-none">
             <Save className="w-4 h-4 mr-2" /> Salvar
           </Button>
         </div>

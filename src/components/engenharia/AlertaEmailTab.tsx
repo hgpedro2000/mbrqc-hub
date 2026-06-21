@@ -182,7 +182,7 @@ const ConfigCard = ({
         <div>
           <Label>Destinatários ({form.recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
-            <Input placeholder="email@exemplo.com" value={newRecipient}
+            <Input className="min-w-0 flex-1" placeholder="email@exemplo.com" value={newRecipient}
               onChange={(e) => setNewRecipient(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newRecipient) {
@@ -212,7 +212,7 @@ const ConfigCard = ({
         <div>
           <Label className="flex items-center gap-2"><AlertTriangle className="h-3 w-3" /> Alertas de falha ({form.error_notify_recipients?.length ?? 0})</Label>
           <div className="flex gap-2 mt-1">
-            <Input placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
+            <Input className="min-w-0 flex-1" placeholder="admin@exemplo.com" value={newErr} onChange={(e) => setNewErr(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && newErr) {
                   setForm({ ...form, error_notify_recipients: [...(form.error_notify_recipients ?? []), newErr.trim()] });
@@ -279,12 +279,12 @@ const ConfigCard = ({
       </CardContent>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] sm:h-[80vh] flex flex-col p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Preview — {previewData?.subject}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg break-words">Preview — {previewData?.subject}</DialogTitle>
             <DialogDescription>Renderização exata do e-mail que será enviado.</DialogDescription>
           </DialogHeader>
-          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded" />
+          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded min-h-0" />
         </DialogContent>
       </Dialog>
     </Card>

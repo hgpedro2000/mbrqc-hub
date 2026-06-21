@@ -57,10 +57,12 @@ export default function MfaVerify() {
   };
 
   const activeIndex = Math.min(code.length, 5);
+  // Use SOLID colors here — semi-transparent borders/bg disappear in light mode
+  // and the slots end up looking empty (as reported on iOS Safari).
   const slotBase =
-    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold rounded-lg border-2 border-border/60 bg-background/60 transition-all";
+    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold text-foreground rounded-lg border-2 border-input bg-background transition-all";
   const slotActive =
-    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/5";
+    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/10";
 
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-hidden">

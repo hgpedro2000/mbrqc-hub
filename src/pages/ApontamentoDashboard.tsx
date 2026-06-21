@@ -1078,7 +1078,12 @@ const ApontamentoDashboard = () => {
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
-            <div className="px-3 py-3 grid grid-cols-4 gap-2 bg-[hsl(220,15%,12%)]">
+            <div className="px-3 py-3 grid grid-cols-5 gap-2 bg-[hsl(220,15%,12%)]">
+              <div className="text-center">
+                <p className="text-[10px] text-[hsl(25,95%,60%)]/80 uppercase tracking-wider">Total</p>
+                <p className="text-lg font-bold text-[hsl(25,95%,60%)]">{total.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(25,95%,60%)]/60">apontamentos</p>
+              </div>
               <div className="text-center">
                 <p className="text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
                 <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>

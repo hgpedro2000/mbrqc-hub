@@ -42,8 +42,8 @@ const RESET_TICKET = {
 };
 
 const invokeMock: ReturnType<typeof vi.fn> = vi.fn();
-const updateEqMock = vi.fn().mockResolvedValue({ error: null });
-const updateMock = vi.fn(() => ({ eq: updateEqMock }));
+const updateEqMock: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ error: null });
+const updateMock: ReturnType<typeof vi.fn> = vi.fn(() => ({ eq: updateEqMock }));
 
 vi.mock("@/integrations/supabase/client", () => {
   const orderMock = vi

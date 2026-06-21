@@ -1110,7 +1110,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[98vw] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
+      <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>

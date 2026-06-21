@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Mail, Plus, X, Send, Clock, Save, History, AlertCircle } from "lucide-react";
+import { Mail, Plus, X, Send, Clock, Save, History, AlertCircle, Eye, FileText, Loader2 } from "lucide-react";
 // auth user resolved via supabase.auth.getUser at trigger time
 
 interface AutomationConfig {
@@ -123,6 +124,25 @@ const EmailAutomationTab = () => {
       qc.invalidateQueries({ queryKey: ["email_automation_log"] });
     },
     onError: (e: any) => toast.error("Erro no teste: " + (e?.message ?? "falha")),
+  });
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<{ html: string; subject: string; pdf_url: string | null; ng_records: number; total_ng: number } | null>(null);
+
+  const loadPreview = useMutation({
+    mutationFn: async () => {
+      if (!form) return null;
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id, preview: true },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      setPreviewData(data);
+      setPreviewOpen(true);
+    },
+    onError: (e: any) => toast.error("Erro ao gerar preview: " + (e?.message ?? "falha")),
   });
 
   if (isLoading || !form) {
@@ -360,7 +380,15 @@ const EmailAutomationTab = () => {
             </>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => loadPreview.mutate()}
+            disabled={loadPreview.isPending}
+          >
+            {loadPreview.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Eye className="w-4 h-4 mr-2" />}
+            Visualizar preview
+          </Button>
           <Button
             variant="outline"
             onClick={() => sendNow.mutate()}
@@ -418,6 +446,54 @@ const EmailAutomationTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] w-[95vw] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" /> Preview do e-mail
+            </DialogTitle>
+            <DialogDescription className="space-y-1">
+              <div className="text-xs">
+                <span className="font-medium text-foreground">Assunto:</span>{" "}
+                {previewData?.subject}
+              </div>
+              <div className="text-xs flex items-center gap-3 flex-wrap">
+                <span><span className="font-medium text-foreground">{previewData?.ng_records ?? 0}</span> registro(s) NG hoje</span>
+                <span>•</span>
+                <span><span className="font-medium text-foreground">{previewData?.total_ng ?? 0}</span> peças NG no total</span>
+                {previewData?.pdf_url && (
+                  <>
+                    <span>•</span>
+                    <a
+                      href={previewData.pdf_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+                    >
+                      <FileText className="w-3.5 h-3.5" /> Abrir PDF
+                    </a>
+                  </>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden p-4 bg-muted/30">
+            {previewData?.html ? (
+              <iframe
+                title="Preview do e-mail"
+                srcDoc={previewData.html}
+                sandbox=""
+                className="w-full h-full min-h-[60vh] rounded-md border bg-white"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+                Sem conteúdo
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

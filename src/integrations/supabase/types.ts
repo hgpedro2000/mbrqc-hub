@@ -1070,7 +1070,9 @@ export type Database = {
           error_message: string | null
           id: string
           ng_count: number | null
+          pdf_url: string | null
           recipients: string[]
+          send_date: string | null
           status: string
           subject: string | null
           trigger_type: string
@@ -1082,7 +1084,9 @@ export type Database = {
           error_message?: string | null
           id?: string
           ng_count?: number | null
+          pdf_url?: string | null
           recipients?: string[]
+          send_date?: string | null
           status?: string
           subject?: string | null
           trigger_type?: string
@@ -1094,7 +1098,9 @@ export type Database = {
           error_message?: string | null
           id?: string
           ng_count?: number | null
+          pdf_url?: string | null
           recipients?: string[]
+          send_date?: string | null
           status?: string
           subject?: string | null
           trigger_type?: string

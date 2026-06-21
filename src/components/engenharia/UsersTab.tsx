@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList } from "lucide-react";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList, FlaskConical } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -384,6 +384,27 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
               Solicitações ({pendingRequests.length})
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
+            onClick={async () => {
+              const t = toast.loading("Provisionando usuário de teste...");
+              try {
+                const { data, error } = await supabase.functions.invoke("create-test-user", { body: {} });
+                if (error || data?.error) throw new Error(data?.error || error?.message);
+                toast.success(
+                  `Usuário de teste pronto • Matrícula: ${data.employee_number} • Senha: ${data.password}`,
+                  { id: t, duration: 15000 },
+                );
+                qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+              } catch (e: any) {
+                toast.error(`Erro: ${e.message}`, { id: t });
+              }
+            }}
+          >
+            <FlaskConical className="w-4 h-4 mr-1" /> Usuário de teste
+          </Button>
           <Dialog open={open} onOpenChange={(v) => { if (!v) { resetForm(); setActiveRequestId(null); } setOpen(v); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="col-span-2 sm:col-span-1"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>

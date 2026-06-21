@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, X, Send, Save, Eye, Loader2, History, AlertTriangle, RotateCw, PlayCircle, Cog, CheckCircle2 } from "lucide-react";
+import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, PlayCircle, Cog, CheckCircle2 } from "lucide-react";
+import { HistoryPanel } from "./EmailHistoryPanel";
 
 interface CtnConfig {
   id: string;

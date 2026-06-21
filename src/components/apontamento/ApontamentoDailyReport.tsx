@@ -138,23 +138,23 @@ const getCombinedRows = (r: any): Array<{ modo: string; tag: string; desc: strin
 
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
-  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
-    <div className="flex justify-between items-center mb-1">
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm min-w-0 w-full max-w-full overflow-hidden">
+    <div className="flex justify-between items-center gap-2 mb-1 min-w-0">
       {r.numero ? (
-        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline min-w-0 truncate">{r.numero}</button>
       ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
-      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+      <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
     </div>
-    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
-    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
-    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
-    <div className="flex gap-3 text-xs">
+    <p className="font-semibold text-sm break-all">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground break-words">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2 break-words">{r.fornecedor || "—"}</p>
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
       <span>Insp: {r.quantidade_inspecionada || 0}</span>
       <span className={`font-bold ${(r.quantidade_ng || 0) > 0 ? "text-destructive" : ""}`}>NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
     </div>
     {(stripCode(r.modo_falha) || r.descricao) && (
-      <p className="text-xs text-muted-foreground mt-1 truncate">{stripCode(r.modo_falha) || r.descricao}</p>
+      <p className="text-xs text-muted-foreground mt-1 break-words">{stripCode(r.modo_falha) || r.descricao}</p>
     )}
   </div>
 );
@@ -165,17 +165,17 @@ const NgMobileCard = ({ r, photos, onNumberClick, onPhotoClick, onMore }: { r: a
   const extraPhotos = Math.max(0, photos.length - 1);
   const photoUrl = photos[0];
   return (
-  <div className="border border-border rounded-lg p-3 bg-card shadow-sm">
-    <div className="flex justify-between items-center mb-1">
+  <div className="border border-border rounded-lg p-3 bg-card shadow-sm min-w-0 w-full max-w-full overflow-hidden">
+    <div className="flex justify-between items-center gap-2 mb-1 min-w-0">
       {r.numero ? (
-        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline">{r.numero}</button>
+        <button onClick={() => onNumberClick(r.id)} className="font-bold text-sm text-primary hover:underline min-w-0 truncate">{r.numero}</button>
       ) : <span className="font-bold text-sm text-muted-foreground">—</span>}
-      <span className="text-[10px] text-muted-foreground">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+      <span className="text-[10px] text-muted-foreground shrink-0 whitespace-nowrap">{r.turno || "—"} • {new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR")}</span>
     </div>
-    <p className="font-semibold text-sm">{r.part_number || "—"}</p>
-    <p className="text-xs text-muted-foreground truncate">{r.part_name || "—"}</p>
-    <p className="text-xs text-muted-foreground/70 mb-2">{r.fornecedor || "—"}</p>
-    <div className="flex gap-3 text-xs mb-2">
+    <p className="font-semibold text-sm break-all">{r.part_number || "—"}</p>
+    <p className="text-xs text-muted-foreground break-words">{r.part_name || "—"}</p>
+    <p className="text-xs text-muted-foreground/70 mb-2 break-words">{r.fornecedor || "—"}</p>
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs mb-2">
       <span>Insp: {r.quantidade_inspecionada || 0}</span>
       <span className="text-destructive font-bold">NG: {r.quantidade_ng || 0}</span>
       <span>OK: {r.quantidade_ok || 0}</span>
@@ -1110,34 +1110,34 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
+      <DialogContent className="!max-w-[calc(100dvw-24px)] w-[calc(100dvw-24px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95dvh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-4 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
-                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-10 md:h-14 w-auto object-contain shrink-0" />
+          <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-3 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6 overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 w-full sm:w-auto">
+                <img src={hyundaiMobisLogo} alt="Hyundai Mobis" className="h-8 sm:h-10 md:h-14 w-auto object-contain shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     {mode === "ng" && <Badge className="bg-destructive/10 text-destructive border-destructive/20"><AlertTriangle className="w-3 h-3 mr-1" />Peças NG</Badge>}
                   </div>
-                  <h2 className="text-sm md:text-lg font-bold text-foreground break-words">
+                  <h2 className="text-[13px] sm:text-sm md:text-lg font-bold text-foreground break-words leading-tight">
                     {mode === "daily" ? "Relatório Diário de Apontamentos" : "Relatório de Peças com Defeito (NG)"}
                   </h2>
-                  <p className="text-[10px] md:text-xs text-muted-foreground break-words">
+                  <p className="text-[10px] md:text-xs text-muted-foreground break-words leading-tight">
                     Data: {dateLabel} {` • ${filtered.length} registros`}
                   </p>
                 </div>
               </div>
-              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto">
-                <div className="flex items-center gap-1">
+              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto min-w-0">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1 w-full max-w-[254px] sm:flex sm:w-auto sm:max-w-none">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
                         {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}
                       </Button>
@@ -1149,7 +1149,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <span className="text-xs text-muted-foreground">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
+                      <Button variant="outline" size="sm" className={cn("w-full sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
                         <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
                         {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}
                       </Button>
@@ -1340,8 +1340,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </div>
 
           {/* Summary cards */}
-          <div className="px-4 md:px-6 py-3">
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+          <div className="px-3 md:px-6 py-3 overflow-hidden">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Inspecionadas</p></div>
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-destructive">{totalNG}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total NG</p></div>
@@ -1349,16 +1349,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </div>
 
           {/* Content by type */}
-          <div className="px-4 md:px-6 pb-4 space-y-4">
+          <div className="px-3 md:px-6 pb-4 space-y-4 min-w-0 overflow-hidden">
             {Object.entries(byType).map(([tipo, records]) => (
-              <div key={tipo}>
+              <div key={tipo} className="min-w-0 overflow-hidden">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="secondary" className="text-xs">{typeLabels[tipo] || tipo}</Badge>
                   <span className="text-xs text-muted-foreground">({records.length} registros)</span>
                 </div>
 
                 {/* Mobile cards */}
-                <div className="block sm:hidden space-y-2">
+                <div className="block sm:hidden space-y-2 min-w-0 overflow-hidden">
                   {records.map((r) =>
                     mode === "ng" ? (
                       <NgMobileCard key={r.id} r={r} photos={allPhotosByItem[r.id] || []} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} onMore={() => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags: getTagsList(r), descs: getDescList(r), photos: allPhotosByItem[r.id] || [] })} />

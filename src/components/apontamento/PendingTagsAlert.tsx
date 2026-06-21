@@ -262,36 +262,36 @@ export const PendingTagsAlert = ({
       )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[640px] sm:w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
-          <DialogHeader>
+        <DialogContent className="!max-w-[calc(100dvw-16px)] w-[calc(100dvw-16px)] sm:!max-w-[640px] sm:w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+          <DialogHeader className="min-w-0">
             <DialogTitle className="flex items-start gap-2 text-sm sm:text-base break-words pr-8">
               <Tag className="w-4 h-4 shrink-0 mt-0.5" />
               <span className="break-words min-w-0 flex-1 text-left">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${activeProfile?.turno}`}</span>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-wrap gap-2 pt-1 border-b pb-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 pt-1 border-b pb-2 min-w-0">
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 px-2"
+              className="h-8 text-xs gap-1.5 px-2 min-w-0"
               onClick={handleExportExcel}
               disabled={importing || pendingItems.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">Exportar Excel</span>
-              <span className="xs:hidden sm:hidden">Exportar</span>
+              <span className="sm:hidden truncate">Exportar</span>
+              <span className="hidden sm:inline">Exportar Excel</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 px-2"
+              className="h-8 text-xs gap-1.5 px-2 min-w-0"
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
             >
               {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              <span className="hidden xs:inline sm:inline">{importing ? "Importando..." : "Importar Excel"}</span>
-              <span className="xs:hidden sm:hidden">{importing ? "..." : "Importar"}</span>
+              <span className="sm:hidden truncate">{importing ? "..." : "Importar"}</span>
+              <span className="hidden sm:inline">{importing ? "Importando..." : "Importar Excel"}</span>
             </Button>
             <input
               ref={fileInputRef}
@@ -304,20 +304,20 @@ export const PendingTagsAlert = ({
 
 
 
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
             {pendingItems.length === 0 ? (
               <p className="text-center text-muted-foreground py-6">
                 Nenhum apontamento pendente de TAG.
               </p>
             ) : (
               pendingItems.map((item) => (
-                <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full min-w-0 max-w-full overflow-hidden">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 min-w-0">
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           onClick={() => setViewTarget(item.id)}
-                          className="text-xs font-mono text-primary hover:underline bg-muted/30 px-1.5 py-0.5 rounded"
+                          className="text-xs font-mono text-primary hover:underline bg-muted/30 px-1.5 py-0.5 rounded max-w-full truncate"
                         >
                           #{item.numero}
                         </button>
@@ -341,9 +341,9 @@ export const PendingTagsAlert = ({
                           return <Badge className={`text-[10px] ${badgeClass}`}>{displayResp}</Badge>;
                         })()}
                       </div>
-                      <p className="text-sm font-semibold truncate">{item.part_number}</p>
-                      <p className="text-xs text-muted-foreground truncate">{item.part_name || "—"}</p>
-                      <p className="text-xs text-muted-foreground/70 truncate">
+                      <p className="text-sm font-semibold break-all">{item.part_number}</p>
+                      <p className="text-xs text-muted-foreground break-words">{item.part_name || "—"}</p>
+                      <p className="text-xs text-muted-foreground/70 break-words">
                         {item.fornecedor} • {item.responsavel}
                       </p>
                       <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground mt-1">

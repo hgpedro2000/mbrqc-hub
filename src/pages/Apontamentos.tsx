@@ -909,7 +909,13 @@ const Apontamentos = () => {
               className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
               onClick={() => {
                 setShowInspectionLocationDialog(false);
-                navigate("/apontamentos/novo/incoming?local=Sala do Audio");
+                const isOutro = effEmpresa === "empresa_terceira" && !["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"].includes(effEmpresaTerceira || "");
+                if (isOutro) {
+                  setPendingIncomingLocal("Sala do Audio");
+                  setShowBC4bDialog(true);
+                } else {
+                  navigate("/apontamentos/novo/incoming?local=Sala do Audio");
+                }
               }}
             >
               <span className="font-semibold text-base">🔊 Sala do Audio</span>
@@ -920,11 +926,51 @@ const Apontamentos = () => {
               className="h-auto py-4 flex flex-col gap-1 hover:border-emerald-400 hover:bg-emerald-50"
               onClick={() => {
                 setShowInspectionLocationDialog(false);
-                navigate("/apontamentos/novo/incoming?local=Área de Incoming");
+                const isOutro = effEmpresa === "empresa_terceira" && !["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"].includes(effEmpresaTerceira || "");
+                if (isOutro) {
+                  setPendingIncomingLocal("Área de Incoming");
+                  setShowBC4bDialog(true);
+                } else {
+                  navigate("/apontamentos/novo/incoming?local=Área de Incoming");
+                }
               }}
             >
               <span className="font-semibold text-base">📦 Área de Incoming</span>
               <span className="text-xs text-muted-foreground">Inspeção na área de recebimento</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* BC4b vs Outras Peças Dialog (only for "outros" terceira users) */}
+      <Dialog open={showBC4bDialog} onOpenChange={setShowBC4bDialog}>
+        <DialogContent className="max-w-sm max-w-[95vw] sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-orange-500" />Tipo de Apontamento</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Selecione o tipo de apontamento que será realizado:</p>
+          <div className="grid grid-cols-1 gap-3 mt-2">
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-orange-400 hover:bg-orange-50"
+              onClick={() => {
+                setShowBC4bDialog(false);
+                navigate(`/apontamentos/novo/incoming?local=${encodeURIComponent(pendingIncomingLocal)}&bc4b=1`);
+              }}
+            >
+              <span className="font-semibold text-base">🟠 Apontamento de Peças do BC4b</span>
+              <span className="text-xs text-muted-foreground">Responsabilidade: Part</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex flex-col gap-1 hover:border-slate-400 hover:bg-slate-50"
+              onClick={() => {
+                setShowBC4bDialog(false);
+                navigate(`/apontamentos/novo/incoming?local=${encodeURIComponent(pendingIncomingLocal)}&bc4b=0`);
+              }}
+            >
+              <span className="font-semibold text-base">⚙️ Apontamento de Outras Peças</span>
+              <span className="text-xs text-muted-foreground">Responsabilidade: Sorting</span>
             </Button>
           </div>
         </DialogContent>

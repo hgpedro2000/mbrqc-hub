@@ -319,9 +319,10 @@ const EmailAutomationTab = () => {
             </Label>
             <div className="flex gap-2">
               <Input value={newErr} onChange={(e) => setNewErr(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="admin@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("error_notify_recipients", newErr, () => setNewErr("")))} />
-              <Button size="sm" onClick={() => addEmail("error_notify_recipients", newErr, () => setNewErr(""))}>
+              <Button size="sm" onClick={() => addEmail("error_notify_recipients", newErr, () => setNewErr(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

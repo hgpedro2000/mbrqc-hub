@@ -262,7 +262,7 @@ export const PendingTagsAlert = ({
       )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="w-[95vw] sm:w-full max-w-[640px] max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+        <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[640px] sm:w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-start gap-2 text-sm sm:text-base break-words pr-8">
               <Tag className="w-4 h-4 shrink-0 mt-0.5" />
@@ -274,22 +274,24 @@ export const PendingTagsAlert = ({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 px-2"
               onClick={handleExportExcel}
               disabled={importing || pendingItems.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
-              Exportar Excel
+              <span className="hidden xs:inline sm:inline">Exportar Excel</span>
+              <span className="xs:hidden sm:hidden">Exportar</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 px-2"
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
             >
               {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              {importing ? "Importando..." : "Importar Excel"}
+              <span className="hidden xs:inline sm:inline">{importing ? "Importando..." : "Importar Excel"}</span>
+              <span className="xs:hidden sm:hidden">{importing ? "..." : "Importar"}</span>
             </Button>
             <input
               ref={fileInputRef}
@@ -299,6 +301,7 @@ export const PendingTagsAlert = ({
               className="hidden"
             />
           </div>
+
 
 
           <div className="space-y-3 pt-2">

@@ -107,7 +107,7 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
 
     // Reset dialog title.
     expect(
-      await screen.findByText(/Cadastrar senha provisória/i)
+      await screen.findByRole("heading", { name: /Cadastrar senha provisória/i })
     ).toBeInTheDocument();
 
     const input = screen.getByLabelText(/Nova senha/i) as HTMLInputElement;

@@ -262,36 +262,36 @@ export const PendingTagsAlert = ({
       )}
 
       <Dialog open={listOpen} onOpenChange={setListOpen}>
-        <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[640px] sm:w-full max-h-[90vh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
-          <DialogHeader>
+        <DialogContent className="!max-w-[calc(100dvw-16px)] w-[calc(100dvw-16px)] sm:!max-w-[640px] sm:w-full max-h-[90dvh] sm:max-h-[85vh] overflow-y-auto overflow-x-hidden p-3 sm:p-6">
+          <DialogHeader className="min-w-0">
             <DialogTitle className="flex items-start gap-2 text-sm sm:text-base break-words pr-8">
               <Tag className="w-4 h-4 shrink-0 mt-0.5" />
               <span className="break-words min-w-0 flex-1 text-left">Pendentes de TAG {isAdmin ? "— Todos os Turnos" : `— Turno ${activeProfile?.turno}`}</span>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-wrap gap-2 pt-1 border-b pb-2">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 pt-1 border-b pb-2 min-w-0">
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 px-2"
+              className="h-8 text-xs gap-1.5 px-2 min-w-0"
               onClick={handleExportExcel}
               disabled={importing || pendingItems.length === 0}
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline sm:inline">Exportar Excel</span>
-              <span className="xs:hidden sm:hidden">Exportar</span>
+              <span className="sm:hidden truncate">Exportar</span>
+              <span className="hidden sm:inline">Exportar Excel</span>
             </Button>
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5 px-2"
+              className="h-8 text-xs gap-1.5 px-2 min-w-0"
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
             >
               {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              <span className="hidden xs:inline sm:inline">{importing ? "Importando..." : "Importar Excel"}</span>
-              <span className="xs:hidden sm:hidden">{importing ? "..." : "Importar"}</span>
+              <span className="sm:hidden truncate">{importing ? "..." : "Importar"}</span>
+              <span className="hidden sm:inline">{importing ? "Importando..." : "Importar Excel"}</span>
             </Button>
             <input
               ref={fileInputRef}

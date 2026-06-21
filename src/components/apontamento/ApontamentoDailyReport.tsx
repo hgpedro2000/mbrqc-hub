@@ -556,7 +556,8 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
   if (mode === "ng") {
     // Build a flat sorted-by-input list (preserve filtered order). Each item gets index + page calculation.
     const list = filtered;
-    const pageOf = (i: number) => 2 + Math.floor(i / 2);
+    const PER_PAGE = 4;
+    const pageOf = (i: number) => 2 + Math.floor(i / PER_PAGE);
 
     // Helper: treat "Sem descrição" placeholder as empty
     const cleanDesc = (v: any) => {
@@ -566,26 +567,12 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
       return s;
     };
 
-    // Pair items into groups of 2 for detailed pages.
-    // Validation: ensure every detail page renders exactly 2 slots, padding with null when odd.
+    // Pair items into groups of 4 (2x2 grid) for detailed pages.
     const pairs: (any | null)[][] = [];
-    for (let i = 0; i < list.length; i += 2) {
-      const slice: (any | null)[] = list.slice(i, i + 2);
-      while (slice.length < 2) slice.push(null);
+    for (let i = 0; i < list.length; i += PER_PAGE) {
+      const slice: (any | null)[] = list.slice(i, i + PER_PAGE);
+      while (slice.length < PER_PAGE) slice.push(null);
       pairs.push(slice);
-    }
-
-    // Strict validation: every detail page MUST have exactly 2 slots before rendering.
-    pairs.forEach((p, idx) => {
-      if (p.length !== 2) {
-        console.error(`[NG PDF] Detail page ${idx + 1} has ${p.length} slots, expected exactly 2.`, p);
-        while (p.length < 2) p.push(null);
-        if (p.length > 2) p.length = 2;
-      }
-    });
-    const invalidPages = pairs.filter((p) => p.length !== 2);
-    if (invalidPages.length > 0) {
-      throw new Error(`[NG PDF] Validation failed: ${invalidPages.length} detail page(s) do not contain exactly 2 occurrences.`);
     }
 
     return (
@@ -606,7 +593,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                 ))}
               </View>
               {list.map((r, idx) => {
-                const tags = parseTags(r);
+                const defectRows = getDefectRows(r);
                 const modos = parseModos(r);
                 const modosTxt = modos.map((m) => m.qty ? `${m.nome} (${m.qty})` : m.nome).join(" • ");
                 const turnoData = `${r.turno || "—"} ${r.data ? "/ " + new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : ""}`.trim();
@@ -626,11 +613,21 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[8].w}%`, fontSize: 6 }]}>{modosTxt || "—"}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[9].w}%` }]}>
-                      {tags.length > 0
-                        ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
+                      {defectRows.length > 0
+                        ? defectRows.map((d, i) => (
+                            d.tag
+                              ? <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {d.tag}</Text>
+                              : <Text key={i} style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>
+                          ))
                         : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{cleanDesc(r.descricao)}</Text>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%` }]}>
+                      {defectRows.length > 0
+                        ? defectRows.map((d, i) => (
+                            <Text key={i} style={{ fontStyle: "italic", fontSize: 6, color: "#374151", marginBottom: 1 }}>{d.desc || "—"}</Text>
+                          ))
+                        : <Text style={{ fontStyle: "italic", fontSize: 6, color: "#374151" }}>{cleanDesc(r.descricao)}</Text>}
+                    </View>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
                     </View>
@@ -644,25 +641,27 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
           <NgFooter generatedAt={generatedAt} />
         </Page>
 
-        {/* DETAILED PAGES — 2 blocks per page */}
+        {/* DETAILED PAGES — 4 blocks per page (2×2 grid) */}
         {pairs.map((pair, pageIdx) => (
           <Page key={pageIdx} size="A4" orientation="landscape" style={{ paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, fontSize: 7, fontFamily: "Helvetica", color: "#1a1a2e" }}>
             <NgSharedHeader logoUrl={logoUrl} titleText={titleText} dateLabel={dateLabel} totals={totals} filtered={filtered} />
 
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 4 }}>
             {pair.map((r, sub) => {
-              const globalIdx = pageIdx * 2 + sub;
+              const globalIdx = pageIdx * PER_PAGE + sub;
               if (!r) {
-                // Placeholder slot to guarantee 2 blocks per detail page
-                return <View key={`empty-${pageIdx}-${sub}`} style={pdfStyles.ngDBlock} />;
+                // Placeholder slot to keep 2×2 grid symmetric
+                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", borderColor: "transparent" }]} />;
               }
               const modos = parseModos(r);
-              const tags = parseTags(r);
+              const defectRows = getDefectRows(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={pdfStyles.ngDBlock} wrap={false}>
+                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
-                      <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"} — {r.part_name || "—"}</Text>
+                      <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"}</Text>
+                      <Text style={pdfStyles.ngDHeaderSub}>{r.part_name || "—"}</Text>
                       <Text style={pdfStyles.ngDHeaderSub}>
                         {(r.fornecedor || "—")} • Turno {r.turno || "—"} • {r.data ? new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
                       </Text>
@@ -673,29 +672,29 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                   </View>
 
-                  <View style={pdfStyles.ngDBody}>
-                    <View style={pdfStyles.ngDMetaGrid}>
-                      <View style={pdfStyles.ngDMetaCol}>
+                  <View style={[pdfStyles.ngDBody, { paddingVertical: 4, paddingHorizontal: 6, gap: 3 }]}>
+                    <View style={[pdfStyles.ngDMetaGrid, { flexWrap: "wrap", paddingVertical: 3, paddingHorizontal: 4 }]}>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%", marginBottom: 2 }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>Local</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{r.local_deteccao || "—"}</Text>
                       </View>
-                      <View style={pdfStyles.ngDMetaCol}>
-                        <Text style={pdfStyles.ngDMetaLabel}>Lote Inspecionado</Text>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%", marginBottom: 2 }]}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Lote</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{r.lote_inspecionado || "—"}</Text>
                       </View>
-                      <View style={pdfStyles.ngDMetaCol}>
-                        <Text style={pdfStyles.ngDMetaLabel}>Responsabilidade</Text>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%", marginBottom: 2 }]}>
+                        <Text style={pdfStyles.ngDMetaLabel}>Responsab.</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{stripCode(r.responsabilidade_defeito || r.responsabilidade) || "—"}</Text>
                       </View>
-                      <View style={pdfStyles.ngDMetaCol}>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%" }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>Origem</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{(r.fornecedor && supplierOrigemMap?.[r.fornecedor]) || r.origem || "—"}</Text>
                       </View>
-                      <View style={pdfStyles.ngDMetaCol}>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%" }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>ALC</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{r.alc_code || "N/A"}</Text>
                       </View>
-                      <View style={pdfStyles.ngDMetaCol}>
+                      <View style={[pdfStyles.ngDMetaCol, { width: "33%" }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>Projeto</Text>
                         <Text style={pdfStyles.ngDMetaValue}>{r.projeto || "—"}</Text>
                       </View>
@@ -705,7 +704,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
                       {modos.length > 0 ? (
                         modos.map((m, idx) => (
-                          <View key={idx} style={pdfStyles.ngDFalhaItem}>
+                          <View key={idx} style={[pdfStyles.ngDFalhaItem, { paddingVertical: 2, marginBottom: 2 }]}>
                             <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
                             <Text style={pdfStyles.ngDFalhaName}>{m.nome}</Text>
                             {m.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {m.qty}</Text> : null}
@@ -718,26 +717,28 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       )}
                     </View>
 
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 }}>
-                      <Text style={pdfStyles.tagsLabel}>Tags:</Text>
-                      {tags.length > 0
-                        ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngDTagOk}>TAG: {t}</Text>)
-                        : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
-                    </View>
-
                     <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Descrição</Text>
-                      <Text style={{ fontSize: 7, color: "#1a1a2e", backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 4, paddingHorizontal: 6 }}>
-                        {cleanDesc(r.descricao)}
-                      </Text>
+                      <Text style={pdfStyles.ngDSectionTitle}>Tags & Descrição</Text>
+                      {defectRows.length > 0 ? (
+                        defectRows.map((d, i) => (
+                          <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, marginBottom: 2 }}>
+                            {d.tag
+                              ? <Text style={pdfStyles.ngDTagOk}>TAG: {d.tag}</Text>
+                              : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
+                            <Text style={{ fontSize: 6, color: "#1a1a2e", flex: 1 }}>{d.desc || "—"}</Text>
+                          </View>
+                        ))
+                      ) : (
+                        <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>
+                      )}
                     </View>
 
                     {photos.length > 0 && (
                       <View wrap={false}>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
                           {photos.slice(0, 4).map((url, i) => (
-                            <PdfImage key={i} src={url} style={{ width: 70, height: 70, objectFit: "cover", borderRadius: 3 }} />
+                            <PdfImage key={i} src={url} style={{ width: 44, height: 44, objectFit: "cover", borderRadius: 3 }} />
                           ))}
                         </View>
                       </View>
@@ -746,6 +747,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                 </View>
               );
             })}
+            </View>
 
             <NgFooter generatedAt={generatedAt} />
           </Page>

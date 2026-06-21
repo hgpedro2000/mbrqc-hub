@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.0.4.72','patch','PDF NG: coluna QTY NG','Adiciona coluna QTY NG ao lado de Descrição na tabela de modos de falha do PDF de Relatório de Peças com Defeito (NG), mantendo layout simétrico de 4 registros por página A4.');

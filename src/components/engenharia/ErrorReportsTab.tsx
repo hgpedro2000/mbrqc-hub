@@ -84,6 +84,24 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
     },
   });
 
+  // Realtime: refetch ticket list instantly on any change
+  useEffect(() => {
+    const channel = supabase
+      .channel("error-reports-tab")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "error_reports" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["error-reports"] });
+          qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const filtered = useMemo(() => {
     let list = reports;
     // Tab filter

@@ -672,7 +672,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                   </View>
 
-                  <View style={[pdfStyles.ngDBody, { paddingVertical: 4, paddingHorizontal: 6, gap: 3 }]}>
+                  <View style={[pdfStyles.ngDBody, { paddingVertical: 4, paddingHorizontal: 6, gap: 3, flexGrow: 1 }]}>
                     <View style={[pdfStyles.ngDMetaGrid, { flexWrap: "wrap", paddingVertical: 3, paddingHorizontal: 4 }]}>
                       <View style={[pdfStyles.ngDMetaCol, { width: "33%", marginBottom: 2 }]}>
                         <Text style={pdfStyles.ngDMetaLabel}>Local</Text>

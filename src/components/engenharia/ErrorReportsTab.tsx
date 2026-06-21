@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus } from "lucide-react";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus, KeyRound, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,6 +35,7 @@ const moduleColors: Record<string, string> = {
   "Consumíveis": "bg-teal-500/15 text-teal-700 border-teal-300",
   "Consulta de Peças": "bg-sky-500/15 text-sky-700 border-sky-300",
   "Novo Usuário": "bg-blue-500/15 text-blue-700 border-blue-300",
+  "Reset de Senha": "bg-orange-500/15 text-orange-700 border-orange-300",
 };
 
 const moduleOptions = [
@@ -48,6 +49,7 @@ const moduleOptions = [
   { value: "Consumíveis", label: "Consumíveis" },
   { value: "Consulta de Peças", label: "Consulta de Peças" },
   { value: "Novo Usuário", label: "Novo Usuário" },
+  { value: "Reset de Senha", label: "Reset de Senha" },
 ];
 
 const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {}) => {
@@ -62,6 +64,13 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("aberto");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetMode, setResetMode] = useState<"custom" | "default">("custom");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<{ password: string } | null>(null);
+
+  const DEFAULT_RESET_PASSWORD = "admin123*";
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["error-reports"],
@@ -150,6 +159,53 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
   };
 
   const getModuleColor = (mod: string) => moduleColors[mod] || "bg-muted text-muted-foreground";
+
+  const openReset = (mode: "custom" | "default") => {
+    setResetMode(mode);
+    setResetPassword(mode === "default" ? DEFAULT_RESET_PASSWORD : "");
+    setResetResult(null);
+    setResetOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!viewItem?.user_id) {
+      toast.error("Solicitação sem usuário vinculado");
+      return;
+    }
+    const finalPassword = resetMode === "default" ? DEFAULT_RESET_PASSWORD : resetPassword.trim();
+    if (resetMode === "custom" && finalPassword.length < 6) {
+      toast.error("A senha deve ter ao menos 6 caracteres");
+      return;
+    }
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { user_id: viewItem.user_id, new_password: finalPassword },
+      });
+      if (error) throw new Error((data as any)?.error || error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      // Auto-mark the ticket as resolved with an admin note.
+      const noteSuffix = `\n[${new Date().toLocaleString("pt-BR")}] Senha ${resetMode === "default" ? "padrão (admin123*)" : "provisória"} aplicada por ${profile?.full_name || "admin"}.`;
+      const nextNotes = (adminNotes ? adminNotes : "") + noteSuffix;
+      await supabase
+        .from("error_reports")
+        .update({ status: "resolvido", admin_notes: nextNotes } as any)
+        .eq("id", viewItem.id);
+
+      setAdminNotes(nextNotes);
+      setNewStatus("resolvido");
+      setResetResult({ password: finalPassword });
+      toast.success("Senha redefinida e chamado resolvido");
+      qc.invalidateQueries({ queryKey: ["error-reports"] });
+      qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao redefinir senha");
+    } finally {
+      setResetting(false);
+    }
+  };
+
 
   return (
     <div className="space-y-4">
@@ -350,7 +406,109 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
                     <UserPlus className="w-4 h-4" /> Criar Usuário a partir desta solicitação
                   </Button>
                 )}
+                {viewItem.module === "Reset de Senha" && viewItem.user_id && (
+                  <div className="mt-2 rounded-lg border border-orange-300/50 bg-orange-500/5 p-3 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <KeyRound className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
+                      <div className="text-xs text-foreground/80">
+                        <p className="font-semibold text-foreground">Reset de senha</p>
+                        <p className="mt-0.5">Escolha uma das opções para liberar o acesso do usuário. A senha será marcada como provisória e o usuário será solicitado a trocá-la no próximo login.</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      <Button variant="secondary" className="gap-2" onClick={() => openReset("custom")}>
+                        <Pencil className="w-4 h-4" /> Senha provisória
+                      </Button>
+                      <Button variant="outline" className="gap-2 border-orange-400/50 text-orange-700 hover:bg-orange-500/10" onClick={() => openReset("default")}>
+                        <ShieldCheck className="w-4 h-4" /> Reset padrão (admin123*)
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={resetOpen} onOpenChange={(v) => { if (!resetting) { setResetOpen(v); if (!v) setResetResult(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-orange-600" />
+              {resetMode === "default" ? "Reset padrão" : "Cadastrar senha provisória"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {!resetResult ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Redefinir a senha de <b className="text-foreground">{viewItem?.user_name}</b>.
+                {resetMode === "default"
+                  ? " A senha será definida como o padrão de fábrica."
+                  : " Defina uma senha provisória — informe-a ao usuário pessoalmente."}
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="reset-pw">Nova senha</Label>
+                <Input
+                  id="reset-pw"
+                  type="text"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  readOnly={resetMode === "default"}
+                  placeholder={resetMode === "custom" ? "Mínimo 6 caracteres" : ""}
+                  className={resetMode === "default" ? "font-mono bg-muted" : "font-mono"}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  O usuário será obrigado a trocar a senha no próximo login.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setResetOpen(false)} disabled={resetting}>
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1 bg-orange-600 hover:bg-orange-600/90 text-white"
+                  onClick={handleResetPassword}
+                  disabled={resetting || (resetMode === "custom" && resetPassword.trim().length < 6)}
+                >
+                  {resetting ? (
+                    <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Aplicando...</>
+                  ) : resetMode === "default" ? (
+                    <><ShieldCheck className="w-4 h-4 mr-1" /> Aplicar reset padrão</>
+                  ) : (
+                    <><CheckCircle className="w-4 h-4 mr-1" /> Cadastrar senha provisória</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-emerald-600" />
+              </div>
+              <p className="text-sm text-foreground">Senha redefinida com sucesso.</p>
+              <div className="rounded-lg border bg-muted/50 p-3 flex items-center justify-between gap-2">
+                <span className="font-mono text-base break-all">{resetResult.password}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(resetResult.password);
+                    toast.success("Senha copiada");
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Compartilhe esta senha somente com o usuário solicitante.
+              </p>
+              <Button className="w-full" onClick={() => { setResetOpen(false); setViewItem(null); }}>
+                Concluir
+              </Button>
             </div>
           )}
         </DialogContent>

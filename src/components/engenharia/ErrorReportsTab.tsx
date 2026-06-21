@@ -160,6 +160,53 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
 
   const getModuleColor = (mod: string) => moduleColors[mod] || "bg-muted text-muted-foreground";
 
+  const openReset = (mode: "custom" | "default") => {
+    setResetMode(mode);
+    setResetPassword(mode === "default" ? DEFAULT_RESET_PASSWORD : "");
+    setResetResult(null);
+    setResetOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!viewItem?.user_id) {
+      toast.error("Solicitação sem usuário vinculado");
+      return;
+    }
+    const finalPassword = resetMode === "default" ? DEFAULT_RESET_PASSWORD : resetPassword.trim();
+    if (resetMode === "custom" && finalPassword.length < 6) {
+      toast.error("A senha deve ter ao menos 6 caracteres");
+      return;
+    }
+    setResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { user_id: viewItem.user_id, new_password: finalPassword },
+      });
+      if (error) throw new Error((data as any)?.error || error.message);
+      if ((data as any)?.error) throw new Error((data as any).error);
+
+      // Auto-mark the ticket as resolved with an admin note.
+      const noteSuffix = `\n[${new Date().toLocaleString("pt-BR")}] Senha ${resetMode === "default" ? "padrão (admin123*)" : "provisória"} aplicada por ${profile?.full_name || "admin"}.`;
+      const nextNotes = (adminNotes ? adminNotes : "") + noteSuffix;
+      await supabase
+        .from("error_reports")
+        .update({ status: "resolvido", admin_notes: nextNotes } as any)
+        .eq("id", viewItem.id);
+
+      setAdminNotes(nextNotes);
+      setNewStatus("resolvido");
+      setResetResult({ password: finalPassword });
+      toast.success("Senha redefinida e chamado resolvido");
+      qc.invalidateQueries({ queryKey: ["error-reports"] });
+      qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao redefinir senha");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">

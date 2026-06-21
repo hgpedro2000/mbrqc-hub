@@ -745,13 +745,28 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
 
                     <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha</Text>
-                      {modos.length > 0 ? (
-                        modos.map((m, idx) => (
-                          <View key={idx} style={[pdfStyles.ngDFalhaItem, { paddingVertical: 2, marginBottom: 2 }]}>
+                      <Text style={pdfStyles.ngDSectionTitle}>Modos de Falha • TAG • Descrição</Text>
+                      {/* Header row */}
+                      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 4, paddingBottom: 2, gap: 4 }}>
+                        <Text style={{ width: 14, fontSize: 5, color: "#9ca3af", textTransform: "uppercase" }}> </Text>
+                        <Text style={{ flex: 4, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Modo de Falha</Text>
+                        <Text style={{ flex: 2, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700, textAlign: "center" }}>TAG</Text>
+                        <Text style={{ flex: 5, fontSize: 5, color: "#9ca3af", textTransform: "uppercase", fontWeight: 700 }}>Descrição</Text>
+                      </View>
+                      {combined.length > 0 ? (
+                        combined.map((row, idx) => (
+                          <View key={idx} style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: idx % 2 ? "#f9fafb" : "#ffffff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 2, paddingVertical: 2, paddingHorizontal: 4, marginBottom: 2 }}>
                             <View style={pdfStyles.ngDFalhaNum}><Text style={pdfStyles.ngDFalhaNumText}>{idx + 1}</Text></View>
-                            <Text style={pdfStyles.ngDFalhaName}>{m.nome}</Text>
-                            {m.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {m.qty}</Text> : null}
+                            <View style={{ flex: 4, flexDirection: "row", alignItems: "center", gap: 3 }}>
+                              <Text style={{ fontSize: 6, fontWeight: 700, color: "#1a1a2e", flex: 1 }}>{row.modo || "—"}</Text>
+                              {row.qty ? <Text style={pdfStyles.ngDFalhaQty}>Qty: {row.qty}</Text> : null}
+                            </View>
+                            <View style={{ flex: 2, alignItems: "center" }}>
+                              {row.tag
+                                ? <Text style={pdfStyles.ngDTagOk}>{row.tag}</Text>
+                                : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
+                            </View>
+                            <Text style={{ flex: 5, fontSize: 6, color: "#374151" }}>{row.desc || "—"}</Text>
                           </View>
                         ))
                       ) : (
@@ -761,21 +776,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                       )}
                     </View>
 
-                    <View>
-                      <Text style={pdfStyles.ngDSectionTitle}>Tags & Descrição</Text>
-                      {defectRows.length > 0 ? (
-                        defectRows.map((d, i) => (
-                          <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 4, marginBottom: 2 }}>
-                            {d.tag
-                              ? <Text style={pdfStyles.ngDTagOk}>TAG: {d.tag}</Text>
-                              : <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>}
-                            <Text style={{ fontSize: 6, color: "#1a1a2e", flex: 1 }}>{d.desc || "—"}</Text>
-                          </View>
-                        ))
-                      ) : (
-                        <Text style={pdfStyles.ngDTagMissing}>Sem TAG</Text>
-                      )}
-                    </View>
+
 
                     {photos.length > 0 && (
                       <View wrap={false} style={{ marginTop: "auto" }}>

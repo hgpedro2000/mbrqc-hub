@@ -27,6 +27,18 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   // Terceiros possuem letras no código — permite alternar para teclado alfanumérico.
   const [alphaKeyboard, setAlphaKeyboard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(ONBOARDING_KEY)) setShowOnboarding(true);
+    } catch { /* ignore */ }
+  }, []);
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false);
+    try { localStorage.setItem(ONBOARDING_KEY, "1"); } catch { /* ignore */ }
+  };
 
   // Whenever AuthContext finishes hydrating with a valid session/profile,
   // redirect away from /login. This handles BOTH:

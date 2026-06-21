@@ -431,6 +431,89 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
         </DialogContent>
       </Dialog>
 
+      {/* Reset Password Dialog */}
+      <Dialog open={resetOpen} onOpenChange={(v) => { if (!resetting) { setResetOpen(v); if (!v) setResetResult(null); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-orange-600" />
+              {resetMode === "default" ? "Reset padrão" : "Cadastrar senha provisória"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {!resetResult ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Redefinir a senha de <b className="text-foreground">{viewItem?.user_name}</b>.
+                {resetMode === "default"
+                  ? " A senha será definida como o padrão de fábrica."
+                  : " Defina uma senha provisória — informe-a ao usuário pessoalmente."}
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="reset-pw">Nova senha</Label>
+                <Input
+                  id="reset-pw"
+                  type="text"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  readOnly={resetMode === "default"}
+                  placeholder={resetMode === "custom" ? "Mínimo 6 caracteres" : ""}
+                  className={resetMode === "default" ? "font-mono bg-muted" : "font-mono"}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  O usuário será obrigado a trocar a senha no próximo login.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setResetOpen(false)} disabled={resetting}>
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1 bg-orange-600 hover:bg-orange-600/90 text-white"
+                  onClick={handleResetPassword}
+                  disabled={resetting || (resetMode === "custom" && resetPassword.trim().length < 6)}
+                >
+                  {resetting ? (
+                    <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Aplicando...</>
+                  ) : resetMode === "default" ? (
+                    <><ShieldCheck className="w-4 h-4 mr-1" /> Aplicar reset padrão</>
+                  ) : (
+                    <><CheckCircle className="w-4 h-4 mr-1" /> Cadastrar senha provisória</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-emerald-600" />
+              </div>
+              <p className="text-sm text-foreground">Senha redefinida com sucesso.</p>
+              <div className="rounded-lg border bg-muted/50 p-3 flex items-center justify-between gap-2">
+                <span className="font-mono text-base break-all">{resetResult.password}</span>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(resetResult.password);
+                    toast.success("Senha copiada");
+                  }}
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Compartilhe esta senha somente com o usuário solicitante.
+              </p>
+              <Button className="w-full" onClick={() => { setResetOpen(false); setViewItem(null); }}>
+                Concluir
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Lightbox for images */}
       {lightboxUrl && (
         <Dialog open={!!lightboxUrl} onOpenChange={() => setLightboxUrl(null)}>

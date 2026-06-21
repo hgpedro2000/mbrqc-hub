@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Mail, Plus, X, Send, Clock, Save, History, AlertCircle } from "lucide-react";
+import { Mail, Plus, X, Send, Clock, Save, History, AlertCircle, Eye, FileText, Loader2 } from "lucide-react";
 // auth user resolved via supabase.auth.getUser at trigger time
 
 interface AutomationConfig {

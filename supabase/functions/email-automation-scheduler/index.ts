@@ -94,8 +94,12 @@ Deno.serve(async (req) => {
         continue
       }
 
-      // Invoke sender (fire and forget)
-      const resp = await fetch(`${SUPABASE_URL}/functions/v1/send-automation-email`, {
+      // Dispatch to the right sender based on modulo
+      const senderFn = cfg.modulo === 'alerta_qualidade'
+        ? 'send-alerta-email'
+        : 'send-automation-email'
+
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/${senderFn}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

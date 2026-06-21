@@ -93,12 +93,32 @@ const AdminPartNameFix = () => {
     setPickerOpen(true);
   };
 
-  const applyPickerSelection = (part_number: string, part_name: string) => {
+  const applyPickerSelection = async (part_number: string, part_name: string) => {
     if (!pickerRowId) return;
-    setEdits((p) => ({ ...p, [pickerRowId]: part_name }));
-    // Also update the part_number on the row in DB later via a separate save action — for now keep PN as-is.
+    setSaving(true);
+    const { error } = await supabase
+      .from("apontamentos")
+      .update({ part_number, part_name })
+      .eq("id", pickerRowId);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success(`Atualizado: ${part_number} — ${part_name}`);
+    setEdits((p) => {
+      const n = { ...p };
+      delete n[pickerRowId];
+      return n;
+    });
+    setSelected((p) => {
+      const n = new Set(p);
+      n.delete(pickerRowId);
+      return n;
+    });
     setPickerOpen(false);
-    toast.success(`Selecionado: ${part_name}`);
+    qc.invalidateQueries({ queryKey: ["inc-blank-partname"] });
+    refetch();
   };
 
   const suggestionByPN = useMemo(() => {

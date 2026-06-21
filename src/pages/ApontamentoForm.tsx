@@ -1194,8 +1194,8 @@ const ApontamentoForm = () => {
             <div className="space-y-1.5">
               <Label className={errLabelClass("turno")}>Turno *</Label>
               {adminEdit ? (
-                <Select value={turno} onValueChange={setTurno}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
+                  <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                 </Select>
               ) : (
@@ -1255,6 +1255,8 @@ const ApontamentoForm = () => {
               partName={partName}
               projeto={projeto}
               partNumberError={validationErrors.has("partNumber")}
+              projetoError={validationErrors.has("projeto")}
+              fornecedorError={validationErrors.has("fornecedor")}
               onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
               onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
               onPartDataChange={(d) => {
@@ -1501,9 +1503,9 @@ const ApontamentoForm = () => {
             {/* Modo de Falha - single mode or when NG <= 1 or same mode */}
             {(isIncoming || isPeca || isProcesso) && (ngMultiploDecisao !== "diferente") && (
               <div className="space-y-1.5">
-                <Label>Modo de Falha {!ngIsZero && "*"}</Label>
-                <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
-                  <SelectTrigger><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
+                <Label className={errLabelClass("modoFalha")}>Modo de Falha {!ngIsZero && "*"}</Label>
+                <Select value={modoFalha} onValueChange={(v) => { setModoFalha(v); setValidationErrors((p) => { const n = new Set(p); n.delete("modoFalha"); return n; }); }} disabled={ngIsZero}>
+                  <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
                   <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -1526,9 +1528,9 @@ const ApontamentoForm = () => {
                       <span className="text-sm font-medium">Defeito {idx === 0 ? "Principal" : `#${idx + 1}`}</span>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Modo de Falha *</Label>
-                      <Select value={detalhe.modo_falha} onValueChange={(v) => updateDefeitoDetalhe(idx, "modo_falha", v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>Modo de Falha *</Label>
+                      <Select value={detalhe.modo_falha} onValueChange={(v) => { updateDefeitoDetalhe(idx, "modo_falha", v); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-modoFalha`); return n; }); }}>
+                        <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>

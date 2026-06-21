@@ -304,10 +304,10 @@ export const AutomationConfigCard = ({
       </Dialog>
 
       <Dialog open={recipientsOpen} onOpenChange={setRecipientsOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Cadastrar destinatários — {form.name}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-base sm:text-lg break-words">Cadastrar destinatários — {form.name}</DialogTitle>
+            <DialogDescription className="text-xs sm:text-sm">
               Informe os e-mails separados por vírgula, ponto-e-vírgula, espaço ou nova linha.
               Endereços são normalizados (domínio em minúsculas) e duplicados são removidos automaticamente.
               TO recebe diretamente; CC recebe em cópia.

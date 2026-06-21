@@ -279,12 +279,12 @@ const ConfigCard = ({
       </CardContent>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] sm:h-[80vh] flex flex-col p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>Preview — {previewData?.subject}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg break-words">Preview — {previewData?.subject}</DialogTitle>
             <DialogDescription>Renderização exata do e-mail que será enviado.</DialogDescription>
           </DialogHeader>
-          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded" />
+          <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded min-h-0" />
         </DialogContent>
       </Dialog>
     </Card>

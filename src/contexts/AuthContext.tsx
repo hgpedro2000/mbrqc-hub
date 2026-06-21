@@ -193,31 +193,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     let currentUserId: string | null = null;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      const nextUserId = nextSession?.user?.id ?? null;
+
       // Token refreshes (focus/visibility changes) must NOT remount the tree.
       if (event === "TOKEN_REFRESHED") {
         setSession(nextSession);
         return;
       }
 
-      const nextUserId = nextSession?.user?.id ?? null;
-
-      // SIGNED_IN: re-hydrate when the user identity actually changes
-      // (login from /login, account switch, MFA upgrade). Without this,
-      // logging in from the form would leave profile=null forever and
-      // the redirect useEffect in Login would never fire — the user
-      // would be stuck on "Aguarde...".
-      if (event === "SIGNED_IN") {
-        if (initialized && nextUserId === currentUserId) {
-          // Same user, just a session re-emit — don't reload the tree.
-          setSession(nextSession);
-          return;
-        }
-        currentUserId = nextUserId;
-        void hydrateAuthState(nextSession, !initialized);
-        initialized = true;
+      // Any event that does NOT change the user identity (INITIAL_SESSION re-emit,
+      // USER_UPDATED, MFA_CHALLENGE_VERIFIED, PASSWORD_RECOVERY, cross-tab
+      // re-broadcasts of SIGNED_IN) must also avoid flipping `loading`/`mfaStatus`,
+      // otherwise ProtectedRoute shows the spinner and unmounts the current page —
+      // the user sees the active tab "reload" or the sub-tab reset back to default.
+      if (initialized && nextUserId === currentUserId) {
+        setSession(nextSession);
         return;
       }
 
+      // SIGNED_OUT or genuine user change → full re-hydration.
       currentUserId = nextUserId;
       void hydrateAuthState(nextSession, !initialized);
       initialized = true;

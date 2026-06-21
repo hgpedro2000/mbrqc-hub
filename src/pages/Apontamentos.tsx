@@ -783,23 +783,26 @@ const Apontamentos = () => {
             <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
           )}
 
-          <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v as ApontamentoTipo); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
-            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleTypes.length}, 1fr)` }}>
-              {visibleTypes.map((tipo) => {
-                const cfg = typeConfig[tipo];
+          <Tabs value={topTab} onValueChange={(v) => { setTopTab(v as TopTab); clearFilters(); setSelectedIds(new Set()); setIncomingLocationFilter(null); }} className="mt-4">
+            <TabsList className={`grid w-full h-auto`} style={{ gridTemplateColumns: `repeat(${visibleCards.length}, 1fr)` }}>
+              {visibleCards.map((tab) => {
+                const cfg = topTabConfig[tab];
                 const Icon = cfg.icon;
+                const count = tab === "processos"
+                  ? (countByType.peca || 0) + (countByType.processo || 0)
+                  : (countByType[tab] || 0);
                 return (
-                  <TabsTrigger key={tipo} value={tipo} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
+                  <TabsTrigger key={tab} value={tab} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
                     <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
                     <span className="hidden sm:inline truncate">{cfg.label}</span>
-                    <span className="text-xs">({countByType[tipo]})</span>
+                    <span className="text-xs">({count})</span>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
             {/* Location filter buttons for INCOMING tab */}
-            {activeTab === "incoming" && (
+            {topTab === "incoming" && (
               <div className="flex items-center gap-2 mt-3">
                 <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
                 <Button
@@ -829,10 +832,41 @@ const Apontamentos = () => {
               </div>
             )}
 
-            {TYPES.map((tipo) => (
-              <TabsContent key={tipo} value={tipo} className="mt-4">
+            {/* Sub-tabs for PROCESSOS group */}
+            {topTab === "processos" && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {PROC_SUBS.map((sub) => {
+                  const cfg = procSubConfig[sub];
+                  const Icon = cfg.icon;
+                  const active = procSub === sub;
+                  const subCount = cfg.realType ? (countByType[cfg.realType] || 0) : 0;
+                  return (
+                    <Button
+                      key={sub}
+                      variant={active ? "default" : "outline"}
+                      size="sm"
+                      className="text-xs h-8 gap-1.5"
+                      onClick={() => { setProcSub(sub); clearFilters(); setSelectedIds(new Set()); }}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{cfg.label}</span>
+                      {cfg.realType && <span className="text-[10px] opacity-80">({subCount})</span>}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+
+            {TOP_TABS.map((tab) => (
+              <TabsContent key={tab} value={tab} className="mt-4">
                 {isLoading ? (
                   <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
+                ) : tab === "processos" && isPlaceholderSub ? (
+                  <div className="border border-dashed rounded-lg py-16 text-center text-muted-foreground">
+                    <Layers className="w-10 h-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">Em breve: {procSubConfig[procSub].label}</p>
+                    <p className="text-xs mt-1">Esta área será habilitada em uma próxima atualização.</p>
+                  </div>
                 ) : viewMode === "detailed" ? renderDetailedList() : renderCompactList()}
               </TabsContent>
             ))}

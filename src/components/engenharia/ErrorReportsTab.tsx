@@ -64,6 +64,13 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("aberto");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetMode, setResetMode] = useState<"custom" | "default">("custom");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<{ password: string } | null>(null);
+
+  const DEFAULT_RESET_PASSWORD = "admin123*";
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["error-reports"],

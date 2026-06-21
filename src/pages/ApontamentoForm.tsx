@@ -1503,9 +1503,9 @@ const ApontamentoForm = () => {
             {/* Modo de Falha - single mode or when NG <= 1 or same mode */}
             {(isIncoming || isPeca || isProcesso) && (ngMultiploDecisao !== "diferente") && (
               <div className="space-y-1.5">
-                <Label>Modo de Falha {!ngIsZero && "*"}</Label>
-                <Select value={modoFalha} onValueChange={setModoFalha} disabled={ngIsZero}>
-                  <SelectTrigger><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
+                <Label className={errLabelClass("modoFalha")}>Modo de Falha {!ngIsZero && "*"}</Label>
+                <Select value={modoFalha} onValueChange={(v) => { setModoFalha(v); setValidationErrors((p) => { const n = new Set(p); n.delete("modoFalha"); return n; }); }} disabled={ngIsZero}>
+                  <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
                   <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>

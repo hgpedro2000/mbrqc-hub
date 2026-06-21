@@ -1078,38 +1078,38 @@ const ApontamentoDashboard = () => {
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
-            <div className="px-1.5 md:px-3 py-2 md:py-3 grid grid-cols-5 gap-1 md:gap-2 bg-[hsl(220,15%,12%)]">
-              <div className="text-center min-w-0">
-                <p className="text-[8px] md:text-[10px] text-[hsl(25,95%,60%)]/80 uppercase tracking-wider truncate">Total</p>
-                <p className="text-sm md:text-lg font-bold text-[hsl(25,95%,60%)] truncate">{total.toLocaleString('pt-BR')}</p>
-                <p className="text-[8px] md:text-[10px] text-[hsl(25,95%,60%)]/60 truncate">apontamentos</p>
+            <div className="px-1.5 md:px-3 py-2 md:py-3 grid grid-cols-5 gap-1 md:gap-2 bg-[hsl(220,15%,12%)] items-stretch">
+              <div className="flex flex-col items-center justify-center gap-0.5 text-center min-w-0">
+                <p className="text-[8px] md:text-[10px] text-[hsl(25,95%,60%)]/80 uppercase tracking-wider truncate leading-none">Total</p>
+                <p className="text-sm md:text-lg font-bold text-[hsl(25,95%,60%)] truncate leading-tight">{total.toLocaleString('pt-BR')}</p>
+                <p className="text-[8px] md:text-[10px] text-[hsl(25,95%,60%)]/60 truncate leading-none">apontamentos</p>
               </div>
-              <div className="text-center min-w-0">
-                <p className="text-[8px] md:text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider truncate">Inspec.</p>
-                <p className="text-sm md:text-lg font-bold text-[hsl(0,0%,90%)] truncate">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
-                <p className="text-[8px] md:text-[10px] text-[hsl(0,0%,50%)]">100%</p>
+              <div className="flex flex-col items-center justify-center gap-0.5 text-center min-w-0">
+                <p className="text-[8px] md:text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider truncate leading-none">Inspec.</p>
+                <p className="text-sm md:text-lg font-bold text-[hsl(0,0%,90%)] truncate leading-tight">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
+                <p className="text-[8px] md:text-[10px] text-[hsl(0,0%,50%)] leading-none">100%</p>
               </div>
-              <div className="text-center min-w-0">
-                <p className="text-[8px] md:text-[10px] text-green-400/80 uppercase tracking-wider truncate">OK</p>
-                <p className="text-sm md:text-lg font-bold text-green-400 truncate">{origemData.totalOk.toLocaleString('pt-BR')}</p>
-                <p className="text-[8px] md:text-[10px] text-green-400/60 truncate">{origemData.totalInspected > 0 ? ((origemData.totalOk / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
+              <div className="flex flex-col items-center justify-center gap-0.5 text-center min-w-0">
+                <p className="text-[8px] md:text-[10px] text-green-400/80 uppercase tracking-wider truncate leading-none">OK</p>
+                <p className="text-sm md:text-lg font-bold text-green-400 truncate leading-tight">{origemData.totalOk.toLocaleString('pt-BR')}</p>
+                <p className="text-[8px] md:text-[10px] text-green-400/60 truncate leading-none">{origemData.totalInspected > 0 ? ((origemData.totalOk / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
               </div>
               <button
                 type="button"
                 onClick={() => origemData.totalNg > 0 && setNgBreakdownOpen(true)}
-                className="text-center rounded-md hover:bg-red-500/10 transition-colors py-1 min-w-0"
+                className="flex flex-col items-center justify-center gap-0.5 text-center rounded-md hover:bg-red-500/10 transition-colors min-w-0"
                 title="Ver detalhamento por responsabilidade"
               >
-                <p className="text-[8px] md:text-[10px] text-red-400/80 uppercase tracking-wider truncate">NG</p>
-                <p className="text-sm md:text-lg font-bold text-red-400 underline-offset-2 hover:underline truncate">{origemData.totalNg.toLocaleString('pt-BR')}</p>
-                <p className="text-[8px] md:text-[10px] text-red-400/60 truncate">{origemData.totalInspected > 0 ? ((origemData.totalNg / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
+                <p className="text-[8px] md:text-[10px] text-red-400/80 uppercase tracking-wider truncate leading-none">NG</p>
+                <p className="text-sm md:text-lg font-bold text-red-400 underline-offset-2 hover:underline truncate leading-tight">{origemData.totalNg.toLocaleString('pt-BR')}</p>
+                <p className="text-[8px] md:text-[10px] text-red-400/60 truncate leading-none">{origemData.totalInspected > 0 ? ((origemData.totalNg / origemData.totalInspected) * 100).toFixed(1) : "0"}%</p>
               </button>
-              <div className="text-center min-w-0">
-                <p className="text-[8px] md:text-[10px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider truncate">PPM</p>
-                <p className="text-[11px] md:text-lg font-bold text-[hsl(45,90%,60%)] truncate leading-tight">
+              <div className="flex flex-col items-center justify-center gap-0.5 text-center min-w-0">
+                <p className="text-[8px] md:text-[10px] text-[hsl(45,90%,60%)]/80 uppercase tracking-wider truncate leading-none">PPM</p>
+                <p className="text-sm md:text-lg font-bold text-[hsl(45,90%,60%)] truncate leading-tight">
                   {origemData.totalOk > 0 ? Math.round((origemData.totalNg / origemData.totalOk) * 1_000_000).toLocaleString('pt-BR') : '0'}
                 </p>
-                <p className="text-[8px] md:text-[10px] text-[hsl(45,90%,60%)]/40">&nbsp;</p>
+                <p className="text-[8px] md:text-[10px] text-[hsl(45,90%,60%)]/40 leading-none">&nbsp;</p>
               </div>
             </div>
           </div>

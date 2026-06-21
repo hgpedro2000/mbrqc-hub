@@ -195,8 +195,13 @@ const SupplierPartSelector = ({
           <Input value={fornecedor} onChange={(e) => onFornecedorChange(e.target.value)} placeholder={t("common.supplier")} />
         </div>
         <div className="space-y-2">
-          <Label>Part Number</Label>
-          <Input value={partNumber} onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" />
+          <Label className={partNumberError ? "text-destructive font-semibold" : ""}>Part Number</Label>
+          <Input
+            value={partNumber}
+            onChange={(e) => onPartNumberChange(e.target.value.toUpperCase().replace(/-/g, ""))}
+            placeholder="Ex: 86350BP000CA"
+            className={partNumberError ? "border-destructive ring-1 ring-destructive" : ""}
+          />
         </div>
         <div className="space-y-2">
           <Label>Part Name</Label>

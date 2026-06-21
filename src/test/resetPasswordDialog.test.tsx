@@ -41,7 +41,7 @@ const RESET_TICKET = {
   photos: [],
 };
 
-const invokeMock = vi.fn();
+const invokeMock: ReturnType<typeof vi.fn> = vi.fn();
 const updateEqMock = vi.fn().mockResolvedValue({ error: null });
 const updateMock = vi.fn(() => ({ eq: updateEqMock }));
 

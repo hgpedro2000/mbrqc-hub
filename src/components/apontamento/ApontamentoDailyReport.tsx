@@ -651,13 +651,13 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const globalIdx = pageIdx * PER_PAGE + sub;
               if (!r) {
                 // Placeholder slot to keep 2×2 grid symmetric
-                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent" }]} />;
+                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent", overflow: "hidden" }]} />;
               }
               const modos = parseModos(r);
               const defectRows = getDefectRows(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%" }]} wrap={false}>
+                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", overflow: "hidden" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"}</Text>

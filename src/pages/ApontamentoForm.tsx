@@ -1074,6 +1074,10 @@ const ApontamentoForm = () => {
       let recordId = id;
 
       if (isEdit) {
+        // Preserve original creator info — never overwrite when editing.
+        // The apontamento_history trigger records who edited.
+        delete payload.responsavel;
+        delete payload.created_by;
         // Re-validate ownership against the effective user (handles impersonation)
         const effectiveUserId = impersonating?.id || user?.id;
         const isOwner = existing?.created_by === effectiveUserId;

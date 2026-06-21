@@ -106,6 +106,20 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     },
   });
 
+  const { data: empresasTerceirasList = [] } = useQuery({
+    queryKey: ["empresas-terceiras-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("empresas_terceiras")
+        .select("name")
+        .eq("active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+
   const getRoleForUser = (userId: string) => {
     const r = roles.find((r: any) => r.user_id === userId);
     return r?.role || "user";

@@ -167,9 +167,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // ("verified"/"not-required") for a tick, ProtectedRoute lets the Hub
     // render, then mfaStatus flips to "needs-verify" and bounces back to
     // /mfa-verify — the flash the user reported.
-    if (isInitial) {
-      setLoading(true);
-    }
+    // Always block UI while we resolve admin role + MFA status — otherwise
+    // a fresh login flashes the Hub before bouncing to /mfa-verify.
+    setLoading(true);
     setMfaStatus("checking");
 
     await fetchProfile(nextSession.user.id);

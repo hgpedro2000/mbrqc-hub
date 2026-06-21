@@ -646,18 +646,18 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
           <Page key={pageIdx} size="A4" orientation="landscape" style={{ paddingTop: 20, paddingBottom: 28, paddingHorizontal: 16, fontSize: 7, fontFamily: "Helvetica", color: "#1a1a2e" }}>
             <NgSharedHeader logoUrl={logoUrl} titleText={titleText} dateLabel={dateLabel} totals={totals} filtered={filtered} />
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginTop: 4 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignContent: "space-between", marginTop: 4, flexGrow: 1 }}>
             {pair.map((r, sub) => {
               const globalIdx = pageIdx * PER_PAGE + sub;
               if (!r) {
                 // Placeholder slot to keep 2×2 grid symmetric
-                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", borderColor: "transparent" }]} />;
+                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent" }]} />;
               }
               const modos = parseModos(r);
               const defectRows = getDefectRows(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%" }]} wrap={false}>
+                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"}</Text>

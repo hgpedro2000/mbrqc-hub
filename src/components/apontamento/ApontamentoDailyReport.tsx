@@ -1133,13 +1133,13 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto">
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateFrom && "text-muted-foreground")}>
-                        <CalendarIcon className="w-3 h-3 mr-1" />
-                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De"}
+                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
+                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -1149,9 +1149,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <span className="text-xs text-muted-foreground">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateTo && "text-muted-foreground")}>
-                        <CalendarIcon className="w-3 h-3 mr-1" />
-                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até"}
+                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
+                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -1159,7 +1159,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-1.5">
+
                 {mode === "ng" && (
                   <Popover>
                     <PopoverTrigger asChild>

@@ -437,7 +437,19 @@ const AdminPartNameFix = () => {
                           {r.projeto && <Badge variant="secondary" className="text-[10px]">{r.projeto}</Badge>}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5 truncate">{r.fornecedor || "—"}</div>
-                        <div className="font-mono text-xs mt-0.5">{r.part_number || "—"}</div>
+                        <div className="font-mono text-xs mt-0.5 flex items-center gap-1">
+                          <span className="flex-1">{r.part_number || "—"}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            title="Buscar Part Number por Projeto/Fornecedor"
+                            onClick={() => openPicker(r.id)}
+                          >
+                            <Search className="w-3.5 h-3.5 text-blue-600" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     <Input

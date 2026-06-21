@@ -520,15 +520,27 @@ const AdminPartNameFix = () => {
                         Aplicar sugestão: {sug}
                       </button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => saveOne(r.id)}
-                      disabled={!hasEdit || saving}
-                      className="w-full h-8 text-xs"
-                    >
-                      <Save className="w-3 h-3 mr-1" /> Salvar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => saveOne(r.id)}
+                        disabled={!hasEdit || saving}
+                        className="flex-1 h-8 text-xs"
+                      >
+                        <Save className="w-3 h-3 mr-1" /> Salvar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                        title="Excluir registro"
+                        onClick={() => setDeleteTarget(r)}
+                        disabled={saving}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </Card>
                 );
               })}

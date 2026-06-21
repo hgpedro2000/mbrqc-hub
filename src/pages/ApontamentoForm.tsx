@@ -960,6 +960,7 @@ const ApontamentoForm = () => {
       }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
+      if (quantidadeNg > 0 && descricao !== "Sem defeito encontrado durante essa inspeção" && !responsabilidadeDefeito) { errors.add("responsabilidadeDefeito"); msgs.push("Responsabilidade do Defeito"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
         errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
@@ -967,6 +968,8 @@ const ApontamentoForm = () => {
       if (ngMultiploDecisao === "diferente") {
         defeitosDetalhes.forEach((d, idx) => {
           if (!d.modo_falha) { errors.add(`defeito-${idx}-modoFalha`); msgs.push(`Defeito ${idx + 1}: Modo de Falha`); }
+          if (!d.descricao) { errors.add(`defeito-${idx}-descricao`); msgs.push(`Defeito ${idx + 1}: Descrição`); }
+          if (!d.qty_ng || d.qty_ng <= 0) { errors.add(`defeito-${idx}-qtyNg`); msgs.push(`Defeito ${idx + 1}: Qty NG`); }
         });
       }
       // Co-inspeção validation: only Mobis Brasil
@@ -1454,12 +1457,12 @@ const ApontamentoForm = () => {
                 </div>
                 {quantidadeNg > 0 && (
                   <div className="space-y-1.5">
-                    <Label>Responsabilidade *</Label>
+                    <Label className={errLabelClass("responsabilidadeDefeito")}>Responsabilidade *</Label>
                     {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
                       <Input value="Sorting" readOnly className="bg-muted" />
                     ) : (
-                      <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <Select value={responsabilidadeDefeito} onValueChange={(v) => { setResponsabilidadeDefeito(v); setValidationErrors((p) => { const n = new Set(p); n.delete("responsabilidadeDefeito"); return n; }); }}>
+                        <SelectTrigger className={errClass("responsabilidadeDefeito")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                         <SelectContent>
                           {responsibilities.map((r: any) => (
                             <SelectItem key={r.id} value={r.description}>{r.description}</SelectItem>
@@ -1535,14 +1538,14 @@ const ApontamentoForm = () => {
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className="text-xs">Descrição *</Label>
-                      <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
+                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-descricao`) ? "text-destructive font-semibold" : ""}`}>Descrição *</Label>
+                      <Textarea value={detalhe.descricao} onChange={(e) => { updateDefeitoDetalhe(idx, "descricao", e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-descricao`); return n; }); }} placeholder="Descrição do defeito" rows={2} className={validationErrors.has(`defeito-${idx}-descricao`) ? "border-destructive ring-1 ring-destructive" : ""} />
                     </div>
                     {!isPrincipalSolo && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5 w-full">
-                          <Label className="text-xs">Qty NG *</Label>
-                          <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
+                          <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-qtyNg`) ? "text-destructive font-semibold" : ""}`}>Qty NG *</Label>
+                          <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => { updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value)); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-qtyNg`); return n; }); }} className={`w-full ${validationErrors.has(`defeito-${idx}-qtyNg`) ? "border-destructive ring-1 ring-destructive" : ""}`} />
                         </div>
                         <div className="space-y-1.5 w-full">
                           <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>

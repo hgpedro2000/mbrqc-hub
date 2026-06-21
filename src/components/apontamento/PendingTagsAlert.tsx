@@ -44,6 +44,18 @@ export const PendingTagsAlert = ({
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const activeProfile = impersonating || profile;
 
+  const computeTagStatus = (item: any) => {
+    const sd = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos : [];
+    const hasMainModo = !!(item?.modo_falha && String(item.modo_falha).trim());
+    const mainTagFilled = !!(item?.numero_tag && String(item.numero_tag).trim()) || !!(item?.tag_number && String(item.tag_number).trim());
+    const sdTagsFilled = sd.filter((d: any) => d?.tag && String(d.tag).trim()).length;
+    // Slots: each main modo (if any) + each secondary defect; at least 1 if NG > 0
+    const expected = Math.max((item?.quantidade_ng || 0) > 0 ? 1 : 0, (hasMainModo ? 1 : 0) + sd.length);
+    const mainCounts = hasMainModo || sd.length === 0;
+    const filled = (mainCounts && mainTagFilled ? 1 : 0) + sdTagsFilled;
+    return { expected, filled, missing: Math.max(0, expected - filled) };
+  };
+
   const fetchPending = async () => {
     if (!user) return;
     let query = supabase
@@ -51,8 +63,6 @@ export const PendingTagsAlert = ({
       .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
       .neq("status", "draft")
       .gt("quantidade_ng", 0)
-      .is("numero_tag" as any, null)
-      .is("tag_number" as any, null)
       .order("data", { ascending: false });
 
     if (!isAdmin && activeProfile?.turno) {
@@ -62,14 +72,15 @@ export const PendingTagsAlert = ({
       return;
     }
 
-    const data = (await query).data;
-    setPendingItems(data || []);
+    const data = (await query).data || [];
+    // Client-side: only items still missing at least one TAG
+    const pending = data.filter((it: any) => computeTagStatus(it).missing > 0);
+    setPendingItems(pending);
   };
 
   const getTagCount = (item: any) => {
-    const main = item?.modo_falha ? 1 : 0;
-    const extras = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos.length : 0;
-    return Math.max(1, main + extras);
+    const { missing, expected } = computeTagStatus(item);
+    return Math.max(1, missing || expected);
   };
 
   useEffect(() => {

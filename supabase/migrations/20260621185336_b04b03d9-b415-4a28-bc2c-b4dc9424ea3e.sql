@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.0.4.107', 'patch', 'Mobile: KPIs simétricos e Origem alinhado', 'Relatórios Diário/NG: KPIs em 3 colunas no mobile (Total Registros, Total OK, Total NG). Filtro Fornecedor inline ao lado do botão PDF no mobile. Dashboard Origem: textos centralizados e tamanhos unificados.');

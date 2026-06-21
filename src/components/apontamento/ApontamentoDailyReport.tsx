@@ -1229,7 +1229,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="hidden sm:flex items-center gap-1.5">
 
                 {mode === "ng" && (
                   <Popover>

@@ -617,11 +617,13 @@ const ApontamentoForm = () => {
   }, [activeProfile, isEdit]);
 
   // Auto-set responsabilidade for terceira users on incoming
+  // bc4b=1 query param → "Part" (for BC4b parts); otherwise "Sorting"
   useEffect(() => {
     if (!isEdit && tipo === "incoming" && (activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira)) {
-      setResponsabilidadeDefeito("Sorting");
+      const isBC4b = searchParams.get("bc4b") === "1";
+      setResponsabilidadeDefeito(isBC4b ? "Part" : "Sorting");
     }
-  }, [activeProfile, isEdit, tipo]);
+  }, [activeProfile, isEdit, tipo, searchParams]);
 
   // Auto-fill Local de Inspeção from URL param for incoming
   useEffect(() => {

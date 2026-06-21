@@ -49,6 +49,9 @@ const PartNumbersTab = () => {
     },
   });
 
+  const { data: projectOptions = [] } = useDropdownOptions("pn_project");
+  const { data: moduleOptions = [] } = useDropdownOptions("pn_line_module");
+
   const { data: partNumbers = [], isLoading } = useQuery({
     queryKey: ["eng-part-numbers"],
     queryFn: async () => {

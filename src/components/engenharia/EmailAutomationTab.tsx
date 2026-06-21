@@ -56,11 +56,12 @@ const EmailAutomationTab = () => {
   const [testEnd, setTestEnd] = useState(todayStr());
 
   const { data: config, isLoading } = useQuery({
-    queryKey: ["email_automation_config"],
+    queryKey: ["email_automation_config", "apontamentos"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("email_automation_config" as any)
         .select("*")
+        .eq("modulo", "apontamentos")
         .order("created_at", { ascending: true })
         .limit(1).maybeSingle();
       if (error) throw error;
@@ -69,11 +70,12 @@ const EmailAutomationTab = () => {
   });
 
   const { data: logs = [] } = useQuery({
-    queryKey: ["email_automation_log"],
+    queryKey: ["email_automation_log", "apontamentos"],
     queryFn: async () => {
       const { data } = await supabase
         .from("email_automation_log" as any)
         .select("*")
+        .eq("modulo", "apontamentos")
         .order("created_at", { ascending: false })
         .limit(30);
       return (data as any[]) || [];

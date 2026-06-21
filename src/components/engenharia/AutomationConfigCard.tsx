@@ -55,8 +55,22 @@ export const AutomationConfigCard = ({
   const [testEmail, setTestEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ subject: string; html: string } | null>(null);
+  const [recipientsOpen, setRecipientsOpen] = useState(false);
+  const [bulkTo, setBulkTo] = useState("");
+  const [bulkCc, setBulkCc] = useState("");
+
+  const ccList: string[] = Array.isArray(form.metadata?.cc) ? form.metadata.cc : [];
 
   useEffect(() => { setForm(config); }, [config]);
+
+  const openRecipientsDialog = () => {
+    setBulkTo((form.recipients ?? []).join(", "));
+    setBulkCc(((form.metadata?.cc ?? []) as string[]).join(", "));
+    setRecipientsOpen(true);
+  };
+
+  const parseList = (s: string) =>
+    Array.from(new Set(s.split(/[,;\n]/).map((x) => x.trim()).filter((x) => /.+@.+\..+/.test(x))));
 
   const save = useMutation({
     mutationFn: async (payload: Partial<GenericConfig>) => {

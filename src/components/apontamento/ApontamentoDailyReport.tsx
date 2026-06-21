@@ -938,6 +938,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
   const [pdfStage, setPdfStage] = useState<string>("");
+  const pdfButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (open) {

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus } from "lucide-react";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus, KeyRound, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,6 +35,7 @@ const moduleColors: Record<string, string> = {
   "Consumíveis": "bg-teal-500/15 text-teal-700 border-teal-300",
   "Consulta de Peças": "bg-sky-500/15 text-sky-700 border-sky-300",
   "Novo Usuário": "bg-blue-500/15 text-blue-700 border-blue-300",
+  "Reset de Senha": "bg-orange-500/15 text-orange-700 border-orange-300",
 };
 
 const moduleOptions = [
@@ -48,6 +49,7 @@ const moduleOptions = [
   { value: "Consumíveis", label: "Consumíveis" },
   { value: "Consulta de Peças", label: "Consulta de Peças" },
   { value: "Novo Usuário", label: "Novo Usuário" },
+  { value: "Reset de Senha", label: "Reset de Senha" },
 ];
 
 const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {}) => {

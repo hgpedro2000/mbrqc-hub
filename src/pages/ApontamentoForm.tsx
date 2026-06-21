@@ -1461,7 +1461,7 @@ const ApontamentoForm = () => {
                   <div className="space-y-1.5">
                     <Label className={errLabelClass("responsabilidadeDefeito")}>Responsabilidade *</Label>
                     {(activeProfile?.empresa === "empresa_terceira" || activeProfile?.empresa_terceira) && !adminEdit ? (
-                      <Input value="Sorting" readOnly className="bg-muted" />
+                      <Input value={searchParams.get("bc4b") === "1" ? "Part" : "Sorting"} readOnly className="bg-muted" />
                     ) : (
                       <Select value={responsabilidadeDefeito} onValueChange={(v) => { setResponsabilidadeDefeito(v); setValidationErrors((p) => { const n = new Set(p); n.delete("responsabilidadeDefeito"); return n; }); }}>
                         <SelectTrigger className={errClass("responsabilidadeDefeito")}><SelectValue placeholder="Selecione" /></SelectTrigger>

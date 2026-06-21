@@ -52,8 +52,9 @@ const ApontamentoDashboard = () => {
   const [pnFilterMap, setPnFilterMap] = useState<Record<string, string | null>>({});
   const [failureModeFilterMap, setFailureModeFilterMap] = useState<Record<string, string[]>>({});
 
-  const dateFrom = dateFromMap[activeType] ?? "";
-  const dateTo = dateToMap[activeType] ?? "";
+  const dateFrom = dateFromMap[activeType] ?? today;
+  const dateTo = dateToMap[activeType] ?? today;
+  const [supplierSortBy, setSupplierSortBy] = useState<"ng" | "ok">("ng");
   const supplierFilter = supplierFilterMap[activeType] ?? null;
   const responsibilityFilter = responsibilityFilterMap[activeType] ?? null;
   const projectFilter = projectFilterMap[activeType] ?? null;
@@ -279,8 +280,8 @@ const ApontamentoDashboard = () => {
     });
     return Array.from(map.entries())
       .map(([name, { ok, ng, pns }]) => ({ name, ok, ng, total: ok + ng, qtyPN: pns.size }))
-      .sort((a, b) => b.total - a.total);
-  }, [filtered]);
+      .sort((a, b) => supplierSortBy === "ng" ? b.ng - a.ng : b.ok - a.ok);
+  }, [filtered, supplierSortBy]);
 
   // Project Status donuts (rate OK vs NG by project)
   const projectData = useMemo(() => {
@@ -1035,26 +1036,27 @@ const ApontamentoDashboard = () => {
                 <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => { setDateTo(d ? format(d, "yyyy-MM-dd") : ""); setDateToOpen(false); }} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Limpar</Button>
+            {(dateFrom !== today || dateTo !== today) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(today); setDateTo(today); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Hoje</Button>
             )}
           </div>
-          <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {total}</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
-                <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">
-              <DropdownMenuItem onClick={exportOneSlide} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
-                Exportar em 1 Slide (Dashboard Completo)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportFourSlides} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
-                Exportar em 4 Slides (Versão Detalhada)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {profile?.is_admin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
+                  <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">
+                <DropdownMenuItem onClick={exportOneSlide} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                  Exportar em 1 Slide (Dashboard Completo)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFourSlides} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                  Exportar em 4 Slides (Versão Detalhada)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -1076,7 +1078,12 @@ const ApontamentoDashboard = () => {
         <div className="px-2 md:px-4 pt-2">
           <div className="border border-[hsl(220,10%,25%)] bg-[hsl(220,15%,14%)] rounded-lg overflow-hidden">
             <SectionHeader>Origem</SectionHeader>
-            <div className="px-3 py-3 grid grid-cols-4 gap-2 bg-[hsl(220,15%,12%)]">
+            <div className="px-3 py-3 grid grid-cols-5 gap-2 bg-[hsl(220,15%,12%)]">
+              <div className="text-center">
+                <p className="text-[10px] text-[hsl(25,95%,60%)]/80 uppercase tracking-wider">Total</p>
+                <p className="text-lg font-bold text-[hsl(25,95%,60%)]">{total.toLocaleString('pt-BR')}</p>
+                <p className="text-[10px] text-[hsl(25,95%,60%)]/60">apontamentos</p>
+              </div>
               <div className="text-center">
                 <p className="text-[10px] text-[hsl(0,0%,60%)] uppercase tracking-wider">Inspecionados</p>
                 <p className="text-lg font-bold text-[hsl(0,0%,90%)]">{origemData.totalInspected.toLocaleString('pt-BR')}</p>
@@ -1123,6 +1130,15 @@ const ApontamentoDashboard = () => {
             >
               PPM {showPPM ? '✓' : ''}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSupplierSortBy((v) => v === "ng" ? "ok" : "ng")}
+              className="text-[10px] h-6 gap-1 bg-[hsl(220,10%,20%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,75%)] hover:bg-[hsl(220,10%,25%)]"
+              title="Alternar ordenação"
+            >
+              ↕ {supplierSortBy === "ng" ? "NG ↓" : "OK ↓"}
+            </Button>
             {supplierFilter && (
               <Button variant="outline" size="sm" onClick={() => setSupplierFilter(null)} className="text-[10px] h-6 bg-[hsl(210,70%,60%)]/20 border-[hsl(210,70%,60%)]/40 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/30 gap-1">
                 ✕ Filtro: {supplierFilter}
@@ -1137,8 +1153,8 @@ const ApontamentoDashboard = () => {
                 <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium" colSpan={2}>
                   <div>Status</div>
                   <div className="flex text-[10px] text-[hsl(0,0%,55%)]">
-                    <span className="flex-1">OK</span>
                     <span className="flex-1">NG</span>
+                    <span className="flex-1">OK</span>
                   </div>
                 </th>
                 {showPPM && (
@@ -1149,12 +1165,13 @@ const ApontamentoDashboard = () => {
             <tbody>
               {supplierData.map((s, i) => {
                 const ppm = s.ok > 0 ? (s.ng / s.ok) * 1_000_000 : 0;
+                const ngColor = s.ng > 0 ? 'text-red-400 font-semibold' : 'text-green-400 font-semibold';
                 return (
                   <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                     <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
+                    <td className={`text-center px-2 py-1 ${ngColor}`}>{s.ng}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
-                    <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
                     {showPPM && (
                       <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     )}
@@ -1164,8 +1181,8 @@ const ApontamentoDashboard = () => {
               <tr className="bg-[hsl(220,10%,20%)] font-bold">
                 <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.qtyPN, 0)}</td>
+                <td className={`text-center px-2 py-1.5 ${ttlNg > 0 ? 'text-red-400' : 'text-green-400'}`}>{ttlNg}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
-                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
                 {showPPM && (
                   <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? ((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                 )}

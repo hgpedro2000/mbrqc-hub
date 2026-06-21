@@ -1021,6 +1021,10 @@ const ApontamentoForm = () => {
     if (asDraft) setValidationErrors(new Set());
     setSaving(true);
     try {
+      // Caso "diferente" tenha sido reduzido a 1 defeito, tratar como "mesmo defeito" usando o Principal
+      const isDiferenteCollapsed = isIncoming && ngMultiploDecisao === "diferente" && defeitosDetalhes.length === 1;
+      const effDescricao = isDiferenteCollapsed ? (defeitosDetalhes[0]?.descricao || descricao) : descricao;
+      const effModoFalha = isDiferenteCollapsed ? (defeitosDetalhes[0]?.modo_falha || modoFalha) : modoFalha;
       const payload: any = {
         tipo: formTipo,
         titulo: `${typeLabels[formTipo]} - ${partNumber || "Sem PN"}`,

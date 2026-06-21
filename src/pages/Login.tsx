@@ -265,13 +265,13 @@ const Login = () => {
           </Button>
           <Link
             to="/esqueci-senha"
-            className="block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="-mt-1 block w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {t("login.forgotPassword")}
           </Link>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-border/30 flex flex-col items-center gap-3">
+        <div className="mt-3 pt-3 pb-6 border-t border-border/30 flex flex-col items-center gap-2">
           <Link
             to="/privacy-policy"
             className="text-xs text-muted-foreground hover:text-accent transition-colors"

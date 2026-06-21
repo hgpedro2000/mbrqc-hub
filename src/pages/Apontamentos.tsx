@@ -909,7 +909,7 @@ const Apontamentos = () => {
               className="h-auto py-4 flex flex-col gap-1 hover:border-blue-400 hover:bg-blue-50"
               onClick={() => {
                 setShowInspectionLocationDialog(false);
-                const isOutro = effEmpresa === "empresa_terceira" && !["IL AUTOMOTIVE", "TRIGO INSPEÇÕES", "Residente"].includes(effEmpresaTerceira || "");
+                const isOutro = effEmpresa === "empresa_terceira";
                 if (isOutro) {
                   setPendingIncomingLocal("Sala do Audio");
                   setShowBC4bDialog(true);

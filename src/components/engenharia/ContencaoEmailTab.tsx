@@ -220,8 +220,6 @@ const ConfigCard = ({ config }: { config: CtnConfig }) => {
 };
 
 const ContencaoEmailTab = () => {
-  const qc = useQueryClient();
-
   const { data: configs = [], isLoading } = useQuery({
     queryKey: ["email_automation_config", "contencao"],
     queryFn: async () => {
@@ -237,46 +235,12 @@ const ContencaoEmailTab = () => {
     },
   });
 
-  const { data: logs = [] } = useQuery({
-    queryKey: ["email_automation_log", "contencao"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("email_automation_log" as any)
-        .select("*")
-        .eq("modulo", "contencao")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      return (data as any[]) ?? [];
-    },
-    refetchInterval: 15000,
-  });
-
-  const subtipoOf = useMemo(() => {
-    const map = new Map<string, string>();
-    configs.forEach((c) => map.set(c.id, c.subtipo));
-    return map;
+  const { subtipoMap, nameMap } = useMemo(() => {
+    const s = new Map<string, string>();
+    const n = new Map<string, string>();
+    configs.forEach((c) => { s.set(c.id, c.subtipo); n.set(c.id, c.name); });
+    return { subtipoMap: s, nameMap: n };
   }, [configs]);
-
-  const resendMut = useMutation({
-    mutationFn: async (log: any) => {
-      const { data, error } = await supabase.functions.invoke("send-contencao-email", {
-        body: {
-          config_id: log.config_id,
-          subtipo: subtipoOf.get(log.config_id) ?? "iniciada",
-          contencao_id: log.entity_id ?? undefined,
-          resend: true,
-        },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Reenvio enfileirado");
-      qc.invalidateQueries({ queryKey: ["email_automation_log", "contencao"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
 
   if (isLoading) return <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div>;
 
@@ -284,48 +248,14 @@ const ContencaoEmailTab = () => {
     <div className="space-y-4">
       {configs.map((c) => <ConfigCard key={c.id} config={c} />)}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <History className="h-5 w-5" /> Histórico de envios — Contenção
-          </CardTitle>
-          <CardDescription>Últimos 30 envios (atualiza a cada 15s).</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {logs.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Sem envios registrados ainda.</p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {logs.map((l: any) => (
-                <div key={l.id} className="flex items-center justify-between gap-3 text-sm border rounded p-2 flex-wrap">
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="font-medium truncate">{l.subject ?? "—"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(l.created_at).toLocaleString("pt-BR")} • {l.tipo_disparo} • {l.trigger_type}
-                      {l.attempt && l.attempt > 1 ? ` • tentativa ${l.attempt}` : ""}
-                    </div>
-                    {l.error_message && (
-                      <div className="text-xs text-destructive mt-1 line-clamp-2">{l.error_message}</div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={
-                      l.status === "sent" || l.status === "queued" ? "default"
-                      : l.status === "failed" ? "destructive"
-                      : "secondary"
-                    }>{l.status}</Badge>
-                    {(l.status === "failed" || l.status === "draft") && l.config_id && (
-                      <Button size="sm" variant="ghost" onClick={() => resendMut.mutate(l)} disabled={resendMut.isPending}>
-                        <RotateCw className="h-3 w-3 mr-1" /> Reenviar
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <HistoryPanel
+        modulo="contencao"
+        senderFn="send-contencao-email"
+        configSubtipo={subtipoMap}
+        configName={nameMap}
+        title="Contenção"
+        buildResendBody={(log) => (log.entity_id ? { contencao_id: log.entity_id } : {})}
+      />
     </div>
   );
 };

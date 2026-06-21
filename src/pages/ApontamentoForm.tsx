@@ -828,8 +828,13 @@ const ApontamentoForm = () => {
   };
 
   const removeDefeitoDetalhe = (index: number) => {
-    if (defeitosDetalhes.length <= 2) return;
+    if (defeitosDetalhes.length <= 1) return;
     setDefeitosDetalhes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeLastDefeitoDetalhe = () => {
+    if (defeitosDetalhes.length <= 1) return;
+    setDefeitosDetalhes((prev) => prev.slice(0, -1));
   };
 
   const updateDefeitoDetalhe = (index: number, field: string, value: any) => {
@@ -837,6 +842,17 @@ const ApontamentoForm = () => {
   };
 
   const totalDefeitosQty = defeitosDetalhes.reduce((s, d) => s + d.qty_ng, 0);
+
+  // Quando só restou o Defeito Principal (collapse para "mesmo defeito"),
+  // sincroniza automaticamente qty = total NG e limpa a tag (usa a TAG geral).
+  useEffect(() => {
+    if (ngMultiploDecisao !== "diferente") return;
+    if (defeitosDetalhes.length !== 1) return;
+    const d = defeitosDetalhes[0];
+    if (d.qty_ng !== quantidadeNg || d.tag_number) {
+      setDefeitosDetalhes([{ ...d, qty_ng: quantidadeNg, tag_number: "" }]);
+    }
+  }, [defeitosDetalhes, ngMultiploDecisao, quantidadeNg]);
 
   const errClass = (field: string) => validationErrors.has(field) ? "border-destructive ring-1 ring-destructive" : "";
   const errLabelClass = (field: string) => validationErrors.has(field) ? "text-destructive font-semibold" : "";

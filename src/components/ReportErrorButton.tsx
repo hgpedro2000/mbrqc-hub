@@ -104,6 +104,22 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
   const newResolvedCount = myTickets.filter((t: any) => t.status === "resolvido" && !seenResolvedIds.includes(t.id)).length;
   const hasNewResolved = newResolvedCount > 0;
 
+  // Admin/Help Desk responsible: red indicator when there are pending tickets to handle
+  const { data: pendingAdminCount = 0 } = useQuery({
+    queryKey: ["pending-error-reports-count"],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("error_reports")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["pendente", "em_andamento"]);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!isAdmin,
+    refetchInterval: 30000,
+  });
+  const hasPendingAdmin = isAdmin && pendingAdminCount > 0;
+
   // When user opens status dialog, mark current resolved tickets as seen
   const markResolvedAsSeen = useCallback(() => {
     const resolvedIds = myTickets.filter((t: any) => t.status === "resolvido").map((t: any) => t.id);

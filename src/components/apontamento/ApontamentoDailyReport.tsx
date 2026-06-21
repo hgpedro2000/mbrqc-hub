@@ -1160,6 +1160,56 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => setDateTo(d ? format(d, "yyyy-MM-dd") : today)} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
+                  {/* Mobile-only inline buttons next to dates */}
+                  {mode === "ng" && (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "sm:hidden shrink-0 h-8 w-8 p-0",
+                            selectedFornecedores.length > 0 && "border-primary text-primary"
+                          )}
+                          title="Filtrar Fornecedor"
+                          aria-label="Filtrar Fornecedor"
+                        >
+                          <Filter className="w-4 h-4" />
+                          {selectedFornecedores.length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">{selectedFornecedores.length}</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[220px] p-2 max-h-[280px] overflow-y-auto" align="end">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[11px] text-muted-foreground font-medium">Filtrar por Fornecedor</span>
+                          {selectedFornecedores.length > 0 && (
+                            <button onClick={() => setSelectedFornecedores([])} className="text-[10px] text-primary hover:underline">Limpar</button>
+                          )}
+                        </div>
+                        {fornecedoresDisponiveis.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-3">Nenhum fornecedor encontrado</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {fornecedoresDisponiveis.map((f) => {
+                              const checked = selectedFornecedores.includes(f);
+                              return (
+                                <label key={f} className="flex items-center gap-2 px-1.5 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                                  <Checkbox
+                                    checked={checked}
+                                    onCheckedChange={(v) => {
+                                      setSelectedFornecedores((prev) => v ? [...prev, f] : prev.filter((x) => x !== f));
+                                    }}
+                                  />
+                                  <span className="text-xs flex-1 truncate">{f}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </PopoverContent>
+                    </Popover>
+                  )}
                   {/* PDF button — inline on mobile, icon-only */}
                   <div className="flex flex-col gap-1 sm:hidden shrink-0">
                     <Button

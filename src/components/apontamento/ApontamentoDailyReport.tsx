@@ -1362,12 +1362,13 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
           {/* Summary cards */}
           <div className="px-3 md:px-6 py-3 overflow-hidden">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
-              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
-              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Inspecionadas</p></div>
-              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-destructive">{totalNG}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total NG</p></div>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full min-w-0">
+              <div className="text-center p-1.5 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-sm sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
+              <div className="text-center p-1.5 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-sm sm:text-xl font-bold text-foreground">{totalOk}</p><p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total OK</p></div>
+              <div className="text-center p-1.5 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-sm sm:text-xl font-bold text-destructive">{totalNG}</p><p className="text-[8px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total NG</p></div>
             </div>
           </div>
+
 
           {/* Content by type */}
           <div className="px-3 md:px-6 pb-4 space-y-4 min-w-0 overflow-hidden">

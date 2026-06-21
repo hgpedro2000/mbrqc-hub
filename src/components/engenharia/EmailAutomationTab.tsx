@@ -396,8 +396,10 @@ const EmailAutomationTab = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <Input type="email" placeholder="email@empresa.com (apenas para 'Enviar teste')"
+              className="min-w-0 flex-1"
               value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
             <Button variant="outline" onClick={() => sendTest.mutate()}
+              className="w-full sm:w-auto shrink-0"
               disabled={sendTest.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)}>
               <Send className="w-4 h-4 mr-2" />
               {sendTest.isPending ? "Enviando…" : "Enviar teste"}

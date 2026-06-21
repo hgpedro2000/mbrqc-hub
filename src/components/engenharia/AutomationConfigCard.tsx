@@ -306,35 +306,72 @@ export const AutomationConfigCard = ({
           <DialogHeader>
             <DialogTitle>Cadastrar destinatários — {form.name}</DialogTitle>
             <DialogDescription>
-              Informe os e-mails separados por vírgula, ponto-e-vírgula ou nova linha.
-              TO recebe diretamente; CC recebe em cópia (uma entrega individual por endereço).
+              Informe os e-mails separados por vírgula, ponto-e-vírgula, espaço ou nova linha.
+              Endereços são normalizados (domínio em minúsculas) e duplicados são removidos automaticamente.
+              TO recebe diretamente; CC recebe em cópia.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label>Destinatários (TO)</Label>
-              <Textarea rows={3} placeholder="qualidade@empresa.com, engenharia@empresa.com"
-                value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} />
-            </div>
-            <div>
-              <Label>Em cópia (CC)</Label>
-              <Textarea rows={3} placeholder="gestor@empresa.com"
-                value={bulkCc} onChange={(e) => setBulkCc(e.target.value)} />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="ghost" onClick={() => setRecipientsOpen(false)}>Cancelar</Button>
-              <Button onClick={() => {
-                const to = parseList(bulkTo);
-                const cc = parseList(bulkCc);
-                const nextMeta = { ...(form.metadata ?? {}), cc };
-                setForm({ ...form, recipients: to, metadata: nextMeta });
-                save.mutate({ recipients: to, metadata: nextMeta });
-                setRecipientsOpen(false);
-              }}>
-                <Save className="h-4 w-4 mr-2" /> Salvar destinatários
-              </Button>
-            </div>
-          </div>
+          {(() => {
+            const to = parseEmails(bulkTo);
+            const cc = parseEmails(bulkCc);
+            const toSet = new Set(to.valid.map((e) => e.toLowerCase()));
+            const ccUnique = cc.valid.filter((e) => !toSet.has(e.toLowerCase()));
+            const ccOverlap = cc.valid.length - ccUnique.length;
+            const hasInvalid = to.invalid.length + cc.invalid.length > 0;
+            const totalUnique = to.valid.length + ccUnique.length;
+            const canSave = !hasInvalid && totalUnique > 0;
+            return (
+              <div className="space-y-3">
+                <div>
+                  <Label>Destinatários (TO)</Label>
+                  <Textarea rows={3} placeholder="qualidade@empresa.com, engenharia@empresa.com"
+                    value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} />
+                  <div className="flex flex-wrap gap-1 mt-1 text-xs">
+                    <Badge variant="secondary">Válidos: {to.valid.length}</Badge>
+                    {to.invalid.length > 0 && (
+                      <Badge variant="destructive">Inválidos: {to.invalid.join(", ")}</Badge>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label>Em cópia (CC)</Label>
+                  <Textarea rows={3} placeholder="gestor@empresa.com"
+                    value={bulkCc} onChange={(e) => setBulkCc(e.target.value)} />
+                  <div className="flex flex-wrap gap-1 mt-1 text-xs">
+                    <Badge variant="secondary">Válidos: {ccUnique.length}</Badge>
+                    {ccOverlap > 0 && (
+                      <Badge variant="outline" className="text-amber-600 border-amber-500">
+                        {ccOverlap} já em TO (ignorado)
+                      </Badge>
+                    )}
+                    {cc.invalid.length > 0 && (
+                      <Badge variant="destructive">Inválidos: {cc.invalid.join(", ")}</Badge>
+                    )}
+                  </div>
+                </div>
+                {hasInvalid && (
+                  <p className="text-xs text-destructive flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" /> Corrija os endereços inválidos antes de salvar.
+                  </p>
+                )}
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="ghost" onClick={() => setRecipientsOpen(false)}>Cancelar</Button>
+                  <Button
+                    disabled={!canSave}
+                    onClick={() => {
+                      const nextMeta = { ...(form.metadata ?? {}), cc: ccUnique };
+                      setForm({ ...form, recipients: to.valid, metadata: nextMeta });
+                      save.mutate({ recipients: to.valid, metadata: nextMeta });
+                      setBulkTo(to.valid.join(", "));
+                      setBulkCc(ccUnique.join(", "));
+                      setRecipientsOpen(false);
+                    }}>
+                    <Save className="h-4 w-4 mr-2" /> Salvar destinatários
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </Card>

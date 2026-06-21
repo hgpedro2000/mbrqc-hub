@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Save, Wand2, Search, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Wand2, Search, CheckCircle2, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 
@@ -32,6 +32,7 @@ const AdminPartNameFix = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Row | null>(null);
 
   // Load INC records with blank part_name
   const { data: rows = [], isLoading, refetch } = useQuery({
@@ -263,6 +264,31 @@ const AdminPartNameFix = () => {
     refetch();
   };
 
+  const deleteOne = async (row: Row) => {
+    setSaving(true);
+    await supabase.from("checklist_photos").delete().eq("checklist_id", row.id);
+    const { error } = await supabase.from("apontamentos").delete().eq("id", row.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao excluir: " + error.message);
+      return;
+    }
+    toast.success(`Registro ${row.numero} excluído`);
+    setEdits((p) => {
+      const n = { ...p };
+      delete n[row.id];
+      return n;
+    });
+    setSelected((p) => {
+      const n = new Set(p);
+      n.delete(row.id);
+      return n;
+    });
+    setDeleteTarget(null);
+    qc.invalidateQueries({ queryKey: ["inc-blank-partname"] });
+    refetch();
+  };
+
   const pendingCount = Object.values(edits).filter((v) => v && v.trim()).length;
   const suggestionsAvailable = filtered.filter((r) => getSuggestion(r.part_number)).length;
 
@@ -413,15 +439,27 @@ const AdminPartNameFix = () => {
                             )}
                           </td>
                           <td className="p-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => saveOne(r.id)}
-                              disabled={!hasEdit || saving}
-                              className="h-7 text-xs"
-                            >
-                              <Save className="w-3 h-3 mr-1" /> Salvar
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => saveOne(r.id)}
+                                disabled={!hasEdit || saving}
+                                className="h-7 text-xs"
+                              >
+                                <Save className="w-3 h-3 mr-1" /> Salvar
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                title="Excluir registro"
+                                onClick={() => setDeleteTarget(r)}
+                                disabled={saving}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -482,15 +520,27 @@ const AdminPartNameFix = () => {
                         Aplicar sugestão: {sug}
                       </button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => saveOne(r.id)}
-                      disabled={!hasEdit || saving}
-                      className="w-full h-8 text-xs"
-                    >
-                      <Save className="w-3 h-3 mr-1" /> Salvar
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => saveOne(r.id)}
+                        disabled={!hasEdit || saving}
+                        className="flex-1 h-8 text-xs"
+                      >
+                        <Save className="w-3 h-3 mr-1" /> Salvar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                        title="Excluir registro"
+                        onClick={() => setDeleteTarget(r)}
+                        disabled={saving}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </Card>
                 );
               })}
@@ -565,6 +615,34 @@ const AdminPartNameFix = () => {
                 );
               })
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Excluir registro
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir o registro{" "}
+            <span className="font-mono font-semibold text-foreground">{deleteTarget?.numero}</span>?{" "}
+            Essa ação não pode ser desfeita.
+          </p>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteTarget && deleteOne(deleteTarget)}
+              disabled={saving}
+            >
+              {saving ? "Excluindo..." : "Excluir"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

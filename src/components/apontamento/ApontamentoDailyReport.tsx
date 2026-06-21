@@ -651,13 +651,13 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
               const globalIdx = pageIdx * PER_PAGE + sub;
               if (!r) {
                 // Placeholder slot to keep 2×2 grid symmetric
-                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent" }]} />;
+                return <View key={`empty-${pageIdx}-${sub}`} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", borderColor: "transparent", overflow: "hidden" }]} />;
               }
               const modos = parseModos(r);
               const defectRows = getDefectRows(r);
               const photos = photoMap?.[r.id] || [];
               return (
-                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%" }]} wrap={false}>
+                <View key={r.id || globalIdx} style={[pdfStyles.ngDBlock, { width: "49.5%", height: "49%", overflow: "hidden" }]} wrap={false}>
                   <View style={pdfStyles.ngDHeader}>
                     <View style={{ flex: 1 }}>
                       <Text style={pdfStyles.ngDHeaderTitle}>{globalIdx + 1}. {r.numero || "—"} — {r.part_number || "—"}</Text>
@@ -736,9 +736,9 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     {photos.length > 0 && (
                       <View wrap={false} style={{ marginTop: "auto" }}>
                         <Text style={pdfStyles.ngDSectionTitle}>Fotos ({photos.length})</Text>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                        <View style={{ flexDirection: "row", flexWrap: "nowrap", gap: 4 }}>
                           {photos.slice(0, 4).map((url, i) => (
-                            <PdfImage key={i} src={url} style={{ width: 88, height: 88, objectFit: "cover", borderRadius: 3 }} />
+                            <PdfImage key={i} src={url} style={{ width: 72, height: 72, objectFit: "cover", borderRadius: 3 }} />
                           ))}
                         </View>
                       </View>

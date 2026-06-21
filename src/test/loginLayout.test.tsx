@@ -108,8 +108,10 @@ describe("Login layout & UX", () => {
   it("onboarding mentions both Mobis and Terceiro paths when open", () => {
     renderLogin();
     fireEvent.click(screen.getByRole("button", { name: /Ajuda/i }));
-    const panel = screen.getByText(/Primeira vez\? Veja onde clicar/i).closest("div")!;
-    expect(within(panel.parentElement as HTMLElement).getByText(/Mobis/i)).toBeInTheDocument();
-    expect(within(panel.parentElement as HTMLElement).getByText(/Terceiro/i)).toBeInTheDocument();
+    const heading = screen.getByText(/Primeira vez\? Veja onde clicar/i);
+    const panel = heading.closest("div")!.parentElement as HTMLElement;
+    // Within the onboarding panel, both keywords must appear
+    expect(within(panel).getByText(/Mobis \(funcionário\)/i)).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Terceiro/i).length).toBeGreaterThan(0);
   });
 });

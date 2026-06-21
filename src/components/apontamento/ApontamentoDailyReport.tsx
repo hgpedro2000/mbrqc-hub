@@ -1074,9 +1074,15 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
     ? new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")
     : `${new Date(dateFrom + "T12:00:00").toLocaleDateString("pt-BR")} a ${new Date(dateTo + "T12:00:00").toLocaleDateString("pt-BR")}`;
 
+  const generatedAt = new Date();
+  const generatedTimeStr = format(generatedAt, "HH'h'mm", { locale: ptBR });
+  const safeDateLabel = dateFrom === dateTo
+    ? format(new Date(dateFrom + "T12:00:00"), "dd-MM-yyyy", { locale: ptBR })
+    : `${format(new Date(dateFrom + "T12:00:00"), "dd-MM-yyyy", { locale: ptBR })} a ${format(new Date(dateTo + "T12:00:00"), "dd-MM-yyyy", { locale: ptBR })}`;
+
   const pdfFileName =
     mode === "ng"
-      ? `relatorio-ng-${dateFrom}.pdf`
+      ? `Incoming NG Report - ${safeDateLabel} - ${generatedTimeStr}.pdf`
       : locationFilter === "Área de Incoming"
       ? `relatorio-incoming-${dateFrom}.pdf`
       : `relatorio-diario-${dateFrom}.pdf`;

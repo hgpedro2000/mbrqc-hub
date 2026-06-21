@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Mail, Plus, X, Send, Clock, Save, History, AlertCircle } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+// auth user resolved via supabase.auth.getUser at trigger time
 
 interface AutomationConfig {
   id: string;
@@ -40,7 +40,6 @@ const WEEKDAYS = [
 
 const EmailAutomationTab = () => {
   const qc = useQueryClient();
-  const { profile } = useAuth();
   const [form, setForm] = useState<AutomationConfig | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
   const [newCc, setNewCc] = useState("");
@@ -93,11 +92,12 @@ const EmailAutomationTab = () => {
   const sendNow = useMutation({
     mutationFn: async () => {
       if (!form) return;
+      const { data: userData } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("email_automation_log" as any)
         .insert({
           config_id: form.id,
-          triggered_by: profile?.id,
+          triggered_by: userData.user?.id,
           trigger_type: "manual",
           recipients: form.recipients,
           subject: form.subject_template.replace("{{date}}", new Date().toLocaleDateString("pt-BR")),

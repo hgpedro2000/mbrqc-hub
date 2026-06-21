@@ -68,8 +68,29 @@ export const AutomationConfigCard = ({
     setRecipientsOpen(true);
   };
 
-  const parseList = (s: string) =>
-    Array.from(new Set(s.split(/[,;\n]/).map((x) => x.trim()).filter((x) => /.+@.+\..+/.test(x))));
+  // RFC-5322 inspired pragmatic email regex
+  const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
+  const normalizeEmail = (raw: string) => {
+    const t = raw.trim().replace(/^["'<]+|["'>]+$/g, "");
+    if (!t) return "";
+    const idx = t.lastIndexOf("@");
+    if (idx < 1) return t.toLowerCase();
+    return t.slice(0, idx) + "@" + t.slice(idx + 1).toLowerCase();
+  };
+  const parseEmails = (s: string) => {
+    const seen = new Set<string>();
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    const tokens = s.split(/[,;\n\t\s]+/).map(normalizeEmail).filter(Boolean);
+    for (const e of tokens) {
+      const key = e.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (EMAIL_RE.test(e) && e.length <= 254) valid.push(e);
+      else invalid.push(e);
+    }
+    return { valid, invalid };
+  };
 
   const save = useMutation({
     mutationFn: async (payload: Partial<GenericConfig>) => {

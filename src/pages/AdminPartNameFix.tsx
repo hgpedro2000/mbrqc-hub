@@ -525,29 +525,45 @@ const AdminPartNameFix = () => {
             />
           </div>
           <div className="text-xs text-muted-foreground">
-            {pickerResults.length} resultado(s) — filtrado por Projeto e Fornecedor da linha
+            {pickerResults.length} resultado(s) — {pickerQuery.trim()
+              ? "busca em todo o catálogo (BATCH)"
+              : "filtrado por Projeto e Fornecedor da linha"}
           </div>
           <div className="flex-1 overflow-y-auto border rounded-md divide-y">
             {pickerResults.length === 0 ? (
               <div className="p-6 text-center text-sm text-muted-foreground">
-                Nenhum Part Number encontrado para este Projeto + Fornecedor.
+                Nenhum Part Number encontrado. Digite para buscar em todo o catálogo.
               </div>
             ) : (
-              pickerResults.map((c: any, i: number) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => applyPickerSelection(c.part_number, c.part_name)}
-                  disabled={saving}
-                  className="w-full text-left p-2.5 hover:bg-muted transition-colors flex items-center gap-3 disabled:opacity-50"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-mono text-sm font-semibold">{c.part_number}</div>
-                    <div className="text-xs text-muted-foreground truncate">{c.part_name}</div>
-                  </div>
-                  <Badge variant="outline" className="text-[10px]">{c.project}</Badge>
-                </button>
-              ))
+              pickerResults.map((c: any, i: number) => {
+                const cProj = (c.project || "").trim();
+                const cSupp = (c.suppliers as any)?.name || "";
+                const matchProj = cProj.toLowerCase() === (pickerRow?.projeto || "").trim().toLowerCase();
+                const matchSupp = cSupp.trim().toLowerCase() === (pickerRow?.fornecedor || "").trim().toLowerCase();
+                const fullMatch = matchProj && matchSupp;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => applyPickerSelection(c.part_number, c.part_name)}
+                    disabled={saving}
+                    className={`w-full text-left p-2.5 hover:bg-muted transition-colors flex items-center gap-3 disabled:opacity-50 ${fullMatch ? "bg-primary/5" : ""}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono text-sm font-semibold">{c.part_number}</div>
+                      <div className="text-xs text-muted-foreground truncate">{c.part_name}</div>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        <Badge variant={matchProj ? "default" : "outline"} className="text-[10px]">
+                          Projeto: {cProj || "—"}
+                        </Badge>
+                        <Badge variant={matchSupp ? "default" : "outline"} className="text-[10px]">
+                          Fornecedor: {cSupp || "—"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </DialogContent>

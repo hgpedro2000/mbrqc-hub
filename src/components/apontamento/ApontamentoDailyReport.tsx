@@ -84,6 +84,50 @@ const getDefectRows = (r: any): Array<{ tag: string; desc: string }> => {
   return rows;
 };
 
+/* Combined per-defect rows: modo de falha + tag + descrição aligned. */
+const getCombinedRows = (r: any): Array<{ modo: string; tag: string; desc: string; qty?: number }> => {
+  const norm = (v: any) => (v == null ? "" : String(v).trim());
+  const skipPlaceholder = (s: string) => !!s && s.toLowerCase() !== "sem descrição" && s.toLowerCase() !== "sem descricao";
+  const rows: Array<{ modo: string; tag: string; desc: string; qty?: number }> = [];
+  // Main modos (split by , or ;)
+  const mainModosRaw = norm(r?.modo_falha);
+  const mainModos = mainModosRaw ? mainModosRaw.split(/[,;]+/).map((s: string) => stripCode(s.trim())).filter(Boolean) : [];
+  const detalhes = (r?.detalhes_modo_falha && typeof r.detalhes_modo_falha === "object") ? r.detalhes_modo_falha : null;
+  const qtyOf = (nome: string) => {
+    if (!detalhes) return undefined;
+    const v = (detalhes as any)[nome] ?? (detalhes as any)[stripCode(nome)];
+    if (typeof v === "number") return v;
+    if (v && typeof v === "object" && v.qty != null) return Number(v.qty);
+    return undefined;
+  };
+  const mainTag = norm(r?.numero_tag ?? r?.tag_number);
+  const mainDescRaw = norm(r?.descricao);
+  const mainDesc = skipPlaceholder(mainDescRaw) ? mainDescRaw : "";
+  if (mainModos.length > 0) {
+    mainModos.forEach((m: string, i: number) => {
+      rows.push({
+        modo: m,
+        tag: i === 0 ? mainTag : "",
+        desc: i === 0 ? mainDesc : "",
+        qty: qtyOf(m),
+      });
+    });
+  } else if (mainTag || mainDesc) {
+    rows.push({ modo: "", tag: mainTag, desc: mainDesc });
+  }
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => {
+    const modo = stripCode(norm(d?.modo_falha));
+    const tag = norm(d?.tag);
+    const descRaw = norm(d?.descricao);
+    const desc = skipPlaceholder(descRaw) ? descRaw : "";
+    if (modo || tag || desc) rows.push({ modo, tag, desc });
+  });
+  return rows;
+};
+
+
+
 
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (

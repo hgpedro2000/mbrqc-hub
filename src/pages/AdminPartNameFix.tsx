@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Save, Wand2, Search, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -47,18 +48,78 @@ const AdminPartNameFix = () => {
     },
   });
 
-  // Load part_numbers catalog for suggestions
+  // Load part_numbers catalog for suggestions (with project + supplier)
   const { data: catalog = [] } = useQuery({
     queryKey: ["part-numbers-catalog-all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number,part_name")
+        .select("part_number,part_name,project,suppliers(name)")
         .eq("active", true);
       if (error) throw error;
       return data || [];
     },
   });
+
+  // Picker dialog state
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerRowId, setPickerRowId] = useState<string | null>(null);
+  const [pickerQuery, setPickerQuery] = useState("");
+  const pickerRow = useMemo(() => rows.find((r) => r.id === pickerRowId) || null, [rows, pickerRowId]);
+
+  const pickerResults = useMemo(() => {
+    if (!pickerRow) return [];
+    const proj = (pickerRow.projeto || "").trim().toLowerCase();
+    const supp = (pickerRow.fornecedor || "").trim().toLowerCase();
+    const q = pickerQuery.trim().toLowerCase();
+    return (catalog as any[])
+      .filter((c) => {
+        const cProj = (c.project || "").trim().toLowerCase();
+        const cSupp = ((c.suppliers as any)?.name || "").trim().toLowerCase();
+        if (proj && cProj !== proj) return false;
+        if (supp && cSupp !== supp) return false;
+        if (!q) return true;
+        return (
+          (c.part_number || "").toLowerCase().includes(q) ||
+          (c.part_name || "").toLowerCase().includes(q)
+        );
+      })
+      .slice(0, 200);
+  }, [catalog, pickerRow, pickerQuery]);
+
+  const openPicker = (rowId: string) => {
+    setPickerRowId(rowId);
+    setPickerQuery("");
+    setPickerOpen(true);
+  };
+
+  const applyPickerSelection = async (part_number: string, part_name: string) => {
+    if (!pickerRowId) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("apontamentos")
+      .update({ part_number, part_name })
+      .eq("id", pickerRowId);
+    setSaving(false);
+    if (error) {
+      toast.error("Erro ao salvar: " + error.message);
+      return;
+    }
+    toast.success(`Atualizado: ${part_number} — ${part_name}`);
+    setEdits((p) => {
+      const n = { ...p };
+      delete n[pickerRowId];
+      return n;
+    });
+    setSelected((p) => {
+      const n = new Set(p);
+      n.delete(pickerRowId);
+      return n;
+    });
+    setPickerOpen(false);
+    qc.invalidateQueries({ queryKey: ["inc-blank-partname"] });
+    refetch();
+  };
 
   const suggestionByPN = useMemo(() => {
     const map: Record<string, string> = {};
@@ -304,7 +365,21 @@ const AdminPartNameFix = () => {
                           <td className="p-2 text-xs">{r.data}</td>
                           <td className="p-2 text-xs">{r.projeto || "—"}</td>
                           <td className="p-2 text-xs">{r.fornecedor || "—"}</td>
-                          <td className="p-2 font-mono text-xs">{r.part_number || "—"}</td>
+                          <td className="p-2 font-mono text-xs">
+                            <div className="flex items-center gap-1">
+                              <span className="flex-1">{r.part_number || "—"}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 shrink-0"
+                                title="Buscar Part Number por Projeto/Fornecedor"
+                                onClick={() => openPicker(r.id)}
+                              >
+                                <Search className="w-3.5 h-3.5 text-blue-600" />
+                              </Button>
+                            </div>
+                          </td>
                           <td className="p-2">
                             <Input
                               value={value}
@@ -362,7 +437,19 @@ const AdminPartNameFix = () => {
                           {r.projeto && <Badge variant="secondary" className="text-[10px]">{r.projeto}</Badge>}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5 truncate">{r.fornecedor || "—"}</div>
-                        <div className="font-mono text-xs mt-0.5">{r.part_number || "—"}</div>
+                        <div className="font-mono text-xs mt-0.5 flex items-center gap-1">
+                          <span className="flex-1">{r.part_number || "—"}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            title="Buscar Part Number por Projeto/Fornecedor"
+                            onClick={() => openPicker(r.id)}
+                          >
+                            <Search className="w-3.5 h-3.5 text-blue-600" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                     <Input
@@ -396,6 +483,60 @@ const AdminPartNameFix = () => {
           </>
         )}
       </main>
+
+      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5 text-blue-500" />
+              Buscar Part Number
+            </DialogTitle>
+          </DialogHeader>
+          {pickerRow && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="secondary">Projeto: {pickerRow.projeto || "—"}</Badge>
+              <Badge variant="secondary">Fornecedor: {pickerRow.fornecedor || "—"}</Badge>
+              <Badge variant="outline" className="font-mono">PN atual: {pickerRow.part_number || "—"}</Badge>
+            </div>
+          )}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              autoFocus
+              placeholder="Filtrar por Part Number ou Part Name"
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {pickerResults.length} resultado(s) — filtrado por Projeto e Fornecedor da linha
+          </div>
+          <div className="flex-1 overflow-y-auto border rounded-md divide-y">
+            {pickerResults.length === 0 ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                Nenhum Part Number encontrado para este Projeto + Fornecedor.
+              </div>
+            ) : (
+              pickerResults.map((c: any, i: number) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => applyPickerSelection(c.part_number, c.part_name)}
+                  disabled={saving}
+                  className="w-full text-left p-2.5 hover:bg-muted transition-colors flex items-center gap-3 disabled:opacity-50"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono text-sm font-semibold">{c.part_number}</div>
+                    <div className="text-xs text-muted-foreground truncate">{c.part_name}</div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">{c.project}</Badge>
+                </button>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

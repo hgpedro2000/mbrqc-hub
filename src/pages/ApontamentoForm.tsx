@@ -828,8 +828,13 @@ const ApontamentoForm = () => {
   };
 
   const removeDefeitoDetalhe = (index: number) => {
-    if (defeitosDetalhes.length <= 2) return;
+    if (defeitosDetalhes.length <= 1) return;
     setDefeitosDetalhes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeLastDefeitoDetalhe = () => {
+    if (defeitosDetalhes.length <= 1) return;
+    setDefeitosDetalhes((prev) => prev.slice(0, -1));
   };
 
   const updateDefeitoDetalhe = (index: number, field: string, value: any) => {
@@ -837,6 +842,17 @@ const ApontamentoForm = () => {
   };
 
   const totalDefeitosQty = defeitosDetalhes.reduce((s, d) => s + d.qty_ng, 0);
+
+  // Quando só restou o Defeito Principal (collapse para "mesmo defeito"),
+  // sincroniza automaticamente qty = total NG e limpa a tag (usa a TAG geral).
+  useEffect(() => {
+    if (ngMultiploDecisao !== "diferente") return;
+    if (defeitosDetalhes.length !== 1) return;
+    const d = defeitosDetalhes[0];
+    if (d.qty_ng !== quantidadeNg || d.tag_number) {
+      setDefeitosDetalhes([{ ...d, qty_ng: quantidadeNg, tag_number: "" }]);
+    }
+  }, [defeitosDetalhes, ngMultiploDecisao, quantidadeNg]);
 
   const errClass = (field: string) => validationErrors.has(field) ? "border-destructive ring-1 ring-destructive" : "";
   const errLabelClass = (field: string) => validationErrors.has(field) ? "text-destructive font-semibold" : "";
@@ -892,7 +908,7 @@ const ApontamentoForm = () => {
     return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, "0") + "min" : ""}` : `${m}min`;
   };
 
-  const validate = (): boolean => {
+  const validate = async (): Promise<boolean> => {
     const errors = new Set<string>();
     const msgs: string[] = [];
 
@@ -901,6 +917,34 @@ const ApontamentoForm = () => {
     if (!projeto) { errors.add("projeto"); msgs.push("Projeto"); }
     if (!fornecedor) { errors.add("fornecedor"); msgs.push("Fornecedor"); }
     if (!partNumber) { errors.add("partNumber"); msgs.push("Part Number"); }
+
+    // BLOQUEIO: Part Number digitado precisa existir no banco e pertencer ao fornecedor
+    if (partNumber && partNumber.trim()) {
+      try {
+        const pnNorm = partNumber.trim().replace(/-/g, "").toUpperCase();
+        const { data: parts } = await supabase
+          .from("part_numbers")
+          .select("part_number, suppliers(name)")
+          .eq("active", true);
+        const match = (parts || []).find((p: any) =>
+          (p.part_number || "").replace(/-/g, "").toUpperCase() === pnNorm
+        );
+        if (!match) {
+          errors.add("partNumber");
+          msgs.push(`Part Number "${partNumber}" não está cadastrado no banco. Selecione um PN válido na lista ou cadastre-o antes de salvar.`);
+        } else if (fornecedor) {
+          const supName = ((match as any).suppliers?.name || "").trim();
+          if (supName && supName !== fornecedor.trim()) {
+            errors.add("partNumber");
+            errors.add("fornecedor");
+            msgs.push(`Part Number "${partNumber}" pertence ao fornecedor "${supName}", incompatível com o fornecedor selecionado "${fornecedor}".`);
+          }
+        }
+      } catch {
+        // se a verificação falhar (offline), não bloqueia para não travar o usuário
+      }
+    }
+
 
     if (!isOem && !isIncoming && !fase) { errors.add("fase"); msgs.push("Fase"); }
     if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }
@@ -973,10 +1017,14 @@ const ApontamentoForm = () => {
   };
 
   const handleSave = async (asDraft: boolean) => {
-    if (!asDraft && !validate()) return;
+    if (!asDraft && !(await validate())) return;
     if (asDraft) setValidationErrors(new Set());
     setSaving(true);
     try {
+      // Caso "diferente" tenha sido reduzido a 1 defeito, tratar como "mesmo defeito" usando o Principal
+      const isDiferenteCollapsed = isIncoming && ngMultiploDecisao === "diferente" && defeitosDetalhes.length === 1;
+      const effDescricao = isDiferenteCollapsed ? (defeitosDetalhes[0]?.descricao || descricao) : descricao;
+      const effModoFalha = isDiferenteCollapsed ? (defeitosDetalhes[0]?.modo_falha || modoFalha) : modoFalha;
       const payload: any = {
         tipo: formTipo,
         titulo: `${typeLabels[formTipo]} - ${partNumber || "Sem PN"}`,
@@ -992,29 +1040,29 @@ const ApontamentoForm = () => {
         alc_expected: (alcExpected && alcExpected.trim()) ? alcExpected.trim() : null,
         alc_validation_method: alcValidatedVia,
         alc_validation_status: alcStatus === "match" ? "ok" : alcStatus === "mismatch" ? "error" : null,
-        descricao: descricao || "Sem descrição",
+        descricao: effDescricao || "Sem descrição",
         quantidade_inspecionada: quantidadeInspecionada,
         quantidade_ng: quantidadeNg,
         quantidade_ok: quantidadeOk,
         lote_inspecionado: loteInspecionado || null,
-        modo_falha: modoFalha || null,
+        modo_falha: effModoFalha || null,
         parada_linha: paradaLinha,
         parada_linha_tempo: paradaLinha === "sim" ? paradaLinhaTempo : null,
         local_deteccao: localDeteccao || null,
         vin_number: vinNumber || null,
-        responsabilidade_defeito: (isIncoming && (quantidadeNg === 0 || descricao === "Sem defeito encontrado durante essa inspeção")) ? null : (responsabilidadeDefeito || null),
+        responsabilidade_defeito: (isIncoming && (quantidadeNg === 0 || effDescricao === "Sem defeito encontrado durante essa inspeção")) ? null : (responsabilidadeDefeito || null),
         quantidade_detectado: quantidadeDetectado,
         lancamento: lancamento || null,
         analise_inicial: analiseInicial || null,
         acao_imediata: acaoImediata || null,
         comentario_adicional: comentarioAdicional || null,
         segundo_defeitos: temSegundoDefeito === "sim" ? segundoDefeitos :
-          ngMultiploDecisao === "diferente" ? defeitosDetalhes.map((d) => ({ modo_falha: d.modo_falha, descricao: d.descricao, qty: d.qty_ng, tag: d.tag_number || null })) : [],
+          (ngMultiploDecisao === "diferente" && defeitosDetalhes.length > 1) ? defeitosDetalhes.map((d) => ({ modo_falha: d.modo_falha, descricao: d.descricao, qty: d.qty_ng, tag: d.tag_number || null })) : [],
         status: asDraft ? "draft" : "submitted",
         created_by: user?.id || null,
         co_inspetores: temCoInspecao === "sim" ? coInspetores : [],
         tempo_inspecao: horaInicio && horaFim ? `${horaInicio} - ${horaFim} (${calcDuration(horaInicio, horaFim)})` : null,
-        numero_tag: isIncoming ? (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" ? (tagNumber || null) : null) : null,
+        numero_tag: isIncoming ? (quantidadeNg > 0 && (ngMultiploDecisao !== "diferente" || defeitosDetalhes.length === 1) ? (tagNumber || null) : null) : null,
       } as any;
 
       let recordId = id;
@@ -1468,11 +1516,12 @@ const ApontamentoForm = () => {
                     {totalDefeitosQty}/{quantidadeNg} NG
                   </Badge>
                 </div>
-                {defeitosDetalhes.map((detalhe, idx) => (
+                {defeitosDetalhes.map((detalhe, idx) => {
+                  const isPrincipalSolo = idx === 0 && defeitosDetalhes.length === 1;
+                  return (
                   <div key={idx} className="border rounded-lg p-3 space-y-3 bg-muted/10">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Defeito {idx === 0 ? "Principal" : `#${idx + 1}`}</span>
-                      {idx >= 2 && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeDefeitoDetalhe(idx)}><Trash2 className="w-4 h-4" /></Button>}
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Modo de Falha *</Label>
@@ -1485,22 +1534,35 @@ const ApontamentoForm = () => {
                       <Label className="text-xs">Descrição *</Label>
                       <Textarea value={detalhe.descricao} onChange={(e) => updateDefeitoDetalhe(idx, "descricao", e.target.value)} placeholder="Descrição do defeito" rows={2} />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5 w-full">
-                        <Label className="text-xs">Qty NG *</Label>
-                        <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
+                    {!isPrincipalSolo && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1.5 w-full">
+                          <Label className="text-xs">Qty NG *</Label>
+                          <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value))} className="w-full" />
+                        </div>
+                        <div className="space-y-1.5 w-full">
+                          <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
+                          <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
+                        </div>
                       </div>
-                      <div className="space-y-1.5 w-full">
-                        <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
-                        <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
-                      </div>
-                    </div>
+                    )}
+                    {isPrincipalSolo && (
+                      <p className="text-xs text-muted-foreground">Qty NG = {quantidadeNg} (total). A TAG é preenchida na seção "Número da TAG" abaixo.</p>
+                    )}
                   </div>
-                ))}
-                {defeitosDetalhes.length < quantidadeNg && (
-                  <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
-                )}
-                {totalDefeitosQty !== quantidadeNg && (
+                  );
+                })}
+                <div className="flex flex-wrap gap-2">
+                  {defeitosDetalhes.length < quantidadeNg && (
+                    <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
+                  )}
+                  {defeitosDetalhes.length > 1 && (
+                    <Button variant="outline" size="sm" onClick={removeLastDefeitoDetalhe} className="gap-2 w-full sm:w-auto text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" /> Excluir Defeito #{defeitosDetalhes.length}
+                    </Button>
+                  )}
+                </div>
+                {defeitosDetalhes.length > 1 && totalDefeitosQty !== quantidadeNg && (
                   <p className="text-xs text-destructive font-medium">⚠ A soma dos NG ({totalDefeitosQty}) deve ser igual ao total NG ({quantidadeNg})</p>
                 )}
               </div>
@@ -1664,8 +1726,8 @@ const ApontamentoForm = () => {
           </div>
         </div>
 
-        {/* TAG NUMBER - Incoming only (hidden when defeitos diferentes, since each defeito has its own tag) */}
-        {isIncoming && ngMultiploDecisao !== "diferente" && (
+        {/* TAG NUMBER - Incoming (visível também quando "diferente" foi reduzido a 1 defeito) */}
+        {isIncoming && (ngMultiploDecisao !== "diferente" || defeitosDetalhes.length === 1) && (
           <div className="form-section">
             <h2 className="form-section-title flex items-center gap-2">
               <Tag className="w-4 h-4" /> Número da TAG

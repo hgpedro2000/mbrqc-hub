@@ -40,6 +40,7 @@ import BarcodeScanner from "./pages/BarcodeScanner";
 import MfaSetup from "./pages/MfaSetup";
 import MfaVerify from "./pages/MfaVerify";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import AdminPartNameFix from "./pages/AdminPartNameFix";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 

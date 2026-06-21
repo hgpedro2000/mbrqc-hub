@@ -1237,8 +1237,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 )}
-                <div className="flex flex-col gap-1">
+                <div className="hidden sm:flex flex-col gap-1">
                   <Button
+                    ref={pdfButtonRef}
                     variant="outline"
                     size="sm"
                     className="gap-1 h-8 px-2 text-xs"

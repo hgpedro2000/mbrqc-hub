@@ -439,15 +439,27 @@ const AdminPartNameFix = () => {
                             )}
                           </td>
                           <td className="p-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => saveOne(r.id)}
-                              disabled={!hasEdit || saving}
-                              className="h-7 text-xs"
-                            >
-                              <Save className="w-3 h-3 mr-1" /> Salvar
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => saveOne(r.id)}
+                                disabled={!hasEdit || saving}
+                                className="h-7 text-xs"
+                              >
+                                <Save className="w-3 h-3 mr-1" /> Salvar
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                title="Excluir registro"
+                                onClick={() => setDeleteTarget(r)}
+                                disabled={saving}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );

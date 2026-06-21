@@ -151,8 +151,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setMfaStatus(status);
   }, [session, checkMFAStatus, fetchAdminRole]);
 
-  const hydrateAuthState = useCallback(async (nextSession: Session | null) => {
-    setSession(nextSession);
+  const hydrateAuthState = useCallback(async (nextSession: Session | null, isInitial = false) => {
+    setSession((prev) => {
+      // If just a token refresh for the same user, don't trigger a full reload.
+      return nextSession;
+    });
 
     if (!nextSession?.user) {
       setProfile(null);
@@ -162,8 +165,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setLoading(true);
-    setMfaStatus("checking");
+    // Only show full-screen loading on initial hydration or when the user changes.
+    // Token refreshes (alt+tab) must NOT remount the route tree.
+    if (isInitial) {
+      setLoading(true);
+      setMfaStatus("checking");
+    }
 
     await fetchProfile(nextSession.user.id);
     const adminFlag = await fetchAdminRole(nextSession.user.id);
@@ -175,19 +182,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const status = await checkMFAStatus(adminFlag);
-    setMfaStatus(status);
+    if (isInitial) {
+      const status = await checkMFAStatus(adminFlag);
+      setMfaStatus(status);
+    }
     setLoading(false);
   }, [checkMFAStatus, checkMinVersion, fetchProfile, fetchAdminRole]);
 
   useEffect(() => {
     setLoading(true);
+    let initialized = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      void hydrateAuthState(nextSession);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      // Ignore token refreshes — they fire when the tab regains focus and would
+      // otherwise remount the entire route tree and wipe in-progress form state.
+      if (event === "TOKEN_REFRESHED") {
+        setSession(nextSession);
+        return;
+      }
+      // SIGNED_IN fires on every getSession after focus too; only re-hydrate
+      // if the user actually changed.
+      if (event === "SIGNED_IN" && initialized) {
+        setSession(nextSession);
+        return;
+      }
+      void hydrateAuthState(nextSession, !initialized);
+      initialized = true;
     });
 
-    void supabase.auth.getSession().then(({ data: { session } }) => hydrateAuthState(session));
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      void hydrateAuthState(session, !initialized);
+      initialized = true;
+    });
 
     return () => subscription.unsubscribe();
   }, [hydrateAuthState]);

@@ -1043,8 +1043,8 @@ const ApontamentoDashboard = () => {
           {profile?.is_admin && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
-                  <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
+                <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs h-7 px-2">
+                  <Download className="w-3.5 h-3.5 sm:mr-1" /><span className="hidden sm:inline">PPTX</span><ChevronDown className="w-3 h-3 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">

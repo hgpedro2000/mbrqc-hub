@@ -1020,10 +1020,13 @@ export type Database = {
           include_ng_pdf: boolean
           last_sent_at: string | null
           message_body: string
+          metadata: Json
+          modulo: string
           name: string
           recipients: string[]
           schedule_time: string
           subject_template: string
+          subtipo: string
           timezone: string
           updated_at: string
           weekdays: number[]
@@ -1038,10 +1041,13 @@ export type Database = {
           include_ng_pdf?: boolean
           last_sent_at?: string | null
           message_body?: string
+          metadata?: Json
+          modulo?: string
           name?: string
           recipients?: string[]
           schedule_time?: string
           subject_template?: string
+          subtipo?: string
           timezone?: string
           updated_at?: string
           weekdays?: number[]
@@ -1056,10 +1062,13 @@ export type Database = {
           include_ng_pdf?: boolean
           last_sent_at?: string | null
           message_body?: string
+          metadata?: Json
+          modulo?: string
           name?: string
           recipients?: string[]
           schedule_time?: string
           subject_template?: string
+          subtipo?: string
           timezone?: string
           updated_at?: string
           weekdays?: number[]
@@ -1071,9 +1080,11 @@ export type Database = {
           attempt: number
           config_id: string | null
           created_at: string
+          entity_id: string | null
           error_message: string | null
           error_notified: boolean
           id: string
+          modulo: string
           ng_count: number | null
           pdf_url: string | null
           period_end: string | null
@@ -1084,6 +1095,7 @@ export type Database = {
           send_date: string | null
           status: string
           subject: string | null
+          tipo_disparo: string
           trigger_type: string
           triggered_by: string | null
         }
@@ -1091,9 +1103,11 @@ export type Database = {
           attempt?: number
           config_id?: string | null
           created_at?: string
+          entity_id?: string | null
           error_message?: string | null
           error_notified?: boolean
           id?: string
+          modulo?: string
           ng_count?: number | null
           pdf_url?: string | null
           period_end?: string | null
@@ -1104,6 +1118,7 @@ export type Database = {
           send_date?: string | null
           status?: string
           subject?: string | null
+          tipo_disparo?: string
           trigger_type?: string
           triggered_by?: string | null
         }
@@ -1111,9 +1126,11 @@ export type Database = {
           attempt?: number
           config_id?: string | null
           created_at?: string
+          entity_id?: string | null
           error_message?: string | null
           error_notified?: boolean
           id?: string
+          modulo?: string
           ng_count?: number | null
           pdf_url?: string | null
           period_end?: string | null
@@ -1124,6 +1141,7 @@ export type Database = {
           send_date?: string | null
           status?: string
           subject?: string | null
+          tipo_disparo?: string
           trigger_type?: string
           triggered_by?: string | null
         }

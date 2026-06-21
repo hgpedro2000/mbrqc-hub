@@ -105,7 +105,9 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
     );
   }, [reports, searchTerm, moduleFilter, activeTab]);
 
-  const pendingCount = reports.filter((r: any) => r.status === "pendente" || r.status === "em_andamento").length;
+  const pendenteCount = reports.filter((r: any) => r.status === "pendente").length;
+  const emAndamentoCount = reports.filter((r: any) => r.status === "em_andamento").length;
+  const pendingCount = pendenteCount + emAndamentoCount;
   const resolvedCount = reports.filter((r: any) => r.status === "resolvido").length;
 
   const openView = (item: any) => {

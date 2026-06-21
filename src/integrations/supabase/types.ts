@@ -1014,6 +1014,7 @@ export type Database = {
           cc_recipients: string[]
           created_at: string
           enabled: boolean
+          error_notify_recipients: string[] | null
           id: string
           include_dashboard_html: boolean
           include_ng_pdf: boolean
@@ -1031,6 +1032,7 @@ export type Database = {
           cc_recipients?: string[]
           created_at?: string
           enabled?: boolean
+          error_notify_recipients?: string[] | null
           id?: string
           include_dashboard_html?: boolean
           include_ng_pdf?: boolean
@@ -1048,6 +1050,7 @@ export type Database = {
           cc_recipients?: string[]
           created_at?: string
           enabled?: boolean
+          error_notify_recipients?: string[] | null
           id?: string
           include_dashboard_html?: boolean
           include_ng_pdf?: boolean
@@ -1065,12 +1068,18 @@ export type Database = {
       }
       email_automation_log: {
         Row: {
+          attempt: number
           config_id: string | null
           created_at: string
           error_message: string | null
+          error_notified: boolean
           id: string
           ng_count: number | null
           pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          preview_html: string | null
+          preview_pdf_url: string | null
           recipients: string[]
           send_date: string | null
           status: string
@@ -1079,12 +1088,18 @@ export type Database = {
           triggered_by: string | null
         }
         Insert: {
+          attempt?: number
           config_id?: string | null
           created_at?: string
           error_message?: string | null
+          error_notified?: boolean
           id?: string
           ng_count?: number | null
           pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          preview_html?: string | null
+          preview_pdf_url?: string | null
           recipients?: string[]
           send_date?: string | null
           status?: string
@@ -1093,12 +1108,18 @@ export type Database = {
           triggered_by?: string | null
         }
         Update: {
+          attempt?: number
           config_id?: string | null
           created_at?: string
           error_message?: string | null
+          error_notified?: boolean
           id?: string
           ng_count?: number | null
           pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          preview_html?: string | null
+          preview_pdf_url?: string | null
           recipients?: string[]
           send_date?: string | null
           status?: string

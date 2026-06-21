@@ -65,6 +65,26 @@ const getDescList = (r: any): string[] => {
   return out;
 };
 
+/* Paired tag+desc rows aligned by index (main first, then each segundo_defeito). */
+const getDefectRows = (r: any): Array<{ tag: string; desc: string }> => {
+  const norm = (v: any) => (v == null ? "" : String(v).trim());
+  const skipPlaceholder = (s: string) => !!s && s.toLowerCase() !== "sem descrição" && s.toLowerCase() !== "sem descricao";
+  const rows: Array<{ tag: string; desc: string }> = [];
+  const mainTag = norm(r?.numero_tag ?? r?.tag_number);
+  const mainDescRaw = norm(r?.descricao);
+  const mainDesc = skipPlaceholder(mainDescRaw) ? mainDescRaw : "";
+  if (mainTag || mainDesc) rows.push({ tag: mainTag, desc: mainDesc });
+  const sd = (r?.segundo_defeitos || []) as any[];
+  if (Array.isArray(sd)) sd.forEach((d: any) => {
+    const tag = norm(d?.tag);
+    const descRaw = norm(d?.descricao);
+    const desc = skipPlaceholder(descRaw) ? descRaw : "";
+    if (tag || desc) rows.push({ tag, desc });
+  });
+  return rows;
+};
+
+
 /* ── Mobile card for Daily mode ── */
 const DailyMobileCard = ({ r, onNumberClick }: { r: any; onNumberClick: (id: string) => void }) => (
   <div className="border border-border rounded-lg p-3 bg-card shadow-sm">

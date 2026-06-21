@@ -106,6 +106,10 @@ const EmailAutomationTabs = () => {
             <Bell className="h-4 w-4" />
             <span>Alerta de Qualidade</span>
           </TabsTrigger>
+          <TabsTrigger value="contencao" className="gap-2">
+            <ShieldAlert className="h-4 w-4" />
+            <span>Contenção</span>
+          </TabsTrigger>
           {COMING_SOON.map((t) => {
             const Icon = t.icon;
             return (

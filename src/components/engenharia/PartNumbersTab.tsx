@@ -14,6 +14,8 @@ import { Plus, Pencil, Loader2, Trash2, Search } from "lucide-react";
 import { toast } from "sonner";
 import ExcelImportDialog, { ColumnMapping } from "./ExcelImportDialog";
 import ExcelExportButton from "./ExcelExportButton";
+import DropdownOptionsDialog from "./DropdownOptionsDialog";
+import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 
 const PN_COLUMNS: ColumnMapping[] = [
   { excelHeader: "Fornecedor (Código)", dbField: "supplier_code", label: "Fornecedor", required: true },
@@ -46,6 +48,9 @@ const PartNumbersTab = () => {
       return data;
     },
   });
+
+  const { data: projectOptions = [] } = useDropdownOptions("pn_project");
+  const { data: moduleOptions = [] } = useDropdownOptions("pn_line_module");
 
   const { data: partNumbers = [], isLoading } = useQuery({
     queryKey: ["eng-part-numbers"],
@@ -108,6 +113,8 @@ const PartNumbersTab = () => {
             checkDuplicates={async (rows) => { const pns = rows.map((r) => r.part_number); const { data } = await supabase.from("part_numbers").select("part_number").in("part_number", pns); const existing = new Set((data || []).map((d) => d.part_number)); return rows.map((r) => existing.has(r.part_number)); }}
             onImport={async (rows) => { const codes = [...new Set(rows.map((r) => r.supplier_code))]; const { data: suppData } = await supabase.from("suppliers").select("id, code").in("code", codes); const codeToId = new Map((suppData || []).map((s) => [s.code, s.id])); const toInsert = rows.filter((r) => codeToId.has(r.supplier_code)).map((r) => ({ supplier_id: codeToId.get(r.supplier_code)!, part_number: r.part_number, part_name: r.part_name, project: r.project || "", line_module: r.line_module || "", alc_code: r.alc_code || "N/A" })); const skipped = rows.length - toInsert.length; if (toInsert.length === 0) throw new Error("Nenhum fornecedor encontrado."); const { error } = await supabase.from("part_numbers").upsert(toInsert, { onConflict: "part_number" }); if (error) throw error; qc.invalidateQueries({ queryKey: ["eng-part-numbers"] }); toast.success(`${toInsert.length} importado(s)!${skipped > 0 ? ` ${skipped} ignorado(s).` : ""}`); }}
           />
+          <DropdownOptionsDialog category="pn_project" title="Gerenciar Projetos" triggerLabel="Projeto" placeholder="Ex: SU2b" />
+          <DropdownOptionsDialog category="pn_line_module" title="Gerenciar Módulos" triggerLabel="Módulo" placeholder="Ex: CP" />
           <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
             <DialogTrigger asChild><Button size="sm" className="col-span-2 sm:col-span-1"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
             <DialogContent className="w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -116,8 +123,8 @@ const PartNumbersTab = () => {
                 <div className="space-y-2"><Label>Fornecedor *</Label><Select value={supplierId} onValueChange={setSupplierId}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} ({s.code})</SelectItem>)}</SelectContent></Select></div>
                 <div className="space-y-2"><Label>Part Number *</Label><Input value={partNumber} onChange={(e) => setPartNumber(e.target.value.toUpperCase().replace(/-/g, ""))} placeholder="Ex: 86350BP000CA" /></div>
                 <div className="space-y-2"><Label>Part Name *</Label><Input value={partName} onChange={(e) => setPartName(e.target.value)} placeholder="Nome da peça" /></div>
-                <div className="space-y-2"><Label>Projeto</Label><Input value={project} onChange={(e) => setProject(e.target.value)} placeholder="Nome do projeto" /></div>
-                <div className="space-y-2"><Label>Módulo de Linha</Label><Input value={lineModule} onChange={(e) => setLineModule(e.target.value)} placeholder="Módulo" /></div>
+                <div className="space-y-2"><Label>Projeto</Label><Select value={project} onValueChange={setProject}><SelectTrigger><SelectValue placeholder={projectOptions.length === 0 ? "Cadastre projetos primeiro" : "Selecione"} /></SelectTrigger><SelectContent>{projectOptions.map((o: any) => <SelectItem key={o.id} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
+                <div className="space-y-2"><Label>Módulo de Linha</Label><Select value={lineModule} onValueChange={setLineModule}><SelectTrigger><SelectValue placeholder={moduleOptions.length === 0 ? "Cadastre módulos primeiro" : "Selecione"} /></SelectTrigger><SelectContent>{moduleOptions.map((o: any) => <SelectItem key={o.id} value={o.value}>{o.label}</SelectItem>)}</SelectContent></Select></div>
                 <div className="space-y-2"><Label>ALC Code</Label><Input value={alcCode} onChange={(e) => setAlcCode(e.target.value)} placeholder="N/A" /></div>
                 <Button onClick={() => saveMutation.mutate()} disabled={!supplierId || !partNumber || !partName || saveMutation.isPending} className="w-full">{saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Salvar</Button>
               </div>

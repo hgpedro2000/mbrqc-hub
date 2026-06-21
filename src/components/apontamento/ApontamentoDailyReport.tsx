@@ -1222,7 +1222,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-1 h-8 px-2 text-xs"
+
                     disabled={generatingPdf}
                     onClick={async () => {
                       if (generatingPdf) return;

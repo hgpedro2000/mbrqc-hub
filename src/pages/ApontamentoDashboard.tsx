@@ -1130,6 +1130,15 @@ const ApontamentoDashboard = () => {
             >
               PPM {showPPM ? '✓' : ''}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSupplierSortBy((v) => v === "ng" ? "ok" : "ng")}
+              className="text-[10px] h-6 gap-1 bg-[hsl(220,10%,20%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,75%)] hover:bg-[hsl(220,10%,25%)]"
+              title="Alternar ordenação"
+            >
+              ↕ {supplierSortBy === "ng" ? "NG ↓" : "OK ↓"}
+            </Button>
             {supplierFilter && (
               <Button variant="outline" size="sm" onClick={() => setSupplierFilter(null)} className="text-[10px] h-6 bg-[hsl(210,70%,60%)]/20 border-[hsl(210,70%,60%)]/40 text-[hsl(210,70%,60%)] hover:bg-[hsl(210,70%,60%)]/30 gap-1">
                 ✕ Filtro: {supplierFilter}
@@ -1144,8 +1153,8 @@ const ApontamentoDashboard = () => {
                 <th className="text-center px-2 py-1.5 text-[hsl(0,0%,70%)] font-medium" colSpan={2}>
                   <div>Status</div>
                   <div className="flex text-[10px] text-[hsl(0,0%,55%)]">
-                    <span className="flex-1">OK</span>
                     <span className="flex-1">NG</span>
+                    <span className="flex-1">OK</span>
                   </div>
                 </th>
                 {showPPM && (
@@ -1156,12 +1165,13 @@ const ApontamentoDashboard = () => {
             <tbody>
               {supplierData.map((s, i) => {
                 const ppm = s.ok > 0 ? (s.ng / s.ok) * 1_000_000 : 0;
+                const ngColor = s.ng > 0 ? 'text-red-400 font-semibold' : 'text-green-400 font-semibold';
                 return (
                   <tr key={s.name} className={`border-b border-[hsl(220,10%,20%)] ${i % 2 === 0 ? 'bg-[hsl(220,15%,14%)]' : 'bg-[hsl(220,15%,16%)]'}`}>
                     <td className="px-2 py-1 text-[hsl(210,70%,60%)] cursor-pointer hover:underline" onClick={() => setSupplierFilter(s.name)}>{s.name}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.qtyPN}</td>
+                    <td className={`text-center px-2 py-1 ${ngColor}`}>{s.ng}</td>
                     <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ok}</td>
-                    <td className="text-center px-2 py-1 text-[hsl(0,0%,80%)]">{s.ng}</td>
                     {showPPM && (
                       <td className="text-center px-2 py-1 text-[hsl(45,90%,60%)] font-medium">{ppm.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     )}
@@ -1171,8 +1181,8 @@ const ApontamentoDashboard = () => {
               <tr className="bg-[hsl(220,10%,20%)] font-bold">
                 <td className="px-2 py-1.5 text-[hsl(0,0%,80%)]">TTL</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{supplierData.reduce((a, b) => a + b.qtyPN, 0)}</td>
+                <td className={`text-center px-2 py-1.5 ${ttlNg > 0 ? 'text-red-400' : 'text-green-400'}`}>{ttlNg}</td>
                 <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlOk}</td>
-                <td className="text-center px-2 py-1.5 text-[hsl(0,0%,80%)]">{ttlNg}</td>
                 {showPPM && (
                   <td className="text-center px-2 py-1.5 text-[hsl(45,90%,60%)]">{ttlOk > 0 ? ((ttlNg / ttlOk) * 1_000_000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}</td>
                 )}

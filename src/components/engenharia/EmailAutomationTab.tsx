@@ -44,7 +44,6 @@ const EmailAutomationTab = () => {
   const [newRecipient, setNewRecipient] = useState("");
   const [newCc, setNewCc] = useState("");
   const [testEmail, setTestEmail] = useState("");
-  const [newCc, setNewCc] = useState("");
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["email_automation_config"],

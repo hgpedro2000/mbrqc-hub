@@ -1339,10 +1339,10 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
           {/* Summary cards */}
           <div className="px-4 md:px-6 py-3">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 w-full">
-              <div className="text-center p-3 bg-card rounded-lg border border-border w-full"><p className="text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[10px] text-muted-foreground uppercase">Total Registros</p></div>
-              <div className="text-center p-3 bg-card rounded-lg border border-border w-full"><p className="text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[10px] text-muted-foreground uppercase">Inspecionadas</p></div>
-              <div className="text-center p-3 bg-card rounded-lg border border-border w-full col-span-2 sm:col-span-1"><p className="text-xl font-bold text-destructive">{totalNG}</p><p className="text-[10px] text-muted-foreground uppercase">Total NG</p></div>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
+              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
+              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Inspecionadas</p></div>
+              <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-destructive">{totalNG}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total NG</p></div>
             </div>
           </div>
 

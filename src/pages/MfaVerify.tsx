@@ -156,6 +156,9 @@ export default function MfaVerify() {
               O código muda a cada 30 segundos.
             </p>
 
+            <AuthenticatorLauncher />
+
+
             <Button
               onClick={() => handleVerify()}
               disabled={code.length !== 6 || verifying}

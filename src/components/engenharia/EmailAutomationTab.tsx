@@ -279,9 +279,10 @@ const EmailAutomationTab = () => {
             <Label className="text-xs">Para</Label>
             <div className="flex gap-2">
               <Input value={newRecipient} onChange={(e) => setNewRecipient(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="email@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("recipients", newRecipient, () => setNewRecipient("")))} />
-              <Button size="sm" onClick={() => addEmail("recipients", newRecipient, () => setNewRecipient(""))}>
+              <Button size="sm" onClick={() => addEmail("recipients", newRecipient, () => setNewRecipient(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

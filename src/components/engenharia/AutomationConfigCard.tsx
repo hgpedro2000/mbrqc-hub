@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, CalendarClock, Bell } from "lucide-react";
+import { Plus, X, Send, Save, Eye, Loader2, AlertTriangle, CalendarClock, Bell, Users, Mail } from "lucide-react";
 
 const WEEKDAYS = [
   { v: 1, l: "Seg" }, { v: 2, l: "Ter" }, { v: 3, l: "Qua" },
@@ -50,13 +50,26 @@ export const AutomationConfigCard = ({
 }: AutomationConfigCardProps) => {
   const qc = useQueryClient();
   const [form, setForm] = useState<GenericConfig>(config);
-  const [newRecipient, setNewRecipient] = useState("");
   const [newErr, setNewErr] = useState("");
   const [testEmail, setTestEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState<{ subject: string; html: string } | null>(null);
+  const [recipientsOpen, setRecipientsOpen] = useState(false);
+  const [bulkTo, setBulkTo] = useState("");
+  const [bulkCc, setBulkCc] = useState("");
+
+  const ccList: string[] = Array.isArray(form.metadata?.cc) ? form.metadata.cc : [];
 
   useEffect(() => { setForm(config); }, [config]);
+
+  const openRecipientsDialog = () => {
+    setBulkTo((form.recipients ?? []).join(", "));
+    setBulkCc(((form.metadata?.cc ?? []) as string[]).join(", "));
+    setRecipientsOpen(true);
+  };
+
+  const parseList = (s: string) =>
+    Array.from(new Set(s.split(/[,;\n]/).map((x) => x.trim()).filter((x) => /.+@.+\..+/.test(x))));
 
   const save = useMutation({
     mutationFn: async (payload: Partial<GenericConfig>) => {
@@ -169,32 +182,23 @@ export const AutomationConfigCard = ({
           </div>
         )}
 
-        <div>
-          <Label>Destinatários ({form.recipients?.length ?? 0})</Label>
-          <div className="flex gap-2 mt-1">
-            <Input placeholder="email@exemplo.com" value={newRecipient}
-              onChange={(e) => setNewRecipient(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newRecipient) {
-                  setForm({ ...form, recipients: [...(form.recipients ?? []), newRecipient.trim()] });
-                  setNewRecipient("");
-                }
-              }} />
-            <Button type="button" size="icon" variant="outline" onClick={() => {
-              if (!newRecipient) return;
-              setForm({ ...form, recipients: [...(form.recipients ?? []), newRecipient.trim()] });
-              setNewRecipient("");
-            }}><Plus className="h-4 w-4" /></Button>
+        <div className="rounded-md border p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Users className="h-4 w-4 text-primary" />
+              Destinatários
+              <Badge variant="secondary">TO: {form.recipients?.length ?? 0}</Badge>
+              <Badge variant="secondary">CC: {ccList.length}</Badge>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={openRecipientsDialog}>
+              <Mail className="h-4 w-4 mr-2" /> Cadastrar destinatários
+            </Button>
           </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {(form.recipients ?? []).map((r, i) => (
-              <Badge key={i} variant="outline" className="gap-1">
-                {r}
-                <button type="button" onClick={() => setForm({ ...form, recipients: form.recipients.filter((_, j) => j !== i) })}>
-                  <X className="h-3 w-3" />
-                </button>
-              </Badge>
-            ))}
+          <div className="text-xs text-muted-foreground break-all">
+            <span className="font-medium">TO:</span> {(form.recipients ?? []).join(", ") || "— nenhum —"}
+          </div>
+          <div className="text-xs text-muted-foreground break-all">
+            <span className="font-medium">CC:</span> {ccList.join(", ") || "— nenhum —"}
           </div>
         </div>
 
@@ -273,6 +277,43 @@ export const AutomationConfigCard = ({
             <DialogDescription>Renderização exata do e-mail que será enviado.</DialogDescription>
           </DialogHeader>
           <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded" />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={recipientsOpen} onOpenChange={setRecipientsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cadastrar destinatários — {form.name}</DialogTitle>
+            <DialogDescription>
+              Informe os e-mails separados por vírgula, ponto-e-vírgula ou nova linha.
+              TO recebe diretamente; CC recebe em cópia (uma entrega individual por endereço).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Destinatários (TO)</Label>
+              <Textarea rows={3} placeholder="qualidade@empresa.com, engenharia@empresa.com"
+                value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} />
+            </div>
+            <div>
+              <Label>Em cópia (CC)</Label>
+              <Textarea rows={3} placeholder="gestor@empresa.com"
+                value={bulkCc} onChange={(e) => setBulkCc(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setRecipientsOpen(false)}>Cancelar</Button>
+              <Button onClick={() => {
+                const to = parseList(bulkTo);
+                const cc = parseList(bulkCc);
+                const nextMeta = { ...(form.metadata ?? {}), cc };
+                setForm({ ...form, recipients: to, metadata: nextMeta });
+                save.mutate({ recipients: to, metadata: nextMeta });
+                setRecipientsOpen(false);
+              }}>
+                <Save className="h-4 w-4 mr-2" /> Salvar destinatários
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>

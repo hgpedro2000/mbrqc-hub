@@ -1110,7 +1110,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[98vw] w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
+      <DialogContent className="!max-w-[calc(100vw-8px)] w-[calc(100vw-8px)] sm:!max-w-[98vw] sm:w-[98vw] max-h-[95vh] overflow-y-auto overflow-x-hidden p-0 [&>button:last-child]:hidden">
         <DialogClose className="absolute right-3 top-3 z-50 rounded-full bg-background/80 backdrop-blur-sm border border-border w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-sm">
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
@@ -1133,13 +1133,13 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-row flex-wrap items-center gap-1.5 w-full sm:w-auto">
                 <div className="flex items-center gap-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateFrom && "text-muted-foreground")}>
-                        <CalendarIcon className="w-3 h-3 mr-1" />
-                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yyyy") : "De"}
+                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateFrom && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
+                        {dateFrom ? format(new Date(dateFrom + "T12:00:00"), "dd/MM/yy") : "De"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -1149,9 +1149,9 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <span className="text-xs text-muted-foreground">a</span>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className={cn("w-[120px] text-xs h-8 justify-start", !dateTo && "text-muted-foreground")}>
-                        <CalendarIcon className="w-3 h-3 mr-1" />
-                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yyyy") : "Até"}
+                      <Button variant="outline" size="sm" className={cn("w-[108px] sm:w-[120px] text-[11px] sm:text-xs h-8 px-2 justify-start", !dateTo && "text-muted-foreground")}>
+                        <CalendarIcon className="w-3 h-3 mr-1 shrink-0" />
+                        {dateTo ? format(new Date(dateTo + "T12:00:00"), "dd/MM/yy") : "Até"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -1159,7 +1159,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                     </PopoverContent>
                   </Popover>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-1.5">
+
                 {mode === "ng" && (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -1221,7 +1222,8 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5"
+                    className="gap-1 h-8 px-2 text-xs"
+
                     disabled={generatingPdf}
                     onClick={async () => {
                       if (generatingPdf) return;
@@ -1318,7 +1320,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
                       }
                     }}
                   >
-                    <Download className="w-4 h-4" /> {generatingPdf ? `Gerando ${pdfProgress}%` : "PDF"}
+                    <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{generatingPdf ? `Gerando ${pdfProgress}%` : "PDF"}</span><span className="sm:hidden">{generatingPdf ? `${pdfProgress}%` : "PDF"}</span>
                   </Button>
                   {generatingPdf && (
                     <div className="w-full min-w-[140px]">

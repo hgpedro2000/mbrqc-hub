@@ -1037,7 +1037,7 @@ const ApontamentoDashboard = () => {
               </PopoverContent>
             </Popover>
             {(dateFrom !== today || dateTo !== today) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(today); setDateTo(today); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Hoje</Button>
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(today); setDateTo(today); }} className="hidden sm:inline-flex text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Hoje</Button>
             )}
           </div>
           {profile?.is_admin && (

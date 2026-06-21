@@ -593,7 +593,7 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                 ))}
               </View>
               {list.map((r, idx) => {
-                const tags = parseTags(r);
+                const defectRows = getDefectRows(r);
                 const modos = parseModos(r);
                 const modosTxt = modos.map((m) => m.qty ? `${m.nome} (${m.qty})` : m.nome).join(" • ");
                 const turnoData = `${r.turno || "—"} ${r.data ? "/ " + new Date(r.data + "T12:00:00").toLocaleDateString("pt-BR") : ""}`.trim();
@@ -613,11 +613,21 @@ const ApontamentoPDFDocument = ({ mode, filtered, byType, totals, dateLabel, loc
                     </View>
                     <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[8].w}%`, fontSize: 6 }]}>{modosTxt || "—"}</Text>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[9].w}%` }]}>
-                      {tags.length > 0
-                        ? tags.map((t, i) => <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {t}</Text>)
+                      {defectRows.length > 0
+                        ? defectRows.map((d, i) => (
+                            d.tag
+                              ? <Text key={i} style={pdfStyles.ngSumTagOk}>TAG: {d.tag}</Text>
+                              : <Text key={i} style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>
+                          ))
                         : <Text style={pdfStyles.ngSumTagMissing}>Sem TAG</Text>}
                     </View>
-                    <Text style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%`, fontStyle: "italic", fontSize: 6, color: "#374151" }]}>{cleanDesc(r.descricao)}</Text>
+                    <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[10].w}%` }]}>
+                      {defectRows.length > 0
+                        ? defectRows.map((d, i) => (
+                            <Text key={i} style={{ fontStyle: "italic", fontSize: 6, color: "#374151", marginBottom: 1 }}>{d.desc || "—"}</Text>
+                          ))
+                        : <Text style={{ fontStyle: "italic", fontSize: 6, color: "#374151" }}>{cleanDesc(r.descricao)}</Text>}
+                    </View>
                     <View style={[pdfStyles.ngSumCell, { width: `${NG_SUM_COLS[11].w}%`, alignItems: "center" }]}>
                       <Text style={pdfStyles.ngSumPagePill}>{pageOf(idx)}</Text>
                     </View>

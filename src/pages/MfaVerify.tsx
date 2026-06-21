@@ -57,12 +57,16 @@ export default function MfaVerify() {
   };
 
   const activeIndex = Math.min(code.length, 5);
-  // Use SOLID colors here — semi-transparent borders/bg disappear in light mode
-  // and the slots end up looking empty (as reported on iOS Safari).
+  // Force a solid, fully-opaque 2px border on EVERY side (including the first
+  // slot's left edge, where the shadcn base uses `first:border-l` 1px). Using
+  // an inline style guarantees the border survives tailwind-merge collapsing
+  // and renders identically on iOS Safari light mode.
   const slotBase =
-    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold text-foreground rounded-lg border-2 border-input bg-background transition-all";
+    "h-14 w-11 sm:h-16 sm:w-12 text-xl sm:text-2xl font-mono font-semibold text-foreground rounded-lg bg-background transition-all !border-2 !border-l-2 !border-r-2 !border-t-2 !border-b-2";
   const slotActive =
-    "data-[active=true]:border-accent data-[active=true]:ring-2 data-[active=true]:ring-accent/40 data-[active=true]:bg-accent/10";
+    "data-[active=true]:!border-accent data-[active=true]:bg-accent/15 data-[active=true]:ring-2 data-[active=true]:ring-accent/30 data-[active=true]:shadow-md data-[active=true]:shadow-accent/20";
+  const slotInactive =
+    "data-[active=false]:!border-foreground/25";
 
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4 relative overflow-hidden">
@@ -127,7 +131,7 @@ export default function MfaVerify() {
                       key={i}
                       index={i}
                       data-active={activeIndex === i}
-                      className={`${slotBase} ${slotActive}`}
+                      className={`${slotBase} ${slotActive} ${slotInactive}`}
                     />
                   ))}
                 </InputOTPGroup>
@@ -140,7 +144,7 @@ export default function MfaVerify() {
                       key={i}
                       index={i}
                       data-active={activeIndex === i}
-                      className={`${slotBase} ${slotActive}`}
+                      className={`${slotBase} ${slotActive} ${slotInactive}`}
                     />
                   ))}
                 </InputOTPGroup>

@@ -112,6 +112,35 @@ Deno.serve(async (req) => {
             .update({ status: 'failed', error_message: errText.slice(0, 1000) })
             .eq('id', logRow.id)
         }
+        // Notify admins about scheduler-level failure
+        try {
+          const adminList: string[] = (cfg.error_notify_recipients?.length ? cfg.error_notify_recipients : cfg.recipients) ?? []
+          for (const to of adminList) {
+            await supabase.rpc('enqueue_email', {
+              queue_name: 'transactional_emails',
+              payload: {
+                to, from: 'informacao@mbrqc.com.br',
+                sender_domain: Deno.env.get('SENDER_DOMAIN') ?? 'notify.mbrqc.com.br',
+                subject: `[MBR Quality] FALHA agendada — ${cfg.name ?? cfg.id}`,
+                html: `<p><strong>Agendamento falhou.</strong></p>
+                       <p><strong>Config:</strong> ${cfg.name ?? ''} (<code>${cfg.id}</code>)</p>
+                       <p><strong>Data:</strong> ${dayStr}</p>
+                       <p><strong>Motivo:</strong></p>
+                       <pre style="background:#fef2f2;padding:12px;border-radius:6px;white-space:pre-wrap;">${errText.slice(0, 1000).replace(/</g, '&lt;')}</pre>`,
+                purpose: 'transactional',
+                label: 'ng-automation-error',
+                idempotency_key: `schederr-${cfg.id}-${dayStr}-${to}`,
+                message_id: crypto.randomUUID(),
+                queued_at: new Date().toISOString(),
+              },
+            })
+          }
+          if (logRow?.id) {
+            await supabase.from('email_automation_log').update({ error_notified: true }).eq('id', logRow.id)
+          }
+        } catch (notifyErr) {
+          console.error('notify failed', notifyErr)
+        }
         skipped.push({ id: cfg.id, reason: `send_error: ${errText.slice(0, 200)}` })
         continue
       }

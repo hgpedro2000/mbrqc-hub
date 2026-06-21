@@ -1255,6 +1255,8 @@ const ApontamentoForm = () => {
               partName={partName}
               projeto={projeto}
               partNumberError={validationErrors.has("partNumber")}
+              projetoError={validationErrors.has("projeto")}
+              fornecedorError={validationErrors.has("fornecedor")}
               onFornecedorChange={(v) => { setFornecedor(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fornecedor"); return n; }); }}
               onPartNumberChange={(v) => { setPartNumber(v); setValidationErrors((p) => { const n = new Set(p); n.delete("partNumber"); return n; }); }}
               onPartDataChange={(d) => {

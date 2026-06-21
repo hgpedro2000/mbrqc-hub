@@ -131,7 +131,7 @@ export default function MfaVerify() {
                       key={i}
                       index={i}
                       data-active={activeIndex === i}
-                      className={`${slotBase} ${slotActive}`}
+                      className={`${slotBase} ${slotActive} ${slotInactive}`}
                     />
                   ))}
                 </InputOTPGroup>
@@ -144,7 +144,7 @@ export default function MfaVerify() {
                       key={i}
                       index={i}
                       data-active={activeIndex === i}
-                      className={`${slotBase} ${slotActive}`}
+                      className={`${slotBase} ${slotActive} ${slotInactive}`}
                     />
                   ))}
                 </InputOTPGroup>

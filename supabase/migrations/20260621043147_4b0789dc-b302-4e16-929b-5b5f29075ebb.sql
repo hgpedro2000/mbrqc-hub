@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.0.4.73','patch','PDF NG: nome do arquivo padrão','Renomeia o arquivo PDF do relatório NG para o padrão "Incoming NG Report - <data> a <data> - <hora>.pdf" incluindo data do relatório e hora de geração.');

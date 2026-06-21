@@ -298,9 +298,10 @@ const EmailAutomationTab = () => {
             <Label className="text-xs">CC (cópia)</Label>
             <div className="flex gap-2">
               <Input value={newCc} onChange={(e) => setNewCc(e.target.value)}
+                className="min-w-0 flex-1"
                 placeholder="email@exemplo.com"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail("cc_recipients", newCc, () => setNewCc("")))} />
-              <Button size="sm" onClick={() => addEmail("cc_recipients", newCc, () => setNewCc(""))}>
+              <Button size="sm" onClick={() => addEmail("cc_recipients", newCc, () => setNewCc(""))} className="shrink-0">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

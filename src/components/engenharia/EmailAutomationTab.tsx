@@ -43,6 +43,7 @@ const EmailAutomationTab = () => {
   const [form, setForm] = useState<AutomationConfig | null>(null);
   const [newRecipient, setNewRecipient] = useState("");
   const [newCc, setNewCc] = useState("");
+  const [testEmail, setTestEmail] = useState("");
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["email_automation_config"],
@@ -92,24 +93,36 @@ const EmailAutomationTab = () => {
   const sendNow = useMutation({
     mutationFn: async () => {
       if (!form) return;
-      const { data: userData } = await supabase.auth.getUser();
-      const { error } = await supabase
-        .from("email_automation_log" as any)
-        .insert({
-          config_id: form.id,
-          triggered_by: userData.user?.id,
-          trigger_type: "manual",
-          recipients: form.recipients,
-          subject: form.subject_template.replace("{{date}}", new Date().toLocaleDateString("pt-BR")),
-          status: "queued",
-        });
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id },
+      });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success("Envio manual registrado. (Worker de envio será ativado em seguida.)");
+    onSuccess: (data: any) => {
+      toast.success(
+        `Enviado para ${data?.queued ?? 0} destinatário(s) — ${data?.ng_records ?? 0} registro(s) NG hoje`,
+      );
+      qc.invalidateQueries({ queryKey: ["email_automation_log"] });
+      qc.invalidateQueries({ queryKey: ["email_automation_config"] });
+    },
+    onError: (e: any) => toast.error("Erro: " + (e?.message ?? "falha no envio")),
+  });
+
+  const sendTest = useMutation({
+    mutationFn: async (testEmail: string) => {
+      if (!form) return;
+      const { data, error } = await supabase.functions.invoke("send-automation-email", {
+        body: { config_id: form.id, test_to: testEmail },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data: any) => {
+      toast.success(`Teste enviado — ${data?.ng_records ?? 0} registro(s) NG no relatório`);
       qc.invalidateQueries({ queryKey: ["email_automation_log"] });
     },
-    onError: (e: any) => toast.error("Erro: " + e.message),
+    onError: (e: any) => toast.error("Erro no teste: " + (e?.message ?? "falha")),
   });
 
   if (isLoading || !form) {
@@ -305,6 +318,35 @@ const EmailAutomationTab = () => {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Send className="w-4 h-4" /> Teste de envio
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input
+              type="email"
+              placeholder="seu-email@empresa.com"
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              onClick={() => sendTest.mutate(testEmail)}
+              disabled={sendTest.isPending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)}
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {sendTest.isPending ? "Enviando…" : "Enviar teste"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Envia o relatório do dia atual apenas para este e-mail, sem atualizar a data do último envio agendado.
+          </p>
+        </CardContent>
+      </Card>
+
       <div className="flex flex-wrap items-center gap-3 justify-between">
         <div className="text-xs text-muted-foreground flex items-center gap-1.5">
           {form.last_sent_at ? (
@@ -324,7 +366,7 @@ const EmailAutomationTab = () => {
             onClick={() => sendNow.mutate()}
             disabled={sendNow.isPending || form.recipients.length === 0}
           >
-            <Send className="w-4 h-4 mr-2" /> Enviar agora
+            <Send className="w-4 h-4 mr-2" /> {sendNow.isPending ? "Enviando…" : "Enviar agora"}
           </Button>
           <Button onClick={() => save.mutate(form)} disabled={save.isPending}>
             <Save className="w-4 h-4 mr-2" /> Salvar

@@ -17,3 +17,7 @@ project_id = "fjsayyuuukmedrjmvexj"
     verify_jwt = false
   [functions.tag-escalation]
     verify_jwt = false
+  [functions.send-automation-email]
+    verify_jwt = true
+  [functions.email-automation-scheduler]
+    verify_jwt = true

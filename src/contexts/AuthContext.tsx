@@ -182,10 +182,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    if (isInitial) {
-      const status = await checkMFAStatus(adminFlag);
-      setMfaStatus(status);
-    }
+    // Re-evaluate MFA on every real hydrate (initial load AND new logins).
+    // Previously this was gated to `isInitial`, which meant a fresh login
+    // never recomputed the MFA status — combined with the SIGNED_IN guard
+    // above, that left the user stuck on /login.
+    const status = await checkMFAStatus(adminFlag);
+    setMfaStatus(status);
     setLoading(false);
   }, [checkMFAStatus, checkMinVersion, fetchProfile, fetchAdminRole]);
 

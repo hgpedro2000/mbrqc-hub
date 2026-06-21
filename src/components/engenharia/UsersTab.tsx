@@ -331,7 +331,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
             <Select value={isResidente ? "Residente" : empTerc} onValueChange={(v) => { setEmpTerc(v); }}>
               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {EMPRESA_TERCEIRA_OPTIONS.map((o) => (
+                {empresasTerceirasList.map((e: any) => (
+                  <SelectItem key={e.name} value={e.name}>{e.name}</SelectItem>
+                ))}
+                {EXTRA_EMPRESA_TERCEIRA_OPTIONS.map((o) => (
                   <SelectItem key={o} value={o}>{o}</SelectItem>
                 ))}
               </SelectContent>

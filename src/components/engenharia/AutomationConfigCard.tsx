@@ -280,6 +280,43 @@ export const AutomationConfigCard = ({
           <iframe srcDoc={previewData?.html ?? ""} className="flex-1 w-full border rounded" />
         </DialogContent>
       </Dialog>
+
+      <Dialog open={recipientsOpen} onOpenChange={setRecipientsOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cadastrar destinatários — {form.name}</DialogTitle>
+            <DialogDescription>
+              Informe os e-mails separados por vírgula, ponto-e-vírgula ou nova linha.
+              TO recebe diretamente; CC recebe em cópia (uma entrega individual por endereço).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Destinatários (TO)</Label>
+              <Textarea rows={3} placeholder="qualidade@empresa.com, engenharia@empresa.com"
+                value={bulkTo} onChange={(e) => setBulkTo(e.target.value)} />
+            </div>
+            <div>
+              <Label>Em cópia (CC)</Label>
+              <Textarea rows={3} placeholder="gestor@empresa.com"
+                value={bulkCc} onChange={(e) => setBulkCc(e.target.value)} />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="ghost" onClick={() => setRecipientsOpen(false)}>Cancelar</Button>
+              <Button onClick={() => {
+                const to = parseList(bulkTo);
+                const cc = parseList(bulkCc);
+                const nextMeta = { ...(form.metadata ?? {}), cc };
+                setForm({ ...form, recipients: to, metadata: nextMeta });
+                save.mutate({ recipients: to, metadata: nextMeta });
+                setRecipientsOpen(false);
+              }}>
+                <Save className="h-4 w-4 mr-2" /> Salvar destinatários
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

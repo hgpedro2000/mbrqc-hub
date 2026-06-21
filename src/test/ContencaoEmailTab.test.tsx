@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import ContencaoEmailTab from "../engenharia/ContencaoEmailTab";
+import ContencaoEmailTab from "@/components/engenharia/ContencaoEmailTab";
 
 // ---- Mocks ----
 const invoke = vi.fn();

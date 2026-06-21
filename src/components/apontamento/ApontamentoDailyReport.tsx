@@ -1115,7 +1115,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           <X className="h-4 w-4" /><span className="sr-only">Fechar</span>
         </DialogClose>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0 w-full max-w-full overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border px-3 md:px-6 pt-4 md:pt-6 pb-3 md:pb-4 pr-12 sm:pr-6 overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3 min-w-0">

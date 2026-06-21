@@ -1340,7 +1340,7 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </div>
 
           {/* Summary cards */}
-          <div className="px-4 md:px-6 py-3">
+          <div className="px-3 md:px-6 py-3 overflow-hidden">
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2 w-full">
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{filtered.length}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Total Registros</p></div>
               <div className="text-center p-2 sm:p-3 bg-card rounded-lg border border-border min-w-0"><p className="text-base sm:text-xl font-bold text-foreground">{totalInsp}</p><p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase leading-tight break-words">Inspecionadas</p></div>
@@ -1349,16 +1349,16 @@ const ApontamentoDailyReport = ({ open, onOpenChange, items, mode, onViewRecord,
           </div>
 
           {/* Content by type */}
-          <div className="px-4 md:px-6 pb-4 space-y-4">
+          <div className="px-3 md:px-6 pb-4 space-y-4 min-w-0 overflow-hidden">
             {Object.entries(byType).map(([tipo, records]) => (
-              <div key={tipo}>
+              <div key={tipo} className="min-w-0 overflow-hidden">
                 <div className="flex items-center gap-2 mb-2">
                   <Badge variant="secondary" className="text-xs">{typeLabels[tipo] || tipo}</Badge>
                   <span className="text-xs text-muted-foreground">({records.length} registros)</span>
                 </div>
 
                 {/* Mobile cards */}
-                <div className="block sm:hidden space-y-2">
+                <div className="block sm:hidden space-y-2 min-w-0 overflow-hidden">
                   {records.map((r) =>
                     mode === "ng" ? (
                       <NgMobileCard key={r.id} r={r} photos={allPhotosByItem[r.id] || []} onNumberClick={handleNumberClick} onPhotoClick={setLightboxUrl} onMore={() => setMoreInfo({ numero: r.numero, part_number: r.part_number, tags: getTagsList(r), descs: getDescList(r), photos: allPhotosByItem[r.id] || [] })} />

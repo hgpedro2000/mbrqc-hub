@@ -270,6 +270,37 @@ export const PendingTagsAlert = ({
             </DialogTitle>
           </DialogHeader>
 
+          <div className="flex flex-wrap gap-2 pt-1 border-b pb-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={handleExportExcel}
+              disabled={importing || pendingItems.length === 0}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Exportar Excel
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+            >
+              {importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+              {importing ? "Importando..." : "Importar Excel"}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleImportExcel}
+              className="hidden"
+            />
+          </div>
+
+
           <div className="space-y-3 pt-2">
             {pendingItems.length === 0 ? (
               <p className="text-center text-muted-foreground py-6">

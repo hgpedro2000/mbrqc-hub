@@ -1009,6 +1009,107 @@ export type Database = {
         }
         Relationships: []
       }
+      email_automation_config: {
+        Row: {
+          cc_recipients: string[]
+          created_at: string
+          enabled: boolean
+          id: string
+          include_dashboard_html: boolean
+          include_ng_pdf: boolean
+          last_sent_at: string | null
+          message_body: string
+          name: string
+          recipients: string[]
+          schedule_time: string
+          subject_template: string
+          timezone: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          cc_recipients?: string[]
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_dashboard_html?: boolean
+          include_ng_pdf?: boolean
+          last_sent_at?: string | null
+          message_body?: string
+          name?: string
+          recipients?: string[]
+          schedule_time?: string
+          subject_template?: string
+          timezone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          cc_recipients?: string[]
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          include_dashboard_html?: boolean
+          include_ng_pdf?: boolean
+          last_sent_at?: string | null
+          message_body?: string
+          name?: string
+          recipients?: string[]
+          schedule_time?: string
+          subject_template?: string
+          timezone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: []
+      }
+      email_automation_log: {
+        Row: {
+          config_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          ng_count: number | null
+          recipients: string[]
+          status: string
+          subject: string | null
+          trigger_type: string
+          triggered_by: string | null
+        }
+        Insert: {
+          config_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ng_count?: number | null
+          recipients?: string[]
+          status?: string
+          subject?: string | null
+          trigger_type?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          config_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          ng_count?: number | null
+          recipients?: string[]
+          status?: string
+          subject?: string | null
+          trigger_type?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_automation_log_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "email_automation_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string

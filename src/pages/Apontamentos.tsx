@@ -63,6 +63,8 @@ const Apontamentos = () => {
   const [galleryPhotos, setGalleryPhotos] = useState<string[] | null>(null);
   const [filtersExpanded, setFiltersExpanded] = useState<boolean>(() => readSS("filtersExpanded", false));
   const [showInspectionLocationDialog, setShowInspectionLocationDialog] = useState(false);
+  const [showBC4bDialog, setShowBC4bDialog] = useState(false);
+  const [pendingIncomingLocal, setPendingIncomingLocal] = useState<string>("");
   const [incomingLocationFilter, _setIncomingLocationFilter] = useState<string | null>(() => readSS("incomingLocationFilter", null));
   const setIncomingLocationFilter = (v: string | null) => { _setIncomingLocationFilter(v); writeSS("incomingLocationFilter", v); };
   const todayStr = getLocalDateString();

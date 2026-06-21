@@ -1036,26 +1036,27 @@ const ApontamentoDashboard = () => {
                 <Calendar mode="single" selected={dateTo ? new Date(dateTo + "T12:00:00") : undefined} onSelect={(d) => { setDateTo(d ? format(d, "yyyy-MM-dd") : ""); setDateToOpen(false); }} locale={ptBR} className={cn("p-3 pointer-events-auto")} />
               </PopoverContent>
             </Popover>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(""); setDateTo(""); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Limpar</Button>
+            {(dateFrom !== today || dateTo !== today) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(today); setDateTo(today); }} className="text-[hsl(0,0%,60%)] hover:text-[hsl(0,0%,90%)] h-7 px-1.5 text-[10px]">Hoje</Button>
             )}
           </div>
-          <span className="text-[10px] md:text-xs text-[hsl(0,0%,50%)]">Total: {total}</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
-                <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">
-              <DropdownMenuItem onClick={exportOneSlide} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
-                Exportar em 1 Slide (Dashboard Completo)
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportFourSlides} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
-                Exportar em 4 Slides (Versão Detalhada)
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {profile?.is_admin && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="text-[hsl(0,0%,80%)] border-[hsl(220,10%,30%)] bg-[hsl(220,15%,18%)] hover:bg-[hsl(220,15%,25%)] text-xs">
+                  <Download className="w-3.5 h-3.5 mr-1" />PPTX<ChevronDown className="w-3 h-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[hsl(220,15%,18%)] border-[hsl(220,10%,30%)] text-[hsl(0,0%,85%)]">
+                <DropdownMenuItem onClick={exportOneSlide} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                  Exportar em 1 Slide (Dashboard Completo)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportFourSlides} className="text-xs cursor-pointer hover:bg-[hsl(220,15%,25%)] focus:bg-[hsl(220,15%,25%)] focus:text-[hsl(0,0%,95%)]">
+                  Exportar em 4 Slides (Versão Detalhada)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 

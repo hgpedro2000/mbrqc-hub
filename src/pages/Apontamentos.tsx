@@ -112,6 +112,16 @@ const Apontamentos = () => {
     return TYPES.filter((t) => enabledModules.includes(`apontamentos_${t}` as any));
   }, [isAdmin, enabledModules]);
 
+  // Top-level cards/tabs (Incoming, Processos, OEM) — "Processos" groups peca + processo
+  const visibleCards = useMemo<TopTab[]>(() => {
+    if (isAdmin) return [...TOP_TABS];
+    const out: TopTab[] = [];
+    if (enabledModules.includes("apontamentos_incoming" as any)) out.push("incoming");
+    if (enabledModules.includes("apontamentos_peca" as any) || enabledModules.includes("apontamentos_processo" as any)) out.push("processos");
+    if (enabledModules.includes("apontamentos_oem" as any)) out.push("oem");
+    return out;
+  }, [isAdmin, enabledModules]);
+
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["apontamentos"],
     queryFn: async () => {

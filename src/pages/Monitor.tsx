@@ -238,6 +238,23 @@ const Monitor = () => {
     return () => clearInterval(id);
   }, []);
 
+  // BroadcastChannel: answer PING with PONG, handle FOCUS, notify on close.
+  useEffect(() => {
+    if (typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel("monitor_channel");
+    ch.onmessage = (e) => {
+      if (e.data?.type === "PING") ch.postMessage({ type: "PONG" });
+      else if (e.data?.type === "FOCUS") { try { window.focus(); } catch { /* noop */ } }
+    };
+    const onUnload = () => { try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ } };
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onUnload);
+      try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
+      ch.close();
+    };
+  }, []);
+
   const fetchTable = async (table: string) => {
     const startISO = range.start.toISOString();
     const endISO = range.end?.toISOString();

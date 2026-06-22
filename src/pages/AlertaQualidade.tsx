@@ -484,6 +484,13 @@ const AlertaQualidade = () => {
                         <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                         </td>
+                        <td className="py-2.5 px-2 text-center">
+                          {a.status === "rascunho" ? (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
+                          )}
+                        </td>
                         <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>

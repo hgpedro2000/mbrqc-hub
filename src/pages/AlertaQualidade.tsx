@@ -388,22 +388,27 @@ const AlertaQualidade = () => {
   };
 
   const CienciaBar = ({ pct, count, total, onClick, clickable }: { pct: number; count: number; total: number; onClick?: () => void; clickable?: boolean }) => (
-    <div
-      className={`relative w-full h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
-      style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
-      onClick={onClick}
-      title={clickable ? "Clique para justificar pendências" : undefined}
-    >
-      {/* Dim overlay on the unfilled portion */}
-      <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
-      {/* Indicator marker */}
-      <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
-      {/* Centered percentage */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-          {pct}% · {count}/{total}
-        </span>
+    <div className="flex items-center gap-2 w-full">
+      <div
+        className={`relative flex-1 h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
+        style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
+        onClick={onClick}
+        title={clickable ? "Clique para justificar pendências" : undefined}
+      >
+        {/* Dim overlay on the unfilled portion */}
+        <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
+        {/* Indicator marker */}
+        <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
+        {/* Centered percentage */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+            {pct}%
+          </span>
+        </div>
       </div>
+      <span className="text-[11px] font-semibold text-muted-foreground tabular-nums whitespace-nowrap">
+        {count}/{total}
+      </span>
     </div>
   );
 
@@ -436,7 +441,7 @@ const AlertaQualidade = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-5xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-[1600px]">
         <div className="flex flex-col sm:flex-row justify-between gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -549,14 +554,31 @@ const AlertaQualidade = () => {
 
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[90px]" />
+                  <col className="w-[80px]" />
+                  <col />
+                  <col className="w-[130px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[100px] hidden lg:table-column" />
+                  <col className="w-[100px] hidden lg:table-column" />
+                  <col className="w-[100px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[180px]" />
+                  <col className="w-[140px]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Projeto</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Ocorrência</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Validade</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Linha/Peça</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Responsabilidade</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Detecção</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Ocorrência</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Validade</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Situação</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
@@ -570,27 +592,36 @@ const AlertaQualidade = () => {
                     const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
-                        <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
+                        <td className="py-3 px-2">
                           {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
                         </td>
-                        <td className="py-2.5 px-2">
-                          <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
+                        <td className="py-3 px-2">
+                          <p className="font-medium text-foreground line-clamp-2 leading-snug">{a.descricao || a.modo_falha || "—"}</p>
                         </td>
-                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.linha_peca || ""}>
+                          {a.linha_peca || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.responsabilidade || ""}>
+                          {a.responsabilidade || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.local_detectado || ""}>
+                          {a.local_detectado || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-muted-foreground hidden lg:table-cell">
                           {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
                         </td>
-                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                        <td className="py-3 px-2 text-xs text-muted-foreground hidden lg:table-cell">
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                         </td>
-                        <td className="py-2.5 px-2 text-center">
+                        <td className="py-3 px-2 text-center">
                           {a.status === "rascunho" ? (
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
                           ) : (
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
                           )}
                         </td>
-                        <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                               <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
@@ -599,18 +630,16 @@ const AlertaQualidade = () => {
                             <Badge variant="outline" className={status.color}>{displayStatus}</Badge>
                           )}
                         </td>
-                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                          <div className="min-w-[140px]">
-                            <CienciaBar
-                              pct={prog.pct}
-                              count={prog.count}
-                              total={prog.total}
-                              clickable={isLider && status.label === "Atrasado"}
-                              onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
-                            />
-                          </div>
+                        <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
+                          <CienciaBar
+                            pct={prog.pct}
+                            count={prog.count}
+                            total={prog.total}
+                            clickable={isLider && status.label === "Atrasado"}
+                            onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                          />
                         </td>
-                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
                             {canEdit(a) && (
                               <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>

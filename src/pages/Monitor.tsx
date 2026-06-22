@@ -300,6 +300,14 @@ const Monitor = () => {
     return () => clearTimeout(t);
   }, [flash]);
 
+  // Prefetch + cache all alert/contention photos so the modal opens instantly.
+  useEffect(() => {
+    const urls: string[] = [];
+    alertas.forEach((a) => urls.push(...allPhotos(a)));
+    contencoes.forEach((c) => urls.push(...allPhotos(c)));
+    if (urls.length) prefetchPhotos(urls);
+  }, [alertas, contencoes]);
+
   const blocks = prefs.blocks;
   const safeIdx = blocks.length ? slideIdx % blocks.length : 0;
   const currentBlock = blocks[safeIdx];

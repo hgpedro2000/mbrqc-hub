@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench, Layers, Gauge, Shield, ShieldAlert, Frame, Zap, Droplet, MonitorPlay } from "lucide-react";
 import { MonitorDialog, MonitorPreferences } from "@/components/apontamento/MonitorDialog";

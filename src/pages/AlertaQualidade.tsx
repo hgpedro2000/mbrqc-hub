@@ -57,6 +57,10 @@ const AlertaQualidade = () => {
   const [statusEditAlert, setStatusEditAlert] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
   const [trainingWarning, setTrainingWarning] = useState<{ name: string; date: string; type: "vencido" | "vencendo" } | null>(null);
+  const [justifyAlert, setJustifyAlert] = useState<any>(null);
+  const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
+  const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
+  const [justifySaving, setJustifySaving] = useState(false);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", effectiveUserId],
@@ -125,6 +129,20 @@ const AlertaQualidade = () => {
       return data;
     },
   });
+
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-name-map"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, full_name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const profileNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of profilesList as any[]) m[p.id] = p.full_name;
+    return m;
+  }, [profilesList]);
 
   useEffect(() => {
     const channel = supabase
@@ -320,6 +338,75 @@ const AlertaQualidade = () => {
   // Edit: only admin or who created the alert (respects impersonation)
   const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
+  const getPendingInspectors = (alertaId: string, linhaPeca: string | null) => {
+    const qualified = getQualifiedInspectors(linhaPeca);
+    const signed = new Set(ciencias.filter((c: any) => c.alerta_id === alertaId).map((c: any) => c.inspetor_id));
+    return qualified.filter((uid) => !signed.has(uid));
+  };
+
+  const openJustifyDialog = (alerta: any) => {
+    setJustifyAlert(alerta);
+    setJustifySelections({});
+    setJustifyCustom({});
+  };
+
+  const handleJustifySubmit = async () => {
+    if (!justifyAlert) return;
+    const pending = getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca);
+    const rows = pending
+      .map((uid) => {
+        const sel = justifySelections[uid];
+        if (!sel) return null;
+        const just = sel === "outro" ? (justifyCustom[uid] || "").trim() : sel;
+        if (!just) return null;
+        return {
+          alerta_id: justifyAlert.id,
+          inspetor_id: uid,
+          metodo: "justificado",
+          justificativa: just,
+          registrado_por_id: user?.id,
+        };
+      })
+      .filter(Boolean);
+    if (rows.length === 0) {
+      toast.error("Selecione ao menos uma justificativa");
+      return;
+    }
+    setJustifySaving(true);
+    try {
+      const { error } = await supabase.from("ciencias").insert(rows as any);
+      if (error) throw error;
+      logAction("justify", "alerta_qualidade", { alerta_id: justifyAlert.id, total: rows.length });
+      qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      toast.success(`${rows.length} justificativa(s) registrada(s)`);
+      setJustifyAlert(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setJustifySaving(false);
+    }
+  };
+
+  const CienciaBar = ({ pct, count, total, onClick, clickable }: { pct: number; count: number; total: number; onClick?: () => void; clickable?: boolean }) => (
+    <div
+      className={`relative w-full h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
+      style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
+      onClick={onClick}
+      title={clickable ? "Clique para justificar pendências" : undefined}
+    >
+      {/* Dim overlay on the unfilled portion */}
+      <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
+      {/* Indicator marker */}
+      <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
+      {/* Centered percentage */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+          {pct}% · {count}/{total}
+        </span>
+      </div>
+    </div>
+  );
+
   const statusOptions = [
     { value: "Em andamento", label: "Em andamento" },
     { value: "Completo", label: "Completo" },
@@ -427,8 +514,13 @@ const AlertaQualidade = () => {
                       <span>{a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : ""}</span>
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Progress value={prog.pct} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{prog.total}p / {prog.count}c</span>
+                      <CienciaBar
+                        pct={prog.pct}
+                        count={prog.count}
+                        total={prog.total}
+                        clickable={isLider && status.label === "Atrasado"}
+                        onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                      />
                     </div>
                     <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
                       {canEdit(a) && (
@@ -508,9 +600,14 @@ const AlertaQualidade = () => {
                           )}
                         </td>
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex flex-col items-center gap-1 min-w-[90px]">
-                            <Progress value={prog.pct} className="h-2 w-full" />
-                            <span className="text-[10px] text-muted-foreground">{prog.total}p / {prog.count}c</span>
+                          <div className="min-w-[140px]">
+                            <CienciaBar
+                              pct={prog.pct}
+                              count={prog.count}
+                              total={prog.total}
+                              clickable={isLider && status.label === "Atrasado"}
+                              onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                            />
                           </div>
                         </td>
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
@@ -630,6 +727,54 @@ const AlertaQualidade = () => {
           <DialogFooter className="flex gap-2 sm:gap-2">
             <Button variant="outline" size="sm" onClick={() => setStatusEditAlert(null)}>Cancelar</Button>
             <Button size="sm" onClick={handleStatusChange} disabled={!newStatus}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Justify pending signatures dialog (Atrasado) */}
+      <Dialog open={!!justifyAlert} onOpenChange={(o) => { if (!o) setJustifyAlert(null); }}>
+        <DialogContent className="max-w-lg max-h-[85dvh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Justificar pendências de ciência</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Selecione uma justificativa para os colaboradores que ainda não assinaram este alerta.
+          </p>
+          <div className="flex-1 overflow-auto space-y-2 pr-1">
+            {justifyAlert && getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma pendência.</p>
+            ) : justifyAlert && getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca).map((uid) => (
+              <div key={uid} className="border rounded-md p-2 space-y-2">
+                <p className="text-sm font-medium">{profileNameMap[uid] || uid}</p>
+                <Select
+                  value={justifySelections[uid] || ""}
+                  onValueChange={(v) => setJustifySelections((p) => ({ ...p, [uid]: v }))}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione justificativa" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Colaborador em Afastamento Médico">Colaborador em Afastamento Médico</SelectItem>
+                    <SelectItem value="Colaborador em Afastamento INSS">Colaborador em Afastamento INSS</SelectItem>
+                    <SelectItem value="Colaborador de Férias">Colaborador de Férias</SelectItem>
+                    <SelectItem value="Colaborador Desligado">Colaborador Desligado</SelectItem>
+                    <SelectItem value="outro">Outro (especificar)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {justifySelections[uid] === "outro" && (
+                  <Input
+                    placeholder="Descreva a justificativa"
+                    className="h-8 text-xs"
+                    value={justifyCustom[uid] || ""}
+                    onChange={(e) => setJustifyCustom((p) => ({ ...p, [uid]: e.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setJustifyAlert(null)}>Cancelar</Button>
+            <Button size="sm" onClick={handleJustifySubmit} disabled={justifySaving}>
+              {justifySaving ? "Salvando..." : "Salvar Justificativas"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

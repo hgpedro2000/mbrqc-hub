@@ -1,0 +1,1 @@
+ALTER TABLE public.ciencias ADD COLUMN IF NOT EXISTS justificativa TEXT;

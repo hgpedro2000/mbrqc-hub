@@ -731,6 +731,7 @@ export type Database = {
           created_at: string
           id: string
           inspetor_id: string
+          justificativa: string | null
           metodo: string
           registrado_por_id: string | null
           termo_aceito: string | null
@@ -741,6 +742,7 @@ export type Database = {
           created_at?: string
           id?: string
           inspetor_id: string
+          justificativa?: string | null
           metodo?: string
           registrado_por_id?: string | null
           termo_aceito?: string | null
@@ -751,6 +753,7 @@ export type Database = {
           created_at?: string
           id?: string
           inspetor_id?: string
+          justificativa?: string | null
           metodo?: string
           registrado_por_id?: string | null
           termo_aceito?: string | null

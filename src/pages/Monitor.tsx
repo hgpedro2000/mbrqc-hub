@@ -638,6 +638,16 @@ const Monitor = () => {
             <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Configurações do monitor">
               <Settings className="w-7 h-7" />
             </Button>
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                onClick={exitMonitor}
+                className="ml-2 gap-2 font-bold uppercase tracking-wider shadow-lg"
+                aria-label="Sair do monitor"
+              >
+                <LogOut className="w-5 h-5" /> Sair
+              </Button>
+            )}
           </div>
         </header>
 

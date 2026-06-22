@@ -628,6 +628,17 @@ const AlertaQualidade = () => {
           </Select>
         </div>
 
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setCompact((c) => !c)}
+            className="text-[11px] px-2.5 py-1 rounded border border-border bg-muted/40 hover:bg-muted text-foreground/80"
+            title="Alterna entre modo normal e compacto"
+          >
+            {compact ? "Modo normal" : "Modo compacto"}
+          </button>
+        </div>
+
 
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>

@@ -6,7 +6,7 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 // and we capture the postgres_changes handlers so we can fire fake events.
 const mocks = vi.hoisted(() => {
   const handlers: Record<string, (payload: any) => void> = {};
-  const state: { mocks.state.subscribeCb: ((s: string) => void) | null } = { mocks.state.subscribeCb: null };
+  const state: { subscribeCb: ((s: string) => void) | null } = { subscribeCb: null };
   const removeChannel = vi.fn();
   const fromMock = vi.fn(() => {
     const builder: any = {
@@ -35,7 +35,7 @@ vi.mock("@/integrations/supabase/client", () => ({
           return ch;
         }),
         subscribe: vi.fn((cb: (s: string) => void) => {
-          mocks.state.mocks.state.subscribeCb = cb;
+          mocks.state.subscribeCb = cb;
           return ch;
         }),
       };

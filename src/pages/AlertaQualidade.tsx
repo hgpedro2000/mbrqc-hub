@@ -130,6 +130,20 @@ const AlertaQualidade = () => {
     },
   });
 
+  const { data: profilesList = [] } = useQuery({
+    queryKey: ["profiles-name-map"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("public_profiles").select("id, full_name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const profileNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of profilesList as any[]) m[p.id] = p.full_name;
+    return m;
+  }, [profilesList]);
+
   useEffect(() => {
     const channel = supabase
       .channel("ciencias-realtime")

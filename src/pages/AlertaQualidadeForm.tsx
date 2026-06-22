@@ -407,7 +407,7 @@ const AlertaQualidadeForm = () => {
               <Select value={form.responsabilidade} onValueChange={(v) => set("responsabilidade", v)}>
                 <SelectTrigger className={cn("text-sm h-9", !form.responsabilidade && "border-[#c0392b]/30")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {(responsabilidades || []).map(r => <SelectItem key={r.code} value={r.description}>{r.code} - {r.description}</SelectItem>)}
+                  {(responsabilidades || []).map(r => <SelectItem key={r.code} value={r.description}>{r.description}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

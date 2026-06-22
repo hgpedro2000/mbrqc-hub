@@ -722,33 +722,33 @@ const AlertaQualidade = () => {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[80px]" />
+                  <col className="w-[70px]" />
                   <col className="w-[70px]" />
                   <col />
-                  <col className="w-[110px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[90px]" />
                   <col className="w-[100px]" />
                   <col className="w-[130px]" />
-                  <col className="w-[120px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[85px]" />
+                  <col className="w-[95px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[110px]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Projeto</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Linha/Peça</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Responsabilidade</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Detecção</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Ocorrência</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Validade</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Situação</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Nº</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Projeto</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Linha/Peça</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Responsabilidade</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Detecção</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Ocorrência</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Validade</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Situação</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Status</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ciência</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -758,22 +758,23 @@ const AlertaQualidade = () => {
                     const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
-                        <td className="py-3 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
-                        <td className="py-3 px-2">
+                        <td className="py-3 px-2 font-mono text-xs font-bold text-[#c0392b] text-center">{formatSeq(a.sequencial)}</td>
+                        <td className="py-3 px-2 text-center">
                           {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
                         </td>
                         <td className="py-3 px-2">
-                          <p className="font-medium text-foreground line-clamp-2 leading-snug">{a.descricao || a.modo_falha || "—"}</p>
+                          <p className="font-medium text-foreground text-[13px] line-clamp-3 leading-snug break-words">{a.descricao || a.modo_falha || "—"}</p>
                         </td>
-                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.linha_peca || ""}>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate text-center" title={a.linha_peca || ""}>
                           {a.linha_peca || "—"}
                         </td>
-                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.responsabilidade || ""}>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate text-center" title={a.responsabilidade || ""}>
                           {a.responsabilidade || "—"}
                         </td>
-                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.local_detectado || ""}>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate text-center" title={a.local_detectado || ""}>
                           {a.local_detectado || "—"}
                         </td>
+
                         <td className="py-3 px-2 text-xs text-muted-foreground hidden lg:table-cell">
                           {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
                         </td>

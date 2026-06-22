@@ -342,8 +342,8 @@ const AlertaQualidadeForm = () => {
 
           <div className="space-y-1">
             {reqLabel("Linha/Peça")}
-            <Button variant="outline" className={cn("w-full text-sm h-9 justify-start font-normal truncate", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); setSelectedSupplier(null); setLinhaPecaOpen(true); }}>
-              {form.linha_peca || "Selecione"}
+            <Button variant="outline" className={cn("w-full text-sm h-9 px-3 justify-start font-normal overflow-hidden", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); setSelectedSupplier(null); setLinhaPecaOpen(true); }}>
+              <AutoFitText text={form.linha_peca || "Selecione"} maxFontPx={14} minFontPx={9} className="text-left" />
             </Button>
           </div>
 

@@ -9,7 +9,7 @@ import {
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
 import { cn } from "@/lib/utils";
 
 // Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.

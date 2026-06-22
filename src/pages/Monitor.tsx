@@ -741,6 +741,19 @@ const Monitor = () => {
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}
 
+      {needsFsGesture && !isFs && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md text-center space-y-4 shadow-2xl">
+            <Maximize2 className="w-12 h-12 mx-auto text-primary" />
+            <h2 className="text-2xl font-bold">Ativar modo Kiosk</h2>
+            <p className="text-muted-foreground">O navegador exige um clique para entrar em tela cheia.</p>
+            <Button size="lg" className="w-full" onClick={() => { toggleFullscreen(); setNeedsFsGesture(false); }}>
+              Entrar em tela cheia
+            </Button>
+          </div>
+        </div>
+      )}
+
       <MonitorDialog open={showSettings} onOpenChange={setShowSettings} initial={prefs} confirmLabel="Aplicar" onConfirm={(p) => { setPrefs(p); setSlideIdx(0); }} />
     </ScaledStage>
   );

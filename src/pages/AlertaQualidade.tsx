@@ -743,10 +743,10 @@ const AlertaQualidade = () => {
                     const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
                     const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
                     const isExpanded = expandedDesc.has(a.id);
-                    const rowPad = compact ? "py-1.5" : "py-3";
-                    const descPad = compact ? "py-1.5" : "py-3";
+                    const rowPad = compact ? "py-2.5" : "py-4";
+                    const descPad = rowPad;
                     const descSize = compact ? "text-[12px]" : "text-[13px]";
-                    const descClamp = isExpanded ? "" : (compact ? "line-clamp-2" : "line-clamp-3");
+                    const descClamp = isExpanded ? "" : (compact ? "line-clamp-3" : "line-clamp-4");
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer align-middle" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
                         <td className={`${rowPad} px-2 font-mono text-xs font-bold text-[#c0392b] text-center`}>{formatSeq(a.sequencial)}</td>

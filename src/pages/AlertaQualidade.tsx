@@ -57,6 +57,10 @@ const AlertaQualidade = () => {
   const [statusEditAlert, setStatusEditAlert] = useState<any>(null);
   const [newStatus, setNewStatus] = useState("");
   const [trainingWarning, setTrainingWarning] = useState<{ name: string; date: string; type: "vencido" | "vencendo" } | null>(null);
+  const [justifyAlert, setJustifyAlert] = useState<any>(null);
+  const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
+  const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
+  const [justifySaving, setJustifySaving] = useState(false);
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", effectiveUserId],

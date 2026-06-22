@@ -704,38 +704,39 @@ const AlertaQualidade = () => {
         ) : (
           <>
             {/* Unified responsive table — horizontal scroll on small screens */}
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div ref={scrollRef} className="overflow-x-auto -mx-2 sm:mx-0 max-h-[70vh] overflow-y-auto rounded border border-border/40">
               <table className="w-full min-w-[1000px] sm:min-w-0 text-sm table-fixed">
                 <colgroup>
                   <col className="w-[70px]" />
-                  <col className="w-[70px]" />
+                  {colVis.projeto && <col className="w-[70px]" />}
                   <col />
-                  <col className="w-[100px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[85px]" />
+                  {colVis.linhaPeca && <col className="w-[100px]" />}
+                  {colVis.responsabilidade && <col className="w-[130px]" />}
+                  {colVis.deteccao && <col className="w-[100px]" />}
+                  {colVis.ocorrencia && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.validade && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.situacao && <col className="w-[85px]" />}
                   <col className="w-[95px]" />
                   <col className="w-[110px]" />
                   <col className="w-[110px]" />
                 </colgroup>
-                <thead className="bg-muted/30">
+                <thead className="bg-muted/30 sticky top-0 z-10 shadow-[0_1px_0_0_hsl(var(--border))]">
                   <tr className="border-b border-border">
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Nº</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Projeto</th>
+                    {colVis.projeto && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Projeto</th>}
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Linha/Peça</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Responsabilidade</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Detecção</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Ocorrência</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Validade</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Situação</th>
+                    {colVis.linhaPeca && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Linha/Peça</th>}
+                    {colVis.responsabilidade && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Responsabilidade</th>}
+                    {colVis.deteccao && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Detecção</th>}
+                    {colVis.ocorrencia && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Ocorrência</th>}
+                    {colVis.validade && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Validade</th>}
+                    {colVis.situacao && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Situação</th>}
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ciência</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filtered.map((a: any) => {
                     const prog = getCienciaProgress(a.id, a.linha_peca);

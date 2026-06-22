@@ -554,14 +554,31 @@ const AlertaQualidade = () => {
 
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col className="w-[90px]" />
+                  <col className="w-[80px]" />
+                  <col />
+                  <col className="w-[130px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[100px] hidden lg:table-column" />
+                  <col className="w-[100px] hidden lg:table-column" />
+                  <col className="w-[100px]" />
+                  <col className="w-[110px]" />
+                  <col className="w-[180px]" />
+                  <col className="w-[140px]" />
+                </colgroup>
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Nº</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Projeto</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Ocorrência</th>
-                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Validade</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Linha/Peça</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Responsabilidade</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Detecção</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Ocorrência</th>
+                    <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell">Validade</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Situação</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
@@ -575,27 +592,36 @@ const AlertaQualidade = () => {
                     const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
-                        <td className="py-2.5 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
-                        <td className="py-2.5 px-2">
+                        <td className="py-3 px-2 font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</td>
+                        <td className="py-3 px-2">
                           {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
                         </td>
-                        <td className="py-2.5 px-2">
-                          <p className="font-medium text-foreground line-clamp-1">{a.descricao || a.modo_falha || "—"}</p>
+                        <td className="py-3 px-2">
+                          <p className="font-medium text-foreground line-clamp-2 leading-snug">{a.descricao || a.modo_falha || "—"}</p>
                         </td>
-                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.linha_peca || ""}>
+                          {a.linha_peca || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.responsabilidade || ""}>
+                          {a.responsabilidade || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-foreground/80 truncate" title={a.local_detectado || ""}>
+                          {a.local_detectado || "—"}
+                        </td>
+                        <td className="py-3 px-2 text-xs text-muted-foreground hidden lg:table-cell">
                           {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
                         </td>
-                        <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
+                        <td className="py-3 px-2 text-xs text-muted-foreground hidden lg:table-cell">
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                         </td>
-                        <td className="py-2.5 px-2 text-center">
+                        <td className="py-3 px-2 text-center">
                           {a.status === "rascunho" ? (
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
                           ) : (
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
                           )}
                         </td>
-                        <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-3 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                               <Badge variant="outline" className={`${status.color} cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
@@ -604,18 +630,16 @@ const AlertaQualidade = () => {
                             <Badge variant="outline" className={status.color}>{displayStatus}</Badge>
                           )}
                         </td>
-                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                          <div className="min-w-[140px]">
-                            <CienciaBar
-                              pct={prog.pct}
-                              count={prog.count}
-                              total={prog.total}
-                              clickable={isLider && status.label === "Atrasado"}
-                              onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
-                            />
-                          </div>
+                        <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
+                          <CienciaBar
+                            pct={prog.pct}
+                            count={prog.count}
+                            total={prog.total}
+                            clickable={isLider && status.label === "Atrasado"}
+                            onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                          />
                         </td>
-                        <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-3 px-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
                             {canEdit(a) && (
                               <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>

@@ -1,14 +1,29 @@
-import { useEffect, useMemo, useState, useCallback, ReactNode } from "react";
+import { useEffect, useMemo, useState, useCallback, ReactNode, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock } from "@/components/apontamento/MonitorDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
-  BarChart3, ListChecks, Maximize2, Minimize2, X,
+  BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell } from "recharts";
 import { cn } from "@/lib/utils";
+
+// Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.
+const photoCache = new Map<string, HTMLImageElement>();
+const prefetchPhotos = (urls: string[]) => {
+  for (const url of urls) {
+    if (!url || photoCache.has(url)) continue;
+    const img = new Image();
+    img.decoding = "async";
+    img.loading = "eager";
+    img.src = url;
+    photoCache.set(url, img);
+  }
+};
 
 type ConnState = "connecting" | "connected" | "error";
 

@@ -100,22 +100,24 @@ const AlertaQualidade = () => {
     }
   }, [canViewAll, navigate]);
 
-  const { data: alertas = [], isLoading } = useQuery({
+  const { data: alertas = [], isLoading, isFetching: alertasFetching, error: alertasError, refetch: refetchAlertas } = useQuery({
     queryKey: ["alertas-lista-mestra"],
     queryFn: async () => {
       const { data, error } = await supabase.from("alertas").select("*").order("sequencial", { ascending: false });
       if (error) throw error;
       return data;
     },
+    retry: 2,
   });
 
-  const { data: ciencias = [] } = useQuery({
+  const { data: ciencias = [], isFetching: cienciasFetching, error: cienciasError } = useQuery({
     queryKey: ["ciencias-all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("ciencias").select("*");
       if (error) throw error;
       return data;
     },
+    retry: 2,
   });
 
   const { data: qualifications = [] } = useQuery({

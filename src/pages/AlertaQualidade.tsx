@@ -599,10 +599,25 @@ const AlertaQualidade = () => {
                       )}
                     </div>
                     <p className="text-sm font-medium text-foreground line-clamp-2">{a.descricao || a.modo_falha || "—"}</p>
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Linha/Peça</div>
+                        <div className="font-medium text-foreground truncate" title={a.linha_peca || ""}>{a.linha_peca || "—"}</div>
+                      </div>
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Respons.</div>
+                        <div className="font-medium text-foreground truncate" title={a.responsabilidade || ""}>{a.responsabilidade || "—"}</div>
+                      </div>
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Detecção</div>
+                        <div className="font-medium text-foreground truncate" title={a.local_detectado || ""}>{a.local_detectado || "—"}</div>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                       {a.modelo && <Badge variant="outline" className="text-[9px] border-emerald-400 text-emerald-700 bg-emerald-50 py-0">{a.modelo}</Badge>}
                       <span>{a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : ""}</span>
                     </div>
+
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <CienciaBar
                         pct={prog.pct}

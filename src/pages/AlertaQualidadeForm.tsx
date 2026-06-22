@@ -334,7 +334,7 @@ const AlertaQualidadeForm = () => {
             <Select value={form.modo_falha} onValueChange={(v) => set("modo_falha", v)}>
               <SelectTrigger className={cn("text-sm h-9", !form.modo_falha && "border-[#c0392b]/30")}><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {(defeitos || []).map(d => <SelectItem key={d.code} value={d.description}>{d.code} - {d.description}</SelectItem>)}
+                {(defeitos || []).map(d => <SelectItem key={d.code} value={d.description}>{d.description}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

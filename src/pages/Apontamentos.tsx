@@ -85,6 +85,7 @@ const Apontamentos = () => {
   const isPlaceholderSub = topTab === "processos" && !procSubConfig[procSub].realType;
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
+  const [monitorDialogOpen, setMonitorDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);

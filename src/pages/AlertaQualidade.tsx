@@ -653,7 +653,35 @@ const AlertaQualidade = () => {
           </Select>
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="text-[11px] px-2.5 py-1 rounded border border-border bg-muted/40 hover:bg-muted text-foreground/80 inline-flex items-center gap-1"
+                title="Mostrar/ocultar colunas"
+              >
+                <Settings2 className="w-3 h-3" /> Colunas
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-52 p-2 space-y-1">
+              <p className="text-[11px] font-semibold text-muted-foreground px-1 pb-1">Mostrar colunas</p>
+              {[
+                ["projeto", "Projeto"],
+                ["linhaPeca", "Linha/Peça"],
+                ["responsabilidade", "Responsabilidade"],
+                ["deteccao", "Detecção"],
+                ["ocorrencia", "Ocorrência"],
+                ["validade", "Validade"],
+                ["situacao", "Situação"],
+              ].map(([k, label]) => (
+                <label key={k} className="flex items-center gap-2 text-xs px-1 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                  <Checkbox checked={!!colVis[k]} onCheckedChange={(v) => setColVis((p) => ({ ...p, [k]: !!v }))} />
+                  {label}
+                </label>
+              ))}
+            </PopoverContent>
+          </Popover>
           <button
             type="button"
             onClick={() => setCompact((c) => !c)}
@@ -663,6 +691,7 @@ const AlertaQualidade = () => {
             {compact ? "Modo normal" : "Modo compacto"}
           </button>
         </div>
+
 
 
         {isLoading ? (

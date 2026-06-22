@@ -417,7 +417,7 @@ const AlertaQualidadeForm = () => {
               <span className="bg-[#c0392b] text-white text-xs font-bold px-3 py-1 rounded">NG *</span>
               <span className="text-xs text-muted-foreground">Foto da não conformidade</span>
             </div>
-            <div onClick={() => ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
+            <div onClick={() => ngPreview ? setPhotoActionType("ng") : ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
               {ngPreview ? <img src={ngPreview} alt="NG" className="w-full h-full object-contain max-h-[200px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}

@@ -176,6 +176,35 @@ const AlertaQualidadeForm = () => {
     setAnnotatingFile(null);
   };
 
+  const urlToFile = async (url: string, name = "image.jpg"): Promise<File> => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new File([blob], name, { type: blob.type || "image/jpeg" });
+  };
+
+  const handleEditExisting = async () => {
+    if (!photoActionType) return;
+    const type = photoActionType;
+    const existing = type === "ng" ? ngFile : okFile;
+    const previewUrl = type === "ng" ? ngPreview : okPreview;
+    setPhotoActionType(null);
+    try {
+      const file = existing || (previewUrl ? await urlToFile(previewUrl, `${type}.jpg`) : null);
+      if (!file) return;
+      setAnnotatingType(type);
+      setAnnotatingFile(file);
+    } catch {
+      toast.error("Não foi possível carregar a imagem");
+    }
+  };
+
+  const handleChangeExisting = () => {
+    const type = photoActionType;
+    setPhotoActionType(null);
+    if (type === "ng") ngInputRef.current?.click();
+    else if (type === "ok") okInputRef.current?.click();
+  };
+
   const uploadPhoto = async (file: File, prefix: string) => {
     const ext = file.name.split(".").pop();
     const path = `${prefix}-${Date.now()}.${ext}`;

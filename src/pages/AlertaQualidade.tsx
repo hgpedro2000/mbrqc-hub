@@ -233,16 +233,47 @@ const AlertaQualidade = () => {
     return { vigentes: v, arquivados: ar };
   }, [filteredByVisibility]);
 
+  const respOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of filteredByVisibility as any[]) if (a.responsabilidade) s.add(a.responsabilidade);
+    return Array.from(s).sort();
+  }, [filteredByVisibility]);
+
+  const lineOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of filteredByVisibility as any[]) if (a.linha_peca) s.add(a.linha_peca);
+    return Array.from(s).sort();
+  }, [filteredByVisibility]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return byTab;
-    const term = searchTerm.toLowerCase();
-    return byTab.filter((a: any) =>
-      formatSeq(a.sequencial).toLowerCase().includes(term) ||
-      a.descricao?.toLowerCase().includes(term) ||
-      a.modo_falha?.toLowerCase().includes(term) ||
-      a.modelo?.toLowerCase().includes(term)
-    );
-  }, [byTab, searchTerm]);
+    let list = byTab as any[];
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter((a: any) =>
+        formatSeq(a.sequencial).toLowerCase().includes(term) ||
+        a.descricao?.toLowerCase().includes(term) ||
+        a.modo_falha?.toLowerCase().includes(term) ||
+        a.modelo?.toLowerCase().includes(term)
+      );
+    }
+    if (statusFilter !== "todos") {
+      list = list.filter((a: any) => {
+        const st = getCienciaStatus(a.id, a.linha_peca, a.created_at).label;
+        const displayStatus = a.status && a.status !== "ativo" ? a.status : st;
+        return displayStatus === statusFilter;
+      });
+    }
+    if (respFilter !== "todos") list = list.filter((a: any) => a.responsabilidade === respFilter);
+    if (lineFilter !== "todos") list = list.filter((a: any) => a.linha_peca === lineFilter);
+    const sorted = [...list];
+    if (sortBy === "recentes") sorted.sort((a, b) => (b.sequencial || 0) - (a.sequencial || 0));
+    else if (sortBy === "antigos") sorted.sort((a, b) => (a.sequencial || 0) - (b.sequencial || 0));
+    else if (sortBy === "responsabilidade") sorted.sort((a, b) => (a.responsabilidade || "").localeCompare(b.responsabilidade || ""));
+    else if (sortBy === "linha") sorted.sort((a, b) => (a.linha_peca || "").localeCompare(b.linha_peca || ""));
+    else if (sortBy === "validade") sorted.sort((a, b) => (a.data_validade || "").localeCompare(b.data_validade || ""));
+    return sorted;
+  }, [byTab, searchTerm, statusFilter, respFilter, lineFilter, sortBy, ciencias, qualifications, partNumbers]);
+
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;

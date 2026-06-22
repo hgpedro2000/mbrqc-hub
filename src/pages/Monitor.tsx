@@ -443,30 +443,38 @@ const Monitor = () => {
       case "recent":
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">
-            <table className="w-full text-3xl">
+            <table className="w-full text-2xl">
               <thead className="bg-muted/30">
-                <tr className="text-muted-foreground text-xl uppercase tracking-wider">
-                  <th className="text-left py-6 px-8">Nº</th>
-                  <th className="text-left py-6 px-8">Tipo</th>
-                  <th className="text-left py-6 px-8">Part Number</th>
-                  <th className="text-left py-6 px-8">Fornecedor</th>
-                  <th className="text-right py-6 px-8">NG</th>
-                  <th className="text-right py-6 px-8">Hora</th>
+                <tr className="text-muted-foreground text-base uppercase tracking-wider">
+                  <th className="text-left py-5 px-5">Nº</th>
+                  <th className="text-left py-5 px-5">Part Number</th>
+                  <th className="text-left py-5 px-5">Fornecedor</th>
+                  <th className="text-left py-5 px-5">Modo de Falha</th>
+                  <th className="text-right py-5 px-5">Insp.</th>
+                  <th className="text-right py-5 px-5">OK</th>
+                  <th className="text-right py-5 px-5">NG</th>
+                  <th className="text-right py-5 px-5">Hora</th>
                 </tr>
               </thead>
               <tbody>
-                {apontamentos.slice(0, 12).map((a, i) => (
-                  <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
-                    <td className="py-5 px-8 font-mono text-2xl">{a.numero || "—"}</td>
-                    <td className="py-5 px-8 uppercase font-semibold">{a.tipo}</td>
-                    <td className="py-5 px-8">{a.part_number || "—"}</td>
-                    <td className="py-5 px-8 truncate max-w-[400px]">{a.fornecedor || "—"}</td>
-                    <td className={cn("py-5 px-8 text-right font-black text-4xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
-                    <td className="py-5 px-8 text-right text-2xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
-                  </tr>
-                ))}
+                {apontamentos.slice(0, 11).map((a, i) => {
+                  const insp = a.quantidade_inspecionada || a.quantidade || 0;
+                  const ok = a.quantidade_ok ?? Math.max(insp - (a.quantidade_ng || 0), 0);
+                  return (
+                    <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
+                      <td className="py-4 px-5 font-mono text-xl">{a.numero || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[260px]">{a.part_number || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[280px]">{a.fornecedor || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[300px] text-amber-300">{a.modo_falha || "—"}</td>
+                      <td className="py-4 px-5 text-right font-bold tabular-nums text-cyan-300">{fmtNum(insp)}</td>
+                      <td className="py-4 px-5 text-right font-bold tabular-nums text-emerald-400">{fmtNum(ok)}</td>
+                      <td className={cn("py-4 px-5 text-right font-black text-3xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
+                      <td className="py-4 px-5 text-right text-xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
+                    </tr>
+                  );
+                })}
                 {apontamentos.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
+                  <tr><td colSpan={8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
                 )}
               </tbody>
             </table>

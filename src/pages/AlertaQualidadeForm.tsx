@@ -473,10 +473,25 @@ const AlertaQualidadeForm = () => {
         </div>
 
         {/* Save */}
-        <div className="flex justify-end pt-2 pb-8">
-          <Button onClick={handleSave} disabled={saving} className="gap-2 bg-[#1a5276] hover:bg-[#154360] w-full sm:w-auto sm:min-w-[200px]">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 pb-8">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleSave("rascunho")}
+            disabled={saving || savingDraft}
+            className="gap-2 bg-white/10 border-white/30 text-white hover:bg-white/20 w-full sm:w-auto sm:min-w-[200px]"
+          >
+            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Salvar Rascunho
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleSave("emitido")}
+            disabled={saving || savingDraft}
+            className="gap-2 bg-[#1a5276] hover:bg-[#154360] w-full sm:w-auto sm:min-w-[200px]"
+          >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isEdit ? "Salvar Alterações" : "Salvar Alerta"}
+            {isEdit && currentStatus !== "rascunho" ? "Salvar Alterações" : "Emitir Alerta"}
           </Button>
         </div>
       </main>

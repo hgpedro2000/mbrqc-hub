@@ -1,14 +1,29 @@
-import { useEffect, useMemo, useState, useCallback, ReactNode } from "react";
+import { useEffect, useMemo, useState, useCallback, ReactNode, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock } from "@/components/apontamento/MonitorDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
-  BarChart3, ListChecks, Maximize2, Minimize2, X,
+  BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell } from "recharts";
 import { cn } from "@/lib/utils";
+
+// Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.
+const photoCache = new Map<string, HTMLImageElement>();
+const prefetchPhotos = (urls: string[]) => {
+  for (const url of urls) {
+    if (!url || photoCache.has(url)) continue;
+    const img = new Image();
+    img.decoding = "async";
+    img.loading = "eager";
+    img.src = url;
+    photoCache.set(url, img);
+  }
+};
 
 type ConnState = "connecting" | "connected" | "error";
 
@@ -174,6 +189,10 @@ const Monitor = () => {
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
+  const { isAdmin } = useUserRole();
+  const navigate = useNavigate();
+  const autoFsTried = useRef(false);
+  const [needsFsGesture, setNeedsFsGesture] = useState(false);
 
   const [apontamentos, setApontamentos] = useState<any[]>([]);
   const [alertas, setAlertas] = useState<any[]>([]);
@@ -182,6 +201,29 @@ const Monitor = () => {
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
+
+  // Auto-enter fullscreen on mount; if the browser blocks it (no gesture), show a one-tap prompt.
+  useEffect(() => {
+    if (autoFsTried.current) return;
+    autoFsTried.current = true;
+    const tryFs = async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+      } catch {
+        setNeedsFsGesture(true);
+      }
+    };
+    tryFs();
+  }, []);
+
+  useEffect(() => {
+    if (isFs) setNeedsFsGesture(false);
+  }, [isFs]);
+
+  const exitMonitor = async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* noop */ }
+    navigate("/apontamentos");
+  };
 
   useEffect(() => {
     const root = document.documentElement;
@@ -257,6 +299,14 @@ const Monitor = () => {
     const t = setTimeout(() => setFlash(null), 6000);
     return () => clearTimeout(t);
   }, [flash]);
+
+  // Prefetch + cache all alert/contention photos so the modal opens instantly.
+  useEffect(() => {
+    const urls: string[] = [];
+    alertas.forEach((a) => urls.push(...allPhotos(a)));
+    contencoes.forEach((c) => urls.push(...allPhotos(c)));
+    if (urls.length) prefetchPhotos(urls);
+  }, [alertas, contencoes]);
 
   const blocks = prefs.blocks;
   const safeIdx = blocks.length ? slideIdx % blocks.length : 0;
@@ -588,6 +638,16 @@ const Monitor = () => {
             <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Configurações do monitor">
               <Settings className="w-7 h-7" />
             </Button>
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                onClick={exitMonitor}
+                className="ml-2 gap-2 font-bold uppercase tracking-wider shadow-lg"
+                aria-label="Sair do monitor"
+              >
+                <LogOut className="w-5 h-5" /> Sair
+              </Button>
+            )}
           </div>
         </header>
 
@@ -680,6 +740,19 @@ const Monitor = () => {
       </div>
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}
+
+      {needsFsGesture && !isFs && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-md text-center space-y-4 shadow-2xl">
+            <Maximize2 className="w-12 h-12 mx-auto text-primary" />
+            <h2 className="text-2xl font-bold">Ativar modo Kiosk</h2>
+            <p className="text-muted-foreground">O navegador exige um clique para entrar em tela cheia.</p>
+            <Button size="lg" className="w-full" onClick={() => { toggleFullscreen(); setNeedsFsGesture(false); }}>
+              Entrar em tela cheia
+            </Button>
+          </div>
+        </div>
+      )}
 
       <MonitorDialog open={showSettings} onOpenChange={setShowSettings} initial={prefs} confirmLabel="Aplicar" onConfirm={(p) => { setPrefs(p); setSlideIdx(0); }} />
     </ScaledStage>

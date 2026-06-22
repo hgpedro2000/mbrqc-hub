@@ -52,6 +52,7 @@ const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: strin
   consumiveis:{ title: "Consumíveis Críticos",    icon: Package,      accent: "text-orange-500",  gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
   ranking:    { title: "Ranking de Fornecedores", icon: Trophy,       accent: "text-yellow-500",  gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
   defects:    { title: "Gráfico de Defeitos",     icon: BarChart3,    accent: "text-destructive", gradient: "from-red-500/20 via-transparent to-pink-500/20" },
+  inspecionado:{ title: "Quantidade Inspecionada", icon: Package,     accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
 };
 
 // --- Hooks ---

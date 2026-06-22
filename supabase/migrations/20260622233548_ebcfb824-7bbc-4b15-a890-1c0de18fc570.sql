@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.0.9.6', 'minor', 'Monitor: detecção de janela aberta', 'Botão Monitor agora detecta se o monitor já está aberto via BroadcastChannel, permite focar a janela existente, abrir outra ou cancelar, e mostra toast quando o monitor é fechado.');

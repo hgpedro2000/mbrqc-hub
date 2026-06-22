@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench, Layers, Gauge, Shield, ShieldAlert, Frame, Zap, Droplet, MonitorPlay } from "lucide-react";
 import { MonitorDialog, MonitorPreferences } from "@/components/apontamento/MonitorDialog";
@@ -86,6 +86,51 @@ const Apontamentos = () => {
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [monitorDialogOpen, setMonitorDialogOpen] = useState(false);
+  const [monitorAlreadyOpen, setMonitorAlreadyOpen] = useState(false);
+  const monitorChannelRef = useRef<BroadcastChannel | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel("monitor_channel");
+    monitorChannelRef.current = ch;
+    ch.onmessage = (e) => {
+      if (e.data?.type === "MONITOR_CLOSED") {
+        toast.message("Monitor foi fechado", { duration: 3000 });
+      }
+    };
+    return () => { ch.close(); monitorChannelRef.current = null; };
+  }, []);
+
+  const handleMonitorClick = () => {
+    if (typeof BroadcastChannel === "undefined") { setMonitorDialogOpen(true); return; }
+    const probe = new BroadcastChannel("monitor_channel");
+    let answered = false;
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === "PONG") {
+        answered = true;
+        probe.close();
+        setMonitorAlreadyOpen(true);
+      }
+    };
+    probe.addEventListener("message", onMsg);
+    probe.postMessage({ type: "PING" });
+    setTimeout(() => {
+      if (!answered) {
+        probe.close();
+        setMonitorDialogOpen(true);
+      }
+    }, 500);
+  };
+
+  const focusMonitor = () => {
+    monitorChannelRef.current?.postMessage({ type: "FOCUS" });
+    setMonitorAlreadyOpen(false);
+  };
+
+  const openAnotherMonitor = () => {
+    setMonitorAlreadyOpen(false);
+    window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
+  };
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -647,7 +692,7 @@ const Apontamentos = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
                 <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setMonitorDialogOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
+              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
                 <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Monitor</span>
               </Button>
               <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
@@ -1135,6 +1180,19 @@ const Apontamentos = () => {
           window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
         }}
       />
+      <Dialog open={monitorAlreadyOpen} onOpenChange={setMonitorAlreadyOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>🖥️ Monitor já está aberto</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">O painel do monitor já está em execução. O que deseja fazer?</p>
+          <div className="flex flex-col gap-2 mt-4">
+            <Button onClick={focusMonitor}>Focar no Monitor</Button>
+            <Button variant="secondary" onClick={openAnotherMonitor}>Abrir outro Monitor</Button>
+            <Button variant="ghost" onClick={() => setMonitorAlreadyOpen(false)}>Cancelar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

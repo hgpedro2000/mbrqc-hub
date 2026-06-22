@@ -476,10 +476,9 @@ const AlertaQualidadeForm = () => {
         <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2 pb-8">
           <Button
             type="button"
-            variant="outline"
             onClick={() => handleSave("rascunho")}
             disabled={saving || savingDraft}
-            className="gap-2 bg-white/10 border-white/30 text-white hover:bg-white/20 w-full sm:w-auto sm:min-w-[200px]"
+            className="gap-2 bg-amber-500 hover:bg-amber-600 text-white border-0 w-full sm:w-auto sm:min-w-[200px]"
           >
             {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Salvar Rascunho

@@ -189,6 +189,10 @@ const Monitor = () => {
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
+  const { isAdmin } = useUserRole();
+  const navigate = useNavigate();
+  const autoFsTried = useRef(false);
+  const [needsFsGesture, setNeedsFsGesture] = useState(false);
 
   const [apontamentos, setApontamentos] = useState<any[]>([]);
   const [alertas, setAlertas] = useState<any[]>([]);
@@ -197,6 +201,29 @@ const Monitor = () => {
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
+
+  // Auto-enter fullscreen on mount; if the browser blocks it (no gesture), show a one-tap prompt.
+  useEffect(() => {
+    if (autoFsTried.current) return;
+    autoFsTried.current = true;
+    const tryFs = async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
+      } catch {
+        setNeedsFsGesture(true);
+      }
+    };
+    tryFs();
+  }, []);
+
+  useEffect(() => {
+    if (isFs) setNeedsFsGesture(false);
+  }, [isFs]);
+
+  const exitMonitor = async () => {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* noop */ }
+    navigate("/apontamentos");
+  };
 
   useEffect(() => {
     const root = document.documentElement;

@@ -4,43 +4,44 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 // --- Mock supabase client used by Monitor + MonitorDialog ---
 // We capture the subscribe callback so tests can drive realtime state transitions,
 // and we capture the postgres_changes handlers so we can fire fake events.
-type Handler = (payload: any) => void;
-const handlers: Record<string, Handler> = {};
-let subscribeCb: ((status: string) => void) | null = null;
-const removeChannel = vi.fn();
-
-const fromMock = vi.fn(() => {
-  const builder: any = {
-    select: vi.fn(() => builder),
-    gte: vi.fn(() => builder),
-    lte: vi.fn(() => builder),
-    eq: vi.fn(() => builder),
-    neq: vi.fn(() => builder),
-    in: vi.fn(() => builder),
-    limit: vi.fn(() => builder),
-    order: vi.fn(() => Promise.resolve({ data: [], error: null })),
-    then: (resolve: any) => resolve({ data: [], error: null }),
-  };
-  return builder;
+const mocks = vi.hoisted(() => {
+  const handlers: Record<string, (payload: any) => void> = {};
+  const state: { subscribeCb: ((s: string) => void) | null } = { subscribeCb: null };
+  const removeChannel = vi.fn();
+  const fromMock = vi.fn(() => {
+    const builder: any = {
+      select: vi.fn(() => builder),
+      gte: vi.fn(() => builder),
+      lte: vi.fn(() => builder),
+      eq: vi.fn(() => builder),
+      neq: vi.fn(() => builder),
+      in: vi.fn(() => builder),
+      limit: vi.fn(() => builder),
+      order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      then: (resolve: any) => resolve({ data: [], error: null }),
+    };
+    return builder;
+  });
+  return { handlers, state, removeChannel, fromMock };
 });
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    from: (table: string) => fromMock(table),
+    from: (table: string) => mocks.fromMock(table),
     channel: vi.fn(() => {
       const ch: any = {
-        on: vi.fn((_evt: string, cfg: { table: string }, cb: Handler) => {
-          handlers[cfg.table] = cb;
+        on: vi.fn((_evt: string, cfg: { table: string }, cb: (p: any) => void) => {
+          mocks.handlers[cfg.table] = cb;
           return ch;
         }),
         subscribe: vi.fn((cb: (s: string) => void) => {
-          subscribeCb = cb;
+          mocks.state.subscribeCb = cb;
           return ch;
         }),
       };
       return ch;
     }),
-    removeChannel,
+    removeChannel: mocks.removeChannel,
   },
 }));
 

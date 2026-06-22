@@ -730,6 +730,54 @@ const AlertaQualidade = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Justify pending signatures dialog (Atrasado) */}
+      <Dialog open={!!justifyAlert} onOpenChange={(o) => { if (!o) setJustifyAlert(null); }}>
+        <DialogContent className="max-w-lg max-h-[85dvh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Justificar pendências de ciência</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Selecione uma justificativa para os colaboradores que ainda não assinaram este alerta.
+          </p>
+          <div className="flex-1 overflow-auto space-y-2 pr-1">
+            {justifyAlert && getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca).length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma pendência.</p>
+            ) : justifyAlert && getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca).map((uid) => (
+              <div key={uid} className="border rounded-md p-2 space-y-2">
+                <p className="text-sm font-medium">{profileNameMap[uid] || uid}</p>
+                <Select
+                  value={justifySelections[uid] || ""}
+                  onValueChange={(v) => setJustifySelections((p) => ({ ...p, [uid]: v }))}
+                >
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione justificativa" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Colaborador em Afastamento Médico">Colaborador em Afastamento Médico</SelectItem>
+                    <SelectItem value="Colaborador em Afastamento INSS">Colaborador em Afastamento INSS</SelectItem>
+                    <SelectItem value="Colaborador de Férias">Colaborador de Férias</SelectItem>
+                    <SelectItem value="Colaborador Desligado">Colaborador Desligado</SelectItem>
+                    <SelectItem value="outro">Outro (especificar)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {justifySelections[uid] === "outro" && (
+                  <Input
+                    placeholder="Descreva a justificativa"
+                    className="h-8 text-xs"
+                    value={justifyCustom[uid] || ""}
+                    onChange={(e) => setJustifyCustom((p) => ({ ...p, [uid]: e.target.value }))}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setJustifyAlert(null)}>Cancelar</Button>
+            <Button size="sm" onClick={handleJustifySubmit} disabled={justifySaving}>
+              {justifySaving ? "Salvando..." : "Salvar Justificativas"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

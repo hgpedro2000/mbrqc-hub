@@ -61,6 +61,12 @@ const AlertaQualidade = () => {
   const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
   const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
   const [justifySaving, setJustifySaving] = useState(false);
+  // Filters / sort
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [respFilter, setRespFilter] = useState<string>("todos");
+  const [lineFilter, setLineFilter] = useState<string>("todos");
+  const [sortBy, setSortBy] = useState<string>("recentes");
+
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", effectiveUserId],
@@ -227,16 +233,47 @@ const AlertaQualidade = () => {
     return { vigentes: v, arquivados: ar };
   }, [filteredByVisibility]);
 
+  const respOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of filteredByVisibility as any[]) if (a.responsabilidade) s.add(a.responsabilidade);
+    return Array.from(s).sort();
+  }, [filteredByVisibility]);
+
+  const lineOptions = useMemo(() => {
+    const s = new Set<string>();
+    for (const a of filteredByVisibility as any[]) if (a.linha_peca) s.add(a.linha_peca);
+    return Array.from(s).sort();
+  }, [filteredByVisibility]);
+
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return byTab;
-    const term = searchTerm.toLowerCase();
-    return byTab.filter((a: any) =>
-      formatSeq(a.sequencial).toLowerCase().includes(term) ||
-      a.descricao?.toLowerCase().includes(term) ||
-      a.modo_falha?.toLowerCase().includes(term) ||
-      a.modelo?.toLowerCase().includes(term)
-    );
-  }, [byTab, searchTerm]);
+    let list = byTab as any[];
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter((a: any) =>
+        formatSeq(a.sequencial).toLowerCase().includes(term) ||
+        a.descricao?.toLowerCase().includes(term) ||
+        a.modo_falha?.toLowerCase().includes(term) ||
+        a.modelo?.toLowerCase().includes(term)
+      );
+    }
+    if (statusFilter !== "todos") {
+      list = list.filter((a: any) => {
+        const st = getCienciaStatus(a.id, a.linha_peca, a.created_at).label;
+        const displayStatus = a.status && a.status !== "ativo" ? a.status : st;
+        return displayStatus === statusFilter;
+      });
+    }
+    if (respFilter !== "todos") list = list.filter((a: any) => a.responsabilidade === respFilter);
+    if (lineFilter !== "todos") list = list.filter((a: any) => a.linha_peca === lineFilter);
+    const sorted = [...list];
+    if (sortBy === "recentes") sorted.sort((a, b) => (b.sequencial || 0) - (a.sequencial || 0));
+    else if (sortBy === "antigos") sorted.sort((a, b) => (a.sequencial || 0) - (b.sequencial || 0));
+    else if (sortBy === "responsabilidade") sorted.sort((a, b) => (a.responsabilidade || "").localeCompare(b.responsabilidade || ""));
+    else if (sortBy === "linha") sorted.sort((a, b) => (a.linha_peca || "").localeCompare(b.linha_peca || ""));
+    else if (sortBy === "validade") sorted.sort((a, b) => (a.data_validade || "").localeCompare(b.data_validade || ""));
+    return sorted;
+  }, [byTab, searchTerm, statusFilter, respFilter, lineFilter, sortBy, ciencias, qualifications, partNumbers]);
+
 
   const handleQrScan = async (qrValue: string) => {
     if (!scanAlertaId) return;
@@ -374,14 +411,23 @@ const AlertaQualidade = () => {
     }
     setJustifySaving(true);
     try {
-      const { error } = await supabase.from("ciencias").insert(rows as any);
+      // Use upsert to avoid duplicate-key failures on retries / page reloads
+      const { error } = await (supabase as any)
+        .from("ciencias")
+        .upsert(rows as any, { onConflict: "alerta_id,inspetor_id", ignoreDuplicates: false });
       if (error) throw error;
       logAction("justify", "alerta_qualidade", { alerta_id: justifyAlert.id, total: rows.length });
-      qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      // Force refetch so the master list + Ciência bar reflect new status immediately
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ["ciencias-all"] }),
+        qc.refetchQueries({ queryKey: ["alertas-lista-mestra"] }),
+      ]);
       toast.success(`${rows.length} justificativa(s) registrada(s)`);
       setJustifyAlert(null);
+      setJustifySelections({});
+      setJustifyCustom({});
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(`Falha ao salvar: ${e.message}. Tente novamente.`);
     } finally {
       setJustifySaving(false);
     }
@@ -475,6 +521,45 @@ const AlertaQualidade = () => {
           </TabsList>
         </Tabs>
 
+        {/* Filters & sort */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="Em andamento">Em andamento</SelectItem>
+              <SelectItem value="Atrasado">Atrasado</SelectItem>
+              <SelectItem value="Completo">Completo</SelectItem>
+              <SelectItem value="Sem destino">Sem destino</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={respFilter} onValueChange={setRespFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Responsabilidade" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas responsab.</SelectItem>
+              {respOptions.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={lineFilter} onValueChange={setLineFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Linha/Peça" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas linhas/peças</SelectItem>
+              {lineOptions.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recentes">Mais recentes</SelectItem>
+              <SelectItem value="antigos">Mais antigos</SelectItem>
+              <SelectItem value="responsabilidade">Responsabilidade (A-Z)</SelectItem>
+              <SelectItem value="linha">Linha/Peça (A-Z)</SelectItem>
+              <SelectItem value="validade">Validade</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (
@@ -514,10 +599,25 @@ const AlertaQualidade = () => {
                       )}
                     </div>
                     <p className="text-sm font-medium text-foreground line-clamp-2">{a.descricao || a.modo_falha || "—"}</p>
+                    <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Linha/Peça</div>
+                        <div className="font-medium text-foreground truncate" title={a.linha_peca || ""}>{a.linha_peca || "—"}</div>
+                      </div>
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Respons.</div>
+                        <div className="font-medium text-foreground truncate" title={a.responsabilidade || ""}>{a.responsabilidade || "—"}</div>
+                      </div>
+                      <div className="bg-muted/40 rounded px-1.5 py-1 min-w-0">
+                        <div className="text-[8px] uppercase text-muted-foreground tracking-wide">Detecção</div>
+                        <div className="font-medium text-foreground truncate" title={a.local_detectado || ""}>{a.local_detectado || "—"}</div>
+                      </div>
+                    </div>
                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                       {a.modelo && <Badge variant="outline" className="text-[9px] border-emerald-400 text-emerald-700 bg-emerald-50 py-0">{a.modelo}</Badge>}
                       <span>{a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : ""}</span>
                     </div>
+
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <CienciaBar
                         pct={prog.pct}

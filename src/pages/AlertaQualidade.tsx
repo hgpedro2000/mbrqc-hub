@@ -542,12 +542,37 @@ const AlertaQualidade = () => {
           >
             <CheckCircle2 className="w-4 h-4" /> Meus Pendentes
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportCsv}
+            className="gap-2 shrink-0"
+            title="Exportar lista filtrada em CSV (abre no Excel)"
+            disabled={filtered.length === 0}
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Exportar CSV
+          </Button>
           {canCreateAlert && (
             <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
               <Plus className="w-4 h-4" /> Novo Alerta
             </Button>
           )}
         </div>
+
+        {(alertasError || cienciasError) && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2 text-xs flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Falha ao carregar dados. Verifique sua conexão.
+            </span>
+            <Button size="sm" variant="outline" className="h-7" onClick={() => refetchAlertas()}>Tentar novamente</Button>
+          </div>
+        )}
+
+        {(alertasFetching || cienciasFetching) && !isLoading && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <Loader2 className="w-3 h-3 animate-spin" /> Atualizando…
+          </div>
+        )}
 
         <Tabs value={archiveTab} onValueChange={(v) => setArchiveTab(v as "vigentes" | "arquivados")}>
           <TabsList className="grid w-full grid-cols-2 max-w-md">

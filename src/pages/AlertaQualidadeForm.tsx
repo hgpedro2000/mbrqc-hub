@@ -45,6 +45,7 @@ const AlertaQualidadeForm = () => {
   // Image annotation editor state
   const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
   const [annotatingType, setAnnotatingType] = useState<"ng" | "ok">("ng");
+  const [photoActionType, setPhotoActionType] = useState<"ng" | "ok" | null>(null);
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",
@@ -173,6 +174,35 @@ const AlertaQualidadeForm = () => {
       }
     }
     setAnnotatingFile(null);
+  };
+
+  const urlToFile = async (url: string, name = "image.jpg"): Promise<File> => {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new File([blob], name, { type: blob.type || "image/jpeg" });
+  };
+
+  const handleEditExisting = async () => {
+    if (!photoActionType) return;
+    const type = photoActionType;
+    const existing = type === "ng" ? ngFile : okFile;
+    const previewUrl = type === "ng" ? ngPreview : okPreview;
+    setPhotoActionType(null);
+    try {
+      const file = existing || (previewUrl ? await urlToFile(previewUrl, `${type}.jpg`) : null);
+      if (!file) return;
+      setAnnotatingType(type);
+      setAnnotatingFile(file);
+    } catch {
+      toast.error("Não foi possível carregar a imagem");
+    }
+  };
+
+  const handleChangeExisting = () => {
+    const type = photoActionType;
+    setPhotoActionType(null);
+    if (type === "ng") ngInputRef.current?.click();
+    else if (type === "ok") okInputRef.current?.click();
   };
 
   const uploadPhoto = async (file: File, prefix: string) => {
@@ -387,7 +417,7 @@ const AlertaQualidadeForm = () => {
               <span className="bg-[#c0392b] text-white text-xs font-bold px-3 py-1 rounded">NG *</span>
               <span className="text-xs text-muted-foreground">Foto da não conformidade</span>
             </div>
-            <div onClick={() => ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
+            <div onClick={() => ngPreview ? setPhotoActionType("ng") : ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
               {ngPreview ? <img src={ngPreview} alt="NG" className="w-full h-full object-contain max-h-[200px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
@@ -399,7 +429,7 @@ const AlertaQualidadeForm = () => {
               <span className="bg-[#1e8449] text-white text-xs font-bold px-3 py-1 rounded">OK *</span>
               <span className="text-xs text-muted-foreground">Foto da referência correta</span>
             </div>
-            <div onClick={() => okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
+            <div onClick={() => okPreview ? setPhotoActionType("ok") : okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
               {okPreview ? <img src={okPreview} alt="OK" className="w-full h-full object-contain max-h-[200px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
@@ -541,6 +571,19 @@ const AlertaQualidadeForm = () => {
       </Dialog>
 
       {/* Image Annotation Editor */}
+      {/* Photo action popup (Alterar / Editar) */}
+      <Dialog open={!!photoActionType} onOpenChange={(o) => !o && setPhotoActionType(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Foto {photoActionType?.toUpperCase()}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={handleChangeExisting}>Alterar Imagem</Button>
+            <Button onClick={handleEditExisting} className="bg-[#1a5276] hover:bg-[#154360]">Editar Imagem</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <ImageAnnotationEditor
         open={!!annotatingFile}
         imageFile={annotatingFile}

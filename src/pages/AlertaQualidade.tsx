@@ -441,7 +441,7 @@ const AlertaQualidade = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-5xl">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 max-w-[1600px]">
         <div className="flex flex-col sm:flex-row justify-between gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

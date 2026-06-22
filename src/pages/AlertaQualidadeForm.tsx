@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import AutoFitText from "@/components/AutoFitText";
 import { compressImage } from "@/lib/compressImage";
 import { logAction } from "@/lib/logAction";
 
@@ -334,15 +335,15 @@ const AlertaQualidadeForm = () => {
             <Select value={form.modo_falha} onValueChange={(v) => set("modo_falha", v)}>
               <SelectTrigger className={cn("text-sm h-9", !form.modo_falha && "border-[#c0392b]/30")}><SelectValue placeholder="Selecione" /></SelectTrigger>
               <SelectContent>
-                {(defeitos || []).map(d => <SelectItem key={d.code} value={d.description}>{d.code} - {d.description}</SelectItem>)}
+                {(defeitos || []).map(d => <SelectItem key={d.code} value={d.description}>{d.description}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1">
             {reqLabel("Linha/Peça")}
-            <Button variant="outline" className={cn("w-full text-sm h-9 justify-start font-normal truncate", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); setSelectedSupplier(null); setLinhaPecaOpen(true); }}>
-              {form.linha_peca || "Selecione"}
+            <Button variant="outline" className={cn("w-full text-sm h-9 px-3 justify-start font-normal overflow-hidden", !form.linha_peca && "border-[#c0392b]/30")} onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); setSelectedSupplier(null); setLinhaPecaOpen(true); }}>
+              <AutoFitText text={form.linha_peca || "Selecione"} maxFontPx={14} minFontPx={9} className="text-left" />
             </Button>
           </div>
 
@@ -407,7 +408,7 @@ const AlertaQualidadeForm = () => {
               <Select value={form.responsabilidade} onValueChange={(v) => set("responsabilidade", v)}>
                 <SelectTrigger className={cn("text-sm h-9", !form.responsabilidade && "border-[#c0392b]/30")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {(responsabilidades || []).map(r => <SelectItem key={r.code} value={r.description}>{r.code} - {r.description}</SelectItem>)}
+                  {(responsabilidades || []).map(r => <SelectItem key={r.code} value={r.description}>{r.description}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

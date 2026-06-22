@@ -13,7 +13,8 @@ export type MonitorBlock =
   | "contencao"
   | "consumiveis"
   | "ranking"
-  | "defects";
+  | "defects"
+  | "inspecionado";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";
@@ -58,6 +59,7 @@ const BLOCK_OPTIONS: { id: MonitorBlock; emoji: string; title: string; desc: str
   { id: "consumiveis", emoji: "📦", title: "Consumíveis Críticos", desc: "Itens abaixo do estoque mínimo" },
   { id: "ranking", emoji: "🏆", title: "Ranking de Fornecedores", desc: "Ranking por NG do período" },
   { id: "defects", emoji: "📈", title: "Gráfico de Defeitos", desc: "Defeitos do período em gráfico" },
+  { id: "inspecionado", emoji: "🔍", title: "Quantidade Inspecionada", desc: "Peças por Part Number/Name por fornecedor" },
 ];
 
 const PERIOD_OPTIONS: { id: MonitorPeriod; label: string }[] = [

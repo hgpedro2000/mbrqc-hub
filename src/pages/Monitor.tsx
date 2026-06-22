@@ -9,7 +9,7 @@ import {
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
 import { cn } from "@/lib/utils";
 
 // Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.
@@ -52,6 +52,7 @@ const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: strin
   consumiveis:{ title: "Consumíveis Críticos",    icon: Package,      accent: "text-orange-500",  gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
   ranking:    { title: "Ranking de Fornecedores", icon: Trophy,       accent: "text-yellow-500",  gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
   defects:    { title: "Gráfico de Defeitos",     icon: BarChart3,    accent: "text-destructive", gradient: "from-red-500/20 via-transparent to-pink-500/20" },
+  inspecionado:{ title: "Quantidade Inspecionada", icon: Package,     accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
 };
 
 // --- Hooks ---
@@ -337,9 +338,45 @@ const Monitor = () => {
   const criticalConsum = consumiveis.filter((c) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0));
 
   const supplierRanking = useMemo(() => {
-    const map = new Map<string, number>();
-    apontamentos.forEach((a) => { const ng = a.quantidade_ng || 0; if (!ng) return; const key = a.fornecedor || "—"; map.set(key, (map.get(key) || 0) + ng); });
-    return Array.from(map.entries()).map(([fornecedor, ng]) => ({ fornecedor, ng })).sort((a, b) => b.ng - a.ng).slice(0, 10);
+    const map = new Map<string, { ng: number; insp: number }>();
+    apontamentos.forEach((a) => {
+      const key = a.fornecedor || "—";
+      const ng = a.quantidade_ng || 0;
+      const insp = a.quantidade_inspecionada || a.quantidade || 0;
+      const cur = map.get(key) || { ng: 0, insp: 0 };
+      cur.ng += ng; cur.insp += insp;
+      map.set(key, cur);
+    });
+    return Array.from(map.entries())
+      .map(([fornecedor, v]) => ({ fornecedor, ng: v.ng, insp: v.insp, ppm: v.insp > 0 ? Math.round((v.ng / v.insp) * 1_000_000) : 0 }))
+      .filter((s) => s.insp > 0)
+      .sort((a, b) => b.ppm - a.ppm)
+      .slice(0, 10);
+  }, [apontamentos]);
+
+  const inspecionadoData = useMemo(() => {
+    // Group by supplier -> list of {part_number, part_name, qty}
+    const bySupplier = new Map<string, Map<string, { part_number: string; part_name: string; qty: number }>>();
+    apontamentos.forEach((a) => {
+      const sup = a.fornecedor || "—";
+      const pn = a.part_number || "—";
+      const pname = a.part_name || a.descricao_peca || "";
+      const qty = a.quantidade_inspecionada || a.quantidade || 0;
+      if (!qty) return;
+      if (!bySupplier.has(sup)) bySupplier.set(sup, new Map());
+      const parts = bySupplier.get(sup)!;
+      const key = `${pn}|${pname}`;
+      const cur = parts.get(key) || { part_number: pn, part_name: pname, qty: 0 };
+      cur.qty += qty;
+      parts.set(key, cur);
+    });
+    return Array.from(bySupplier.entries())
+      .map(([fornecedor, parts]) => ({
+        fornecedor,
+        total: Array.from(parts.values()).reduce((s, p) => s + p.qty, 0),
+        parts: Array.from(parts.values()).sort((a, b) => b.qty - a.qty),
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [apontamentos]);
 
   const defectsData = useMemo(() => {
@@ -382,20 +419,20 @@ const Monitor = () => {
           { label: "PPM", value: ppm, accent: "text-amber-400", bar: "bg-amber-400", icon: TrendingUp },
         ];
         return (
-          <div className="grid grid-cols-4 gap-8 w-full h-full">
+          <div className="grid grid-cols-2 grid-rows-2 gap-8 w-full h-full">
             {cards.map((c, i) => {
               const Icon = c.icon;
               return (
                 <div
                   key={c.label}
-                  className="relative overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10 flex flex-col justify-between"
+                  className="relative overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-12 flex items-center justify-between gap-8"
                   style={reducedMotion ? undefined : { animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3">
                     <span className="uppercase tracking-[0.2em] text-2xl text-muted-foreground">{c.label}</span>
-                    <Icon className={cn("w-14 h-14", c.accent)} />
+                    <p className={cn("text-[140px] leading-none font-black tabular-nums", c.accent)}>{fmtNum(c.value)}</p>
                   </div>
-                  <p className={cn("text-[160px] leading-none font-black tabular-nums", c.accent)}>{fmtNum(c.value)}</p>
+                  <Icon className={cn("w-32 h-32 opacity-80", c.accent)} />
                   <div className={cn("absolute inset-x-0 bottom-0 h-2", c.bar)} />
                 </div>
               );
@@ -406,30 +443,38 @@ const Monitor = () => {
       case "recent":
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">
-            <table className="w-full text-3xl">
+            <table className="w-full text-2xl">
               <thead className="bg-muted/30">
-                <tr className="text-muted-foreground text-xl uppercase tracking-wider">
-                  <th className="text-left py-6 px-8">Nº</th>
-                  <th className="text-left py-6 px-8">Tipo</th>
-                  <th className="text-left py-6 px-8">Part Number</th>
-                  <th className="text-left py-6 px-8">Fornecedor</th>
-                  <th className="text-right py-6 px-8">NG</th>
-                  <th className="text-right py-6 px-8">Hora</th>
+                <tr className="text-muted-foreground text-base uppercase tracking-wider">
+                  <th className="text-left py-5 px-5">Nº</th>
+                  <th className="text-left py-5 px-5">Part Number</th>
+                  <th className="text-left py-5 px-5">Fornecedor</th>
+                  <th className="text-left py-5 px-5">Modo de Falha</th>
+                  <th className="text-right py-5 px-5">Insp.</th>
+                  <th className="text-right py-5 px-5">OK</th>
+                  <th className="text-right py-5 px-5">NG</th>
+                  <th className="text-right py-5 px-5">Hora</th>
                 </tr>
               </thead>
               <tbody>
-                {apontamentos.slice(0, 12).map((a, i) => (
-                  <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
-                    <td className="py-5 px-8 font-mono text-2xl">{a.numero || "—"}</td>
-                    <td className="py-5 px-8 uppercase font-semibold">{a.tipo}</td>
-                    <td className="py-5 px-8">{a.part_number || "—"}</td>
-                    <td className="py-5 px-8 truncate max-w-[400px]">{a.fornecedor || "—"}</td>
-                    <td className={cn("py-5 px-8 text-right font-black text-4xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
-                    <td className="py-5 px-8 text-right text-2xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
-                  </tr>
-                ))}
+                {apontamentos.slice(0, 11).map((a, i) => {
+                  const insp = a.quantidade_inspecionada || a.quantidade || 0;
+                  const ok = a.quantidade_ok ?? Math.max(insp - (a.quantidade_ng || 0), 0);
+                  return (
+                    <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
+                      <td className="py-4 px-5 font-mono text-xl">{a.numero || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[260px]">{a.part_number || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[280px]">{a.fornecedor || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[300px] text-amber-300">{a.modo_falha || "—"}</td>
+                      <td className="py-4 px-5 text-right font-bold tabular-nums text-cyan-300">{fmtNum(insp)}</td>
+                      <td className="py-4 px-5 text-right font-bold tabular-nums text-emerald-400">{fmtNum(ok)}</td>
+                      <td className={cn("py-4 px-5 text-right font-black text-3xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
+                      <td className="py-4 px-5 text-right text-xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
+                    </tr>
+                  );
+                })}
                 {apontamentos.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
+                  <tr><td colSpan={8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
                 )}
               </tbody>
             </table>
@@ -529,21 +574,30 @@ const Monitor = () => {
           </div>
         );
       case "ranking": {
-        const max = Math.max(...supplierRanking.map((s) => s.ng), 1);
+        const max = Math.max(...supplierRanking.map((s) => s.ppm), 1);
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
-            <ol className="space-y-5 h-full">
-              {supplierRanking.length === 0 && <li className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
+            <div className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40">
+              <span className="text-center">#</span>
+              <span>Fornecedor</span>
+              <span className="text-right">Insp.</span>
+              <span className="text-right">NG</span>
+              <span className="text-right">PPM</span>
+            </div>
+            <ol className="divide-y divide-border/30">
+              {supplierRanking.length === 0 && <li className="h-[60vh] flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
               {supplierRanking.slice(0, 8).map((s, i) => (
-                <li key={s.fornecedor} className="grid grid-cols-[5rem_1fr_auto] items-center gap-6" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both` }}>
+                <li key={s.fornecedor} className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] items-center gap-6 py-4" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both` }}>
                   <span className={cn("text-5xl font-black text-center", i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-amber-700" : "text-muted-foreground")}>{i + 1}</span>
                   <div className="min-w-0">
                     <p className="font-semibold text-3xl truncate">{s.fornecedor}</p>
                     <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
-                      <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ng / max) * 100}%` }} />
+                      <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
                     </div>
                   </div>
-                  <span className="text-5xl font-black text-red-500 tabular-nums">{fmtNum(s.ng)}</span>
+                  <span className="text-3xl font-bold text-cyan-300 tabular-nums text-right">{fmtNum(s.insp)}</span>
+                  <span className="text-3xl font-bold text-red-400 tabular-nums text-right">{fmtNum(s.ng)}</span>
+                  <span className="text-5xl font-black text-red-500 tabular-nums text-right">{fmtNum(s.ppm)}</span>
                 </li>
               ))}
             </ol>
@@ -557,19 +611,62 @@ const Monitor = () => {
               <div className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem defeitos no período.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={defectsData} layout="vertical" margin={{ left: 200, right: 60, top: 20, bottom: 20 }}>
+                <BarChart data={defectsData} layout="vertical" margin={{ left: 200, right: 120, top: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                   <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <YAxis dataKey="name" type="category" width={260} stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 18 }} />
                   <Bar dataKey="value" radius={[0, 8, 8, 0]} isAnimationActive={!reducedMotion} animationDuration={800}>
                     {defectsData.map((_, i) => <Cell key={i} fill={`hsl(${10 + i * 8}, 85%, ${55 - i * 2}%)`} />)}
+                    <LabelList dataKey="value" position="right" fill="hsl(var(--foreground))" fontSize={26} fontWeight={900} formatter={(v: number) => fmtNum(v)} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             )}
           </div>
         );
+      case "inspecionado": {
+        const suppliers = inspecionadoData.slice(0, 4);
+        return (
+          <div className="w-full h-full overflow-hidden">
+            {suppliers.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">
+                Sem peças inspecionadas no período.
+              </div>
+            ) : (
+              <div className={cn(
+                "grid gap-6 w-full h-full",
+                suppliers.length === 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2",
+              )}>
+                {suppliers.map((sup, si) => (
+                  <div
+                    key={sup.fornecedor}
+                    className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col"
+                    style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}
+                  >
+                    <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
+                      <h3 className="text-2xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
+                      <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>
+                    </div>
+                    <ul className="flex-1 overflow-hidden mt-2 divide-y divide-border/30">
+                      {sup.parts.slice(0, 8).map((p, i) => (
+                        <li key={`${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
+                          <div className="min-w-0">
+                            <p className="font-mono text-lg truncate">{p.part_number}</p>
+                            {p.part_name && <p className="text-sm text-muted-foreground truncate">{p.part_name}</p>}
+                          </div>
+                          <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
     }
   };
 

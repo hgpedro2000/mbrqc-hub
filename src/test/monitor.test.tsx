@@ -17,7 +17,7 @@ const mocks = vi.hoisted(() => {
       neq: vi.fn(() => builder),
       in: vi.fn(() => builder),
       limit: vi.fn(() => builder),
-      order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      order: vi.fn(() => builder),
       then: (resolve: any) => resolve({ data: [], error: null }),
     };
     return builder;

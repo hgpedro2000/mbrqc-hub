@@ -63,14 +63,37 @@ const AlertaQualidade = () => {
   const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
   const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
   const [justifySaving, setJustifySaving] = useState(false);
-  // Filters / sort
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [respFilter, setRespFilter] = useState<string>("todos");
-  const [lineFilter, setLineFilter] = useState<string>("todos");
-  const [sortBy, setSortBy] = useState<string>("recentes");
-  const [compact, setCompact] = useState<boolean>(false);
+  // Filters / sort — persisted in localStorage
+  const LS_KEY = "alertaQualidade.listMaster.v1";
+  const persisted = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } })();
+  const [statusFilter, setStatusFilter] = useState<string>(persisted.statusFilter ?? "todos");
+  const [respFilter, setRespFilter] = useState<string>(persisted.respFilter ?? "todos");
+  const [lineFilter, setLineFilter] = useState<string>(persisted.lineFilter ?? "todos");
+  const [sortBy, setSortBy] = useState<string>(persisted.sortBy ?? "recentes");
+  const [compact, setCompact] = useState<boolean>(persisted.compact ?? false);
+  const defaultColVis = { projeto: true, linhaPeca: true, responsabilidade: true, deteccao: true, ocorrencia: true, validade: true, situacao: true };
+  const [colVis, setColVis] = useState<Record<string, boolean>>({ ...defaultColVis, ...(persisted.colVis ?? {}) });
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
   const toggleDesc = (id: string) => setExpandedDesc((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Persist filters/compact/columns
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ statusFilter, respFilter, lineFilter, sortBy, compact, colVis }));
+    } catch {}
+  }, [statusFilter, respFilter, lineFilter, sortBy, compact, colVis]);
+
+  // Persist & restore horizontal scroll position (survives refetch/realtime re-renders)
+  useEffect(() => {
+    const el = scrollRef.current; if (!el) return;
+    const saved = Number(sessionStorage.getItem(LS_KEY + ".scrollX") || 0);
+    if (saved) el.scrollLeft = saved;
+    const onScroll = () => sessionStorage.setItem(LS_KEY + ".scrollX", String(el.scrollLeft));
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
 
 
   const { data: roles = [] } = useQuery({

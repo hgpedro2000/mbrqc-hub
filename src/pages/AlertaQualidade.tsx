@@ -710,11 +710,11 @@ const AlertaQualidade = () => {
                   <col className="w-[70px]" />
                   {colVis.projeto && <col className="w-[70px]" />}
                   <col />
-                  {colVis.linhaPeca && <col className="w-[100px]" />}
+                  {colVis.linhaPeca && <col className="w-[130px]" />}
                   {colVis.responsabilidade && <col className="w-[130px]" />}
                   {colVis.deteccao && <col className="w-[100px]" />}
-                  {colVis.ocorrencia && <col className="w-[90px] hidden lg:table-column" />}
-                  {colVis.validade && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.ocorrencia && <col className="w-[72px] hidden lg:table-column" />}
+                  {colVis.validade && <col className="w-[72px] hidden lg:table-column" />}
                   {colVis.situacao && <col className="w-[85px]" />}
                   <col className="w-[95px]" />
                   <col className="w-[110px]" />
@@ -743,10 +743,10 @@ const AlertaQualidade = () => {
                     const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
                     const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
                     const isExpanded = expandedDesc.has(a.id);
-                    const rowPad = compact ? "py-1.5" : "py-3";
-                    const descPad = compact ? "py-1.5" : "py-3";
+                    const rowPad = compact ? "py-2.5" : "py-4";
+                    const descPad = rowPad;
                     const descSize = compact ? "text-[12px]" : "text-[13px]";
-                    const descClamp = isExpanded ? "" : (compact ? "line-clamp-2" : "line-clamp-3");
+                    const descClamp = isExpanded ? "" : (compact ? "line-clamp-3" : "line-clamp-4");
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer align-middle" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
                         <td className={`${rowPad} px-2 font-mono text-xs font-bold text-[#c0392b] text-center`}>{formatSeq(a.sequencial)}</td>
@@ -785,12 +785,12 @@ const AlertaQualidade = () => {
                           </td>
                         )}
                         {colVis.ocorrencia && (
-                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                          <td className={`${rowPad} px-1 text-[10px] text-muted-foreground text-center hidden lg:table-cell whitespace-nowrap`}>
                             {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
                           </td>
                         )}
                         {colVis.validade && (
-                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                          <td className={`${rowPad} px-1 text-[10px] text-muted-foreground text-center hidden lg:table-cell whitespace-nowrap`}>
                             {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                           </td>
                         )}

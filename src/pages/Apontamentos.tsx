@@ -86,6 +86,51 @@ const Apontamentos = () => {
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
   const [monitorDialogOpen, setMonitorDialogOpen] = useState(false);
+  const [monitorAlreadyOpen, setMonitorAlreadyOpen] = useState(false);
+  const monitorChannelRef = useRef<BroadcastChannel | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+    const ch = new BroadcastChannel("monitor_channel");
+    monitorChannelRef.current = ch;
+    ch.onmessage = (e) => {
+      if (e.data?.type === "MONITOR_CLOSED") {
+        toast.message("Monitor foi fechado", { duration: 3000 });
+      }
+    };
+    return () => { ch.close(); monitorChannelRef.current = null; };
+  }, []);
+
+  const handleMonitorClick = () => {
+    if (typeof BroadcastChannel === "undefined") { setMonitorDialogOpen(true); return; }
+    const probe = new BroadcastChannel("monitor_channel");
+    let answered = false;
+    const onMsg = (e: MessageEvent) => {
+      if (e.data?.type === "PONG") {
+        answered = true;
+        probe.close();
+        setMonitorAlreadyOpen(true);
+      }
+    };
+    probe.addEventListener("message", onMsg);
+    probe.postMessage({ type: "PING" });
+    setTimeout(() => {
+      if (!answered) {
+        probe.close();
+        setMonitorDialogOpen(true);
+      }
+    }, 500);
+  };
+
+  const focusMonitor = () => {
+    monitorChannelRef.current?.postMessage({ type: "FOCUS" });
+    setMonitorAlreadyOpen(false);
+  };
+
+  const openAnotherMonitor = () => {
+    setMonitorAlreadyOpen(false);
+    window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
+  };
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);

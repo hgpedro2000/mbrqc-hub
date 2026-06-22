@@ -73,6 +73,7 @@ const AlertaQualidadeForm = () => {
       });
       if (data.foto_ng_url) setNgPreview(data.foto_ng_url);
       if (data.foto_ok_url) setOkPreview(data.foto_ok_url);
+      setCurrentStatus((data as any).status || "ativo");
       setLoaded(true);
     })();
   }, [editId, loaded, navigate]);

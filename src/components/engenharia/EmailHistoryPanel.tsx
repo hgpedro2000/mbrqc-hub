@@ -132,22 +132,22 @@ export const HistoryPanel = ({
                     <div className="font-medium text-sm">{s.name}</div>
                     <Badge variant="outline">{s.subtipo}</Badge>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div className="rounded bg-muted p-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px] sm:text-xs">
+                    <div className="rounded bg-muted p-2 min-w-0">
                       <div className="text-base font-semibold">{s.total}</div>
-                      <div className="text-muted-foreground">Total</div>
+                      <div className="text-muted-foreground truncate">Total</div>
                     </div>
-                    <div className="rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-2">
+                    <div className="rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-2 min-w-0">
                       <div className="text-base font-semibold">{s.sent + s.queued}</div>
-                      <div>Sucesso</div>
+                      <div className="truncate">Sucesso</div>
                     </div>
-                    <div className="rounded bg-destructive/10 text-destructive p-2">
+                    <div className="rounded bg-destructive/10 text-destructive p-2 min-w-0">
                       <div className="text-base font-semibold">{s.failed}</div>
-                      <div>Falhas</div>
+                      <div className="truncate">Falhas</div>
                     </div>
-                    <div className="rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 p-2">
+                    <div className="rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 p-2 min-w-0">
                       <div className="text-base font-semibold">{s.attempts}</div>
-                      <div>Tentativas</div>
+                      <div className="truncate" title="Tentativas">Tentativas</div>
                     </div>
                   </div>
                   {s.byRecipient.size > 0 && (

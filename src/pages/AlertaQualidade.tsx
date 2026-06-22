@@ -338,6 +338,75 @@ const AlertaQualidade = () => {
   // Edit: only admin or who created the alert (respects impersonation)
   const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
+  const getPendingInspectors = (alertaId: string, linhaPeca: string | null) => {
+    const qualified = getQualifiedInspectors(linhaPeca);
+    const signed = new Set(ciencias.filter((c: any) => c.alerta_id === alertaId).map((c: any) => c.inspetor_id));
+    return qualified.filter((uid) => !signed.has(uid));
+  };
+
+  const openJustifyDialog = (alerta: any) => {
+    setJustifyAlert(alerta);
+    setJustifySelections({});
+    setJustifyCustom({});
+  };
+
+  const handleJustifySubmit = async () => {
+    if (!justifyAlert) return;
+    const pending = getPendingInspectors(justifyAlert.id, justifyAlert.linha_peca);
+    const rows = pending
+      .map((uid) => {
+        const sel = justifySelections[uid];
+        if (!sel) return null;
+        const just = sel === "outro" ? (justifyCustom[uid] || "").trim() : sel;
+        if (!just) return null;
+        return {
+          alerta_id: justifyAlert.id,
+          inspetor_id: uid,
+          metodo: "justificado",
+          justificativa: just,
+          registrado_por_id: user?.id,
+        };
+      })
+      .filter(Boolean);
+    if (rows.length === 0) {
+      toast.error("Selecione ao menos uma justificativa");
+      return;
+    }
+    setJustifySaving(true);
+    try {
+      const { error } = await supabase.from("ciencias").insert(rows as any);
+      if (error) throw error;
+      logAction("justify", "alerta_qualidade", { alerta_id: justifyAlert.id, total: rows.length });
+      qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      toast.success(`${rows.length} justificativa(s) registrada(s)`);
+      setJustifyAlert(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setJustifySaving(false);
+    }
+  };
+
+  const CienciaBar = ({ pct, count, total, onClick, clickable }: { pct: number; count: number; total: number; onClick?: () => void; clickable?: boolean }) => (
+    <div
+      className={`relative w-full h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
+      style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
+      onClick={onClick}
+      title={clickable ? "Clique para justificar pendências" : undefined}
+    >
+      {/* Dim overlay on the unfilled portion */}
+      <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
+      {/* Indicator marker */}
+      <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
+      {/* Centered percentage */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+          {pct}% · {count}/{total}
+        </span>
+      </div>
+    </div>
+  );
+
   const statusOptions = [
     { value: "Em andamento", label: "Em andamento" },
     { value: "Completo", label: "Completo" },

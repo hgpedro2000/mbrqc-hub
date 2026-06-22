@@ -521,6 +521,45 @@ const AlertaQualidade = () => {
           </TabsList>
         </Tabs>
 
+        {/* Filters & sort */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="Em andamento">Em andamento</SelectItem>
+              <SelectItem value="Atrasado">Atrasado</SelectItem>
+              <SelectItem value="Completo">Completo</SelectItem>
+              <SelectItem value="Sem destino">Sem destino</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={respFilter} onValueChange={setRespFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Responsabilidade" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas responsab.</SelectItem>
+              {respOptions.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={lineFilter} onValueChange={setLineFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Linha/Peça" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas linhas/peças</SelectItem>
+              {lineOptions.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recentes">Mais recentes</SelectItem>
+              <SelectItem value="antigos">Mais antigos</SelectItem>
+              <SelectItem value="responsabilidade">Responsabilidade (A-Z)</SelectItem>
+              <SelectItem value="linha">Linha/Peça (A-Z)</SelectItem>
+              <SelectItem value="validade">Validade</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (

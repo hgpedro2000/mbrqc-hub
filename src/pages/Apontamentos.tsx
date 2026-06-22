@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench, Layers, Gauge, Shield, ShieldAlert, Frame, Zap, Droplet } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Plus, BarChart3, Eye, LayoutList, LayoutGrid, LogOut, ClipboardCheck, ArrowRight, Package, Cog, Car, BoxSelect, FileBarChart, FileDown, Calendar, AlertTriangle, X, Filter, MoreVertical, MapPin, Tag, CalendarDays, Wrench, Layers, Gauge, Shield, ShieldAlert, Frame, Zap, Droplet, MonitorPlay } from "lucide-react";
+import { MonitorDialog, MonitorPreferences } from "@/components/apontamento/MonitorDialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -84,6 +85,7 @@ const Apontamentos = () => {
   const isPlaceholderSub = topTab === "processos" && !procSubConfig[procSub].realType;
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters([], "apontamentos");
   const [viewMode, setViewMode] = useState<"detailed" | "compact">("detailed");
+  const [monitorDialogOpen, setMonitorDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
@@ -645,6 +647,9 @@ const Apontamentos = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
                 <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
               </Button>
+              <Button variant="ghost" size="icon" onClick={() => setMonitorDialogOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
+                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Monitor</span>
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
                 <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
               </Button>
@@ -1123,6 +1128,13 @@ const Apontamentos = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <MonitorDialog
+        open={monitorDialogOpen}
+        onOpenChange={setMonitorDialogOpen}
+        onConfirm={(_prefs: MonitorPreferences) => {
+          window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
+        }}
+      />
     </div>
   );
 };

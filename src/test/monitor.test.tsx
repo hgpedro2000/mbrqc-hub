@@ -6,7 +6,7 @@ import { render, screen, act, waitFor } from "@testing-library/react";
 // and we capture the postgres_changes handlers so we can fire fake events.
 const mocks = vi.hoisted(() => {
   const handlers: Record<string, (payload: any) => void> = {};
-  const state: { subscribeCb: ((s: string) => void) | null } = { subscribeCb: null };
+  const state: { mocks.state.subscribeCb: ((s: string) => void) | null } = { mocks.state.subscribeCb: null };
   const removeChannel = vi.fn();
   const fromMock = vi.fn(() => {
     const builder: any = {
@@ -35,7 +35,7 @@ vi.mock("@/integrations/supabase/client", () => ({
           return ch;
         }),
         subscribe: vi.fn((cb: (s: string) => void) => {
-          mocks.state.subscribeCb = cb;
+          mocks.state.mocks.state.subscribeCb = cb;
           return ch;
         }),
       };
@@ -53,8 +53,8 @@ beforeEach(() => {
     "monitor_preferences",
     JSON.stringify({ blocks: ["summary"], period: "today", theme: "dark" }),
   );
-  subscribeCb = null;
-  Object.keys(handlers).forEach((k) => delete handlers[k]);
+  mocks.state.subscribeCb = null;
+  Object.keys(mocks.handlers).forEach((k) => delete mocks.handlers[k]);
 });
 
 describe("Monitor — renders only selected blocks", () => {
@@ -84,8 +84,8 @@ describe("Monitor — connection indicator reflects realtime state transitions",
 
   it("switches to 'connected' when the channel subscribes", async () => {
     render(<Monitor />);
-    expect(subscribeCb).toBeTruthy();
-    act(() => subscribeCb!("SUBSCRIBED"));
+    expect(mocks.state.subscribeCb).toBeTruthy();
+    act(() => mocks.state.subscribeCb!("SUBSCRIBED"));
     await waitFor(() => {
       expect(screen.getByTestId("monitor-conn").getAttribute("data-state")).toBe("connected");
     });
@@ -94,18 +94,18 @@ describe("Monitor — connection indicator reflects realtime state transitions",
 
   it("switches to 'error' on CHANNEL_ERROR/TIMED_OUT/CLOSED and back on reconnect", async () => {
     render(<Monitor />);
-    act(() => subscribeCb!("SUBSCRIBED"));
+    act(() => mocks.state.subscribeCb!("SUBSCRIBED"));
     await waitFor(() => expect(screen.getByTestId("monitor-conn").getAttribute("data-state")).toBe("connected"));
 
-    act(() => subscribeCb!("CHANNEL_ERROR"));
+    act(() => mocks.state.subscribeCb!("CHANNEL_ERROR"));
     await waitFor(() => expect(screen.getByTestId("monitor-conn").getAttribute("data-state")).toBe("error"));
     expect(screen.getByText(/Sem conexão/i)).toBeInTheDocument();
 
-    act(() => subscribeCb!("TIMED_OUT"));
+    act(() => mocks.state.subscribeCb!("TIMED_OUT"));
     await waitFor(() => expect(screen.getByTestId("monitor-conn").getAttribute("data-state")).toBe("error"));
 
     // Reconnect
-    act(() => subscribeCb!("SUBSCRIBED"));
+    act(() => mocks.state.subscribeCb!("SUBSCRIBED"));
     await waitFor(() => expect(screen.getByTestId("monitor-conn").getAttribute("data-state")).toBe("connected"));
   });
 });
@@ -113,7 +113,7 @@ describe("Monitor — connection indicator reflects realtime state transitions",
 describe("Monitor — realtime events trigger refetch without reload", () => {
   it("registers postgres_changes handlers for the 4 tracked tables", () => {
     render(<Monitor />);
-    expect(Object.keys(handlers).sort()).toEqual(
+    expect(Object.keys(mocks.handlers).sort()).toEqual(
       ["alertas_qualidade", "apontamentos", "consumable_items", "contencao"],
     );
   });
@@ -124,7 +124,7 @@ describe("Monitor — realtime events trigger refetch without reload", () => {
     expect(before).toBeInTheDocument();
 
     // Fire a fake INSERT event on apontamentos
-    act(() => handlers["apontamentos"]({ eventType: "INSERT", new: { id: "x" } }));
+    act(() => mocks.handlers["apontamentos"]({ eventType: "INSERT", new: { id: "x" } }));
 
     const after = container.querySelector('[data-testid="monitor-root"]');
     // Same DOM node = no remount, no page reload.
@@ -134,6 +134,6 @@ describe("Monitor — realtime events trigger refetch without reload", () => {
   it("cleans up the realtime channel on unmount", () => {
     const { unmount } = render(<Monitor />);
     unmount();
-    expect(removeChannel).toHaveBeenCalled();
+    expect(mocks.removeChannel).toHaveBeenCalled();
   });
 });

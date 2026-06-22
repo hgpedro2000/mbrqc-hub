@@ -405,7 +405,14 @@ const AlertaQualidade = () => {
                     onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                        {a.status === "rascunho" ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[9px]">Rascunho</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[9px]">Emitido</Badge>
+                        )}
+                      </div>
                       {effectiveIsAdmin ? (
                         <button onClick={(e) => { e.stopPropagation(); setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                           <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer`}>{displayStatus}</Badge>
@@ -458,6 +465,7 @@ const AlertaQualidade = () => {
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Ocorrência</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Validade</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Situação</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>
@@ -482,6 +490,13 @@ const AlertaQualidade = () => {
                         </td>
                         <td className="py-2.5 px-2 text-xs text-muted-foreground hidden md:table-cell">
                           {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
+                        </td>
+                        <td className="py-2.5 px-2 text-center">
+                          {a.status === "rascunho" ? (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
+                          )}
                         </td>
                         <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (

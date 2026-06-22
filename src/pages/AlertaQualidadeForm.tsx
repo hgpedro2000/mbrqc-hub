@@ -429,7 +429,7 @@ const AlertaQualidadeForm = () => {
               <span className="bg-[#1e8449] text-white text-xs font-bold px-3 py-1 rounded">OK *</span>
               <span className="text-xs text-muted-foreground">Foto da referência correta</span>
             </div>
-            <div onClick={() => okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
+            <div onClick={() => okPreview ? setPhotoActionType("ok") : okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
               {okPreview ? <img src={okPreview} alt="OK" className="w-full h-full object-contain max-h-[200px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}

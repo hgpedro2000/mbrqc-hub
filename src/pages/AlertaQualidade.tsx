@@ -770,7 +770,7 @@ const AlertaQualidade = () => {
                           )}
                         </td>
                         {colVis.linhaPeca && (
-                          <td className={`${rowPad} px-2 text-[10px] text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
+                          <td className={`${rowPad} px-2 text-[10px] text-foreground/80 text-center break-words whitespace-normal leading-tight`} title={a.linha_peca || ""}>
                             {a.linha_peca || "—"}
                           </td>
                         )}

@@ -514,8 +514,13 @@ const AlertaQualidade = () => {
                       <span>{a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : ""}</span>
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Progress value={prog.pct} className="h-1.5 flex-1" />
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{prog.total}p / {prog.count}c</span>
+                      <CienciaBar
+                        pct={prog.pct}
+                        count={prog.count}
+                        total={prog.total}
+                        clickable={isLider && status.label === "Atrasado"}
+                        onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                      />
                     </div>
                     <div className="flex items-center gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
                       {canEdit(a) && (

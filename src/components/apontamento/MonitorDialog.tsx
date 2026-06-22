@@ -13,7 +13,8 @@ export type MonitorBlock =
   | "contencao"
   | "consumiveis"
   | "ranking"
-  | "defects";
+  | "defects"
+  | "inspecionado";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";

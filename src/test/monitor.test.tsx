@@ -26,7 +26,7 @@ const fromMock = vi.fn(() => {
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    from: (...args: any[]) => fromMock(...args),
+    from: (table: string) => fromMock(table),
     channel: vi.fn(() => {
       const ch: any = {
         on: vi.fn((_evt: string, cfg: { table: string }, cb: Handler) => {

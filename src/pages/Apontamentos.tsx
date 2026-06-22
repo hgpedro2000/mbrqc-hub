@@ -1180,6 +1180,19 @@ const Apontamentos = () => {
           window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
         }}
       />
+      <Dialog open={monitorAlreadyOpen} onOpenChange={setMonitorAlreadyOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>🖥️ Monitor já está aberto</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">O painel do monitor já está em execução. O que deseja fazer?</p>
+          <div className="flex flex-col gap-2 mt-4">
+            <Button onClick={focusMonitor}>Focar no Monitor</Button>
+            <Button variant="secondary" onClick={openAnotherMonitor}>Abrir outro Monitor</Button>
+            <Button variant="ghost" onClick={() => setMonitorAlreadyOpen(false)}>Cancelar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

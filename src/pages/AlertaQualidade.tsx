@@ -66,6 +66,9 @@ const AlertaQualidade = () => {
   const [respFilter, setRespFilter] = useState<string>("todos");
   const [lineFilter, setLineFilter] = useState<string>("todos");
   const [sortBy, setSortBy] = useState<string>("recentes");
+  const [compact, setCompact] = useState<boolean>(false);
+  const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
+  const toggleDesc = (id: string) => setExpandedDesc((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
 
   const { data: roles = [] } = useQuery({

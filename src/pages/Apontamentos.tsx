@@ -669,7 +669,7 @@ const Apontamentos = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 space-y-8 max-w-6xl w-full overflow-x-hidden" style={{ paddingBottom: "max(6rem, calc(6rem + env(safe-area-inset-bottom)))" }}>
         {/* Module cards */}
-        <div className={`grid gap-4 sm:gap-6 grid-cols-2 ${visibleCards.length <= 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+        <div className="grid gap-4 sm:gap-6 grid-cols-2">
           {visibleCards.map((tab, i) => {
             const cfg = topTabConfig[tab];
             const Icon = cfg.icon;

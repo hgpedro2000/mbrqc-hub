@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2, Archive } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle, Camera, Search, Download, CheckCircle2, Pencil, Trash2, Archive, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -100,22 +100,24 @@ const AlertaQualidade = () => {
     }
   }, [canViewAll, navigate]);
 
-  const { data: alertas = [], isLoading } = useQuery({
+  const { data: alertas = [], isLoading, isFetching: alertasFetching, error: alertasError, refetch: refetchAlertas } = useQuery({
     queryKey: ["alertas-lista-mestra"],
     queryFn: async () => {
       const { data, error } = await supabase.from("alertas").select("*").order("sequencial", { ascending: false });
       if (error) throw error;
       return data;
     },
+    retry: 2,
   });
 
-  const { data: ciencias = [] } = useQuery({
+  const { data: ciencias = [], isFetching: cienciasFetching, error: cienciasError } = useQuery({
     queryKey: ["ciencias-all"],
     queryFn: async () => {
       const { data, error } = await supabase.from("ciencias").select("*");
       if (error) throw error;
       return data;
     },
+    retry: 2,
   });
 
   const { data: qualifications = [] } = useQuery({
@@ -152,9 +154,12 @@ const AlertaQualidade = () => {
 
   useEffect(() => {
     const channel = supabase
-      .channel("ciencias-realtime")
+      .channel("alertas-lista-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "ciencias" }, () => {
         qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => {
+        qc.invalidateQueries({ queryKey: ["alertas-lista-mestra"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -375,6 +380,42 @@ const AlertaQualidade = () => {
   // Edit: only admin or who created the alert (respects impersonation)
   const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
+  const handleExportCsv = () => {
+    try {
+      const headers = ["Nº", "Projeto", "Descrição", "Modo de Falha", "Linha/Peça", "Responsabilidade", "Detecção", "Ocorrência", "Validade", "Situação", "Status", "Ciência %", "Ciência (assin./total)"];
+      const escape = (v: any) => {
+        const s = v == null ? "" : String(v);
+        return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rows = (filtered as any[]).map((a) => {
+        const prog = getCienciaProgress(a.id, a.linha_peca);
+        const st = getCienciaStatus(a.id, a.linha_peca, a.created_at);
+        const displayStatus = a.status && a.status !== "ativo" ? a.status : st.label;
+        const situacao = a.status === "rascunho" ? "Rascunho" : "Emitido";
+        return [
+          formatSeq(a.sequencial), a.modelo || "", a.descricao || "", a.modo_falha || "",
+          a.linha_peca || "", a.responsabilidade || "", a.local_detectado || "",
+          a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "",
+          a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "",
+          situacao, displayStatus, `${prog.pct}%`, `${prog.count}/${prog.total}`,
+        ].map(escape).join(";");
+      });
+      const csv = "\ufeff" + headers.map(escape).join(";") + "\n" + rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `lista-mestra-alertas-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`${rows.length} alerta(s) exportado(s)`);
+    } catch (e: any) {
+      toast.error(`Falha ao exportar: ${e.message}`);
+    }
+  };
+
   const getPendingInspectors = (alertaId: string, linhaPeca: string | null) => {
     const qualified = getQualifiedInspectors(linhaPeca);
     const signed = new Set(ciencias.filter((c: any) => c.alerta_id === alertaId).map((c: any) => c.inspetor_id));
@@ -501,12 +542,37 @@ const AlertaQualidade = () => {
           >
             <CheckCircle2 className="w-4 h-4" /> Meus Pendentes
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleExportCsv}
+            className="gap-2 shrink-0"
+            title="Exportar lista filtrada em CSV (abre no Excel)"
+            disabled={filtered.length === 0}
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Exportar CSV
+          </Button>
           {canCreateAlert && (
             <Button onClick={() => navigate("/alerta-qualidade/novo")} className="gap-2 bg-[#c0392b] hover:bg-[#a93226] shrink-0">
               <Plus className="w-4 h-4" /> Novo Alerta
             </Button>
           )}
         </div>
+
+        {(alertasError || cienciasError) && (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2 text-xs flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Falha ao carregar dados. Verifique sua conexão.
+            </span>
+            <Button size="sm" variant="outline" className="h-7" onClick={() => refetchAlertas()}>Tentar novamente</Button>
+          </div>
+        )}
+
+        {(alertasFetching || cienciasFetching) && !isLoading && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <Loader2 className="w-3 h-3 animate-spin" /> Atualizando…
+          </div>
+        )}
 
         <Tabs value={archiveTab} onValueChange={(v) => setArchiveTab(v as "vigentes" | "arquivados")}>
           <TabsList className="grid w-full grid-cols-2 max-w-md">
@@ -656,18 +722,18 @@ const AlertaQualidade = () => {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[90px]" />
                   <col className="w-[80px]" />
+                  <col className="w-[70px]" />
                   <col />
-                  <col className="w-[130px]" />
                   <col className="w-[110px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[100px] hidden lg:table-column" />
-                  <col className="w-[100px] hidden lg:table-column" />
                   <col className="w-[100px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[180px]" />
-                  <col className="w-[140px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[90px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[120px]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-border">

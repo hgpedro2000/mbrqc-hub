@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import AutoFitText from "@/components/AutoFitText";
 import { compressImage } from "@/lib/compressImage";
 import { logAction } from "@/lib/logAction";
 

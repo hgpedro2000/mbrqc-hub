@@ -405,7 +405,14 @@ const AlertaQualidade = () => {
                     onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                        {a.status === "rascunho" ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[9px]">Rascunho</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[9px]">Emitido</Badge>
+                        )}
+                      </div>
                       {effectiveIsAdmin ? (
                         <button onClick={(e) => { e.stopPropagation(); setStatusEditAlert(a); setNewStatus(displayStatus); }}>
                           <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer`}>{displayStatus}</Badge>

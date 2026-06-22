@@ -703,9 +703,9 @@ const AlertaQualidade = () => {
           </div>
         ) : (
           <>
-            {/* Unified responsive table — horizontal scroll on small screens */}
-            <div ref={scrollRef} className="overflow-x-auto -mx-2 sm:mx-0 max-h-[70vh] overflow-y-auto rounded border border-border/40">
-              <table className="w-full min-w-[1000px] sm:min-w-0 text-sm table-fixed">
+            {/* Desktop / tablet table */}
+            <div ref={scrollRef} className="hidden md:block overflow-x-auto max-h-[70vh] overflow-y-auto rounded border border-border/40">
+              <table className="w-full min-w-0 text-sm table-fixed">
                 <colgroup>
                   <col className="w-[70px]" />
                   {colVis.projeto && <col className="w-[70px]" />}
@@ -849,6 +849,123 @@ const AlertaQualidade = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile cards — stacked, no overflow */}
+            <div className="md:hidden space-y-2">
+              {filtered.map((a: any) => {
+                const prog = getCienciaProgress(a.id, a.linha_peca);
+                const status = getCienciaStatus(a.id, a.linha_peca, a.created_at);
+                const displayStatus = a.status && a.status !== "ativo" ? a.status : status.label;
+                const isExpanded = expandedDesc.has(a.id);
+                const descClamp = isExpanded ? "" : (compact ? "line-clamp-2" : "line-clamp-3");
+                const descText = a.descricao || a.modo_falha || "—";
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}
+                    className="rounded-lg border border-border/60 bg-card p-3 shadow-sm active:bg-muted/40 cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-mono text-xs font-bold text-[#c0392b]">{formatSeq(a.sequencial)}</span>
+                        {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
+                        {a.status === "rascunho" ? (
+                          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
+                        )}
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                        {effectiveIsAdmin ? (
+                          <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>
+                            <Badge variant="outline" className={`${status.color} text-[10px] cursor-pointer hover:opacity-80`}>{displayStatus}</Badge>
+                          </button>
+                        ) : (
+                          <Badge variant="outline" className={`${status.color} text-[10px]`}>{displayStatus}</Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className={`text-[12px] font-medium text-foreground ${descClamp} leading-snug break-words`}>
+                      {descText}
+                    </p>
+                    {descText.length > 80 && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleDesc(a.id); }}
+                        className="mt-1 text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/40 text-foreground/70"
+                      >
+                        {isExpanded ? "recolher" : "ver mais"}
+                      </button>
+                    )}
+
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                      {a.linha_peca && (
+                        <div className="col-span-2 min-w-0">
+                          <span className="text-muted-foreground">Linha/Peça: </span>
+                          <span className="text-foreground/90 break-words">{a.linha_peca}</span>
+                        </div>
+                      )}
+                      {a.responsabilidade && (
+                        <div className="min-w-0 truncate">
+                          <span className="text-muted-foreground">Resp.: </span>
+                          <span className="text-foreground/90">{a.responsabilidade}</span>
+                        </div>
+                      )}
+                      {a.local_detectado && (
+                        <div className="min-w-0 truncate">
+                          <span className="text-muted-foreground">Detecção: </span>
+                          <span className="text-foreground/90">{a.local_detectado}</span>
+                        </div>
+                      )}
+                      {a.data_ocorrencia && (
+                        <div className="min-w-0">
+                          <span className="text-muted-foreground">Ocor.: </span>
+                          <span className="text-foreground/90">{new Date(a.data_ocorrencia).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                      )}
+                      {a.data_validade && (
+                        <div className="min-w-0">
+                          <span className="text-muted-foreground">Validade: </span>
+                          <span className="text-foreground/90">{new Date(a.data_validade).toLocaleDateString("pt-BR")}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                      <CienciaBar
+                        pct={prog.pct}
+                        count={prog.count}
+                        total={prog.total}
+                        clickable={isLider && status.label === "Atrasado"}
+                        onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                      />
+                    </div>
+
+                    <div className="mt-2 flex items-center justify-end gap-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                      {canEdit(a) && (
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Editar" onClick={() => navigate(`/alerta-qualidade/editar/${a.id}`)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {canScanQr && (
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Escanear QR" onClick={() => setScanAlertaId(a.id)}>
+                          <Camera className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Exportar" onClick={() => { setExportAlertaId(a.id); setIncludeCiencias(true); }}>
+                        <Download className="w-3.5 h-3.5" />
+                      </Button>
+                      {effectiveIsAdmin && (
+                        <Button variant="outline" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10" title="Excluir" onClick={() => setDeleteAlertaId(a.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

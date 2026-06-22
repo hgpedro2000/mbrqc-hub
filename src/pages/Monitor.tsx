@@ -419,20 +419,20 @@ const Monitor = () => {
           { label: "PPM", value: ppm, accent: "text-amber-400", bar: "bg-amber-400", icon: TrendingUp },
         ];
         return (
-          <div className="grid grid-cols-4 gap-8 w-full h-full">
+          <div className="grid grid-cols-2 grid-rows-2 gap-8 w-full h-full">
             {cards.map((c, i) => {
               const Icon = c.icon;
               return (
                 <div
                   key={c.label}
-                  className="relative overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10 flex flex-col justify-between"
+                  className="relative overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-12 flex items-center justify-between gap-8"
                   style={reducedMotion ? undefined : { animation: `fade-in 0.6s ease-out ${i * 120}ms both` }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3">
                     <span className="uppercase tracking-[0.2em] text-2xl text-muted-foreground">{c.label}</span>
-                    <Icon className={cn("w-14 h-14", c.accent)} />
+                    <p className={cn("text-[140px] leading-none font-black tabular-nums", c.accent)}>{fmtNum(c.value)}</p>
                   </div>
-                  <p className={cn("text-[160px] leading-none font-black tabular-nums", c.accent)}>{fmtNum(c.value)}</p>
+                  <Icon className={cn("w-32 h-32 opacity-80", c.accent)} />
                   <div className={cn("absolute inset-x-0 bottom-0 h-2", c.bar)} />
                 </div>
               );

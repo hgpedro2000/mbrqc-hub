@@ -411,14 +411,23 @@ const AlertaQualidade = () => {
     }
     setJustifySaving(true);
     try {
-      const { error } = await supabase.from("ciencias").insert(rows as any);
+      // Use upsert to avoid duplicate-key failures on retries / page reloads
+      const { error } = await (supabase as any)
+        .from("ciencias")
+        .upsert(rows as any, { onConflict: "alerta_id,inspetor_id", ignoreDuplicates: false });
       if (error) throw error;
       logAction("justify", "alerta_qualidade", { alerta_id: justifyAlert.id, total: rows.length });
-      qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      // Force refetch so the master list + Ciência bar reflect new status immediately
+      await Promise.all([
+        qc.refetchQueries({ queryKey: ["ciencias-all"] }),
+        qc.refetchQueries({ queryKey: ["alertas-lista-mestra"] }),
+      ]);
       toast.success(`${rows.length} justificativa(s) registrada(s)`);
       setJustifyAlert(null);
+      setJustifySelections({});
+      setJustifyCustom({});
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(`Falha ao salvar: ${e.message}. Tente novamente.`);
     } finally {
       setJustifySaving(false);
     }

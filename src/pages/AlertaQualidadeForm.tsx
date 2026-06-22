@@ -28,6 +28,8 @@ const AlertaQualidadeForm = () => {
   const isEdit = !!editId;
   const { user, profile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState<string>("ativo");
   const ngInputRef = useRef<HTMLInputElement>(null);
   const okInputRef = useRef<HTMLInputElement>(null);
   const [ngFile, setNgFile] = useState<File | null>(null);

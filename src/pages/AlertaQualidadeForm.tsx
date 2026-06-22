@@ -217,30 +217,33 @@ const AlertaQualidadeForm = () => {
     return urlData.publicUrl;
   };
 
-  const handleSave = async () => {
+  const handleSave = async (mode: "rascunho" | "emitido" = "emitido") => {
+    const isDraft = mode === "rascunho";
     const missing: string[] = [];
     if (!form.modelo) missing.push("Modelo do Carro");
     if (!form.modo_falha) missing.push("Modo de Falha");
     if (!form.linha_peca) missing.push("Linha/Peça");
     if (!form.local_detectado) missing.push("Local Detectado");
     if (!form.data_ocorrencia) missing.push("Data Ocorrência");
-    if (!form.data_validade) missing.push("Data Validade");
+    if (!isDraft && !form.data_validade) missing.push("Data Validade");
     if (!form.turno) missing.push("Turno");
-    if (!form.descricao) missing.push("Descrição");
-    if (!form.responsabilidade) missing.push("Responsabilidade");
-    if (!isEdit && !ngFile) missing.push("Foto NG");
-    if (!isEdit && !okFile) missing.push("Foto OK");
+    if (!isDraft && !form.descricao) missing.push("Descrição");
+    if (!isDraft && !form.responsabilidade) missing.push("Responsabilidade");
+    if (!isDraft && !isEdit && !ngFile) missing.push("Foto NG");
+    if (!isDraft && !isEdit && !okFile) missing.push("Foto OK");
 
     if (missing.length > 0) {
       toast.error(`Campos obrigatórios: ${missing.join(", ")}`);
       return;
     }
-    setSaving(true);
+    if (isDraft) setSavingDraft(true); else setSaving(true);
     try {
       let foto_ng_url = ngPreview || "";
       let foto_ok_url = okPreview || "";
       if (ngFile) foto_ng_url = await uploadPhoto(ngFile, "ng");
       if (okFile) foto_ok_url = await uploadPhoto(okFile, "ok");
+
+      const newStatus = isDraft ? "rascunho" : "ativo";
 
       if (isEdit) {
         const { error } = await supabase.from("alertas").update({
@@ -249,12 +252,13 @@ const AlertaQualidadeForm = () => {
           data_validade: form.data_validade, turno: form.turno, descricao: form.descricao,
           responsabilidade: form.responsabilidade, vin: form.vin, foto_ng_url, foto_ok_url,
           observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
+          status: newStatus,
         } as any).eq("id", editId!);
         if (error) throw error;
         logAction("update", "alerta_qualidade", {
-          alerta_id: editId, modelo: form.modelo, linha_peca: form.linha_peca,
+          alerta_id: editId, modelo: form.modelo, linha_peca: form.linha_peca, status: newStatus,
         });
-        toast.success("Alerta atualizado com sucesso!");
+        toast.success(isDraft ? "Rascunho salvo!" : "Alerta emitido com sucesso!");
       } else {
         const { count } = await supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "inspetor");
         const { data: created, error } = await supabase.from("alertas").insert({
@@ -265,17 +269,18 @@ const AlertaQualidadeForm = () => {
           observacoes: form.observacoes, sequencia_bp: form.sequencia_bp, vin_bp: form.vin_bp,
           emitido_por: profile?.full_name || "", criado_por_id: user?.id,
           total_destinatarios: count || 0,
+          status: newStatus,
         } as any).select("id, sequencial").maybeSingle();
         if (error) throw error;
         logAction("create", "alerta_qualidade", {
           alerta_id: created?.id, sequencial: created?.sequencial,
-          modelo: form.modelo, linha_peca: form.linha_peca,
+          modelo: form.modelo, linha_peca: form.linha_peca, status: newStatus,
         });
-        toast.success("Alerta criado com sucesso!");
+        toast.success(isDraft ? "Rascunho salvo!" : "Alerta emitido com sucesso!");
       }
       navigate("/alerta-qualidade");
     } catch (e: any) { toast.error(e.message); }
-    finally { setSaving(false); }
+    finally { setSaving(false); setSavingDraft(false); }
   };
 
   const reqLabel = (text: string) => (

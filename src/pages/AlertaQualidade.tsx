@@ -154,9 +154,12 @@ const AlertaQualidade = () => {
 
   useEffect(() => {
     const channel = supabase
-      .channel("ciencias-realtime")
+      .channel("alertas-lista-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "ciencias" }, () => {
         qc.invalidateQueries({ queryKey: ["ciencias-all"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "alertas" }, () => {
+        qc.invalidateQueries({ queryKey: ["alertas-lista-mestra"] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };

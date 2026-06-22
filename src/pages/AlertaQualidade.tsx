@@ -61,6 +61,12 @@ const AlertaQualidade = () => {
   const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
   const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
   const [justifySaving, setJustifySaving] = useState(false);
+  // Filters / sort
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [respFilter, setRespFilter] = useState<string>("todos");
+  const [lineFilter, setLineFilter] = useState<string>("todos");
+  const [sortBy, setSortBy] = useState<string>("recentes");
+
 
   const { data: roles = [] } = useQuery({
     queryKey: ["my-roles-alerta", effectiveUserId],

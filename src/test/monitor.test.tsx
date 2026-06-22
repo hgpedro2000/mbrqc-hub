@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => {
   const handlers: Record<string, (payload: any) => void> = {};
   const state: { subscribeCb: ((s: string) => void) | null } = { subscribeCb: null };
   const removeChannel = vi.fn();
-  const fromMock = vi.fn(() => {
+  const fromMock = vi.fn((_table: string) => {
     const builder: any = {
       select: vi.fn(() => builder),
       gte: vi.fn(() => builder),

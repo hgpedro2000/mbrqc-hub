@@ -647,6 +647,9 @@ const Apontamentos = () => {
               <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
                 <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
               </Button>
+              <Button variant="ghost" size="icon" onClick={() => setMonitorDialogOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
+                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Monitor</span>
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
                 <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
               </Button>

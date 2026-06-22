@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Settings2 } from "lucide-react";
 import { logAction } from "@/lib/logAction";
 
 const lineAreaMap: Record<string, string> = {
@@ -61,14 +63,37 @@ const AlertaQualidade = () => {
   const [justifySelections, setJustifySelections] = useState<Record<string, string>>({});
   const [justifyCustom, setJustifyCustom] = useState<Record<string, string>>({});
   const [justifySaving, setJustifySaving] = useState(false);
-  // Filters / sort
-  const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [respFilter, setRespFilter] = useState<string>("todos");
-  const [lineFilter, setLineFilter] = useState<string>("todos");
-  const [sortBy, setSortBy] = useState<string>("recentes");
-  const [compact, setCompact] = useState<boolean>(false);
+  // Filters / sort — persisted in localStorage
+  const LS_KEY = "alertaQualidade.listMaster.v1";
+  const persisted = (() => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } })();
+  const [statusFilter, setStatusFilter] = useState<string>(persisted.statusFilter ?? "todos");
+  const [respFilter, setRespFilter] = useState<string>(persisted.respFilter ?? "todos");
+  const [lineFilter, setLineFilter] = useState<string>(persisted.lineFilter ?? "todos");
+  const [sortBy, setSortBy] = useState<string>(persisted.sortBy ?? "recentes");
+  const [compact, setCompact] = useState<boolean>(persisted.compact ?? false);
+  const defaultColVis = { projeto: true, linhaPeca: true, responsabilidade: true, deteccao: true, ocorrencia: true, validade: true, situacao: true };
+  const [colVis, setColVis] = useState<Record<string, boolean>>({ ...defaultColVis, ...(persisted.colVis ?? {}) });
   const [expandedDesc, setExpandedDesc] = useState<Set<string>>(new Set());
   const toggleDesc = (id: string) => setExpandedDesc((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Persist filters/compact/columns
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ statusFilter, respFilter, lineFilter, sortBy, compact, colVis }));
+    } catch {}
+  }, [statusFilter, respFilter, lineFilter, sortBy, compact, colVis]);
+
+  // Persist & restore horizontal scroll position (survives refetch/realtime re-renders)
+  useEffect(() => {
+    const el = scrollRef.current; if (!el) return;
+    const saved = Number(sessionStorage.getItem(LS_KEY + ".scrollX") || 0);
+    if (saved) el.scrollLeft = saved;
+    const onScroll = () => sessionStorage.setItem(LS_KEY + ".scrollX", String(el.scrollLeft));
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
 
 
   const { data: roles = [] } = useQuery({
@@ -628,7 +653,35 @@ const AlertaQualidade = () => {
           </Select>
         </div>
 
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-end gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="text-[11px] px-2.5 py-1 rounded border border-border bg-muted/40 hover:bg-muted text-foreground/80 inline-flex items-center gap-1"
+                title="Mostrar/ocultar colunas"
+              >
+                <Settings2 className="w-3 h-3" /> Colunas
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-52 p-2 space-y-1">
+              <p className="text-[11px] font-semibold text-muted-foreground px-1 pb-1">Mostrar colunas</p>
+              {[
+                ["projeto", "Projeto"],
+                ["linhaPeca", "Linha/Peça"],
+                ["responsabilidade", "Responsabilidade"],
+                ["deteccao", "Detecção"],
+                ["ocorrencia", "Ocorrência"],
+                ["validade", "Validade"],
+                ["situacao", "Situação"],
+              ].map(([k, label]) => (
+                <label key={k} className="flex items-center gap-2 text-xs px-1 py-1 rounded hover:bg-muted/50 cursor-pointer">
+                  <Checkbox checked={!!colVis[k]} onCheckedChange={(v) => setColVis((p) => ({ ...p, [k]: !!v }))} />
+                  {label}
+                </label>
+              ))}
+            </PopoverContent>
+          </Popover>
           <button
             type="button"
             onClick={() => setCompact((c) => !c)}
@@ -638,6 +691,7 @@ const AlertaQualidade = () => {
             {compact ? "Modo normal" : "Modo compacto"}
           </button>
         </div>
+
 
 
         {isLoading ? (
@@ -650,38 +704,39 @@ const AlertaQualidade = () => {
         ) : (
           <>
             {/* Unified responsive table — horizontal scroll on small screens */}
-            <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div ref={scrollRef} className="overflow-x-auto -mx-2 sm:mx-0 max-h-[70vh] overflow-y-auto rounded border border-border/40">
               <table className="w-full min-w-[1000px] sm:min-w-0 text-sm table-fixed">
                 <colgroup>
                   <col className="w-[70px]" />
-                  <col className="w-[70px]" />
+                  {colVis.projeto && <col className="w-[70px]" />}
                   <col />
-                  <col className="w-[100px]" />
-                  <col className="w-[130px]" />
-                  <col className="w-[100px]" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[90px] hidden lg:table-column" />
-                  <col className="w-[85px]" />
+                  {colVis.linhaPeca && <col className="w-[100px]" />}
+                  {colVis.responsabilidade && <col className="w-[130px]" />}
+                  {colVis.deteccao && <col className="w-[100px]" />}
+                  {colVis.ocorrencia && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.validade && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.situacao && <col className="w-[85px]" />}
                   <col className="w-[95px]" />
                   <col className="w-[110px]" />
                   <col className="w-[110px]" />
                 </colgroup>
-                <thead className="bg-muted/30">
+                <thead className="bg-muted/30 sticky top-0 z-10 shadow-[0_1px_0_0_hsl(var(--border))]">
                   <tr className="border-b border-border">
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Nº</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Projeto</th>
+                    {colVis.projeto && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Projeto</th>}
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Descrição</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Linha/Peça</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Responsabilidade</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Detecção</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Ocorrência</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Validade</th>
-                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Situação</th>
+                    {colVis.linhaPeca && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Linha/Peça</th>}
+                    {colVis.responsabilidade && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Responsabilidade</th>}
+                    {colVis.deteccao && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Detecção</th>}
+                    {colVis.ocorrencia && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Ocorrência</th>}
+                    {colVis.validade && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground hidden lg:table-cell whitespace-nowrap">Validade</th>}
+                    {colVis.situacao && <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Situação</th>}
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ciência</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground whitespace-nowrap">Ações</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filtered.map((a: any) => {
                     const prog = getCienciaProgress(a.id, a.linha_peca);
@@ -695,41 +750,60 @@ const AlertaQualidade = () => {
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer align-middle" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
                         <td className={`${rowPad} px-2 font-mono text-xs font-bold text-[#c0392b] text-center`}>{formatSeq(a.sequencial)}</td>
-                        <td className={`${rowPad} px-2 text-center`}>
-                          {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
-                        </td>
-                        <td className={`${descPad} px-2`} onClick={(e) => { e.stopPropagation(); toggleDesc(a.id); }} title={a.descricao || a.modo_falha || ""}>
+                        {colVis.projeto && (
+                          <td className={`${rowPad} px-2 text-center`}>
+                            {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
+                          </td>
+                        )}
+                        <td className={`${descPad} px-2`} title={a.descricao || a.modo_falha || ""}>
                           <p className={`font-medium text-foreground ${descSize} ${descClamp} leading-snug break-words`}>
                             {a.descricao || a.modo_falha || "—"}
                           </p>
                           {(a.descricao || a.modo_falha || "").length > 80 && (
-                            <span className="text-[9px] text-muted-foreground hover:text-foreground">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); toggleDesc(a.id); }}
+                              className="mt-0.5 text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/40 hover:bg-muted text-foreground/70"
+                            >
                               {isExpanded ? "recolher" : "ver mais"}
-                            </span>
+                            </button>
                           )}
                         </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
-                          {a.linha_peca || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
-                          {a.responsabilidade || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
-                          {a.local_detectado || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
-                          {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
-                          {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-center`}>
-                          {a.status === "rascunho" ? (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
-                          )}
-                        </td>
+                        {colVis.linhaPeca && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
+                            {a.linha_peca || "—"}
+                          </td>
+                        )}
+                        {colVis.responsabilidade && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
+                            {a.responsabilidade || "—"}
+                          </td>
+                        )}
+                        {colVis.deteccao && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
+                            {a.local_detectado || "—"}
+                          </td>
+                        )}
+                        {colVis.ocorrencia && (
+                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                            {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                        )}
+                        {colVis.validade && (
+                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                            {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                        )}
+                        {colVis.situacao && (
+                          <td className={`${rowPad} px-2 text-center`}>
+                            {a.status === "rascunho" ? (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
+                            )}
+                          </td>
+                        )}
+
                         <td className={`${rowPad} px-2 text-center`} onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>

@@ -388,22 +388,27 @@ const AlertaQualidade = () => {
   };
 
   const CienciaBar = ({ pct, count, total, onClick, clickable }: { pct: number; count: number; total: number; onClick?: () => void; clickable?: boolean }) => (
-    <div
-      className={`relative w-full h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
-      style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
-      onClick={onClick}
-      title={clickable ? "Clique para justificar pendências" : undefined}
-    >
-      {/* Dim overlay on the unfilled portion */}
-      <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
-      {/* Indicator marker */}
-      <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
-      {/* Centered percentage */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
-          {pct}% · {count}/{total}
-        </span>
+    <div className="flex items-center gap-2 w-full">
+      <div
+        className={`relative flex-1 h-5 rounded-full overflow-hidden border border-border ${clickable ? "cursor-pointer hover:ring-2 hover:ring-amber-400" : ""}`}
+        style={{ background: "linear-gradient(90deg,#ef4444 0%,#f59e0b 50%,#10b981 100%)" }}
+        onClick={onClick}
+        title={clickable ? "Clique para justificar pendências" : undefined}
+      >
+        {/* Dim overlay on the unfilled portion */}
+        <div className="absolute inset-y-0 right-0 bg-black/55" style={{ width: `${100 - pct}%` }} />
+        {/* Indicator marker */}
+        <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow" style={{ left: `calc(${pct}% - 1px)` }} />
+        {/* Centered percentage */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-[10px] font-bold text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]">
+            {pct}%
+          </span>
+        </div>
       </div>
+      <span className="text-[11px] font-semibold text-muted-foreground tabular-nums whitespace-nowrap">
+        {count}/{total}
+      </span>
     </div>
   );
 

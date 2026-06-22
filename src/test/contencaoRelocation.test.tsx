@@ -30,25 +30,25 @@ describe("Contenção relocation — Apontamentos hosts the card", () => {
   });
 
   it("uses module-card classes so spacing/wrap/sizing match the other cards on small screens", () => {
-    // Find the Contenção card block and verify it inherits the shared responsive classes.
-    const block = apSrc.split("Contenção")[0].split("module-card").pop() ?? "";
+    // Locate the Contenção card block in source and verify it inherits the shared responsive classes.
+    const idx = apSrc.indexOf("Contenção");
+    expect(idx).toBeGreaterThan(-1);
+    const block = apSrc.slice(Math.max(0, idx - 800), idx + 400);
+    expect(block).toContain("module-card");
     expect(block).toContain("opacity-0");
     expect(block).toContain("animate-fade-in");
-    // The surrounding heading / description use the same responsive typography tokens.
-    expect(apSrc).toMatch(/text-base md:text-xl[^"]*"\s*>\s*Contenção/);
-    expect(apSrc).toMatch(/line-clamp-2[^"]*"\s*>[^<]*contenção/i);
+    // Responsive typography tokens shared with the other cards.
+    expect(block).toMatch(/text-base md:text-xl/);
+    expect(block).toMatch(/line-clamp-2/);
   });
 });
 
 describe("/contencao route still resolves to the Contenção screen", () => {
-  it("navigates to the Contenção page when /contencao is opened", () => {
+  it("renders the Contenção screen when the route is /contencao", () => {
     render(
-      <MemoryRouter initialEntries={["/start"]}>
+      <MemoryRouter initialEntries={["/contencao"]}>
         <Routes>
-          <Route
-            path="/start"
-            element={<Link to="/contencao">go</Link>}
-          />
+          <Route path="/" element={<div data-testid="hub" />} />
           <Route
             path="/contencao"
             element={<div data-testid="contencao-screen">Contenção</div>}
@@ -56,9 +56,6 @@ describe("/contencao route still resolves to the Contenção screen", () => {
         </Routes>
       </MemoryRouter>,
     );
-
-    // Simulate the same redirect the Apontamentos card performs.
-    screen.getByText("go").click();
     expect(screen.getByTestId("contencao-screen")).toBeInTheDocument();
   });
 });

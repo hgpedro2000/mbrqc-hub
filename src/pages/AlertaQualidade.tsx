@@ -380,6 +380,42 @@ const AlertaQualidade = () => {
   // Edit: only admin or who created the alert (respects impersonation)
   const canEdit = (alerta: any) => effectiveIsAdmin || alerta.criado_por_id === effectiveUserId;
 
+  const handleExportCsv = () => {
+    try {
+      const headers = ["Nº", "Projeto", "Descrição", "Modo de Falha", "Linha/Peça", "Responsabilidade", "Detecção", "Ocorrência", "Validade", "Situação", "Status", "Ciência %", "Ciência (assin./total)"];
+      const escape = (v: any) => {
+        const s = v == null ? "" : String(v);
+        return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rows = (filtered as any[]).map((a) => {
+        const prog = getCienciaProgress(a.id, a.linha_peca);
+        const st = getCienciaStatus(a.id, a.linha_peca, a.created_at);
+        const displayStatus = a.status && a.status !== "ativo" ? a.status : st.label;
+        const situacao = a.status === "rascunho" ? "Rascunho" : "Emitido";
+        return [
+          formatSeq(a.sequencial), a.modelo || "", a.descricao || "", a.modo_falha || "",
+          a.linha_peca || "", a.responsabilidade || "", a.local_detectado || "",
+          a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "",
+          a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "",
+          situacao, displayStatus, `${prog.pct}%`, `${prog.count}/${prog.total}`,
+        ].map(escape).join(";");
+      });
+      const csv = "\ufeff" + headers.map(escape).join(";") + "\n" + rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `lista-mestra-alertas-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`${rows.length} alerta(s) exportado(s)`);
+    } catch (e: any) {
+      toast.error(`Falha ao exportar: ${e.message}`);
+    }
+  };
+
   const getPendingInspectors = (alertaId: string, linhaPeca: string | null) => {
     const qualified = getQualifiedInspectors(linhaPeca);
     const signed = new Set(ciencias.filter((c: any) => c.alerta_id === alertaId).map((c: any) => c.inspetor_id));

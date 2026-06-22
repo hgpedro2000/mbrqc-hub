@@ -1128,6 +1128,13 @@ const Apontamentos = () => {
           </div>
         </DialogContent>
       </Dialog>
+      <MonitorDialog
+        open={monitorDialogOpen}
+        onOpenChange={setMonitorDialogOpen}
+        onConfirm={(_prefs: MonitorPreferences) => {
+          window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no");
+        }}
+      />
     </div>
   );
 };

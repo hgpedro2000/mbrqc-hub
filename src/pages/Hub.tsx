@@ -38,7 +38,7 @@ import { CSS } from "@dnd-kit/utilities";
 const allModules = [
   { id: "tryout", titleKey: "modules.tryout.title", descriptionKey: "modules.tryout.description", icon: Beaker, path: "/tryout", color: "from-blue-500/15 to-cyan-500/5", iconBg: "bg-blue-500/10 text-blue-600" },
   { id: "auditorias", titleKey: "modules.auditorias.title", descriptionKey: "modules.auditorias.description", icon: ShieldCheck, path: "/auditorias", color: "from-emerald-500/15 to-green-500/5", iconBg: "bg-emerald-500/10 text-emerald-600" },
-  { id: "contencao", titleKey: "modules.contencao.title", descriptionKey: "modules.contencao.description", icon: ShieldAlert, path: "/contencao", color: "from-orange-500/15 to-amber-500/5", iconBg: "bg-orange-500/10 text-orange-600" },
+  // Contenção foi realocada para dentro do módulo Apontamentos
   { id: "apontamentos", titleKey: "modules.apontamentos.title", descriptionKey: "modules.apontamentos.description", icon: FileBarChart, path: "/apontamentos", color: "from-violet-500/15 to-purple-500/5", iconBg: "bg-violet-500/10 text-violet-600" },
   { id: "alerta-qualidade", titleKey: "modules.alertaQualidade.title", descriptionKey: "modules.alertaQualidade.description", icon: AlertTriangle, path: "/alerta-qualidade", color: "from-red-500/15 to-rose-500/5", iconBg: "bg-red-500/10 text-red-600" },
   { id: "consumiveis", titleKey: "modules.consumiveis.title", descriptionKey: "modules.consumiveis.description", icon: Package, path: "/consumiveis", color: "from-teal-500/15 to-cyan-500/5", iconBg: "bg-teal-500/10 text-teal-600" },

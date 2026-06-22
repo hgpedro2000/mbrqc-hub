@@ -338,9 +338,45 @@ const Monitor = () => {
   const criticalConsum = consumiveis.filter((c) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0));
 
   const supplierRanking = useMemo(() => {
-    const map = new Map<string, number>();
-    apontamentos.forEach((a) => { const ng = a.quantidade_ng || 0; if (!ng) return; const key = a.fornecedor || "—"; map.set(key, (map.get(key) || 0) + ng); });
-    return Array.from(map.entries()).map(([fornecedor, ng]) => ({ fornecedor, ng })).sort((a, b) => b.ng - a.ng).slice(0, 10);
+    const map = new Map<string, { ng: number; insp: number }>();
+    apontamentos.forEach((a) => {
+      const key = a.fornecedor || "—";
+      const ng = a.quantidade_ng || 0;
+      const insp = a.quantidade_inspecionada || a.quantidade || 0;
+      const cur = map.get(key) || { ng: 0, insp: 0 };
+      cur.ng += ng; cur.insp += insp;
+      map.set(key, cur);
+    });
+    return Array.from(map.entries())
+      .map(([fornecedor, v]) => ({ fornecedor, ng: v.ng, insp: v.insp, ppm: v.insp > 0 ? Math.round((v.ng / v.insp) * 1_000_000) : 0 }))
+      .filter((s) => s.insp > 0)
+      .sort((a, b) => b.ppm - a.ppm)
+      .slice(0, 10);
+  }, [apontamentos]);
+
+  const inspecionadoData = useMemo(() => {
+    // Group by supplier -> list of {part_number, part_name, qty}
+    const bySupplier = new Map<string, Map<string, { part_number: string; part_name: string; qty: number }>>();
+    apontamentos.forEach((a) => {
+      const sup = a.fornecedor || "—";
+      const pn = a.part_number || "—";
+      const pname = a.part_name || a.descricao_peca || "";
+      const qty = a.quantidade_inspecionada || a.quantidade || 0;
+      if (!qty) return;
+      if (!bySupplier.has(sup)) bySupplier.set(sup, new Map());
+      const parts = bySupplier.get(sup)!;
+      const key = `${pn}|${pname}`;
+      const cur = parts.get(key) || { part_number: pn, part_name: pname, qty: 0 };
+      cur.qty += qty;
+      parts.set(key, cur);
+    });
+    return Array.from(bySupplier.entries())
+      .map(([fornecedor, parts]) => ({
+        fornecedor,
+        total: Array.from(parts.values()).reduce((s, p) => s + p.qty, 0),
+        parts: Array.from(parts.values()).sort((a, b) => b.qty - a.qty),
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [apontamentos]);
 
   const defectsData = useMemo(() => {

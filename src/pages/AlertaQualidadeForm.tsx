@@ -45,6 +45,7 @@ const AlertaQualidadeForm = () => {
   // Image annotation editor state
   const [annotatingFile, setAnnotatingFile] = useState<File | null>(null);
   const [annotatingType, setAnnotatingType] = useState<"ng" | "ok">("ng");
+  const [photoActionType, setPhotoActionType] = useState<"ng" | "ok" | null>(null);
 
   const [form, setForm] = useState({
     modelo: "", modo_falha: "", linha_peca: "", local_detectado: "",

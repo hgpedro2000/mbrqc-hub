@@ -745,7 +745,7 @@ const AlertaQualidade = () => {
                     const isExpanded = expandedDesc.has(a.id);
                     const rowPad = compact ? "py-2.5" : "py-4";
                     const descPad = rowPad;
-                    const descSize = compact ? "text-[12px]" : "text-[13px]";
+                    const descSize = compact ? "text-[10px]" : "text-[11px]";
                     const descClamp = isExpanded ? "" : (compact ? "line-clamp-3" : "line-clamp-4");
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer align-middle" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>

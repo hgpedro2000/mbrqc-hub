@@ -722,18 +722,18 @@ const AlertaQualidade = () => {
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm table-fixed">
                 <colgroup>
-                  <col className="w-[90px]" />
                   <col className="w-[80px]" />
+                  <col className="w-[70px]" />
                   <col />
-                  <col className="w-[130px]" />
                   <col className="w-[110px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[100px] hidden lg:table-column" />
-                  <col className="w-[100px] hidden lg:table-column" />
                   <col className="w-[100px]" />
-                  <col className="w-[110px]" />
-                  <col className="w-[180px]" />
-                  <col className="w-[140px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[90px] hidden lg:table-column" />
+                  <col className="w-[90px]" />
+                  <col className="w-[100px]" />
+                  <col className="w-[130px]" />
+                  <col className="w-[120px]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-border">

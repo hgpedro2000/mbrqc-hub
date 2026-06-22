@@ -600,9 +600,14 @@ const AlertaQualidade = () => {
                           )}
                         </td>
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex flex-col items-center gap-1 min-w-[90px]">
-                            <Progress value={prog.pct} className="h-2 w-full" />
-                            <span className="text-[10px] text-muted-foreground">{prog.total}p / {prog.count}c</span>
+                          <div className="min-w-[140px]">
+                            <CienciaBar
+                              pct={prog.pct}
+                              count={prog.count}
+                              total={prog.total}
+                              clickable={isLider && status.label === "Atrasado"}
+                              onClick={isLider && status.label === "Atrasado" ? () => openJustifyDialog(a) : undefined}
+                            />
                           </div>
                         </td>
                         <td className="py-2.5 px-2" onClick={(e) => e.stopPropagation()}>

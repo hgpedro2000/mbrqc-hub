@@ -571,6 +571,19 @@ const AlertaQualidadeForm = () => {
       </Dialog>
 
       {/* Image Annotation Editor */}
+      {/* Photo action popup (Alterar / Editar) */}
+      <Dialog open={!!photoActionType} onOpenChange={(o) => !o && setPhotoActionType(null)}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Foto {photoActionType?.toUpperCase()}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={handleChangeExisting}>Alterar Imagem</Button>
+            <Button onClick={handleEditExisting} className="bg-[#1a5276] hover:bg-[#154360]">Editar Imagem</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <ImageAnnotationEditor
         open={!!annotatingFile}
         imageFile={annotatingFile}

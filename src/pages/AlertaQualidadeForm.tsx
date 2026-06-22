@@ -278,7 +278,7 @@ const AlertaQualidadeForm = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl space-y-4">
+      <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-[1600px] space-y-4">
         {/* Row 1: Header fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
           <div className="space-y-1">

@@ -278,7 +278,7 @@ const AlertaQualidadeForm = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl space-y-4">
+      <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-[1600px] space-y-4">
         {/* Row 1: Header fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 sm:gap-3">
           <div className="space-y-1">
@@ -357,11 +357,11 @@ const AlertaQualidadeForm = () => {
           </div>
         </div>
 
-        {/* Row 2: Descrição + Responsabilidade/VIN */}
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-2 sm:gap-3">
-          <div className="lg:col-span-5 space-y-1">
+        {/* Row 2: Descrição + Responsabilidade/VIN + Fotos NG/OK (single wide row no XL) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 sm:gap-3">
+          <div className="lg:col-span-4 space-y-1">
             {reqLabel("Descrição")}
-            <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className={cn("min-h-[100px] text-sm", !form.descricao && "border-[#c0392b]/30")} />
+            <Textarea value={form.descricao} onChange={(e) => set("descricao", e.target.value)} className={cn("min-h-[180px] lg:min-h-[220px] text-sm h-full", !form.descricao && "border-[#c0392b]/30")} />
           </div>
           <div className="lg:col-span-2 space-y-3">
             <div className="space-y-1">
@@ -378,29 +378,29 @@ const AlertaQualidadeForm = () => {
               <Input value={form.vin} onChange={(e) => set("vin", e.target.value)} className="text-sm h-9" />
             </div>
           </div>
-        </div>
 
-        {/* Fotos NG / OK */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
+          {/* Foto NG */}
+          <div className="lg:col-span-3 space-y-2">
             <div className="flex items-center gap-2">
               <span className="bg-[#c0392b] text-white text-xs font-bold px-3 py-1 rounded">NG *</span>
-              <span className="text-xs text-muted-foreground">Foto da não conformidade</span>
+              <span className="text-xs text-muted-foreground truncate">Foto da não conformidade</span>
             </div>
-            <div onClick={() => ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
-              {ngPreview ? <img src={ngPreview} alt="NG" className="w-full h-full object-contain max-h-[200px]" /> : (
+            <div onClick={() => ngInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] lg:min-h-[220px] flex items-center justify-center cursor-pointer hover:bg-[#c0392b]/5 transition-colors overflow-hidden", ngFile ? "border-[#c0392b]" : "border-[#c0392b]/40")}>
+              {ngPreview ? <img src={ngPreview} alt="NG" className="w-full h-full object-contain max-h-[260px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
             </div>
             <input ref={ngInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelected(e.target.files?.[0] || null, "ng")} />
           </div>
-          <div className="space-y-2">
+
+          {/* Foto OK */}
+          <div className="lg:col-span-3 space-y-2">
             <div className="flex items-center gap-2">
               <span className="bg-[#1e8449] text-white text-xs font-bold px-3 py-1 rounded">OK *</span>
-              <span className="text-xs text-muted-foreground">Foto da referência correta</span>
+              <span className="text-xs text-muted-foreground truncate">Foto da referência correta</span>
             </div>
-            <div onClick={() => okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
-              {okPreview ? <img src={okPreview} alt="OK" className="w-full h-full object-contain max-h-[200px]" /> : (
+            <div onClick={() => okInputRef.current?.click()} className={cn("border-[3px] border-dashed rounded-lg min-h-[180px] lg:min-h-[220px] flex items-center justify-center cursor-pointer hover:bg-[#1e8449]/5 transition-colors overflow-hidden", okFile ? "border-[#1e8449]" : "border-[#1e8449]/40")}>
+              {okPreview ? <img src={okPreview} alt="OK" className="w-full h-full object-contain max-h-[260px]" /> : (
                 <div className="text-center text-muted-foreground"><Upload className="w-8 h-8 mx-auto mb-1" /><p className="text-xs">Clique para upload</p></div>
               )}
             </div>

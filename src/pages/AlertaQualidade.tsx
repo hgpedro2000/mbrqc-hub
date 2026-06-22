@@ -770,17 +770,17 @@ const AlertaQualidade = () => {
                           )}
                         </td>
                         {colVis.linhaPeca && (
-                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
+                          <td className={`${rowPad} px-2 text-[10px] text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
                             {a.linha_peca || "—"}
                           </td>
                         )}
                         {colVis.responsabilidade && (
-                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
+                          <td className={`${rowPad} px-2 text-[10px] text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
                             {a.responsabilidade || "—"}
                           </td>
                         )}
                         {colVis.deteccao && (
-                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
+                          <td className={`${rowPad} px-2 text-[10px] text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
                             {a.local_detectado || "—"}
                           </td>
                         )}

@@ -458,6 +458,7 @@ const AlertaQualidade = () => {
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground">Descrição</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Ocorrência</th>
                     <th className="text-left py-2 px-2 text-xs font-semibold text-muted-foreground hidden md:table-cell">Validade</th>
+                    <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Situação</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Status</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ciência</th>
                     <th className="text-center py-2 px-2 text-xs font-semibold text-muted-foreground">Ações</th>

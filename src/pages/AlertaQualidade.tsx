@@ -750,41 +750,60 @@ const AlertaQualidade = () => {
                     return (
                       <tr key={a.id} className="border-b border-border/50 hover:bg-muted/30 cursor-pointer align-middle" onClick={() => navigate(`/alerta-qualidade/ver/${a.id}`)}>
                         <td className={`${rowPad} px-2 font-mono text-xs font-bold text-[#c0392b] text-center`}>{formatSeq(a.sequencial)}</td>
-                        <td className={`${rowPad} px-2 text-center`}>
-                          {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
-                        </td>
-                        <td className={`${descPad} px-2`} onClick={(e) => { e.stopPropagation(); toggleDesc(a.id); }} title={a.descricao || a.modo_falha || ""}>
+                        {colVis.projeto && (
+                          <td className={`${rowPad} px-2 text-center`}>
+                            {a.modelo && <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-700 bg-emerald-50">{a.modelo}</Badge>}
+                          </td>
+                        )}
+                        <td className={`${descPad} px-2`} title={a.descricao || a.modo_falha || ""}>
                           <p className={`font-medium text-foreground ${descSize} ${descClamp} leading-snug break-words`}>
                             {a.descricao || a.modo_falha || "—"}
                           </p>
                           {(a.descricao || a.modo_falha || "").length > 80 && (
-                            <span className="text-[9px] text-muted-foreground hover:text-foreground">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); toggleDesc(a.id); }}
+                              className="mt-0.5 text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted/40 hover:bg-muted text-foreground/70"
+                            >
                               {isExpanded ? "recolher" : "ver mais"}
-                            </span>
+                            </button>
                           )}
                         </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
-                          {a.linha_peca || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
-                          {a.responsabilidade || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
-                          {a.local_detectado || "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
-                          {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
-                          {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
-                        </td>
-                        <td className={`${rowPad} px-2 text-center`}>
-                          {a.status === "rascunho" ? (
-                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
-                          )}
-                        </td>
+                        {colVis.linhaPeca && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.linha_peca || ""}>
+                            {a.linha_peca || "—"}
+                          </td>
+                        )}
+                        {colVis.responsabilidade && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.responsabilidade || ""}>
+                            {a.responsabilidade || "—"}
+                          </td>
+                        )}
+                        {colVis.deteccao && (
+                          <td className={`${rowPad} px-2 text-xs text-foreground/80 truncate text-center`} title={a.local_detectado || ""}>
+                            {a.local_detectado || "—"}
+                          </td>
+                        )}
+                        {colVis.ocorrencia && (
+                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                            {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                        )}
+                        {colVis.validade && (
+                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                            {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                        )}
+                        {colVis.situacao && (
+                          <td className={`${rowPad} px-2 text-center`}>
+                            {a.status === "rascunho" ? (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 text-[10px]">Rascunho</Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px]">Emitido</Badge>
+                            )}
+                          </td>
+                        )}
+
                         <td className={`${rowPad} px-2 text-center`} onClick={(e) => e.stopPropagation()}>
                           {effectiveIsAdmin ? (
                             <button onClick={() => { setStatusEditAlert(a); setNewStatus(displayStatus); }}>

@@ -48,31 +48,42 @@ vi.mock("@/integrations/supabase/client", () => ({
 import Monitor from "@/pages/Monitor";
 
 beforeEach(() => {
-  // Default preferences: only "summary" block so we can validate selective rendering.
+  // Two blocks so we have a "next" slide to preload.
   localStorage.setItem(
     "monitor_preferences",
-    JSON.stringify({ blocks: ["summary"], period: "today", theme: "dark" }),
+    JSON.stringify({ blocks: ["summary", "recent"], period: "today", theme: "dark" }),
   );
   mocks.state.subscribeCb = null;
   Object.keys(mocks.handlers).forEach((k) => delete mocks.handlers[k]);
+  mocks.removeChannel.mockClear();
+  mocks.fromMock.mockClear();
 });
 
-describe("Monitor — renders only selected blocks", () => {
-  it("renders the Summary block and omits non-selected ones", async () => {
+describe("Monitor — renders only selected blocks (current slide only)", () => {
+  it("renders the active Summary slide title in the header", async () => {
     render(<Monitor />);
     await waitFor(() => {
       expect(screen.getByText(/Resumo do Período/i)).toBeInTheDocument();
     });
-    expect(screen.queryByText(/Últimos Registros/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Alertas Vigentes/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Contenções Ativas/i)).not.toBeInTheDocument();
   });
 
-  it("uses a CSS grid sized to the number of selected blocks", () => {
+  it("scales the entire UI inside a 1920x1080 stage so it never gets cut", () => {
     render(<Monitor />);
-    const grid = screen.getByTestId("monitor-grid");
-    // With 1 block selected we expect 1 column.
-    expect(grid.getAttribute("style")).toMatch(/grid-template-columns:\s*repeat\(1,/);
+    const stage = screen.getByTestId("monitor-stage");
+    const style = stage.getAttribute("style") || "";
+    expect(style).toMatch(/width:\s*1920px/);
+    expect(style).toMatch(/height:\s*1080px/);
+    expect(style).toMatch(/transform:\s*scale\(/);
+  });
+
+  it("pre-renders the next slide off-screen for smoother transitions", () => {
+    render(<Monitor />);
+    expect(screen.getByTestId("monitor-preload")).toBeInTheDocument();
+  });
+
+  it("exposes a fullscreen (kiosk) toggle button", () => {
+    render(<Monitor />);
+    expect(screen.getByLabelText(/Tela cheia/i)).toBeInTheDocument();
   });
 });
 

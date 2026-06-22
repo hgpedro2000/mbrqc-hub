@@ -785,12 +785,12 @@ const AlertaQualidade = () => {
                           </td>
                         )}
                         {colVis.ocorrencia && (
-                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                          <td className={`${rowPad} px-1 text-[10px] text-muted-foreground text-center hidden lg:table-cell whitespace-nowrap`}>
                             {a.data_ocorrencia ? new Date(a.data_ocorrencia).toLocaleDateString("pt-BR") : "—"}
                           </td>
                         )}
                         {colVis.validade && (
-                          <td className={`${rowPad} px-2 text-xs text-muted-foreground text-center hidden lg:table-cell`}>
+                          <td className={`${rowPad} px-1 text-[10px] text-muted-foreground text-center hidden lg:table-cell whitespace-nowrap`}>
                             {a.data_validade ? new Date(a.data_validade).toLocaleDateString("pt-BR") : "—"}
                           </td>
                         )}

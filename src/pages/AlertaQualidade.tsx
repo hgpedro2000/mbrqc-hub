@@ -710,11 +710,11 @@ const AlertaQualidade = () => {
                   <col className="w-[70px]" />
                   {colVis.projeto && <col className="w-[70px]" />}
                   <col />
-                  {colVis.linhaPeca && <col className="w-[100px]" />}
+                  {colVis.linhaPeca && <col className="w-[130px]" />}
                   {colVis.responsabilidade && <col className="w-[130px]" />}
                   {colVis.deteccao && <col className="w-[100px]" />}
-                  {colVis.ocorrencia && <col className="w-[90px] hidden lg:table-column" />}
-                  {colVis.validade && <col className="w-[90px] hidden lg:table-column" />}
+                  {colVis.ocorrencia && <col className="w-[72px] hidden lg:table-column" />}
+                  {colVis.validade && <col className="w-[72px] hidden lg:table-column" />}
                   {colVis.situacao && <col className="w-[85px]" />}
                   <col className="w-[95px]" />
                   <col className="w-[110px]" />

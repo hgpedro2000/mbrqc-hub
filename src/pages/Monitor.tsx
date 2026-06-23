@@ -183,100 +183,225 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
   );
 };
 
-// --- SplitFlap digit (airport-board style, vertical roll) ---
-// Robust: every change animates because we drive translateY off a numeric
-// `absIndex` that only increases; modulo strip length gives the actual
-// position, so React always commits a new transform and the CSS transition
-// fires reliably even on rapid updates.
-const FLAP_MS = 480;
-const FLAP_CHARS = "0123456789 .,:-/+%";
+// --- SplitFlap digit (airport-board style two-half flip) ---
+// Top half of OLD char flips down (rotateX 0 → -90), then bottom half of NEW
+// char flips up (rotateX 90 → 0). Per-digit `delayMs` enables L→R cascade.
+const FLAP_HALF_MS = 300;
+const FLAP_CASCADE_MS = 80;
 
-const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
+// Inject keyframes once.
+if (typeof document !== "undefined" && !document.getElementById("splitflap-keyframes")) {
+  const s = document.createElement("style");
+  s.id = "splitflap-keyframes";
+  s.textContent = `
+    @keyframes splitflap-top    { 0% { transform: rotateX(0deg);  } 100% { transform: rotateX(-90deg); } }
+    @keyframes splitflap-bottom { 0% { transform: rotateX(90deg); } 100% { transform: rotateX(0deg);   } }
+  `;
+  document.head.appendChild(s);
+}
+
+const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; delayMs?: number }) => {
   const isDigit = /[0-9]/.test(ch);
-  const w = isDigit ? size * 0.7 : size * 0.5;
+  const w = isDigit ? size * 0.7 : size * 0.45;
   const h = size;
+  const halfH = h / 2;
   const fontSize = size * 0.72;
 
-  const strip = useMemo(() => FLAP_CHARS.split(""), []);
-  const targetPos = (() => {
-    const i = strip.indexOf(ch);
-    return i >= 0 ? i : strip.indexOf(" ");
-  })();
-
-  const [absIndex, setAbsIndex] = useState(targetPos);
-  const lastTargetRef = useRef(targetPos);
+  // Digits start at "0" so first paint counts up from zero; non-digits show as-is.
+  const [current, setCurrent] = useState(() => (isDigit ? "0" : ch));
+  const [next, setNext] = useState<string | null>(null);
+  const [flipKey, setFlipKey] = useState(0);
+  const timersRef = useRef<number[]>([]);
+  const chRef = useRef(ch);
 
   useEffect(() => {
-    if (targetPos === lastTargetRef.current) return;
-    const len = strip.length;
-    const cur = ((absIndex % len) + len) % len;
-    let delta = (targetPos - cur + len) % len;
-    if (delta === 0) delta = len;
-    setAbsIndex(absIndex + delta);
-    lastTargetRef.current = targetPos;
+    chRef.current = ch;
+    if (ch === current && next === null) return;
+    timersRef.current.forEach((id) => clearTimeout(id));
+    timersRef.current = [];
+
+    const startId = window.setTimeout(() => {
+      if (chRef.current !== ch) return;
+      setNext(ch);
+      setFlipKey((k) => k + 1);
+      const commitId = window.setTimeout(() => {
+        setCurrent(ch);
+        setNext(null);
+      }, FLAP_HALF_MS * 2 + 20);
+      timersRef.current.push(commitId);
+    }, delayMs);
+    timersRef.current.push(startId);
+
+    return () => {
+      timersRef.current.forEach((id) => clearTimeout(id));
+      timersRef.current = [];
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetPos]);
+  }, [ch]);
+
+  const animating = next !== null && next !== current;
+  const bgTop = animating ? next! : current;     // revealed after old top flips away
+  const bgBottom = current;                       // hidden when new bottom drops on top
+
+  const half: React.CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: halfH,
+    overflow: "hidden",
+    background: "#0a0a0a",
+    color: "#fff",
+    display: "block",
+    textAlign: "center",
+    fontSize,
+  };
+  const innerFull: React.CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: h,
+    lineHeight: `${h}px`,
+    textAlign: "center",
+    fontSize,
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontWeight: 900,
+  };
 
   return (
     <span
-      className="relative inline-block rounded-md border border-white/20 shadow-inner overflow-hidden align-middle font-mono font-black tabular-nums"
-      style={{
-        width: w,
-        height: h,
-        background: "#000",
-        color: "#fff",
-        verticalAlign: "middle",
-      }}
+      className="relative inline-block rounded-md border border-white/15 shadow-inner align-middle"
+      style={{ width: w, height: h, perspective: 400, background: "#0a0a0a", verticalAlign: "middle" }}
     >
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: "50%",
-          height: 1,
-          background: "rgba(255,255,255,0.18)",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          transform: `translateY(${-absIndex * h}px)`,
-          transition: `transform ${FLAP_MS}ms cubic-bezier(.2,.85,.3,1)`,
-          willChange: "transform",
-        }}
-      >
-        {Array.from({ length: absIndex + strip.length }).map((_, i) => {
-          const c = strip[((i % strip.length) + strip.length) % strip.length];
-          return (
-            <div
-              key={i}
-              style={{
-                height: h,
-                lineHeight: `${h}px`,
-                textAlign: "center",
-                fontSize,
-              }}
-            >
-              {c}
-            </div>
-          );
-        })}
-      </div>
+      {/* bg top (NEW) */}
+      <span style={{ ...half, top: 0, borderBottom: "1px solid rgba(255,255,255,0.18)" }}>
+        <span style={{ ...innerFull, top: 0 }}>{bgTop}</span>
+      </span>
+      {/* bg bottom (OLD) */}
+      <span style={{ ...half, bottom: 0 }}>
+        <span style={{ ...innerFull, bottom: 0 }}>{bgBottom}</span>
+      </span>
+
+      {animating && (
+        <>
+          {/* flap-top: OLD top flips down */}
+          <span
+            key={`t${flipKey}`}
+            style={{
+              ...half,
+              top: 0,
+              borderBottom: "1px solid rgba(255,255,255,0.18)",
+              transformOrigin: "bottom",
+              animation: `splitflap-top ${FLAP_HALF_MS}ms ease-in forwards`,
+              backfaceVisibility: "hidden",
+              zIndex: 2,
+            }}
+          >
+            <span style={{ ...innerFull, top: 0 }}>{current}</span>
+          </span>
+          {/* flap-bottom: NEW bottom flips up */}
+          <span
+            key={`b${flipKey}`}
+            style={{
+              ...half,
+              bottom: 0,
+              transformOrigin: "top",
+              transform: "rotateX(90deg)",
+              animation: `splitflap-bottom ${FLAP_HALF_MS}ms ease-out ${FLAP_HALF_MS}ms forwards`,
+              backfaceVisibility: "hidden",
+              zIndex: 2,
+            }}
+          >
+            <span style={{ ...innerFull, bottom: 0 }}>{next!}</span>
+          </span>
+        </>
+      )}
     </span>
   );
 };
 
-export const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
+export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS }: { value: number; size?: number; cascadeMs?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-1 items-center align-middle" style={{ lineHeight: 1 }}>
+    <span className="inline-flex gap-[2px] items-center align-middle" style={{ lineHeight: 1 }}>
       {str.split("").map((ch, i) => (
-        <SplitFlapDigit key={i} ch={ch} size={size} />
+        <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
       ))}
     </span>
+  );
+};
+
+// --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
+type InspPart = { part_number: string; part_name: string; qty: number };
+const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number }) => {
+  const groups = useMemo(() => {
+    const out: InspPart[][] = [];
+    for (let i = 0; i < parts.length; i += 2) out.push(parts.slice(i, i + 2));
+    return out;
+  }, [parts]);
+  const total = groups.length;
+  const interval = total <= 4 ? 4000 : Math.max(1500, Math.floor(16000 / total));
+
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState<"enter" | "visible" | "exit">("visible");
+
+  // Reset when parts shape changes.
+  useEffect(() => { setIdx(0); setPhase("visible"); }, [total]);
+
+  // Enter → visible on next frame so CSS transitions fire.
+  useEffect(() => {
+    if (phase !== "enter") return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setPhase("visible")));
+    return () => cancelAnimationFrame(id);
+  }, [phase, idx]);
+
+  // Rotation timer.
+  useEffect(() => {
+    if (total <= 1) return;
+    const tick = window.setInterval(() => {
+      setPhase("exit");
+      window.setTimeout(() => {
+        setIdx((i) => (i + 1) % total);
+        setPhase("enter");
+      }, 400);
+    }, interval);
+    return () => clearInterval(tick);
+  }, [total, interval]);
+
+  const current = groups[idx] || [];
+  const cls =
+    phase === "enter" ? "opacity-0 translate-y-5" :
+    phase === "exit"  ? "opacity-0 -translate-y-5" :
+                        "opacity-100 translate-y-0";
+
+  return (
+    <>
+      <ul className="flex-1 overflow-hidden mt-2 divide-y divide-border/30 relative">
+        <div className={cn("transition-all duration-[400ms] ease-out", cls)}>
+          {current.map((p, i) => (
+            <li key={`${idx}-${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
+              <div className="min-w-0">
+                <p className="font-mono text-base truncate">{p.part_number}</p>
+                {p.part_name && <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>}
+              </div>
+              <SplitFlapNumber value={p.qty} size={qtySize} />
+            </li>
+          ))}
+        </div>
+      </ul>
+      {total > 1 && (
+        <div className="absolute bottom-2 right-3 flex gap-1.5 z-10">
+          {groups.map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "rounded-full transition-all duration-300",
+                i === idx ? "w-2.5 h-2.5 bg-cyan-400" : "w-2 h-2 bg-white/25",
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 };
 

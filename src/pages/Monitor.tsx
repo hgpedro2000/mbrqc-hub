@@ -1025,7 +1025,7 @@ const Monitor = () => {
         )}
 
         {/* Auto-advance progress bar */}
-        {!isPaused && blocks.length > 1 && (
+        {!chromeOff && !isPaused && blocks.length > 1 && (
           <div className="relative z-10 h-1.5 bg-muted/30">
             <div
               key={`pb-${safeIdx}-${rangeKey}`}

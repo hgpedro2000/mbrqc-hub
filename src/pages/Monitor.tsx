@@ -1076,7 +1076,7 @@ const Monitor = () => {
         </main>
 
         {/* Live ticker */}
-        {apontamentos.length > 0 && (
+        {!chromeOff && apontamentos.length > 0 && (
           <div className="relative z-10 overflow-hidden border-t border-border/40 bg-background/60 backdrop-blur-md py-3">
             <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : "ticker 45s linear infinite", width: "max-content" }}>
               {[...apontamentos.slice(0, 20), ...apontamentos.slice(0, 20)].map((a, i) => (
@@ -1093,6 +1093,7 @@ const Monitor = () => {
         )}
 
         {/* Footer */}
+        {!chromeOff && (
         <footer className="relative z-10 flex items-center justify-between px-10 py-4 border-t border-border/40 bg-background/60 backdrop-blur-md text-xl">
           <span className="font-mono">
             {now.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })} · <span className="font-bold">{now.toLocaleTimeString("pt-BR")}</span>

@@ -6,6 +6,50 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import * as XLSX from "xlsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/** Validation regexes for DB rows. */
+const PN_RE = /^[A-Z0-9]{8,14}$/;
+const ALC_RE = /^[A-Z0-9]{2,8}$/;
+
+/**
+ * Validate a candidate row against the DB.
+ * Returns null when valid; otherwise a user-facing error message.
+ */
+function validateDbRow(
+  candidate: DbRow,
+  existing: DbRow[],
+  excludeIdx: number | null = null
+): string | null {
+  if (!candidate.switch || !candidate.panel || !candidate.alc) {
+    return "Preencha SWITCH, PANEL e ALC.";
+  }
+  if (!PN_RE.test(candidate.switch)) {
+    return "SWITCH inválido: use 8–14 caracteres alfanuméricos (sem espaços/símbolos).";
+  }
+  if (!PN_RE.test(candidate.panel)) {
+    return "PANEL inválido: use 8–14 caracteres alfanuméricos (sem espaços/símbolos).";
+  }
+  if (!ALC_RE.test(candidate.alc)) {
+    return "ALC inválido: use 2–8 caracteres alfanuméricos (ex.: LL31).";
+  }
+  const dupIdx = existing.findIndex(
+    (x) => x.switch === candidate.switch && x.panel === candidate.panel
+  );
+  if (dupIdx !== -1 && dupIdx !== excludeIdx) {
+    return `Spec duplicada: já existe SWITCH=${candidate.switch} + PANEL=${candidate.panel} (linha ${dupIdx + 1}).`;
+  }
+  return null;
+}
 
 interface DbRow {
   switch: string;

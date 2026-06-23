@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash, ShieldCheck, Barcode } from "lucide-react";
+import HKMCScanner from "@/components/HKMCScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ const ConsultaPecas = () => {
   const [scanMode, setScanMode] = useState<"search" | "check">("search");
   const [specDialogOpen, setSpecDialogOpen] = useState(false);
   const [specPart, setSpecPart] = useState<any>(null);
+  const [hkmcOpen, setHkmcOpen] = useState(false);
 
   // Scanner refs (reuse Apontamento incoming logic)
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
@@ -217,6 +219,26 @@ const ConsultaPecas = () => {
               onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
             >
               <QrCode className="w-5 h-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 shrink-0 gap-2 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 hidden sm:flex"
+              onClick={() => setHkmcOpen(true)}
+              title="Barcode Scanner H/KMC"
+            >
+              <Barcode className="w-5 h-5" />
+              <span className="font-semibold">H/KMC</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Barcode Scanner H/KMC"
+              className="h-12 w-12 shrink-0 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 sm:hidden"
+              onClick={() => setHkmcOpen(true)}
+            >
+              <Barcode className="w-5 h-5" />
             </Button>
             <Button
               type="button"
@@ -460,6 +482,19 @@ const ConsultaPecas = () => {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* HKMC Barcode Scanner Dialog */}
+      <Dialog open={hkmcOpen} onOpenChange={setHkmcOpen}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="px-4 pt-4">
+            <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> Barcode Scanner H/KMC</DialogTitle>
+            <DialogDescription>Leitor de códigos Hyundai/KIA</DialogDescription>
+          </DialogHeader>
+          <div className="p-2">
+            <HKMCScanner />
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -841,7 +841,7 @@ const Monitor = () => {
       case "alteracoes_4m": {
         const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
         const items = slidesMedia.filter((m) => m.tipo === tipo);
-        const [mi, setMi] = [Math.floor(Date.now() / 8000) % Math.max(items.length, 1), null] as any;
+        const mi = Math.floor(now.getTime() / 8000) % Math.max(items.length, 1);
         const current = items[mi];
         if (!items.length) {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;

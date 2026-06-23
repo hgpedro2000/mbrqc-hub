@@ -215,7 +215,7 @@ const ConsultaPecas = () => {
               size="icon"
               title="Buscar por QR / Código de Barras"
               className="h-12 w-12 shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10"
-              onClick={() => { setScanMode("search"); setTypeChooserOpen(true); }}
+              onClick={() => { setScanMode("search"); qrScannerSearchRef.current?.openScanner(); }}
             >
               <QrCode className="w-5 h-5" />
             </Button>
@@ -223,7 +223,7 @@ const ConsultaPecas = () => {
               type="button"
               variant="default"
               className="h-12 shrink-0 gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md hidden sm:flex"
-              onClick={() => { setScanMode("check"); setTypeChooserOpen(true); }}
+              onClick={() => { setScanMode("check"); qrScannerCheckRef.current?.openScanner(); }}
             >
               <ScanSearch className="w-5 h-5" />
               <span className="font-semibold">Checar SPEC/ALC</span>
@@ -234,15 +234,13 @@ const ConsultaPecas = () => {
               size="icon"
               title="Checar SPEC/ALC"
               className="h-12 w-12 shrink-0 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md sm:hidden"
-              onClick={() => { setScanMode("check"); setTypeChooserOpen(true); }}
+              onClick={() => { setScanMode("check"); qrScannerCheckRef.current?.openScanner(); }}
             >
               <ScanSearch className="w-5 h-5" />
             </Button>
           </div>
         </div>
 
-        {/* Hidden element for scanFile */}
-        <div id="qr-reader-consulta-tmp" className="hidden" />
 
         <div className="flex-1 overflow-y-auto mt-4 space-y-4">
         {isLoading ? (

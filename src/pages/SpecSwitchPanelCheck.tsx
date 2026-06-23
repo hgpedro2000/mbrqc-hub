@@ -207,6 +207,10 @@ export default function SpecSwitchPanelCheck() {
     () => (panelRaw ? extractPart(panelRaw, panelPrefixes) : { code: "" }),
     [panelRaw, panelPrefixes]
   );
+  const panelAlc = useMemo(() => {
+    if (!panelRaw) return "";
+    return parseHyundaiQR(panelRaw)?.alc || "";
+  }, [panelRaw]);
   const switchExtract = useMemo(
     () => (switchRaw ? extractPart(switchRaw, switchPrefixes) : { code: "" }),
     [switchRaw, switchPrefixes]
@@ -267,6 +271,8 @@ export default function SpecSwitchPanelCheck() {
     };
   }, [panelPn, switchPn, panelRaw, switchRaw, panelExtract.error, switchExtract.error, db]);
 
+  const displayedAlc = panelAlc || result.alc;
+
   const lastLoggedRef = useRef<string>("");
   useEffect(() => {
     if (result.status === "waiting" || result.status === "parse_error") return;
@@ -280,12 +286,12 @@ export default function SpecSwitchPanelCheck() {
           panel: panelPn,
           switchPn,
           status: result.status,
-          alcExpected: result.alc,
+          alcExpected: displayedAlc,
         },
         ...prev,
       ].slice(0, 50)
     );
-  }, [panelPn, switchPn, result.status, result.alc]);
+  }, [panelPn, switchPn, result.status, displayedAlc]);
 
   const reset = useCallback(() => {
     setPanelRaw("");
@@ -309,13 +315,13 @@ export default function SpecSwitchPanelCheck() {
     panelRef.current?.blur();
     switchRef.current?.blur();
     if (result.status === "ok") {
-      toast.success(`SPEC OK — ALC ${result.alc}`, { duration: 1500 });
+      toast.success(`SPEC OK — ALC ${displayedAlc || result.alc}`, { duration: 1500 });
     } else if (result.status === "alc_diff") {
       toast.error(`ALC divergente: ${result.alc}`, { duration: 2500 });
     } else {
       toast.error("Combinação não encontrada no banco", { duration: 2500 });
     }
-  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
+  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc, displayedAlc]);
 
   // Debounced scanner actions: Hyundai QR payloads contain control separators
   // that some USB readers emit as Enter mid-stream. Never move fields just
@@ -575,25 +581,25 @@ export default function SpecSwitchPanelCheck() {
 
           {/* PAINEL EXTRAIDO */}
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
-            <div className="p-3 font-mono text-lg">
+            <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAÍDO</div>
+            <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
               {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* SWITCH EXTRAIDO */}
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
-            <div className="p-3 font-mono text-lg">
+            <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAÍDO</div>
+            <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
               {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* ALC CODE */}
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
-            <div className="p-3 font-mono text-xl font-bold">
-              {result.alc || <span className="text-slate-400 font-normal text-base">—</span>}
+            <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
+            <div className="p-3 min-h-[56px] flex items-center font-mono text-xl font-bold">
+              {displayedAlc || <span className="text-slate-400 font-normal text-base">—</span>}
             </div>
           </div>
 

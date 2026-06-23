@@ -71,35 +71,8 @@ const ConsultaPecas = () => {
     }
   };
 
-  // ── Scanner helpers ──
+  // ── Scanner: usa o mesmo componente do Apontamento (Incoming) ──
 
-  const getFormats = useCallback(() => {
-    if (selectedScanType === "barcode") return BARCODE_FORMATS;
-    if (selectedScanType === "qrcode") return QR_FORMATS;
-    return ALL_FORMATS;
-  }, [selectedScanType]);
-
-  const createScanner = useCallback(() => {
-    return new Html5Qrcode(READER_ID, {
-      formatsToSupport: getFormats(),
-      verbose: false,
-    });
-  }, [getFormats]);
-
-  const stopScanner = useCallback(async () => {
-    const scanner = scannerRef.current;
-    scannerRef.current = null;
-    if (!scanner) return;
-    try { await scanner.stop(); } catch {}
-    try { await scanner.clear(); } catch {}
-  }, []);
-
-  const closeScanner = useCallback(() => {
-    void stopScanner();
-    setScannerOpen(false);
-    setCameraError(null);
-    setIsProcessingImage(false);
-  }, [stopScanner]);
 
   const applyScannedPartNumber = useCallback(async (pn: string) => {
     const pnNormalized = pn.replace(/-/g, "");

@@ -30,7 +30,7 @@ const prefetchPhotos = (urls: string[]) => {
 
 type ConnState = "connecting" | "connected" | "error";
 
-const SLIDE_DURATION_MS = 10000;
+const DEFAULT_SLIDE_DURATION_MS = 10000;
 const STAGE_W = 1920;
 const STAGE_H = 1080;
 

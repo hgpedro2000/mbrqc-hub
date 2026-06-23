@@ -630,18 +630,58 @@ export default function SpecSwitchPanelCheck() {
         </div>
 
         {showDb && (
-          <div className="mt-4 bg-slate-800/60 backdrop-blur rounded-lg p-4 border border-slate-700 max-h-80 overflow-auto">
-            <h2 className="font-bold text-slate-200 mb-2">Banco atual ({db.length} linhas)</h2>
+          <div className="mt-4 bg-slate-800/60 backdrop-blur rounded-lg p-4 border border-slate-700 max-h-[28rem] overflow-auto">
+            <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+              <h2 className="font-bold text-slate-200">Banco atual ({db.length} linhas){editMode && <span className="ml-2 text-xs text-amber-300 font-normal">— modo edição</span>}</h2>
+            </div>
+
+            {editMode && isAdmin && (
+              <div className="mb-3 p-2 bg-slate-900/60 border border-slate-700 rounded">
+                <div className="text-xs text-slate-400 mb-1 font-bold">ADICIONAR LINHA</div>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2">
+                  <input value={newRow.switch} onChange={(e) => setNewRow({ ...newRow, switch: e.target.value })} placeholder="SWITCH" className="px-2 py-1 rounded bg-slate-800 border border-slate-600 text-white text-xs font-mono uppercase" />
+                  <input value={newRow.panel} onChange={(e) => setNewRow({ ...newRow, panel: e.target.value })} placeholder="PANEL" className="px-2 py-1 rounded bg-slate-800 border border-slate-600 text-white text-xs font-mono uppercase" />
+                  <input value={newRow.alc} onChange={(e) => setNewRow({ ...newRow, alc: e.target.value })} placeholder="ALC" className="px-2 py-1 rounded bg-slate-800 border border-slate-600 text-white text-xs font-mono uppercase" />
+                  <Button size="sm" onClick={handleAddRow}><Plus className="w-4 h-4 mr-1" />Adicionar</Button>
+                </div>
+              </div>
+            )}
+
             <table className="w-full font-mono text-xs">
               <thead className="text-slate-400 border-b border-slate-700">
-                <tr><th className="text-left py-1 px-2">SWITCH</th><th className="text-left py-1 px-2">PANEL</th><th className="text-left py-1 px-2">ALC</th></tr>
+                <tr>
+                  <th className="text-left py-1 px-2">SWITCH</th>
+                  <th className="text-left py-1 px-2">PANEL</th>
+                  <th className="text-left py-1 px-2">ALC</th>
+                  {editMode && <th className="text-right py-1 px-2">Ações</th>}
+                </tr>
               </thead>
               <tbody>
                 {db.map((r, i) => (
                   <tr key={i} className="border-b border-slate-700/50">
-                    <td className="py-1 px-2">{r.switch}</td>
-                    <td className="py-1 px-2">{r.panel}</td>
-                    <td className="py-1 px-2 text-emerald-300">{r.alc}</td>
+                    {editingIdx === i ? (
+                      <>
+                        <td className="py-1 px-2"><input value={editRow.switch} onChange={(e) => setEditRow({ ...editRow, switch: e.target.value })} className="w-full px-1 py-0.5 rounded bg-slate-800 border border-slate-600 text-white uppercase" /></td>
+                        <td className="py-1 px-2"><input value={editRow.panel} onChange={(e) => setEditRow({ ...editRow, panel: e.target.value })} className="w-full px-1 py-0.5 rounded bg-slate-800 border border-slate-600 text-white uppercase" /></td>
+                        <td className="py-1 px-2"><input value={editRow.alc} onChange={(e) => setEditRow({ ...editRow, alc: e.target.value })} className="w-full px-1 py-0.5 rounded bg-slate-800 border border-slate-600 text-white uppercase" /></td>
+                        <td className="py-1 px-2 text-right whitespace-nowrap">
+                          <button onClick={saveEdit} className="inline-flex items-center text-emerald-400 hover:text-emerald-300 mr-2" title="Salvar"><Save className="w-4 h-4" /></button>
+                          <button onClick={() => setEditingIdx(null)} className="inline-flex items-center text-slate-400 hover:text-white" title="Cancelar"><X className="w-4 h-4" /></button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-1 px-2">{r.switch}</td>
+                        <td className="py-1 px-2">{r.panel}</td>
+                        <td className="py-1 px-2 text-emerald-300">{r.alc}</td>
+                        {editMode && (
+                          <td className="py-1 px-2 text-right whitespace-nowrap">
+                            <button onClick={() => startEdit(i)} className="inline-flex items-center text-blue-400 hover:text-blue-300 mr-2" title="Editar"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteRow(i)} className="inline-flex items-center text-red-400 hover:text-red-300" title="Excluir"><Trash2 className="w-4 h-4" /></button>
+                          </td>
+                        )}
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>

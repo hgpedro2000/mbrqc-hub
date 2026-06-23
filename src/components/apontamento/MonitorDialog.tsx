@@ -569,11 +569,13 @@ const ChoiceCard = ({ active, onClick, title, desc }: { active: boolean; onClick
  * Replays automatically when duration/animations change, with a Repetir button.
  */
 const SlidePreview = ({
+  blockId,
   emoji,
   title,
   durationMs,
   animations,
 }: {
+  blockId: MonitorBlock;
   emoji: string;
   title: string;
   durationMs: number;

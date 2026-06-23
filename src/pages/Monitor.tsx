@@ -184,21 +184,46 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 };
 
 // --- SplitFlap digit (airport-board style) ---
-// Each digit has 4 stacked halves:
-//  - static top: shows the NEW value (revealed under the flipping top)
-//  - static bottom: shows the OLD value (covered by the flipping bottom once it lands)
-//  - animated top: flips down 0→-90deg around its bottom edge, showing the OLD value
-//  - animated bottom: flips up 90→0deg around its top edge, showing the NEW value
+// Queue-based: each character change is enqueued; we animate them one by one
+// so rapid updates produce a true cascading flip instead of skipping frames.
+const FLAP_TOP_MS = 260;
+const FLAP_BOTTOM_MS = 260;
+const FLAP_DELAY_MS = 230;
+const FLAP_TOTAL_MS = FLAP_DELAY_MS + FLAP_BOTTOM_MS;
+
 const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
-  const [prev, setPrev] = useState(ch);
+  // `shown` = currently displayed (post-animation) value.
+  // `prev`  = value the flipping flap shows on its front face (the "from").
+  // `next`  = value to flip TO next; when set, animation runs and then shown=next.
+  const [shown, setShown] = useState<string>(ch === " " ? " " : " ");
+  const [next, setNext] = useState<string | null>(ch === " " ? null : ch);
   const [animKey, setAnimKey] = useState(0);
-  const lastRef = useRef(ch);
+  const queueRef = useRef<string[]>([]);
+  const animatingRef = useRef(false);
+
+  const runNext = () => {
+    const q = queueRef.current;
+    if (q.length === 0) { animatingRef.current = false; return; }
+    animatingRef.current = true;
+    const target = q.shift()!;
+    setNext(target);
+    setAnimKey((k) => k + 1);
+    window.setTimeout(() => {
+      setShown(target);
+      setNext(null);
+      // chain next on a microtask so React commits `shown` first
+      window.setTimeout(runNext, 16);
+    }, FLAP_TOTAL_MS);
+  };
+
   useEffect(() => {
-    if (ch !== lastRef.current) {
-      setPrev(lastRef.current);
-      lastRef.current = ch;
-      setAnimKey((k) => k + 1);
+    const q = queueRef.current;
+    const last = q.length ? q[q.length - 1] : (next ?? shown);
+    if (ch !== last) {
+      q.push(ch);
+      if (!animatingRef.current) runNext();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ch]);
 
   const isDigit = /[0-9]/.test(ch);
@@ -228,50 +253,59 @@ const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
     background: "#000",
     color: "#fff",
   };
-  const changed = ch !== prev;
+
+  const animating = next !== null;
+  const topNew = animating ? next! : shown;       // revealed under flipping top
+  const bottomOld = shown;                          // covered by flipping bottom
+  const flipFromTop = shown;                        // flap face flipping down
+  const flipToBottom = animating ? next! : shown;   // flap face flipping up
 
   return (
     <span
       className="relative inline-block rounded-md border border-white/20 shadow-inner overflow-hidden align-middle font-mono font-black tabular-nums"
       style={{ width: w, height: h, perspective: 600 }}
     >
-      {/* Static top — new value */}
+      {/* Static top — new value (revealed once flap clears) */}
       <div style={{ ...halfBase, top: 0, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-        {renderText(ch, 0)}
+        {renderText(topNew, 0)}
       </div>
-      {/* Static bottom — old value */}
+      {/* Static bottom — old value (covered by flipping bottom) */}
       <div style={{ ...halfBase, bottom: 0 }}>
-        {renderText(prev, -half)}
+        {renderText(bottomOld, -half)}
       </div>
-      {/* Animated top half flipping down (shows old value) */}
-      <div
-        key={`t-${animKey}`}
-        style={{
-          ...halfBase,
-          top: 0,
-          borderBottom: "1px solid rgba(255,255,255,0.15)",
-          transformOrigin: "bottom",
-          transformStyle: "preserve-3d",
-          backfaceVisibility: "hidden",
-          animation: changed ? "flap-top 0.32s cubic-bezier(.55,.05,.95,.6) both" : undefined,
-        }}
-      >
-        {renderText(prev, 0)}
-      </div>
-      {/* Animated bottom half flipping up (shows new value) */}
-      <div
-        key={`b-${animKey}`}
-        style={{
-          ...halfBase,
-          bottom: 0,
-          transformOrigin: "top",
-          transformStyle: "preserve-3d",
-          backfaceVisibility: "hidden",
-          animation: changed ? "flap-bottom 0.32s cubic-bezier(.25,.5,.5,1) 0.3s both" : undefined,
-        }}
-      >
-        {renderText(ch, -half)}
-      </div>
+      {animating && (
+        <>
+          {/* Animated top half flipping down (shows old value) */}
+          <div
+            key={`t-${animKey}`}
+            style={{
+              ...halfBase,
+              top: 0,
+              borderBottom: "1px solid rgba(255,255,255,0.15)",
+              transformOrigin: "bottom",
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "hidden",
+              animation: `flap-top ${FLAP_TOP_MS}ms cubic-bezier(.55,.05,.95,.6) both`,
+            }}
+          >
+            {renderText(flipFromTop, 0)}
+          </div>
+          {/* Animated bottom half flipping up (shows new value) */}
+          <div
+            key={`b-${animKey}`}
+            style={{
+              ...halfBase,
+              bottom: 0,
+              transformOrigin: "top",
+              transformStyle: "preserve-3d",
+              backfaceVisibility: "hidden",
+              animation: `flap-bottom ${FLAP_BOTTOM_MS}ms cubic-bezier(.25,.5,.5,1) ${FLAP_DELAY_MS}ms both`,
+            }}
+          >
+            {renderText(flipToBottom, -half)}
+          </div>
+        </>
+      )}
     </span>
   );
 };

@@ -498,6 +498,59 @@ const ConsultaPecas = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Desktop SPEC/ALC Barcode Reader Dialog (HW scanner / manual) */}
+      <Dialog open={specReaderOpen} onOpenChange={setSpecReaderOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+          <div className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 px-5 py-4 text-white">
+            <div className="flex items-center gap-2 mb-1 opacity-90">
+              <ScanSearch className="w-4 h-4" />
+              <span className="text-xs font-medium tracking-wider uppercase">Leitor de Código de Barras</span>
+            </div>
+            <DialogTitle className="text-xl font-bold text-white">Checar SPEC / ALC</DialogTitle>
+            <DialogDescription className="text-white/85 text-sm">
+              Aponte o leitor de código de barras para o Part Number — ou digite e pressione Enter.
+            </DialogDescription>
+          </div>
+          <form
+            className="p-5 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = specReaderInput.trim();
+              if (!val) return;
+              void applyScannedPartNumber(val);
+              setSpecReaderInput("");
+            }}
+          >
+            <div className="relative">
+              <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-violet-500" />
+              <Input
+                ref={specReaderInputRef}
+                value={specReaderInput}
+                onChange={(e) => setSpecReaderInput(e.target.value)}
+                placeholder="Part Number..."
+                autoFocus
+                className="h-14 text-lg font-mono pl-11 border-2 border-violet-300 focus-visible:ring-violet-500 focus-visible:ring-2"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setSpecReaderOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                disabled={!specReaderInput.trim()}
+              >
+                <ScanSearch className="w-4 h-4 mr-2" /> Checar
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Dica: a maioria dos leitores envia <kbd className="px-1 rounded bg-muted">Enter</kbd> automaticamente.
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -510,10 +510,30 @@ const ConsultaPecas = () => {
               type="button"
               variant="outline"
               size="icon"
+              title="Buscar por QR / Código de Barras"
               className="h-12 w-12 shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10"
-              onClick={() => setTypeChooserOpen(true)}
+              onClick={() => { setScanMode("search"); setTypeChooserOpen(true); }}
             >
               <QrCode className="w-5 h-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              className="h-12 shrink-0 gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md hidden sm:flex"
+              onClick={() => { setScanMode("check"); setTypeChooserOpen(true); }}
+            >
+              <ScanSearch className="w-5 h-5" />
+              <span className="font-semibold">Checar SPEC/ALC</span>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="icon"
+              title="Checar SPEC/ALC"
+              className="h-12 w-12 shrink-0 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md sm:hidden"
+              onClick={() => { setScanMode("check"); setTypeChooserOpen(true); }}
+            >
+              <ScanSearch className="w-5 h-5" />
             </Button>
           </div>
         </div>

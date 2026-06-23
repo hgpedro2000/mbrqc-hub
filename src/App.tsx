@@ -144,6 +144,7 @@ const App = () => (
           <UpdateBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/dev/splitflap" element={<SplitFlapHarness />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
             <Route path="/solicitar-reset-admin" element={<SolicitarResetAdmin />} />

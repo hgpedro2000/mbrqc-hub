@@ -853,10 +853,15 @@ const Monitor = () => {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
         }
         const url = current ? mediaUrls[current.file_path] : undefined;
+        const isPdf = /\.pdf($|\?)/i.test(current?.file_name || current?.file_path || "");
         return (
           <div key={current?.id} className="w-full h-full grid grid-rows-[1fr_auto] gap-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-6 animate-fade-in">
             <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
-              {url ? <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" /> : <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />}
+              {!url
+                ? <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />
+                : isPdf
+                  ? <iframe title={current?.titulo || "PDF"} src={`${url}#toolbar=0&navpanes=0&view=FitH`} className="w-full h-full bg-white rounded-xl" />
+                  : <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" />}
             </div>
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
@@ -873,18 +878,19 @@ const Monitor = () => {
         if (!all.length) {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Sem defeitos detectados no período.</div>;
         }
-        const pageSize = 5;
+        const pageSize = 4;
         const totalPages = Math.max(1, Math.ceil(all.length / pageSize));
-        const page = Math.floor(now.getTime() / 8000) % totalPages;
+        const page = Math.floor(now.getTime() / 12000) % totalPages;
         const items = all.slice(page * pageSize, page * pageSize + pageSize);
         return (
-          <div key={page} className="grid grid-cols-5 gap-4 w-full h-full">
+          <div key={page} className="grid grid-cols-4 gap-5 w-full h-full">
             {items.map((a, i) => {
               const photos = ngPhotos[a.id] || [];
               const photo = photos[0];
               return (
-                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.numero || "Apontamento", meta: [
+                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.modo_falha || "Defeito", meta: [
                   { label: "Modo de Falha", value: a.modo_falha || "" },
+                  { label: "Descrição", value: a.descricao_problema || a.descricao || "" },
                   { label: "Fornecedor", value: a.fornecedor || "" },
                   { label: "Part Number", value: a.part_number || "" },
                   { label: "NG", value: String(a.quantidade_ng || 0) },
@@ -893,16 +899,17 @@ const Monitor = () => {
                   className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-rose-500/40 flex flex-col", photo && "cursor-pointer transition-transform hover:scale-[1.02]")}
                   style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
                   {photo
-                    ? <img src={photo} alt="" className="w-full h-56 object-cover" loading="lazy" />
-                    : <div className="w-full h-56 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-12 h-12" /></div>}
-                  <div className="p-4 flex-1 flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-sm text-muted-foreground">{a.numero || "—"}</span>
-                      <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold">NG {a.quantidade_ng}</span>
+                    ? <img src={photo} alt="" className="w-full h-72 object-cover" loading="lazy" />
+                    : <div className="w-full h-72 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-16 h-16" /></div>}
+                  <div className="p-5 flex-1 flex flex-col gap-2">
+                    <div className="flex items-center justify-end">
+                      <span className="text-sm uppercase px-3 py-1 rounded-full bg-red-500/20 text-red-300 font-bold tabular-nums">NG {a.quantidade_ng}</span>
                     </div>
-                    <p className="text-lg font-bold text-rose-300 line-clamp-2">{a.modo_falha || "—"}</p>
-                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"}</p>
-                    <p className="text-sm text-muted-foreground truncate">{a.fornecedor || "—"}</p>
+                    <p className="text-2xl font-bold text-rose-300 line-clamp-2">{a.modo_falha || "—"}</p>
+                    {(a.descricao_problema || a.descricao) && (
+                      <p className="text-base text-foreground/90 line-clamp-3">{a.descricao_problema || a.descricao}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"} · {a.fornecedor || "—"}</p>
                     <p className="text-xs text-muted-foreground mt-auto">{new Date(a.created_at).toLocaleString("pt-BR")}</p>
                   </div>
                   <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
@@ -912,6 +919,7 @@ const Monitor = () => {
           </div>
         );
       }
+
     }
   };
 

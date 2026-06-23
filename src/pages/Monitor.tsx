@@ -223,7 +223,7 @@ const Monitor = () => {
     setDebugEvents((prev) => [{ t: Date.now(), kind, detail }, ...prev].slice(0, 50));
   }, []);
 
-  const reducedMotion = useReducedMotion();
+  const systemReducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
   const navigate = useNavigate();
   const autoFsTried = useRef(false);

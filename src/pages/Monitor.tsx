@@ -1022,6 +1022,7 @@ const Monitor = () => {
             </Button>
           </div>
         </header>
+        )}
 
         {/* Auto-advance progress bar */}
         {!isPaused && blocks.length > 1 && (

@@ -187,15 +187,16 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1 }}>
+    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1, perspective: "400px" }}>
       {str.split("").map((ch, i) => (
         <span
-          key={`${i}-${ch}`}
-          className="inline-block bg-zinc-950 border border-zinc-700 rounded-md text-emerald-300 font-mono font-black tabular-nums shadow-inner overflow-hidden"
+          key={`${i}-${ch}-${value}`}
+          className="inline-block bg-black border border-white/20 rounded-md text-white font-mono font-black tabular-nums shadow-inner overflow-hidden"
           style={{
-            minWidth: ch.match(/[0-9]/) ? size * 0.65 : size * 0.35,
-            padding: `${size * 0.05}px ${size * 0.1}px`,
-            animation: "flap-down 0.45s ease-out both",
+            minWidth: ch.match(/[0-9]/) ? size * 0.7 : size * 0.35,
+            padding: `${size * 0.08}px ${size * 0.1}px`,
+            animation: `flap-down 0.6s ease-out ${i * 100}ms both`,
+            transformStyle: "preserve-3d",
           }}
         >
           {ch}
@@ -204,6 +205,7 @@ const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number })
     </span>
   );
 };
+
 
 const Monitor = () => {
   const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());

@@ -29,6 +29,15 @@ const ConsultaPecas = () => {
   const [specReaderOpen, setSpecReaderOpen] = useState(false);
   const [specReaderInput, setSpecReaderInput] = useState("");
   const specReaderInputRef = useRef<HTMLInputElement | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid" | "compact">("list");
+  const cycleViewMode = () =>
+    setViewMode((m) => (m === "list" ? "grid" : m === "grid" ? "compact" : "list"));
+  const viewModeMeta = {
+    list: { icon: LayoutList, label: "1 / linha" },
+    grid: { icon: LayoutGrid, label: "2 / linha" },
+    compact: { icon: Rows3, label: "Compacto" },
+  } as const;
+  const ViewIcon = viewModeMeta[viewMode].icon;
 
   // Scanner refs (reuse Apontamento incoming logic)
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);

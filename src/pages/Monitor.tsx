@@ -451,6 +451,12 @@ const Monitor = () => {
   const currentBlock = blocks[safeIdx];
   const nextBlock = blocks.length ? blocks[(safeIdx + 1) % blocks.length] : undefined;
 
+  // Per-slide effective config (duration + animations override globals)
+  const { durationMs: slideDurationMs, animations: blockAnimations } = currentBlock
+    ? getBlockSlideConfig(prefs, currentBlock)
+    : { durationMs: globalSlideDurationMs, animations: globalAnimationsEnabled };
+  const reducedMotion = systemReducedMotion || !blockAnimations;
+
   // Pause slideshow when modal/settings open
   const isPaused = paused || !!photoSource || showSettings;
 
@@ -461,7 +467,7 @@ const Monitor = () => {
       setSlideIdx((i) => (i + 1) % blocks.length);
     }, slideDurationMs);
     return () => clearInterval(id);
-  }, [isPaused, blocks.length]);
+  }, [isPaused, blocks.length, slideDurationMs]);
 
   const goPrev = () => { setDirection(-1); setSlideIdx((i) => (i - 1 + blocks.length) % blocks.length); };
   const goNext = () => { setDirection(1); setSlideIdx((i) => (i + 1) % blocks.length); };

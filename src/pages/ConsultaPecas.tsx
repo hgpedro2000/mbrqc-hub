@@ -425,91 +425,93 @@ const ConsultaPecas = () => {
 
       {/* Spec / ALC Dialog */}
       <Dialog open={specDialogOpen} onOpenChange={setSpecDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-xl p-0 overflow-hidden border-0">
+        <DialogContent className="max-w-[96vw] sm:max-w-lg md:max-w-xl p-0 overflow-hidden border-0 w-[96vw] sm:w-auto">
           {specPart && (
-            <div className="flex flex-col max-h-[90vh]">
+            <div className="flex flex-col max-h-[92vh]">
               {/* Header */}
-              <div className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 px-5 py-4 text-white relative">
+              <div className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 px-3 sm:px-5 py-3 sm:py-4 text-white relative">
                 <div className="flex items-center gap-2 mb-1 opacity-90">
-                  <ScanSearch className="w-4 h-4" />
-                  <span className="text-xs font-medium tracking-wider uppercase">Resultado da Leitura</span>
+                  <ScanSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">Resultado da Leitura</span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-heading font-bold leading-tight font-mono break-all">
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold leading-tight font-mono break-all">
                   {specPart.part_number}
                 </h2>
-                <p className="text-sm md:text-base opacity-90 mt-1">{specPart.part_name || "—"}</p>
+                <p className="text-xs sm:text-sm md:text-base opacity-90 mt-1 break-words">{specPart.part_name || "—"}</p>
                 <div className="mt-2">{origemBadge(specPart.origem)}</div>
               </div>
 
               {/* Body */}
-              <div className="px-5 py-4 space-y-4 overflow-y-auto">
+              <div className="px-3 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4 overflow-y-auto">
                 {/* ALC Highlight */}
-                <div className={`rounded-xl p-4 border-2 ${
+                <div className={`rounded-xl p-3 sm:p-4 border-2 ${
                   specPart.alc_code
                     ? "bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/40 dark:to-fuchsia-950/40 border-violet-400 dark:border-violet-600 shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30"
                     : "bg-muted/40 border-dashed border-muted-foreground/30"
                 }`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className={`w-5 h-5 ${specPart.alc_code ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
-                    <span className={`text-sm font-bold uppercase tracking-wider ${
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                    <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
+                    <span className={`text-[11px] sm:text-sm font-bold uppercase tracking-wider ${
                       specPart.alc_code ? "text-violet-700 dark:text-violet-300" : "text-muted-foreground"
                     }`}>
                       ALC Code
                     </span>
                   </div>
                   {specPart.alc_code ? (
-                    <p className="font-mono font-bold text-3xl md:text-4xl text-violet-900 dark:text-violet-100 break-all text-center py-2">
+                    <p className="font-mono font-bold text-2xl sm:text-3xl md:text-4xl text-violet-900 dark:text-violet-100 break-all text-center py-1 sm:py-2">
                       {specPart.alc_code}
                     </p>
                   ) : (
-                    <p className="text-base text-muted-foreground text-center py-2 italic">
+                    <p className="text-sm sm:text-base text-muted-foreground text-center py-1 sm:py-2 italic">
                       Sem ALC cadastrado
                     </p>
                   )}
                 </div>
 
                 {/* Info grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <Factory className="w-3.5 h-3.5" /> Fornecedor
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
+                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Fornecedor</span>
                     </div>
-                    <p className="text-base font-semibold text-foreground break-words">
+                    <p className="text-xs sm:text-base font-semibold text-foreground break-words">
                       {specPart.suppliers?.name || "—"}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <Hash className="w-3.5 h-3.5" /> Code Vendor
+                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
+                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Code Vendor</span>
                     </div>
-                    <p className="text-base font-mono font-semibold text-amber-700 dark:text-amber-400">
+                    <p className="text-xs sm:text-base font-mono font-semibold text-amber-700 dark:text-amber-400 break-all">
                       {specPart.suppliers?.code || "—"}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <Layers className="w-3.5 h-3.5" /> Projeto
+                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
+                      <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Projeto</span>
                     </div>
-                    <p className="text-base font-semibold text-emerald-700 dark:text-emerald-400">
+                    <p className="text-xs sm:text-base font-semibold text-emerald-700 dark:text-emerald-400 break-words">
                       {specPart.project || "—"}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                      <Package className="w-3.5 h-3.5" /> Linha / Módulo
+                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
+                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
+                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Linha / Módulo</span>
                     </div>
-                    <p className="text-base font-semibold text-cyan-700 dark:text-cyan-400">
+                    <p className="text-xs sm:text-base font-semibold text-cyan-700 dark:text-cyan-400 break-words">
                       {specPart.line_module || "—"}
                     </p>
                   </div>
                 </div>
               </div>
 
+
               {/* Footer */}
-              <div className="px-5 py-3 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
+              <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1 min-h-[44px]"
+                  size="sm"
+                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm"
                   onClick={() => {
                     setSearchTerm(specPart.part_number);
                     setSpecDialogOpen(false);
@@ -518,7 +520,8 @@ const ConsultaPecas = () => {
                   <Search className="w-4 h-4 mr-2" /> Ver na lista
                 </Button>
                 <Button
-                  className="flex-1 min-h-[44px] bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                  size="sm"
+                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setTimeout(() => openSpecScanner(), 150);
@@ -527,6 +530,7 @@ const ConsultaPecas = () => {
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra
                 </Button>
               </div>
+
             </div>
           )}
         </DialogContent>

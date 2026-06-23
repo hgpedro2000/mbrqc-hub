@@ -429,12 +429,24 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
               const usingAnimOverride = s.animations !== undefined;
               return (
                 <TabsContent key={b.id} value={`b:${b.id}`} className="mt-0 space-y-4">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex flex-wrap items-start gap-3 p-3 rounded-lg border bg-card">
                     <span className="text-3xl leading-none">{b.emoji}</span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[140px]">
                       <p className="font-medium">{b.title}</p>
                       <p className="text-xs text-muted-foreground">{b.desc}</p>
                     </div>
+                    {(usingDurOverride || usingAnimOverride) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => resetBlock(b.id)}
+                        title="Voltar a usar o tempo e animação globais"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Redefinir
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant={prefs.blocks.includes(b.id) ? "default" : "outline"}

@@ -102,15 +102,26 @@ const ConsultaPecas = () => {
     );
 
     const openMatch = (part: any) => {
+      // Feedback tátil/sonoro ao capturar
+      try { navigator.vibrate?.([60, 30, 60]); } catch { /* noop */ }
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 880; g.gain.value = 0.08;
+        o.start(); o.stop(ctx.currentTime + 0.12);
+      } catch { /* noop */ }
       if (scanMode === "check") {
+        setSpecReaderOpen(false);
         setSpecPart(part);
         setSpecDialogOpen(true);
-        toast({ title: "Peça identificada!", description: `PN: ${part.part_number}` });
+        toast({ title: "✓ Peça identificada!", description: `PN: ${part.part_number}` });
       } else {
         setSearchTerm(part.part_number);
-        toast({ title: "Peça encontrada!", description: `PN: ${part.part_number}` });
+        toast({ title: "✓ Peça encontrada!", description: `PN: ${part.part_number}` });
       }
     };
+
 
     if (exactMatch) {
       openMatch(exactMatch);

@@ -227,6 +227,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [hydrateAuthState]);
 
   const signOut = async () => {
+    // Notify any open /monitor window so it can switch to its anon client BEFORE we kill the session.
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        const ch = new BroadcastChannel("monitor_channel");
+        ch.postMessage({ type: "MAIN_LOGOUT" });
+        // Give the monitor ~300ms to react before tearing down auth.
+        await new Promise((r) => setTimeout(r, 300));
+        ch.close();
+      }
+    } catch { /* ignore */ }
     // Fire-and-forget audit before clearing the session
     try {
       const { logAction } = await import("@/lib/logAction");

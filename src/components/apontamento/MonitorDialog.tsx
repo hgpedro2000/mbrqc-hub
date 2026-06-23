@@ -524,6 +524,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                     title={b.title}
                     durationMs={effDur}
                     animations={effAnim}
+                    data={previewData}
                   />
                 </TabsContent>
               );

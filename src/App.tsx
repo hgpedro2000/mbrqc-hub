@@ -46,6 +46,7 @@ import AuditLogsPage from "./pages/AuditLogsPage";
 import AdminPartNameFix from "./pages/AdminPartNameFix";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import SplitFlapHarness from "./pages/SplitFlapHarness";
 
 const queryClient = new QueryClient({
   defaultOptions: {

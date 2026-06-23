@@ -419,8 +419,9 @@ export default function SpecSwitchPanelCheck() {
               <input
                 ref={panelRef}
                 value={panelRaw}
-                onChange={(e) => setPanelRaw(e.target.value)}
+                onChange={(e) => { clearPanelJump(); setPanelRaw(e.target.value); }}
                 onKeyDown={handlePanelKey}
+
                 placeholder="Leia o QR do PAINEL..."
                 aria-invalid={!!panelExtract.error}
                 className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${

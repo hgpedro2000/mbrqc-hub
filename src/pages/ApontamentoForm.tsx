@@ -18,6 +18,7 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/compressImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -969,6 +970,7 @@ const ApontamentoForm = () => {
 
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
+      if (quantidadeInspecionada > 1000) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada acima do limite (máx. 1000) — faça um novo apontamento para o excedente"); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
@@ -1464,8 +1466,19 @@ const ApontamentoForm = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-3 sm:gap-4">
                   <div className="space-y-1.5">
-                    <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada *</Label>
-                    <Input type="number" min={1} value={quantidadeInspecionada || ""} onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeInspecionada")} />
+                    <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada * <span className="text-xs text-muted-foreground">(máx. 1000)</span></Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={quantidadeInspecionada || ""}
+                      onChange={(e) => setQuantidadeInspecionada(e.target.value === "" ? 0 : Number(e.target.value))}
+                      className={cn(errClass("quantidadeInspecionada"), quantidadeInspecionada > 1000 && "border-destructive ring-2 ring-destructive/50 text-destructive")}
+                      aria-invalid={quantidadeInspecionada > 1000}
+                    />
+                    {quantidadeInspecionada > 1000 && (
+                      <p className="text-xs text-destructive mt-1">Limite de 1000 peças por apontamento. Crie um novo apontamento para o excedente.</p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label>NG *</Label>

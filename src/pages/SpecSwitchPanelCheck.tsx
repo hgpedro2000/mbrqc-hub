@@ -217,7 +217,8 @@ export default function SpecSwitchPanelCheck() {
   );
 
   const panelPn = panelExtract.code;
-  const switchPn = switchExtract.code;
+  // Switch PN is 10 chars (sem sufixo de 3 letras tipo YJT/NNB)
+  const switchPn = switchExtract.code ? switchExtract.code.slice(0, 10) : "";
 
   const result = useMemo(() => {
     if (panelRaw && panelExtract.error) {

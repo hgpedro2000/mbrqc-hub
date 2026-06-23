@@ -357,7 +357,7 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
               bottom: 0,
               transformOrigin: "top",
               transform: "rotateX(90deg)",
-              animation: `splitflap-bottom ${FLAP_HALF_MS}ms ease-out ${FLAP_HALF_MS}ms forwards`,
+              animation: `splitflap-bottom ${flapHalfMs()}ms ease-out ${flapHalfMs()}ms forwards`,
               backfaceVisibility: "hidden",
               zIndex: 2,
             }}

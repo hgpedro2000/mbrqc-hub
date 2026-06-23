@@ -184,23 +184,104 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 };
 
 // --- SplitFlap digit (airport-board style) ---
+// Each digit has 4 stacked halves:
+//  - static top: shows the NEW value (revealed under the flipping top)
+//  - static bottom: shows the OLD value (covered by the flipping bottom once it lands)
+//  - animated top: flips down 0→-90deg around its bottom edge, showing the OLD value
+//  - animated bottom: flips up 90→0deg around its top edge, showing the NEW value
+const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
+  const [prev, setPrev] = useState(ch);
+  const [animKey, setAnimKey] = useState(0);
+  const lastRef = useRef(ch);
+  useEffect(() => {
+    if (ch !== lastRef.current) {
+      setPrev(lastRef.current);
+      lastRef.current = ch;
+      setAnimKey((k) => k + 1);
+    }
+  }, [ch]);
+
+  const isDigit = /[0-9]/.test(ch);
+  const w = isDigit ? size * 0.7 : size * 0.35;
+  const h = size;
+  const half = h / 2;
+  const fontSize = size * 0.9;
+  const renderText = (c: string, offset = 0) => (
+    <div
+      style={{
+        height: h,
+        lineHeight: `${h}px`,
+        textAlign: "center",
+        fontSize,
+        marginTop: offset,
+      }}
+    >
+      {c}
+    </div>
+  );
+  const halfBase: React.CSSProperties = {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: half,
+    overflow: "hidden",
+    background: "#000",
+    color: "#fff",
+  };
+  const changed = ch !== prev;
+
+  return (
+    <span
+      className="relative inline-block rounded-md border border-white/20 shadow-inner overflow-hidden align-middle font-mono font-black tabular-nums"
+      style={{ width: w, height: h, perspective: 600 }}
+    >
+      {/* Static top — new value */}
+      <div style={{ ...halfBase, top: 0, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
+        {renderText(ch, 0)}
+      </div>
+      {/* Static bottom — old value */}
+      <div style={{ ...halfBase, bottom: 0 }}>
+        {renderText(prev, -half)}
+      </div>
+      {/* Animated top half flipping down (shows old value) */}
+      <div
+        key={`t-${animKey}`}
+        style={{
+          ...halfBase,
+          top: 0,
+          borderBottom: "1px solid rgba(255,255,255,0.15)",
+          transformOrigin: "bottom",
+          transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
+          animation: changed ? "flap-top 0.32s cubic-bezier(.55,.05,.95,.6) both" : undefined,
+        }}
+      >
+        {renderText(prev, 0)}
+      </div>
+      {/* Animated bottom half flipping up (shows new value) */}
+      <div
+        key={`b-${animKey}`}
+        style={{
+          ...halfBase,
+          bottom: 0,
+          transformOrigin: "top",
+          transformStyle: "preserve-3d",
+          backfaceVisibility: "hidden",
+          animation: changed ? "flap-bottom 0.32s cubic-bezier(.25,.5,.5,1) 0.3s both" : undefined,
+        }}
+      >
+        {renderText(ch, -half)}
+      </div>
+    </span>
+  );
+};
+
 const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1, perspective: "400px" }}>
+    <span className="inline-flex gap-1 items-center align-middle" style={{ lineHeight: 1 }}>
       {str.split("").map((ch, i) => (
-        <span
-          key={`${i}-${ch}-${value}`}
-          className="inline-block bg-black border border-white/20 rounded-md text-white font-mono font-black tabular-nums shadow-inner overflow-hidden"
-          style={{
-            minWidth: ch.match(/[0-9]/) ? size * 0.7 : size * 0.35,
-            padding: `${size * 0.08}px ${size * 0.1}px`,
-            animation: `flap-down 0.6s ease-out ${i * 100}ms both`,
-            transformStyle: "preserve-3d",
-          }}
-        >
-          {ch}
-        </span>
+        <SplitFlapDigit key={i} ch={ch} size={size} />
       ))}
     </span>
   );
@@ -968,6 +1049,8 @@ const Monitor = () => {
         @keyframes slide-in-left { 0% { transform: translateX(-100%); opacity: 0 } 100% { transform: translateX(0); opacity: 1 } }
         @keyframes ticker { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
         @keyframes flap-down { 0% { transform: rotateX(-90deg); opacity: 0 } 60% { transform: rotateX(10deg); opacity: 1 } 100% { transform: rotateX(0deg); opacity: 1 } }
+        @keyframes flap-top { 0% { transform: rotateX(0deg) } 100% { transform: rotateX(-90deg) } }
+        @keyframes flap-bottom { 0% { transform: rotateX(90deg) } 100% { transform: rotateX(0deg) } }
         @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 0 0 hsl(0 90% 55% / 0.45) } 50% { box-shadow: 0 0 0 14px hsl(0 90% 55% / 0) } }
         @media (prefers-reduced-motion: reduce) {
           .reduced-motion * { animation: none !important; transition: none !important; }

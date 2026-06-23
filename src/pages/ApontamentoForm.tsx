@@ -1464,9 +1464,9 @@ const ApontamentoForm = () => {
                   <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
                   <Input value={loteInspecionado} onChange={(e) => { setLoteInspecionado(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("loteInspecionado"); return n; }); }} placeholder="Ex: A1234" className={errClass("loteInspecionado")} />
                 </div>
-                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-3 gap-3 sm:gap-4 items-start">
                   <div className="space-y-1.5">
-                    <Label className={errLabelClass("quantidadeInspecionada")}>Inspecionada * <span className="text-xs text-muted-foreground">(máx. 1000)</span></Label>
+                    <Label className={cn(errLabelClass("quantidadeInspecionada"), "truncate")} title="Quantidade inspecionada (máx. 1000)">Inspecionada *</Label>
                     <Input
                       type="number"
                       min={1}
@@ -1476,9 +1476,6 @@ const ApontamentoForm = () => {
                       className={cn(errClass("quantidadeInspecionada"), quantidadeInspecionada > 1000 && "border-destructive ring-2 ring-destructive/50 text-destructive")}
                       aria-invalid={quantidadeInspecionada > 1000}
                     />
-                    {quantidadeInspecionada > 1000 && (
-                      <p className="text-xs text-destructive mt-1">Limite de 1000 peças por apontamento. Crie um novo apontamento para o excedente.</p>
-                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label>NG *</Label>
@@ -1488,6 +1485,9 @@ const ApontamentoForm = () => {
                     <Label>OK</Label>
                     <Input type="number" value={quantidadeOk} readOnly className="bg-muted" />
                   </div>
+                  {quantidadeInspecionada > 1000 && (
+                    <p className="col-span-3 text-xs text-destructive">Limite de 1000 peças por apontamento. Crie um novo apontamento para o excedente.</p>
+                  )}
                 </div>
                 {quantidadeNg > 0 && (
                   <div className="space-y-1.5">

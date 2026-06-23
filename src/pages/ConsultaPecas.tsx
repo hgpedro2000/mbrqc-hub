@@ -41,6 +41,9 @@ const ConsultaPecas = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [scanMode, setScanMode] = useState<"search" | "check">("search");
+  const [specDialogOpen, setSpecDialogOpen] = useState(false);
+  const [specPart, setSpecPart] = useState<any>(null);
 
   // Scanner state
   const [typeChooserOpen, setTypeChooserOpen] = useState(false);

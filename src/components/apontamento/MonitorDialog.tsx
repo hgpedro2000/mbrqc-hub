@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Moon, Sun, Settings2, Megaphone, Wrench, Check, RotateCcw } from "lucide-react";
+import { Moon, Sun, Settings2, Megaphone, Wrench, Check, RotateCcw, AlertTriangle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { monitorClient } from "@/integrations/supabase/monitor-client";
 
 export type MonitorBlock =
   | "summary"

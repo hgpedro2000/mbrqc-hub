@@ -79,23 +79,23 @@ async def main():
                 print("✗ no Lovable session env — cannot run authenticated E2E")
                 sys.exit(2)
 
-            await page.goto(f"{BASE}/apontamentos", wait_until="networkidle")
-            await page.screenshot(path=str(OUT / "1_apontamentos.png"))
+            # Use the PUBLIC /monitor page (no MFA gate) — it embeds the same
+            # MonitorDialog. We open it by clicking the aria-labelled
+            # "Configurações do monitor" button (always in the DOM, just
+            # opacity-0 until hover; we click it directly).
+            await page.goto(f"{BASE}/monitor", wait_until="domcontentloaded")
+            await page.wait_for_timeout(800)
+            await page.screenshot(path=str(OUT / "1_monitor.png"))
 
             opened = await page.evaluate(
                 """() => {
-                    const btns = [...document.querySelectorAll('button')];
-                    // Prefer a button whose visible text is exactly "Monitor"
-                    let b = btns.find(x => (x.textContent || '').trim() === 'Monitor');
-                    if (!b) b = btns.find(x => /monitor/i.test(x.textContent || '') && !/admin|fechad/i.test(x.textContent || ''));
-                    if (b) { b.scrollIntoView(); b.click(); return true; }
+                    const b = document.querySelector('button[aria-label="Configurações do monitor"]')
+                        || [...document.querySelectorAll('button')].find(x => /Configurar/.test(x.textContent || ''));
+                    if (b) { b.click(); return true; }
                     return false;
                 }"""
             )
-            assert opened, "could not click Monitor trigger"
-            # handleMonitorClick waits up to 500ms for a PONG from an existing monitor
-            # window before opening the dialog. Give it ~800ms before asserting.
-            await page.wait_for_timeout(800)
+            assert opened, "could not open Monitor config dialog from /monitor"
             await page.wait_for_selector('[role="dialog"]', timeout=4000)
             await page.screenshot(path=str(OUT / "2_dialog_open.png"))
 

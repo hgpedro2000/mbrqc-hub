@@ -563,6 +563,152 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
   );
 };
 
+const DESC_COLOR_OPTIONS: { id: DescStyleColor; label: string; sw: string }[] = [
+  { id: "default", label: "Padrão", sw: "bg-foreground/80" },
+  { id: "rose", label: "Rosa", sw: "bg-rose-400" },
+  { id: "amber", label: "Âmbar", sw: "bg-amber-400" },
+  { id: "emerald", label: "Verde", sw: "bg-emerald-400" },
+  { id: "sky", label: "Azul", sw: "bg-sky-400" },
+  { id: "violet", label: "Violeta", sw: "bg-violet-400" },
+];
+
+export const descStyleClasses = (style?: DefectsDescStyle): string => {
+  const color = style?.color ?? "default";
+  const weight = style?.weight ?? "normal";
+  const size = style?.size ?? "md";
+  const colorCls =
+    color === "rose"    ? "text-rose-300"    :
+    color === "amber"   ? "text-amber-300"   :
+    color === "emerald" ? "text-emerald-300" :
+    color === "sky"     ? "text-sky-300"     :
+    color === "violet"  ? "text-violet-300"  :
+                          "text-foreground/90";
+  const weightCls = weight === "bold" ? "font-bold" : weight === "semibold" ? "font-semibold" : "font-normal";
+  const sizeCls = size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-base";
+  return cn(colorCls, weightCls, sizeCls, style?.italic && "italic");
+};
+
+const UltimosDefeitosExtras = ({
+  setting,
+  onChange,
+}: {
+  setting: MonitorBlockSetting;
+  onChange: (patch: MonitorBlockSetting) => void;
+}) => {
+  const perSlide = setting.perSlide ?? 4;
+  const ds: DefectsDescStyle = setting.descStyle ?? {};
+  const setDs = (patch: Partial<DefectsDescStyle>) =>
+    onChange({ descStyle: { ...ds, ...patch } });
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-medium">Defeitos por slide</p>
+          <p className="text-xs text-muted-foreground">Quantos cartões mostrar por vez (2 a 5).</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {[2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ perSlide: n as 2 | 3 | 4 | 5 })}
+              className={cn(
+                "h-8 w-10 text-sm rounded-sm transition-colors tabular-nums",
+                perSlide === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-3 border-t space-y-3">
+        <div>
+          <p className="text-sm font-medium">Estilo da Descrição</p>
+          <p className="text-xs text-muted-foreground">Personaliza cor, peso e tamanho do texto de descrição.</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {DESC_COLOR_OPTIONS.map((c) => {
+            const active = (ds.color ?? "default") === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setDs({ color: c.id })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-md border text-xs",
+                  active ? "border-primary ring-1 ring-primary bg-primary/5" : "border-border hover:bg-muted",
+                )}
+              >
+                <span className={cn("w-3 h-3 rounded-full", c.sw)} />
+                {c.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground mr-1">Peso:</span>
+          {(["normal","semibold","bold"] as DescStyleWeight[]).map((w) => (
+            <button
+              key={w}
+              type="button"
+              onClick={() => setDs({ weight: w })}
+              className={cn(
+                "h-8 px-3 rounded-md border text-xs",
+                (ds.weight ?? "normal") === w ? "border-primary bg-primary/5" : "border-border hover:bg-muted",
+                w === "bold" && "font-bold",
+                w === "semibold" && "font-semibold",
+              )}
+            >
+              {w === "normal" ? "Normal" : w === "semibold" ? "Semi" : "Negrito"}
+            </button>
+          ))}
+
+          <span className="text-xs text-muted-foreground ml-3 mr-1">Tamanho:</span>
+          {(["sm","md","lg"] as DescStyleSize[]).map((sz) => (
+            <button
+              key={sz}
+              type="button"
+              onClick={() => setDs({ size: sz })}
+              className={cn(
+                "h-8 px-3 rounded-md border text-xs",
+                (ds.size ?? "md") === sz ? "border-primary bg-primary/5" : "border-border hover:bg-muted",
+              )}
+            >
+              {sz === "sm" ? "P" : sz === "md" ? "M" : "G"}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => setDs({ italic: !ds.italic })}
+            className={cn(
+              "h-8 px-3 rounded-md border text-xs italic ml-3",
+              ds.italic ? "border-primary bg-primary/5" : "border-border hover:bg-muted",
+            )}
+          >
+            Itálico
+          </button>
+
+          {(ds.color || ds.weight || ds.size || ds.italic) && (
+            <Button size="sm" variant="ghost" className="h-8 ml-auto" onClick={() => onChange({ descStyle: undefined })}>
+              <RotateCcw className="w-3.5 h-3.5 mr-1" /> Redefinir estilo
+            </Button>
+          )}
+        </div>
+
+        <p className={cn("rounded-md border bg-muted/30 px-3 py-2", descStyleClasses(ds))}>
+          Exemplo: descrição do defeito detectado durante a inspeção.
+        </p>
+      </div>
+    </div>
+  );
+};
+
 const Section = ({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) => (
   <div className="space-y-2">
     <div>

@@ -897,6 +897,53 @@ const Monitor = () => {
         </div>
       )}
 
+      {/* Debug panel — toggle with `D` key or ?debug query param */}
+      <button
+        onClick={() => setDebugOpen((v) => !v)}
+        className="fixed bottom-2 right-2 z-[250] px-2 py-1 rounded bg-black/40 text-white/60 text-[10px] font-mono hover:bg-black/70"
+        aria-label="Toggle debug"
+      >DBG</button>
+      {debugOpen && (
+        <div className="fixed bottom-10 right-2 z-[250] w-[360px] max-h-[60vh] overflow-auto rounded-lg bg-black/85 text-white text-xs font-mono shadow-2xl border border-white/10">
+          <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+            <span className="font-bold">Monitor Debug</span>
+            <span className="text-white/50">
+              BC: {typeof BroadcastChannel !== "undefined" ? "ok" : "fallback(ls)"}
+            </span>
+          </div>
+          <div className="px-3 py-2 border-b border-white/10 space-y-0.5">
+            <div className="text-white/60">Última atualização dos dados:</div>
+            {(["apontamentos","alertas_qualidade","contencao","consumable_items"] as const).map((t) => {
+              const ts = lastFetchAt[t];
+              const ago = ts ? Math.round((Date.now() - ts) / 1000) : null;
+              return (
+                <div key={t} className="flex justify-between">
+                  <span>{t}</span>
+                  <span className={cn(ago === null ? "text-white/40" : ago > 60 ? "text-amber-400" : "text-emerald-400")}>
+                    {ago === null ? "—" : `${ago}s atrás`}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+              <span>Realtime</span>
+              <span className={cn(conn === "connected" ? "text-emerald-400" : conn === "error" ? "text-red-400" : "text-amber-400")}>{conn}</span>
+            </div>
+          </div>
+          <div className="px-3 py-2">
+            <div className="text-white/60 mb-1">Eventos BroadcastChannel ({debugEvents.length}):</div>
+            {debugEvents.length === 0 && <div className="text-white/40">nenhum evento ainda</div>}
+            {debugEvents.map((e, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-white/40">{new Date(e.t).toLocaleTimeString()}</span>
+                <span className="text-cyan-300">{e.kind}</span>
+                {e.detail && <span className="text-white/60 truncate">{e.detail}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {needsFsGesture && !isFs && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-card border border-border rounded-2xl p-8 max-w-md text-center space-y-4 shadow-2xl">

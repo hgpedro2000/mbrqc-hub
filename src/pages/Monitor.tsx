@@ -654,40 +654,64 @@ const Monitor = () => {
             })}
           </div>
         );
-      case "contencao":
-        return (
-          <div className="grid grid-cols-3 grid-rows-2 gap-6 w-full h-full">
-            {contencoes.length === 0 && <div className="col-span-3 row-span-2 flex items-center justify-center text-5xl text-muted-foreground">Nenhuma contenção ativa.</div>}
-            {contencoes.slice(0, 6).map((c, i) => {
-              const photos = allPhotos(c);
-              const photo = photos[0];
-              const hasPhotos = photos.length > 0;
-              return (
-                <div
-                  key={c.id}
-                  onClick={() => hasPhotos && openPhotoModal(c, "contencao")}
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-red-500/40 flex flex-col",
-                    hasPhotos && "cursor-pointer transition-transform hover:scale-[1.02]",
-                  )}
-                  style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}
-                >
-                  {photo && <img src={photo} alt="" className="w-full h-44 object-cover" loading="lazy" />}
-                  <div className="p-5 flex-1 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-2xl font-bold truncate">{c.titulo || c.numero || "Contenção"}</h3>
-                      <span className="text-base px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-semibold uppercase">{c.status}</span>
+      case "contencao": {
+        const ativas = contencoes.filter((c) => ["aberta", "em_andamento", "iniciada", "ativo"].includes(c.status));
+        const finalizadas = contencoes.filter((c) => ["concluida", "encerrada", "fechada", "cancelada"].includes(c.status));
+        if (!isV2) {
+          const list = ativas.slice(0, 6);
+          return (
+            <div className="grid grid-cols-3 grid-rows-2 gap-6 w-full h-full">
+              {list.length === 0 && <div className="col-span-3 row-span-2 flex items-center justify-center text-5xl text-muted-foreground">Nenhuma contenção ativa.</div>}
+              {list.map((c, i) => {
+                const photos = allPhotos(c);
+                const photo = photos[0];
+                const hasPhotos = photos.length > 0;
+                return (
+                  <div key={c.id} onClick={() => hasPhotos && openPhotoModal(c, "contencao")} className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-red-500/40 flex flex-col", hasPhotos && "cursor-pointer transition-transform hover:scale-[1.02]")} style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
+                    {photo && <img src={photo} alt="" className="w-full h-44 object-cover" loading="lazy" />}
+                    <div className="p-5 flex-1 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3"><h3 className="text-2xl font-bold truncate">{c.titulo || c.numero || "Contenção"}</h3><span className="text-base px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-semibold uppercase">{c.status}</span></div>
+                      <p className="text-xl text-muted-foreground line-clamp-2">{c.part_number} · {c.fornecedor || ""}</p>
                     </div>
-                    <p className="text-xl text-muted-foreground line-clamp-2">{c.part_number} · {c.fornecedor || ""}</p>
-                    {c.descricao && <p className="text-lg text-muted-foreground line-clamp-2">{c.descricao}</p>}
+                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-red-500" />
                   </div>
-                  <div className="absolute left-0 top-0 bottom-0 w-2 bg-red-500" />
-                  {photos.length > 1 && <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-black/60 text-white">+{photos.length - 1}</span>}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          );
+        }
+        const Row = ({ c, i, color }: { c: any; i: number; color: string }) => (
+          <li key={c.id}
+              onClick={() => allPhotos(c).length && openPhotoModal(c, "contencao")}
+              className={cn("grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-4 rounded-xl border", color, "bg-card/40 hover:bg-card/70 cursor-pointer")}
+              style={reducedMotion ? undefined : { animation: `slide-in-right 0.45s ease-out ${i * 60}ms both` }}>
+            <span className="font-mono text-lg text-muted-foreground">{c.numero || "—"}</span>
+            <div className="min-w-0">
+              <p className="text-xl font-bold truncate">{c.titulo || "Contenção"}</p>
+              <p className="text-sm text-muted-foreground truncate">{c.part_number} · {c.fornecedor || "—"}</p>
+            </div>
+            <span className="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-background/60 font-semibold">{c.status}</span>
+          </li>
+        );
+        return (
+          <div className="grid grid-cols-2 gap-6 w-full h-full">
+            <div className="rounded-3xl bg-card/60 backdrop-blur-md border border-red-500/30 p-6 flex flex-col">
+              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2 text-red-400"><ShieldAlert className="w-7 h-7 animate-pulse" /> Em Andamento ({ativas.length})</h3>
+              <ul className="space-y-2 overflow-hidden flex-1">
+                {ativas.length === 0 && <li className="h-full flex items-center justify-center text-2xl text-muted-foreground">Nenhuma</li>}
+                {ativas.slice(0, 10).map((c, i) => <Row key={c.id} c={c} i={i} color="border-red-500/30" />)}
+              </ul>
+            </div>
+            <div className="rounded-3xl bg-card/60 backdrop-blur-md border border-emerald-500/30 p-6 flex flex-col">
+              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2 text-emerald-400"><CheckCircle2 className="w-7 h-7" /> Finalizadas ({finalizadas.length})</h3>
+              <ul className="space-y-2 overflow-hidden flex-1">
+                {finalizadas.length === 0 && <li className="h-full flex items-center justify-center text-2xl text-muted-foreground">Nenhuma</li>}
+                {finalizadas.slice(0, 10).map((c, i) => <Row key={c.id} c={c} i={i} color="border-emerald-500/30" />)}
+              </ul>
+            </div>
           </div>
         );
+      }
       case "consumiveis":
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">

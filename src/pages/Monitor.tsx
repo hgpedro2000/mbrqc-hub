@@ -444,8 +444,8 @@ const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number 
           {current.map((p, i) => (
             <li key={`${idx}-${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
               <div className="min-w-0">
-                <SplitFlapText value={p.part_number} size={16} maxChars={18} className="font-mono" />
-                {p.part_name && <div className="mt-1"><SplitFlapText value={p.part_name} size={11} maxChars={28} className="text-muted-foreground" /></div>}
+                <SplitFlapText value={p.part_number} size={26} maxChars={16} className="font-mono" />
+                {p.part_name && <div className="mt-1.5"><SplitFlapText value={p.part_name} size={18} maxChars={26} className="text-muted-foreground" /></div>}
               </div>
               <SplitFlapNumber value={p.qty} size={qtySize} />
             </li>
@@ -1103,10 +1103,10 @@ const Monitor = () => {
                 {suppliers.map((sup, si) => (
                   <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 pb-8 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
-                      <SplitFlapText value={sup.fornecedor} size={20} maxChars={22} className="text-cyan-300 font-bold" />
-                      <SplitFlapNumber value={sup.total} size={isV2 ? 40 : 44} />
+                      <SplitFlapText value={sup.fornecedor} size={32} maxChars={18} className="text-cyan-300 font-bold" />
+                      <SplitFlapNumber value={sup.total} size={isV2 ? 44 : 48} />
                     </div>
-                    <RotatingParts parts={sup.parts} qtySize={isV2 ? 22 : 26} />
+                    <RotatingParts parts={sup.parts} qtySize={26} />
                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
                   </div>
                 ))}

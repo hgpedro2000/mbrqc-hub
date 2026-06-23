@@ -241,7 +241,7 @@ const ConsultaPecas = () => {
               type="button"
               variant="default"
               className="h-12 shrink-0 gap-2 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hidden sm:flex"
-              onClick={() => window.open("/spec-switch-panel", "_blank", "noopener")}
+              onClick={() => window.open("/spec-switch-panel", "_blank")}
               title="Validar Painel × Switch (nova aba)"
             >
               <ShieldCheck className="w-5 h-5" />

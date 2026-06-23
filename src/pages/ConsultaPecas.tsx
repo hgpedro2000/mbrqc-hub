@@ -23,22 +23,9 @@ const ConsultaPecas = () => {
   const [specDialogOpen, setSpecDialogOpen] = useState(false);
   const [specPart, setSpecPart] = useState<any>(null);
 
-  // Scanner state
-  const [typeChooserOpen, setTypeChooserOpen] = useState(false);
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
-  const [selectedScanType, setSelectedScanType] = useState<"qrcode" | "barcode" | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  const hasScanned = useRef(false);
-  const cameraInputRef = useRef<HTMLInputElement | null>(null);
-  const galleryInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Incompatible dialog
-  const [incompatibleOpen, setIncompatibleOpen] = useState(false);
-  const [rawQR, setRawQR] = useState("");
-  const [sending, setSending] = useState(false);
-  const [reportSent, setReportSent] = useState(false);
+  // Scanner refs (reuse Apontamento incoming logic)
+  const qrScannerSearchRef = useRef<QRScannerButtonHandle | null>(null);
+  const qrScannerCheckRef = useRef<QRScannerButtonHandle | null>(null);
 
   // Suffix picker
   const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);

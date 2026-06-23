@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.1', 'patch', 'Destaque para ALC Code cadastrado', 'Peças com ALC Code diferente de N/A agora aparecem com badge laranja e linha levemente destacada na lista de Consulta de Peças.');

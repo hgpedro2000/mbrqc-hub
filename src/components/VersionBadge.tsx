@@ -87,9 +87,10 @@ const VersionBadge = () => {
               <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma versão registrada ainda.</div>
             ) : (
               <ol className="space-y-3 py-2">
-                {entries.map((e) => {
+                {entries.map((e, idx) => {
                   const meta = CHANGE_TYPE_META[e.change_type] ?? CHANGE_TYPE_META.patch;
-                  const isCurrent = e.version === clientVersion;
+                  const hasExact = entries.some((x) => x.version === clientVersion);
+                  const isCurrent = hasExact ? e.version === clientVersion : idx === 0;
                   return (
                     <li
                       key={e.id}

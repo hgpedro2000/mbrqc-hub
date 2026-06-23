@@ -287,22 +287,6 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
           <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
             {/* ======= GERAL ======= */}
             <TabsContent value="geral" className="mt-0 space-y-5">
-              <Section title="Perfil do Monitor">
-                <div className="flex gap-2 flex-wrap">
-                  <ChoiceCard
-                    active={(prefs.profile ?? "default") === "default"}
-                    onClick={() => setPrefs((p) => ({ ...p, profile: "default" }))}
-                    title="Padrão"
-                    desc="Layout original com slides essenciais"
-                  />
-                  <ChoiceCard
-                    active={prefs.profile === "v2"}
-                    onClick={() => setPrefs((p) => ({ ...p, profile: "v2" }))}
-                    title="V2 — Detalhado"
-                    desc="Versão completa com Rate, Inspeção, Comunicados…"
-                  />
-                </div>
-              </Section>
 
               <Section title="Tema">
                 <div className="flex gap-2 flex-wrap">

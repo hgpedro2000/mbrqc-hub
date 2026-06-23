@@ -969,6 +969,7 @@ const ApontamentoForm = () => {
 
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
+      if (quantidadeInspecionada > 1000) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada acima do limite (máx. 1000) — faça um novo apontamento para o excedente"); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }

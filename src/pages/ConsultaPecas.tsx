@@ -222,6 +222,25 @@ const ConsultaPecas = () => {
             </Button>
             <Button
               type="button"
+              variant="outline"
+              className="h-12 shrink-0 gap-2 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 hidden sm:flex"
+              onClick={() => setHkmcOpen(true)}
+              title="Barcode Scanner H/KMC"
+            >
+              <Barcode className="w-5 h-5" />
+              <span className="font-semibold">H/KMC</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Barcode Scanner H/KMC"
+              className="h-12 w-12 shrink-0 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 sm:hidden"
+              onClick={() => setHkmcOpen(true)}
+            >
+              <Barcode className="w-5 h-5" />
+            <Button
+              type="button"
               variant="default"
               className="h-12 shrink-0 gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md hidden sm:flex"
               onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}

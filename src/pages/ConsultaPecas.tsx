@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash } from "lucide-react";
+import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

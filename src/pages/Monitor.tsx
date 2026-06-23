@@ -260,7 +260,9 @@ const Monitor = () => {
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
 
   // Auto-enter fullscreen on mount; if the browser blocks it (no gesture), show a one-tap prompt.
+  // Skipped in preview-embed mode.
   useEffect(() => {
+    if (isPreviewMode) return;
     if (autoFsTried.current) return;
     autoFsTried.current = true;
     const tryFs = async () => {
@@ -271,7 +273,7 @@ const Monitor = () => {
       }
     };
     tryFs();
-  }, []);
+  }, [isPreviewMode]);
 
   useEffect(() => {
     if (isFs) setNeedsFsGesture(false);

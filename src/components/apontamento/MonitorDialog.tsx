@@ -52,6 +52,8 @@ export interface MonitorBlockSetting {
   inspSuppliersPerSlide?: number;
   /** Used by "inspecionado": how many part lines per rotation group (1–6). */
   inspPartsPerGroup?: number;
+  /** Used by "inspecionado": font scale multiplier (0.6 – 1.6). */
+  inspFontScale?: number;
 }
 
 export interface MonitorPreferences {

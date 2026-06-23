@@ -465,18 +465,30 @@ const RotatingParts = ({
     return () => cancelAnimationFrame(id);
   }, [phase, idx]);
 
-  // Rotation timer.
+  // Rotation timer — count `interval` ms AFTER the split-flap finishes settling
+  // on the new group, so users always get a guaranteed reading window.
   useEffect(() => {
     if (total <= 1) return;
-    const tick = window.setInterval(() => {
+    if (phase !== "visible") return;
+    const currentGroup = groups[idx] || [];
+    const maxChars = currentGroup.reduce((m, p) => {
+      const a = (p.part_number || "").length;
+      const b = (p.part_name || "").length;
+      const c = String(p.qty ?? "").length;
+      return Math.max(m, a, b, c);
+    }, 1);
+    // Settle ≈ longest cascade + a few flap half-flips for the path.
+    const settleMs = maxChars * FLAP_CASCADE_MS + flapHalfMs() * 2 * 5;
+    const totalDelay = settleMs + interval;
+    const startExit = window.setTimeout(() => {
       setPhase("exit");
       window.setTimeout(() => {
         setIdx((i) => (i + 1) % total);
         setPhase("enter");
       }, 400);
-    }, interval);
-    return () => clearInterval(tick);
-  }, [total, interval]);
+    }, totalDelay);
+    return () => clearTimeout(startExit);
+  }, [total, interval, phase, idx, groups]);
 
   const current = groups[idx] || [];
   const cls =

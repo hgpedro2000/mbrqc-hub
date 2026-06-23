@@ -24,8 +24,7 @@ const ConsultaPecas = () => {
   const [specPart, setSpecPart] = useState<any>(null);
 
   // Scanner refs (reuse Apontamento incoming logic)
-  const qrScannerSearchRef = useRef<QRScannerButtonHandle | null>(null);
-  const qrScannerCheckRef = useRef<QRScannerButtonHandle | null>(null);
+  const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
 
   // Suffix picker
   const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);
@@ -215,7 +214,7 @@ const ConsultaPecas = () => {
               size="icon"
               title="Buscar por QR / Código de Barras"
               className="h-12 w-12 shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10"
-              onClick={() => { setScanMode("search"); qrScannerSearchRef.current?.openScanner(); }}
+              onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
             >
               <QrCode className="w-5 h-5" />
             </Button>
@@ -223,7 +222,7 @@ const ConsultaPecas = () => {
               type="button"
               variant="default"
               className="h-12 shrink-0 gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md hidden sm:flex"
-              onClick={() => { setScanMode("check"); qrScannerCheckRef.current?.openScanner(); }}
+              onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
             >
               <ScanSearch className="w-5 h-5" />
               <span className="font-semibold">Checar SPEC/ALC</span>
@@ -234,7 +233,7 @@ const ConsultaPecas = () => {
               size="icon"
               title="Checar SPEC/ALC"
               className="h-12 w-12 shrink-0 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md sm:hidden"
-              onClick={() => { setScanMode("check"); qrScannerCheckRef.current?.openScanner(); }}
+              onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
             >
               <ScanSearch className="w-5 h-5" />
             </Button>
@@ -282,8 +281,7 @@ const ConsultaPecas = () => {
 
       {/* Scanners ocultos — reaproveitam toda a lógica do Apontamento (Incoming) */}
       <div className="hidden">
-        <QRScannerButton ref={qrScannerSearchRef} onScan={handleQRScan} />
-        <QRScannerButton ref={qrScannerCheckRef} onScan={handleQRScan} />
+        <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
       </div>
 
 
@@ -434,7 +432,7 @@ const ConsultaPecas = () => {
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setScanMode("check");
-                    qrScannerCheckRef.current?.openScanner();
+                    qrScannerRef.current?.openScanner();
                   }}
                 >
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra

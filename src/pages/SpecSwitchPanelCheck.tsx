@@ -216,9 +216,21 @@ export default function SpecSwitchPanelCheck() {
   const reset = useCallback(() => {
     setPanelRaw("");
     setSwitchRaw("");
+    setValidated(false);
     lastLoggedRef.current = "";
     setTimeout(() => panelRef.current?.focus(), 50);
   }, []);
+
+  const handleValidate = useCallback(() => {
+    if (isValidating) return;
+    setIsValidating(true);
+    panelRef.current?.blur();
+    switchRef.current?.blur();
+    setTimeout(() => {
+      setIsValidating(false);
+      setValidated(true);
+    }, 350);
+  }, [isValidating]);
 
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {

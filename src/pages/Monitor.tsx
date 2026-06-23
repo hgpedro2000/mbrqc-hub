@@ -404,7 +404,7 @@ export const SplitFlapText = ({
 
 // --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
 type InspPart = { part_number: string; part_name: string; qty: number };
-const RotatingParts = ({ parts, qtySize, perGroup = 2 }: { parts: InspPart[]; qtySize: number; perGroup?: number }) => {
+const RotatingParts = ({ parts, qtySize, perGroup = 2, fontScale = 1 }: { parts: InspPart[]; qtySize: number; perGroup?: number; fontScale?: number }) => {
   const groups = useMemo(() => {
     const step = Math.max(1, perGroup);
     const out: InspPart[][] = [];

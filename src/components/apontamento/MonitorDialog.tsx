@@ -533,6 +533,13 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                     </div>
                   </div>
 
+                  {b.id === "ultimos_defeitos" && (
+                    <UltimosDefeitosExtras
+                      setting={s}
+                      onChange={(patch) => setBlockSetting(b.id, patch)}
+                    />
+                  )}
+
                   <SlidePreview
                     blockId={b.id}
                     emoji={b.emoji}

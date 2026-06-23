@@ -488,8 +488,8 @@ export default function SpecSwitchPanelCheck() {
             </div>
           )}
 
-          {/* Botões LIMPAR / VALIDAR */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-200">
+          {/* Botões LIMPAR / NOVA LEITURA / VALIDAR */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-200">
             <button
               type="button"
               onClick={reset}
@@ -497,6 +497,14 @@ export default function SpecSwitchPanelCheck() {
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               LIMPAR
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              disabled={isValidating}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" /> NOVA LEITURA
             </button>
             <button
               type="button"

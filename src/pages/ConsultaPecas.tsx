@@ -507,10 +507,11 @@ const ConsultaPecas = () => {
 
 
               {/* Footer */}
-              <div className="px-5 py-3 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
+              <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
-                  className="flex-1 min-h-[44px]"
+                  size="sm"
+                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm"
                   onClick={() => {
                     setSearchTerm(specPart.part_number);
                     setSpecDialogOpen(false);
@@ -519,7 +520,8 @@ const ConsultaPecas = () => {
                   <Search className="w-4 h-4 mr-2" /> Ver na lista
                 </Button>
                 <Button
-                  className="flex-1 min-h-[44px] bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                  size="sm"
+                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setTimeout(() => openSpecScanner(), 150);
@@ -528,6 +530,7 @@ const ConsultaPecas = () => {
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra
                 </Button>
               </div>
+
             </div>
           )}
         </DialogContent>

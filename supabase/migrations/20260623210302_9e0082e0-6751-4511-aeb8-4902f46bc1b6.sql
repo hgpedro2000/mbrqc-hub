@@ -1,0 +1,2 @@
+INSERT INTO public.app_changelog (version, change_type, title, description)
+VALUES ('1.2.7.3', 'patch', 'SPEC: leitura QR completa por campo', 'Validação PANEL x Switch aguarda QR Hyundai completo antes de trocar de campo ou validar, evitando dividir a leitura entre as duas linhas.');

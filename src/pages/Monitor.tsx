@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // persistence). It must NOT import the main `supabase` client nor any auth
 // listener/hook — the monitor session is independent of the main app login.
 import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
-import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock } from "@/components/apontamento/MonitorDialog";
+import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig } from "@/components/apontamento/MonitorDialog";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
@@ -226,9 +226,8 @@ const Monitor = () => {
   }, []);
 
   const systemReducedMotion = useReducedMotion();
-  const animationsEnabled = prefs.animationsEnabled ?? true;
-  const reducedMotion = systemReducedMotion || !animationsEnabled;
-  const slideDurationMs = prefs.slideDurationMs ?? DEFAULT_slideDurationMs;
+  const globalAnimationsEnabled = prefs.animationsEnabled ?? true;
+  const globalSlideDurationMs = prefs.slideDurationMs ?? DEFAULT_slideDurationMs;
 
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
   const navigate = useNavigate();
@@ -452,6 +451,12 @@ const Monitor = () => {
   const currentBlock = blocks[safeIdx];
   const nextBlock = blocks.length ? blocks[(safeIdx + 1) % blocks.length] : undefined;
 
+  // Per-slide effective config (duration + animations override globals)
+  const { durationMs: slideDurationMs, animations: blockAnimations } = currentBlock
+    ? getBlockSlideConfig(prefs, currentBlock)
+    : { durationMs: globalSlideDurationMs, animations: globalAnimationsEnabled };
+  const reducedMotion = systemReducedMotion || !blockAnimations;
+
   // Pause slideshow when modal/settings open
   const isPaused = paused || !!photoSource || showSettings;
 
@@ -462,7 +467,7 @@ const Monitor = () => {
       setSlideIdx((i) => (i + 1) % blocks.length);
     }, slideDurationMs);
     return () => clearInterval(id);
-  }, [isPaused, blocks.length]);
+  }, [isPaused, blocks.length, slideDurationMs]);
 
   const goPrev = () => { setDirection(-1); setSlideIdx((i) => (i - 1 + blocks.length) % blocks.length); };
   const goNext = () => { setDirection(1); setSlideIdx((i) => (i + 1) % blocks.length); };

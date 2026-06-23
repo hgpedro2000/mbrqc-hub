@@ -56,26 +56,26 @@ test.describe("SplitFlapDigit", () => {
   });
 
   test("rapid navigation keeps animating and ends on final value", async ({ page }) => {
-    const samples: number[][] = [];
-    samples.push(await readTransforms(page));
+    const initial = await readTransforms(page);
+    const samples: number[][] = [initial];
 
-    // 8 rapid clicks (~30 ms apart) to simulate fast navigation.
+    // 8 rapid +1 clicks (~30 ms apart). Value stays single-digit (0 → 8) so
+    // the units digit must visibly roll through several positions.
     for (let i = 0; i < 8; i++) {
-      await page.getByTestId("add10").click();
+      await page.getByTestId("inc").click();
       await page.waitForTimeout(30);
       samples.push(await readTransforms(page));
     }
 
-    // Wait for everything to settle.
     await page.waitForTimeout(800);
     const final = await readTransforms(page);
 
-    // Final transform must differ from the initial one on at least one digit.
-    expect(final.some((v, i) => v !== samples[0][i])).toBe(true);
+    // Units digit (last entry) must have moved away from its initial value.
+    expect(final[final.length - 1]).not.toBe(initial[initial.length - 1]);
 
-    // Across the rapid sequence, the transform of the units digit (last span)
-    // must have changed at least 3 distinct values — proving the roll keeps
-    // animating frame-by-frame, not snapping to the end.
+    // Across the rapid sequence, the units-digit transform must take at
+    // least 3 distinct values — proves the roll keeps animating rather than
+    // snapping straight to the end.
     const lastDigitSeries = samples.map((s) => s[s.length - 1]);
     const distinct = new Set(lastDigitSeries.map((v) => v.toFixed(2)));
     expect(
@@ -83,7 +83,8 @@ test.describe("SplitFlapDigit", () => {
       `expected the units digit to move through multiple positions, saw=${[...distinct]}`
     ).toBeGreaterThanOrEqual(3);
 
-    // The harness shows "value=80" after 8 clicks of +10.
-    await expect(page.getByTestId("current-value")).toHaveText("value=80");
+    // After 8 clicks of +1 the harness displays value=8.
+    await expect(page.getByTestId("current-value")).toHaveText("value=8");
   });
 });
+

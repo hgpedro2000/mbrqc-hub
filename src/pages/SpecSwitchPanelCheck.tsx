@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Clock, RotateCcw, Upload, Database, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Clock, RotateCcw, Upload, Database, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import * as XLSX from "xlsx";
@@ -97,11 +98,14 @@ function loadDb(): DbRow[] {
 }
 
 export default function SpecSwitchPanelCheck() {
+  const navigate = useNavigate();
   const [db, setDb] = useState<DbRow[]>(() => loadDb());
   const [panelRaw, setPanelRaw] = useState("");
   const [switchRaw, setSwitchRaw] = useState("");
   const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [showDb, setShowDb] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validated, setValidated] = useState(false);
   const panelRef = useRef<HTMLInputElement>(null);
   const switchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -110,6 +114,9 @@ export default function SpecSwitchPanelCheck() {
   useEffect(() => {
     panelRef.current?.focus();
   }, []);
+
+  // Reset validation flag when inputs change
+  useEffect(() => { setValidated(false); }, [panelRaw, switchRaw]);
 
   // Build prefix sets from current DB (first 5 chars of each PN)
   const { panelPrefixes, switchPrefixes } = useMemo(() => {
@@ -209,9 +216,21 @@ export default function SpecSwitchPanelCheck() {
   const reset = useCallback(() => {
     setPanelRaw("");
     setSwitchRaw("");
+    setValidated(false);
     lastLoggedRef.current = "";
     setTimeout(() => panelRef.current?.focus(), 50);
   }, []);
+
+  const handleValidate = useCallback(() => {
+    if (isValidating) return;
+    setIsValidating(true);
+    panelRef.current?.blur();
+    switchRef.current?.blur();
+    setTimeout(() => {
+      setIsValidating(false);
+      setValidated(true);
+    }, 350);
+  }, [isValidating]);
 
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {
@@ -291,8 +310,8 @@ export default function SpecSwitchPanelCheck() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => window.close()} className="text-slate-300 hover:text-white">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Fechar
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-slate-300 hover:text-white">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Button>
           <h1 className="text-xl md:text-2xl font-bold tracking-wide">VALIDAÇÃO SPEC — PAINEL × SWITCH</h1>
           <div className="flex gap-2">
@@ -332,8 +351,8 @@ export default function SpecSwitchPanelCheck() {
 
         <div className="bg-slate-100 text-slate-900 rounded-lg overflow-hidden shadow-2xl border-2 border-slate-400">
           {/* QR PAINEL */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR PAINEL</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">QR PAINEL</div>
             <div className="p-2 flex items-center gap-2">
               <input
                 ref={panelRef}
@@ -348,8 +367,8 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* QR SWITCH */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR SWITCH</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">QR SWITCH</div>
             <div className="p-2 flex items-center gap-2">
               <input
                 ref={switchRef}
@@ -364,32 +383,32 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* PAINEL EXTRAIDO */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
             <div className="p-3 font-mono text-lg">
               {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* SWITCH EXTRAIDO */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
             <div className="p-3 font-mono text-lg">
               {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* ALC CODE */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">ALC CODE</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
             <div className="p-3 font-mono text-xl font-bold">
               {result.alc || <span className="text-slate-400 font-normal text-base">—</span>}
             </div>
           </div>
 
           {/* RESULTADO */}
-          <div className={`grid grid-cols-[160px_1fr] border-b-2 border-slate-400 ${p.bg} ${p.text}`}>
-            <div className="bg-black/20 p-3 font-bold border-r-2 border-slate-400 flex items-center">RESULTADO</div>
+          <div className={`grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400 ${p.bg} ${p.text}`}>
+            <div className="bg-black/20 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">RESULTADO</div>
             <div className="p-4 flex items-center gap-4">
               <div className="shrink-0">{p.icon}</div>
               <div className="text-3xl md:text-4xl font-black tracking-tight">{p.label}</div>
@@ -397,15 +416,15 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* MENSAGEM */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
             <div className="p-3 text-base">{result.message}</div>
           </div>
 
           {/* Detalhes esperados quando divergência */}
           {(result.status === "alc_diff" || result.status === "not_found") && result.expectedRows.length > 0 && (
-            <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-              <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+              <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
               <div className="p-3 overflow-x-auto">
                 <table className="w-full text-sm font-mono">
                   <thead className="text-xs text-slate-600">
@@ -426,20 +445,38 @@ export default function SpecSwitchPanelCheck() {
           )}
 
           {/* Botões LIMPAR / VALIDAR */}
-          <div className="grid grid-cols-2 gap-3 p-4 bg-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-200">
             <button
               type="button"
               onClick={reset}
-              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+              disabled={isValidating}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               LIMPAR
             </button>
             <button
               type="button"
-              onClick={() => { switchRef.current?.blur(); panelRef.current?.blur(); }}
-              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+              onClick={handleValidate}
+              disabled={isValidating || (!panelRaw && !switchRaw)}
+              className={`py-3 border-2 rounded font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isValidating
+                  ? "bg-blue-100 border-blue-400 text-blue-800"
+                  : validated && result.status === "ok"
+                  ? "bg-emerald-100 border-emerald-500 text-emerald-800"
+                  : validated && (result.status === "alc_diff" || result.status === "not_found" || result.status === "parse_error")
+                  ? "bg-red-100 border-red-500 text-red-800"
+                  : "bg-white border-slate-400 text-slate-800 hover:bg-slate-50"
+              }`}
             >
-              VALIDAR
+              {isValidating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> VALIDANDO...</>
+              ) : validated && result.status === "ok" ? (
+                <><CheckCircle2 className="w-4 h-4" /> VÁLIDO</>
+              ) : validated && result.status !== "waiting" ? (
+                <><XCircle className="w-4 h-4" /> INVÁLIDO</>
+              ) : (
+                "VALIDAR"
+              )}
             </button>
           </div>
         </div>

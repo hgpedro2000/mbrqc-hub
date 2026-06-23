@@ -48,14 +48,17 @@ const periodRange = (p: MonitorPreferences): { start: Date; end?: Date } => {
 const fmtNum = (n: number) => new Intl.NumberFormat("pt-BR").format(n);
 
 const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: string; gradient: string }> = {
-  summary:    { title: "Resumo do Período",       icon: TrendingUp,   accent: "text-primary",     gradient: "from-blue-500/20 via-transparent to-purple-500/20" },
-  recent:     { title: "Últimos Registros",       icon: ListChecks,   accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-blue-500/20" },
-  alerts:     { title: "Alertas Vigentes",        icon: AlertTriangle,accent: "text-amber-500",  gradient: "from-amber-500/25 via-transparent to-orange-500/20" },
-  contencao:  { title: "Contenções Ativas",       icon: ShieldAlert,  accent: "text-red-500",     gradient: "from-red-500/25 via-transparent to-rose-500/20" },
-  consumiveis:{ title: "Consumíveis Críticos",    icon: Package,      accent: "text-orange-500",  gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
-  ranking:    { title: "Ranking de Fornecedores", icon: Trophy,       accent: "text-yellow-500",  gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
-  defects:    { title: "Gráfico de Defeitos",     icon: BarChart3,    accent: "text-destructive", gradient: "from-red-500/20 via-transparent to-pink-500/20" },
-  inspecionado:{ title: "Quantidade Inspecionada", icon: Package,     accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
+  summary:        { title: "Resumo do Período",                  icon: TrendingUp,    accent: "text-primary",      gradient: "from-blue-500/20 via-transparent to-purple-500/20" },
+  recent:         { title: "Últimos Lançamentos",                 icon: ListChecks,    accent: "text-cyan-400",     gradient: "from-cyan-500/20 via-transparent to-blue-500/20" },
+  alerts:         { title: "Alertas de Qualidade",                icon: AlertTriangle, accent: "text-amber-500",    gradient: "from-amber-500/25 via-transparent to-orange-500/20" },
+  contencao:      { title: "Contenções",                          icon: ShieldAlert,   accent: "text-red-500",      gradient: "from-red-500/25 via-transparent to-rose-500/20" },
+  consumiveis:    { title: "Consumíveis Críticos",                icon: Package,       accent: "text-orange-500",   gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
+  ranking:        { title: "Performance de Fornecedores",         icon: Trophy,        accent: "text-yellow-500",   gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
+  defects:        { title: "Principais Modos de Falhas Detectados", icon: BarChart3,   accent: "text-destructive",  gradient: "from-red-500/20 via-transparent to-pink-500/20" },
+  inspecionado:   { title: "Monitoramento de Inspeção",           icon: Package,       accent: "text-cyan-400",     gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
+  comunicados:    { title: "Comunicados",                         icon: Megaphone,     accent: "text-sky-400",      gradient: "from-sky-500/20 via-transparent to-indigo-500/20" },
+  alteracoes_4m:  { title: "Alterações 4M/EO e Validações",       icon: Wrench,        accent: "text-violet-400",   gradient: "from-violet-500/20 via-transparent to-fuchsia-500/20" },
+  ultimos_defeitos:{ title: "Últimos Defeitos Detectados",        icon: Microscope,    accent: "text-rose-400",     gradient: "from-rose-500/20 via-transparent to-red-500/20" },
 };
 
 // --- Hooks ---

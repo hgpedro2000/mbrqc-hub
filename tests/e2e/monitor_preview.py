@@ -1,21 +1,20 @@
 """
 E2E validation for the per-slide PREVIEW inside "Configurar Monitor".
 
-Checks, on a desktop viewport (1440x900):
-  1. Open /apontamentos and trigger the Monitor config dialog.
-  2. Switch to the Slides tab, enable a known slide (Resumo), then open
-     its per-slide tab.
-  3. Assert the "Pré-visualização" card is rendered with:
-        - emoji + title visible
-        - progress bar element present
-        - "X.Xs restantes" countdown text
-  4. Change the per-slide duration via the <select> and confirm the
-     preview restarts (countdown re-reads the new value and the runKey
-     changes — we detect this by reading the "restantes" text before
-     and after).
-  5. Click "Repetir" and confirm the countdown restarts (remaining
-     value resets close to full duration).
-  6. Screenshot evidence at each step.
+Runs against the PUBLIC /monitor page (no MFA gate) which embeds the same
+MonitorDialog. Uses Playwright locators (real pointer events) because
+Radix Tabs reacts to pointerdown, not synthetic .click().
+
+Steps:
+  1. Open /monitor and click the "Configurações do monitor" button.
+  2. Switch to the Slides tab, ensure Resumo is enabled, open its
+     per-slide tab.
+  3. Assert the "Pré-visualização" card is rendered with a live
+     countdown ("Xs restantes").
+  4. Wait → confirm countdown ticks down.
+  5. Click "Repetir" → confirm countdown resets.
+  6. Change slide duration → confirm preview restarts at the new value.
+  7. Confirm a progress bar with a CSS width transition exists.
 
 Run:
     python3 tests/e2e/monitor_preview.py
@@ -55,19 +54,6 @@ async def read_remaining(page) -> float | None:
     return float(m.group(1)) if m else None
 
 
-async def click_text(page, scope: str, text: str) -> bool:
-    return await page.evaluate(
-        """({sel, t}) => {
-            const root = document.querySelector(sel) || document;
-            const el = [...root.querySelectorAll('button, [role="tab"]')]
-                .find(e => (e.textContent || '').trim().includes(t));
-            if (el) { el.click(); return true; }
-            return false;
-        }""",
-        {"sel": scope, "t": text},
-    )
-
-
 async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -76,85 +62,59 @@ async def main():
         failures = []
         try:
             if not await restore_session(page):
-                print("✗ no Lovable session env — cannot run authenticated E2E")
+                print("✗ no Lovable session env — cannot run E2E")
                 sys.exit(2)
 
-            # Use the PUBLIC /monitor page (no MFA gate) — it embeds the same
-            # MonitorDialog. We open it by clicking the aria-labelled
-            # "Configurações do monitor" button (always in the DOM, just
-            # opacity-0 until hover; we click it directly).
             await page.goto(f"{BASE}/monitor", wait_until="domcontentloaded")
-            await page.wait_for_timeout(800)
+            await page.wait_for_timeout(1000)
             await page.screenshot(path=str(OUT / "1_monitor.png"))
 
-            opened = await page.evaluate(
-                """() => {
-                    const b = document.querySelector('button[aria-label="Configurações do monitor"]')
-                        || [...document.querySelectorAll('button')].find(x => /Configurar/.test(x.textContent || ''));
-                    if (b) { b.click(); return true; }
-                    return false;
-                }"""
-            )
-            assert opened, "could not open Monitor config dialog from /monitor"
+            await page.locator('button[aria-label="Configurações do monitor"]').click(force=True)
             await page.wait_for_selector('[role="dialog"]', timeout=4000)
             await page.screenshot(path=str(OUT / "2_dialog_open.png"))
 
-            # Make sure "Resumo" slide is enabled (it is by default), then open its tab.
-            assert await click_text(page, '[role="dialog"]', "Slides"), "Slides tab missing"
-            await page.wait_for_timeout(200)
-            # Click "Resumo" tile if it's not already selected — toggling a selected
-            # slide would disable it, so only click if no Check icon is present.
-            await page.evaluate(
-                """() => {
-                    const btn = [...document.querySelectorAll('[role="dialog"] button')]
-                        .find(b => /Resumo/.test(b.textContent || '') && /Total de registros/.test(b.textContent || ''));
-                    if (btn && !btn.querySelector('svg.lucide-check')) btn.click();
-                }"""
-            )
+            # Open Slides master list and make sure Resumo is enabled.
+            await page.locator('[role="tab"]:has-text("Slides")').click()
             await page.wait_for_timeout(150)
+            # If Resumo tile has no Check icon, click it to enable.
+            tile = page.locator('[role="dialog"] button:has-text("Resumo"):has-text("Total de registros")')
+            try:
+                already = await tile.locator('svg.lucide-check').count() > 0
+                if not already:
+                    await tile.click()
+            except Exception:
+                pass
 
-            # Open the per-slide tab "Resumo"
-            assert await click_text(page, '[role="dialog"]', "Resumo"), "Resumo per-slide tab not found"
+            # Open per-slide Resumo tab.
+            await page.locator('[role="tab"]:has-text("Resumo")').click()
             await page.wait_for_timeout(300)
             await page.screenshot(path=str(OUT / "3_resumo_tab.png"))
 
-            # --- Preview presence ---
-            has_preview = await page.evaluate(
-                """() => !!([...document.querySelectorAll('[role="dialog"] *')]
-                        .find(e => /Pré-visualização/i.test(e.textContent || '') && e.children.length === 0))"""
-            )
+            # --- 1) Preview present ---
+            has_preview = await page.locator('[role="dialog"]:has-text("Pré-visualização")').count() > 0
             assert has_preview, "Pré-visualização card not rendered"
             r0 = await read_remaining(page)
-            assert r0 is not None and r0 > 0, f"countdown not active (got {r0})"
+            assert r0 and r0 > 0, f"countdown not active (got {r0})"
             print(f"✓ preview rendered, initial countdown = {r0:.1f}s")
 
-            # --- Countdown actually ticks down ---
-            await page.wait_for_timeout(1500)
+            # --- 2) Countdown ticks down ---
+            await page.wait_for_timeout(1600)
             r1 = await read_remaining(page)
-            assert r1 is not None and r1 < r0, f"countdown not decreasing ({r0} → {r1})"
-            print(f"✓ countdown is ticking ({r0:.1f}s → {r1:.1f}s)")
+            assert r1 is not None and r1 < r0 - 0.5, f"countdown not decreasing ({r0} → {r1})"
+            print(f"✓ countdown ticking ({r0:.1f}s → {r1:.1f}s)")
 
-            # --- Repetir resets the countdown ---
-            clicked = await page.evaluate(
-                """() => {
-                    const b = [...document.querySelectorAll('[role="dialog"] button')]
-                        .find(x => /Repetir/.test(x.textContent || ''));
-                    if (b) { b.click(); return true; }
-                    return false;
-                }"""
-            )
-            assert clicked, "Repetir button not found"
-            await page.wait_for_timeout(200)
+            # --- 3) Repetir resets the countdown ---
+            await page.locator('[role="dialog"] button:has-text("Repetir")').click()
+            await page.wait_for_timeout(250)
             r2 = await read_remaining(page)
-            assert r2 is not None and r2 > r1, f"Repetir did not restart countdown ({r1} → {r2})"
+            assert r2 is not None and r2 > r1 + 0.5, f"Repetir did not restart countdown ({r1} → {r2})"
             print(f"✓ Repetir restarted countdown ({r1:.1f}s → {r2:.1f}s)")
             await page.screenshot(path=str(OUT / "4_after_repetir.png"))
 
-            # --- Changing duration auto-restarts the preview to the new value ---
+            # --- 4) Changing duration restarts the preview at new value ---
             await page.evaluate(
                 """() => {
                     const sel = document.querySelector('[role="dialog"] select');
-                    if (!sel) throw new Error('duration select not found');
                     sel.value = '30000';
                     sel.dispatchEvent(new Event('change', { bubbles: true }));
                 }"""
@@ -162,24 +122,23 @@ async def main():
             await page.wait_for_timeout(300)
             r3 = await read_remaining(page)
             assert r3 is not None and r3 > 20, f"duration change did not restart preview to ~30s (got {r3})"
-            print(f"✓ duration change restarted preview at {r3:.1f}s (≈ new 30s setting)")
+            print(f"✓ duration change restarted preview at {r3:.1f}s (≈ new 30s)")
             await page.screenshot(path=str(OUT / "5_duration_30s.png"))
 
-            # --- Progress bar element exists ---
+            # --- 5) Progress bar exists with width transition ---
             bar = await page.evaluate(
                 """() => {
                     const dlg = document.querySelector('[role="dialog"]');
-                    if (!dlg) return null;
                     const bar = dlg.querySelector('.bg-primary');
                     if (!bar) return null;
                     const r = bar.getBoundingClientRect();
-                    return { w: r.width, h: r.height, transition: getComputedStyle(bar).transition };
+                    return { h: r.height, transition: getComputedStyle(bar).transition };
                 }"""
             )
             assert bar and bar["h"] > 0 and "width" in bar["transition"], (
-                f"progress bar missing or not animating: {bar}"
+                f"progress bar missing/not animating: {bar}"
             )
-            print(f"✓ progress bar present with width transition ({bar['transition']})")
+            print(f"✓ progress bar present ({bar['transition']})")
 
             print("\nAll preview E2E checks passed.")
             print(f"Screenshots: {OUT}")

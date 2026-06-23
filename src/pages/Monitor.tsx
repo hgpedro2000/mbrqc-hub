@@ -585,13 +585,16 @@ const Monitor = () => {
                   <th className="text-right py-5 px-5">Insp.</th>
                   <th className="text-right py-5 px-5">OK</th>
                   <th className="text-right py-5 px-5">NG</th>
+                  {isV2 && <th className="text-right py-5 px-5">Rate Aprov.</th>}
                   <th className="text-right py-5 px-5">Hora</th>
                 </tr>
               </thead>
               <tbody>
-                {apontamentos.slice(0, 11).map((a, i) => {
+                {apontamentos.slice(0, isV2 ? 10 : 11).map((a, i) => {
                   const insp = a.quantidade_inspecionada || a.quantidade || 0;
                   const ok = a.quantidade_ok ?? Math.max(insp - (a.quantidade_ng || 0), 0);
+                  const rate = insp > 0 ? (ok / insp) * 100 : 0;
+                  const rateColor = rate >= 98 ? "text-emerald-400" : rate >= 90 ? "text-amber-400" : "text-red-500";
                   return (
                     <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
                       <td className="py-4 px-5 font-mono text-xl">{a.numero || "—"}</td>
@@ -601,12 +604,17 @@ const Monitor = () => {
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-cyan-300">{fmtNum(insp)}</td>
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-emerald-400">{fmtNum(ok)}</td>
                       <td className={cn("py-4 px-5 text-right font-black text-3xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
+                      {isV2 && (
+                        <td className={cn("py-4 px-5 text-right font-black text-2xl tabular-nums", rateColor)}>
+                          {insp > 0 ? `${rate.toFixed(1)}%` : "—"}
+                        </td>
+                      )}
                       <td className="py-4 px-5 text-right text-xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   );
                 })}
                 {apontamentos.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
+                  <tr><td colSpan={isV2 ? 9 : 8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
                 )}
               </tbody>
             </table>

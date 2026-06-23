@@ -281,7 +281,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                 </TabsTrigger>
               ))}
             </TabsList>
-            <ScrollBar orientation="horizontal" />
+            <ScrollBar orientation="horizontal" className="h-3 bg-muted/50 hover:bg-muted [&>div]:bg-primary/60 hover:[&>div]:bg-primary" />
           </ScrollArea>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
@@ -414,29 +414,67 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {BLOCK_OPTIONS.map((opt) => {
                   const active = prefs.blocks.includes(opt.id);
+                  const s = prefs.blockSettings?.[opt.id] ?? {};
+                  const effDur = s.durationMs ?? globalDur;
+                  const isOverride = s.durationMs !== undefined;
                   return (
-                    <button
+                    <div
                       key={opt.id}
-                      type="button"
-                      onClick={() => toggle(opt.id)}
                       className={cn(
-                        "text-left rounded-lg border p-3 transition-all duration-200 hover:scale-[1.01]",
+                        "text-left rounded-lg border p-3 transition-all duration-200",
                         active
                           ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm shadow-primary/20"
                           : "border-border bg-card hover:bg-muted/50",
                       )}
                     >
-                      <div className="flex items-start gap-2">
-                        <span className="text-xl leading-none">{opt.emoji}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm flex items-center gap-1.5">
-                            {opt.title}
-                            {active && <Check className="w-3.5 h-3.5 text-primary" />}
-                          </p>
-                          <p className="text-xs text-muted-foreground leading-snug">{opt.desc}</p>
+                      <button
+                        type="button"
+                        onClick={() => toggle(opt.id)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="text-xl leading-none">{opt.emoji}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm flex items-center gap-1.5">
+                              {opt.title}
+                              {active && <Check className="w-3.5 h-3.5 text-primary" />}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-snug">{opt.desc}</p>
+                          </div>
                         </div>
-                      </div>
-                    </button>
+                      </button>
+                      {active && (
+                        <div
+                          className="mt-2 pt-2 border-t border-border/60 flex items-center justify-between gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="text-[11px] text-muted-foreground">
+                            ⏱ Tempo {isOverride ? "(custom)" : "(global)"}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <select
+                              value={effDur}
+                              onChange={(e) => setBlockSetting(opt.id, { durationMs: Number(e.target.value) })}
+                              className="h-7 rounded-md border border-input bg-background px-1.5 text-xs"
+                            >
+                              {DURATION_OPTIONS.map((v) => (
+                                <option key={v} value={v}>{v / 1000}s</option>
+                              ))}
+                            </select>
+                            {isOverride && (
+                              <button
+                                type="button"
+                                onClick={() => setBlockSetting(opt.id, { durationMs: undefined })}
+                                className="text-[10px] text-muted-foreground hover:text-foreground px-1.5 py-1 rounded hover:bg-muted"
+                                title="Voltar ao padrão global"
+                              >
+                                ↺
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

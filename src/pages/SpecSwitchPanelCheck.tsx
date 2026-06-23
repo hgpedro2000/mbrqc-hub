@@ -264,18 +264,44 @@ export default function SpecSwitchPanelCheck() {
     handleValidate();
   }, [panelPn, switchPn, panelExtract.error, switchExtract.error, handleValidate]);
 
+  // Debounced field-jump: scanners that embed CR/LF inside the QR payload fire
+  // Enter mid-stream. We only jump when no more characters arrive for ~120ms,
+  // ensuring the entire QR ended up in the originating field.
+  const panelJumpTimer = useRef<number | null>(null);
+  const switchValidateTimer = useRef<number | null>(null);
+
+  const clearPanelJump = () => {
+    if (panelJumpTimer.current) {
+      window.clearTimeout(panelJumpTimer.current);
+      panelJumpTimer.current = null;
+    }
+  };
+  const clearSwitchValidate = () => {
+    if (switchValidateTimer.current) {
+      window.clearTimeout(switchValidateTimer.current);
+      switchValidateTimer.current = null;
+    }
+  };
+
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-      switchRef.current?.focus();
+      clearPanelJump();
+      panelJumpTimer.current = window.setTimeout(() => {
+        switchRef.current?.focus();
+      }, 120);
     }
   };
   const handleSwitchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleValidate();
+      clearSwitchValidate();
+      switchValidateTimer.current = window.setTimeout(() => {
+        handleValidate();
+      }, 120);
     }
   };
+
 
   /** Import CSV or Excel. Accepts columns SWITCH, PANEL, ALC CODE (any case, with spaces). */
   const handleImport = async (file: File) => {

@@ -981,6 +981,7 @@ const Monitor = () => {
         )}
 
         {/* Header */}
+        {!chromeOff && (
         <header className="relative z-10 flex items-center justify-between px-10 py-6 border-b border-border/40 backdrop-blur-md bg-background/40">
           <div className="flex items-center gap-5">
             {Icon && <Icon className={cn("w-14 h-14", meta!.accent)} />}

@@ -717,6 +717,27 @@ const InspecionadoExtras = ({
           <span>60%</span><span>100%</span><span>160%</span>
         </div>
       </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Velocidade do efeito aeroporto (split-flap)</p>
+            <p className="text-xs text-muted-foreground">Tempo de cada meio-giro. Menor = mais rápido.</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{flapSpeedMs}ms</span>
+        </div>
+        <input
+          type="range"
+          min={20}
+          max={250}
+          step={5}
+          value={flapSpeedMs}
+          onChange={(e) => onFlapSpeedChange(Number(e.target.value))}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>Rápido (20ms)</span><span>Padrão (70ms)</span><span>Lento (250ms)</span>
+        </div>
+      </div>
     </div>
   );
 };

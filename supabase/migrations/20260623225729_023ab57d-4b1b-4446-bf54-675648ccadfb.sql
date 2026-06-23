@@ -1,0 +1,2 @@
+INSERT INTO public.app_changelog (version, change_type, title, description)
+VALUES ('1.2.7.6', 'patch', 'SPEC: ALC do QR Painel e alinhamento', 'Validação PANEL x Switch passa a exibir o ALC extraído diretamente do QR do painel e centraliza verticalmente os campos extraídos.');

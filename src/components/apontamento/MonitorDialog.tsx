@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Moon, Sun, Settings2, Megaphone, Wrench, Check } from "lucide-react";
+import { Moon, Sun, Settings2, Megaphone, Wrench, Check, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 export type MonitorBlock =
   | "summary"
@@ -137,9 +138,26 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
   }, [open, initial]);
 
   // Auto-persist preferences (including per-slide overrides) so reloads keep them.
+  // Show a subtle toast confirming save, debounced so rapid changes only fire once.
+  const skipInitialSaveToast = useRef(true);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      skipInitialSaveToast.current = true;
+      return;
+    }
     savePrefs(prefs);
+    if (skipInitialSaveToast.current) {
+      skipInitialSaveToast.current = false;
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      toast.success("Configurações salvas", {
+        description: "Tempo e animação atualizados.",
+        duration: 1500,
+        id: "monitor-prefs-saved",
+      });
+    }, 400);
+    return () => window.clearTimeout(handle);
   }, [prefs, open]);
 
   const toggle = (id: MonitorBlock) => {
@@ -154,6 +172,19 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
       ...p,
       blockSettings: { ...(p.blockSettings ?? {}), [id]: { ...(p.blockSettings?.[id] ?? {}), ...patch } },
     }));
+  };
+
+  /** Remove all per-slide overrides for a block, falling back to global defaults. */
+  const resetBlock = (id: MonitorBlock) => {
+    setPrefs((p) => {
+      const next = { ...(p.blockSettings ?? {}) };
+      delete next[id];
+      return { ...p, blockSettings: next };
+    });
+    toast.success("Slide redefinido", {
+      description: "Voltou a usar o padrão global.",
+      duration: 1800,
+    });
   };
 
   const customValid = prefs.period !== "custom" || (!!prefs.customFrom && !!prefs.customTo && prefs.customFrom <= prefs.customTo);
@@ -398,12 +429,24 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
               const usingAnimOverride = s.animations !== undefined;
               return (
                 <TabsContent key={b.id} value={`b:${b.id}`} className="mt-0 space-y-4">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex flex-wrap items-start gap-3 p-3 rounded-lg border bg-card">
                     <span className="text-3xl leading-none">{b.emoji}</span>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-[140px]">
                       <p className="font-medium">{b.title}</p>
                       <p className="text-xs text-muted-foreground">{b.desc}</p>
                     </div>
+                    {(usingDurOverride || usingAnimOverride) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                        onClick={() => resetBlock(b.id)}
+                        title="Voltar a usar o tempo e animação globais"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Redefinir
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant={prefs.blocks.includes(b.id) ? "default" : "outline"}

@@ -606,6 +606,8 @@ const Monitor = () => {
   }, [isFs]);
 
   const exitMonitor = async () => {
+    const ok = window.confirm("Deseja realmente sair do Monitor? A janela será fechada.");
+    if (!ok) return;
     try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* noop */ }
     // Try to close the window/tab (works when opened via window.open)
     try { window.close(); } catch { /* noop */ }

@@ -370,10 +370,10 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
   );
 };
 
-export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS }: { value: number; size?: number; cascadeMs?: number }) => {
+export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS, gapPx = 2 }: { value: number; size?: number; cascadeMs?: number; gapPx?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-[2px] items-center align-middle" style={{ lineHeight: 1 }}>
+    <span className="inline-flex items-center align-middle" style={{ lineHeight: 1, gap: `${gapPx}px` }}>
       {str.split("").map((ch, i) => (
         <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
       ))}
@@ -389,11 +389,12 @@ export const SplitFlapText = ({
   cascadeMs = 60,
   maxChars,
   className,
-}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string }) => {
+  gapPx = 2,
+}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string; gapPx?: number }) => {
   let str = (value || "").toUpperCase();
   if (maxChars && str.length > maxChars) str = str.slice(0, maxChars);
   return (
-    <span className={cn("inline-flex gap-[2px] items-center align-middle", className)} style={{ lineHeight: 1 }}>
+    <span className={cn("inline-flex items-center align-middle", className)} style={{ lineHeight: 1, gap: `${gapPx}px` }}>
       {str.split("").map((ch, i) => (
         <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
       ))}
@@ -402,9 +403,29 @@ export const SplitFlapText = ({
 };
 
 
-// --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
+// --- Rotating parts list for supplier cards ---
+// Persist rotation index across remounts (slide visits) so the user picks up
+// where the last view left off when there are many parts to read.
 type InspPart = { part_number: string; part_name: string; qty: number };
-const RotatingParts = ({ parts, qtySize, perGroup = 2, fontScale = 1 }: { parts: InspPart[]; qtySize: number; perGroup?: number; fontScale?: number }) => {
+const rotationIndexStore = new Map<string, number>();
+
+const RotatingParts = ({
+  parts,
+  qtySize,
+  perGroup = 2,
+  fontScale = 1,
+  intervalMs,
+  gapPx = 2,
+  storageKey,
+}: {
+  parts: InspPart[];
+  qtySize: number;
+  perGroup?: number;
+  fontScale?: number;
+  intervalMs?: number;
+  gapPx?: number;
+  storageKey: string;
+}) => {
   const groups = useMemo(() => {
     const step = Math.max(1, perGroup);
     const out: InspPart[][] = [];
@@ -412,13 +433,30 @@ const RotatingParts = ({ parts, qtySize, perGroup = 2, fontScale = 1 }: { parts:
     return out;
   }, [parts, perGroup]);
   const total = groups.length;
-  const interval = total <= 4 ? 4000 : Math.max(1500, Math.floor(16000 / total));
+  const fullKey = `${storageKey}::${perGroup}::${total}`;
+  const interval = Math.max(
+    2000,
+    intervalMs ?? (total <= 4 ? 4000 : Math.floor(16000 / total)),
+  );
 
-  const [idx, setIdx] = useState(0);
+  const [idx, setIdx] = useState(() => {
+    const saved = rotationIndexStore.get(fullKey) ?? 0;
+    return total > 0 ? saved % total : 0;
+  });
   const [phase, setPhase] = useState<"enter" | "visible" | "exit">("visible");
 
-  // Reset when parts shape changes.
-  useEffect(() => { setIdx(0); setPhase("visible"); }, [total]);
+  // Reset only when the group shape changes (not on every mount), so a fresh
+  // visit to the slide resumes from the saved index for the same supplier+config.
+  useEffect(() => {
+    const saved = rotationIndexStore.get(fullKey) ?? 0;
+    setIdx(total > 0 ? saved % total : 0);
+    setPhase("visible");
+  }, [fullKey, total]);
+
+  // Persist idx whenever it changes.
+  useEffect(() => {
+    rotationIndexStore.set(fullKey, idx);
+  }, [fullKey, idx]);
 
   // Enter → visible on next frame so CSS transitions fire.
   useEffect(() => {
@@ -453,10 +491,10 @@ const RotatingParts = ({ parts, qtySize, perGroup = 2, fontScale = 1 }: { parts:
           {current.map((p, i) => (
             <li key={`${idx}-${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
               <div className="min-w-0">
-                <SplitFlapText value={p.part_number} size={Math.round(26 * fontScale)} maxChars={16} className="font-mono" />
-                {p.part_name && <div className="mt-1.5"><SplitFlapText value={p.part_name} size={Math.round(18 * fontScale)} maxChars={26} className="text-muted-foreground" /></div>}
+                <SplitFlapText value={p.part_number} size={Math.round(26 * fontScale)} maxChars={16} className="font-mono" gapPx={gapPx} />
+                {p.part_name && <div className="mt-1.5"><SplitFlapText value={p.part_name} size={Math.round(18 * fontScale)} maxChars={26} className="text-muted-foreground" gapPx={gapPx} /></div>}
               </div>
-              <SplitFlapNumber value={p.qty} size={qtySize} />
+              <SplitFlapNumber value={p.qty} size={qtySize} gapPx={gapPx} />
             </li>
           ))}
         </div>
@@ -1108,8 +1146,22 @@ const Monitor = () => {
         const supsPerSlide = inspSetting.inspSuppliersPerSlide ?? (isV2 ? 9 : 4);
         const partsPerGroup = inspSetting.inspPartsPerGroup ?? 2;
         const fontScale = inspSetting.inspFontScale ?? 1;
+        const rotateMs = inspSetting.inspRotateMs;
+        const layoutCols = inspSetting.inspLayoutCols ?? "auto";
+        const gapPx = inspSetting.inspLetterGap ?? 2;
         const suppliers = inspecionadoData.slice(0, supsPerSlide);
-        const cols = suppliers.length <= 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" : suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" : "grid-cols-3 grid-rows-3";
+        const autoCols =
+          suppliers.length <= 1 ? "grid-cols-1" :
+          suppliers.length === 2 ? "grid-cols-2" :
+          suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" :
+          suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" :
+                                  "grid-cols-3 grid-rows-3";
+        const forcedCols =
+          layoutCols === 1 ? "grid-cols-1" :
+          layoutCols === 2 ? "grid-cols-2" :
+          layoutCols === 3 ? "grid-cols-3" :
+          layoutCols === 4 ? "grid-cols-4" : null;
+        const cols = forcedCols ?? autoCols;
         const sz = (n: number) => Math.round(n * fontScale);
         return (
           <div className="w-full h-full overflow-hidden">
@@ -1122,10 +1174,18 @@ const Monitor = () => {
                 {suppliers.map((sup, si) => (
                   <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 pb-8 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
-                      <SplitFlapText value={sup.fornecedor} size={sz(32)} maxChars={18} className="text-cyan-300 font-bold" />
-                      <SplitFlapNumber value={sup.total} size={sz(isV2 ? 44 : 48)} />
+                      <SplitFlapText value={sup.fornecedor} size={sz(32)} maxChars={18} className="text-cyan-300 font-bold" gapPx={gapPx} />
+                      <SplitFlapNumber value={sup.total} size={sz(isV2 ? 44 : 48)} gapPx={gapPx} />
                     </div>
-                    <RotatingParts parts={sup.parts} qtySize={sz(26)} perGroup={partsPerGroup} fontScale={fontScale} />
+                    <RotatingParts
+                      parts={sup.parts}
+                      qtySize={sz(26)}
+                      perGroup={partsPerGroup}
+                      fontScale={fontScale}
+                      intervalMs={rotateMs}
+                      gapPx={gapPx}
+                      storageKey={`insp::${sup.fornecedor}`}
+                    />
                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
                   </div>
                 ))}

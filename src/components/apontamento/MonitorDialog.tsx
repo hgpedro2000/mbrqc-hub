@@ -52,8 +52,14 @@ export interface MonitorBlockSetting {
   inspSuppliersPerSlide?: number;
   /** Used by "inspecionado": how many part lines per rotation group (1–6). */
   inspPartsPerGroup?: number;
-  /** Used by "inspecionado": font scale multiplier (0.6 – 1.6). */
+  /** Used by "inspecionado": font scale multiplier (0.6 – 2.5). */
   inspFontScale?: number;
+  /** Used by "inspecionado": rotation interval between part groups in ms (min 2000). */
+  inspRotateMs?: number;
+  /** Used by "inspecionado": fixed grid columns (1–4). "auto" lets the layout decide. */
+  inspLayoutCols?: "auto" | 1 | 2 | 3 | 4;
+  /** Used by "inspecionado": horizontal gap between split-flap characters in px (-2 to 8). */
+  inspLetterGap?: number;
 }
 
 export interface MonitorPreferences {
@@ -653,6 +659,9 @@ const InspecionadoExtras = ({
   const sps = setting.inspSuppliersPerSlide ?? 6;
   const ppg = setting.inspPartsPerGroup ?? 2;
   const fs = setting.inspFontScale ?? 1;
+  const rot = setting.inspRotateMs ?? 4000;
+  const layout = setting.inspLayoutCols ?? "auto";
+  const gap = setting.inspLetterGap ?? 2;
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -708,14 +717,77 @@ const InspecionadoExtras = ({
         <input
           type="range"
           min={0.6}
-          max={1.6}
+          max={2.5}
           step={0.05}
           value={fs}
           onChange={(e) => onChange({ inspFontScale: Number(e.target.value) })}
           className="w-full accent-primary"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>60%</span><span>100%</span><span>160%</span>
+          <span>60%</span><span>150%</span><span>250%</span>
+        </div>
+      </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Tempo de rotação das peças</p>
+            <p className="text-xs text-muted-foreground">Intervalo entre grupos de peças no card. Se o slide acabar antes, continua de onde parou na próxima exibição.</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{(rot / 1000).toFixed(1)}s</span>
+        </div>
+        <input
+          type="range"
+          min={2000}
+          max={15000}
+          step={500}
+          value={rot}
+          onChange={(e) => onChange({ inspRotateMs: Number(e.target.value) })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>2s</span><span>8s</span><span>15s</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap pt-3 border-t">
+        <div>
+          <p className="text-sm font-medium">Layout (colunas)</p>
+          <p className="text-xs text-muted-foreground">Quantas colunas de cards. Auto ajusta pela quantidade.</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {(["auto", 1, 2, 3, 4] as const).map((n) => (
+            <button
+              key={String(n)}
+              type="button"
+              onClick={() => onChange({ inspLayoutCols: n })}
+              className={cn(
+                "h-8 px-3 text-sm rounded-sm transition-colors tabular-nums",
+                layout === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n === "auto" ? "Auto" : n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Compactação das letras</p>
+            <p className="text-xs text-muted-foreground">Espaço entre os caracteres do split-flap. Menor = mais compacto.</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{gap}px</span>
+        </div>
+        <input
+          type="range"
+          min={-2}
+          max={8}
+          step={1}
+          value={gap}
+          onChange={(e) => onChange({ inspLetterGap: Number(e.target.value) })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>Compacto (-2)</span><span>Padrão (2)</span><span>Largo (8)</span>
         </div>
       </div>
       <div className="pt-3 border-t space-y-2">

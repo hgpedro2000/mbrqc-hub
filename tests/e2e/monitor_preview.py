@@ -77,13 +77,19 @@ async def main():
             await page.reload(wait_until="domcontentloaded")
             await page.wait_for_timeout(1200)
 
-            # Try the always-mounted Settings icon; fall back to "Configurar" CTA.
-            icon = page.locator('button[aria-label="Configurações do monitor"]')
-            cfg = page.locator('button:has-text("Configurar")').first
-            if await icon.count() > 0:
-                await icon.first.click(force=True)
-            else:
-                await cfg.click()
+            # Open dialog via direct JS click (the icon button is opacity-0
+            # until hover; both approaches dispatch a click that React handles).
+            opened = await page.evaluate(
+                """() => {
+                    const icon = document.querySelector('button[aria-label="Configurações do monitor"]');
+                    const cfg  = [...document.querySelectorAll('button')]
+                        .find(b => /^Configurar$/.test((b.textContent||'').trim()));
+                    const b = icon || cfg;
+                    if (b) { b.click(); return true; }
+                    return false;
+                }"""
+            )
+            assert opened, "Could not find Settings or Configurar button on /monitor"
             await page.wait_for_selector('[role="dialog"]', timeout=6000)
             await page.screenshot(path=str(OUT / "2_dialog_open.png"))
 

@@ -30,6 +30,8 @@ export interface MonitorPreferences {
   customTo?: string;
   theme: MonitorTheme;
   profile?: MonitorProfile;
+  slideDurationMs?: number;
+  animationsEnabled?: boolean;
 }
 
 const STORAGE_KEY = "monitor_preferences";
@@ -39,7 +41,10 @@ export const defaultPrefs: MonitorPreferences = {
   period: "today",
   theme: "dark",
   profile: "default",
+  slideDurationMs: 10000,
+  animationsEnabled: true,
 };
+
 
 export const loadPrefs = (): MonitorPreferences => {
   try {

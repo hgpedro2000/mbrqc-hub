@@ -116,6 +116,27 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           <DialogTitle>O que deseja exibir no monitor?</DialogTitle>
         </DialogHeader>
 
+        {/* Profile */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Perfil:</span>
+          <Button
+            type="button"
+            variant={(prefs.profile ?? "default") === "default" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPrefs((p) => ({ ...p, profile: "default" }))}
+          >
+            Padrão
+          </Button>
+          <Button
+            type="button"
+            variant={prefs.profile === "v2" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPrefs((p) => ({ ...p, profile: "v2" }))}
+          >
+            V2 — Detalhado
+          </Button>
+        </div>
+
         {/* Theme */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground">Tema:</span>

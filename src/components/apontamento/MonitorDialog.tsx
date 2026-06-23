@@ -516,6 +516,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                   </div>
 
                   <SlidePreview
+                    blockId={b.id}
                     emoji={b.emoji}
                     title={b.title}
                     durationMs={effDur}

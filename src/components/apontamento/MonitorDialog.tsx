@@ -477,7 +477,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           </div>
         </Tabs>
 
-        <DialogFooter className="px-6 py-3 border-t bg-muted/30 gap-2 sm:justify-end">
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 gap-2 shrink-0 flex-row justify-end pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
         </DialogFooter>

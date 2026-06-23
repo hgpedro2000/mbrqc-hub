@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Package, QrCode, X, AlertTriangle, Camera, ImagePlus, Loader2, Pencil, Send, Barcode, ScanSearch, Sparkles, Factory, Layers, Hash } from "lucide-react";
+import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,33 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { parseHyundaiQR, HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { HyundaiQRData } from "@/lib/parseHyundaiQR";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import ReportErrorButton from "@/components/ReportErrorButton";
-
-const READER_ID = "qr-reader-consulta";
-
-const QR_FORMATS = [
-  Html5QrcodeSupportedFormats.QR_CODE,
-  Html5QrcodeSupportedFormats.DATA_MATRIX,
-  Html5QrcodeSupportedFormats.AZTEC,
-  Html5QrcodeSupportedFormats.PDF_417,
-];
-
-const BARCODE_FORMATS = [
-  Html5QrcodeSupportedFormats.CODE_128,
-  Html5QrcodeSupportedFormats.CODE_39,
-  Html5QrcodeSupportedFormats.EAN_13,
-  Html5QrcodeSupportedFormats.EAN_8,
-  Html5QrcodeSupportedFormats.UPC_A,
-  Html5QrcodeSupportedFormats.UPC_E,
-  Html5QrcodeSupportedFormats.ITF,
-  Html5QrcodeSupportedFormats.CODABAR,
-];
-
-const ALL_FORMATS = [...QR_FORMATS, ...BARCODE_FORMATS];
+import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();

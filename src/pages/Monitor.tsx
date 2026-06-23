@@ -374,6 +374,51 @@ const Monitor = () => {
     if (urls.length) prefetchPhotos(urls);
   }, [alertas, contencoes]);
 
+  // Resolve signed URLs for monitor-comunicados media (bucket is private but has anon-read RLS).
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const updates: Record<string, string> = {};
+      for (const m of slidesMedia) {
+        if (mediaUrls[m.file_path]) continue;
+        const { data } = await supabase.storage.from("monitor-comunicados").createSignedUrl(m.file_path, 60 * 60 * 6);
+        if (data?.signedUrl) updates[m.file_path] = data.signedUrl;
+      }
+      if (!cancelled && Object.keys(updates).length) setMediaUrls((prev) => ({ ...prev, ...updates }));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slidesMedia]);
+
+  // Fetch NG checklist_photos for "Últimos Defeitos Detectados"
+  const ngApontamentos = useMemo(
+    () => apontamentos.filter((a) => (a.quantidade_ng || 0) > 0).slice(0, 12),
+    [apontamentos]
+  );
+  useEffect(() => {
+    if (!ngApontamentos.length) return;
+    let cancelled = false;
+    (async () => {
+      const ids = ngApontamentos.map((a) => a.id);
+      const { data } = await supabase
+        .from("checklist_photos")
+        .select("checklist_id,file_path")
+        .eq("checklist_type", "apontamento")
+        .in("checklist_id", ids);
+      if (!data || cancelled) return;
+      const byId: Record<string, string[]> = {};
+      for (const ph of data) {
+        const { data: signed } = await supabase.storage.from("checklist-photos").createSignedUrl(ph.file_path, 60 * 60 * 6);
+        if (signed?.signedUrl) {
+          (byId[ph.checklist_id] ||= []).push(signed.signedUrl);
+        }
+      }
+      if (!cancelled) setNgPhotos(byId);
+    })();
+    return () => { cancelled = true; };
+  }, [ngApontamentos]);
+
   const blocks = prefs.blocks;
   const safeIdx = blocks.length ? slideIdx % blocks.length : 0;
   const currentBlock = blocks[safeIdx];

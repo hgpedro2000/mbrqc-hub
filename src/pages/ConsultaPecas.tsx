@@ -282,122 +282,12 @@ const ConsultaPecas = () => {
         </div>
       </main>
 
-      {/* Type Chooser Dialog */}
-      <Dialog open={typeChooserOpen} onOpenChange={setTypeChooserOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-xs p-4">
-          <DialogHeader>
-            <DialogTitle>Tipo de Leitura</DialogTitle>
-            <DialogDescription>Selecione o tipo de código para escanear:</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 mt-2">
-            <Button
-              variant="outline"
-              className="w-full gap-3 min-h-[56px] text-left justify-start"
-              onClick={() => { setTypeChooserOpen(false); handleScanTypeChosen("qrcode"); }}
-            >
-              <QrCode className="w-6 h-6 shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">QR Code / Data Matrix</p>
-                <p className="text-xs text-muted-foreground">Etiquetas Hyundai Mobis, QR Codes</p>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full gap-3 min-h-[56px] text-left justify-start"
-              onClick={() => { setTypeChooserOpen(false); handleScanTypeChosen("barcode"); }}
-            >
-              <Barcode className="w-6 h-6 shrink-0" />
-              <div>
-                <p className="font-semibold text-sm">Código de Barras</p>
-                <p className="text-xs text-muted-foreground">Code 128, Code 39, EAN, UPC</p>
-              </div>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Scanners ocultos — reaproveitam toda a lógica do Apontamento (Incoming) */}
+      <div className="hidden">
+        <QRScannerButton ref={qrScannerSearchRef} onScan={handleQRScan} />
+        <QRScannerButton ref={qrScannerCheckRef} onScan={handleQRScan} />
+      </div>
 
-      {/* Scanner Dialog */}
-      <Dialog open={scannerOpen} onOpenChange={(open) => { if (!open) closeScanner(); }}>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm p-3 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 pr-10">
-              {selectedScanType === "barcode" ? <Barcode className="w-5 h-5" /> : <QrCode className="w-5 h-5" />}
-              {selectedScanType === "barcode" ? "Escanear Código de Barras" : "Escanear QR Code"}
-            </DialogTitle>
-            <Button variant="ghost" size="icon" className="absolute right-3 top-3" onClick={closeScanner}>
-              <X className="w-4 h-4" />
-            </Button>
-          </DialogHeader>
-          <div className="space-y-3">
-            {cameraError && (
-              <div className="flex flex-col items-center gap-3 py-4 text-center">
-                <AlertTriangle className="w-10 h-10 text-amber-500" />
-                <p className="text-sm text-muted-foreground">{cameraError}</p>
-              </div>
-            )}
-
-            <div id={READER_ID} className="w-full min-h-[280px] rounded-lg overflow-hidden bg-muted" />
-
-            <p className="text-xs text-muted-foreground text-center">
-              {selectedScanType === "barcode"
-                ? "Aponte a câmera para o código de barras da peça."
-                : "Aponte a câmera para o QR Code / Data Matrix da etiqueta."}
-            </p>
-
-            <div className="flex flex-col gap-2">
-              <Button type="button" onClick={() => cameraInputRef.current?.click()} variant="secondary" className="w-full gap-2 min-h-[44px]">
-                {isProcessingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                {isProcessingImage ? "Lendo foto..." : "Tirar foto da etiqueta"}
-              </Button>
-              <Button type="button" onClick={() => galleryInputRef.current?.click()} variant="outline" className="w-full gap-2 min-h-[44px]">
-                <ImagePlus className="w-4 h-4" />
-                Escolher foto da galeria
-              </Button>
-            </div>
-
-            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelected} />
-            <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelected} />
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Incompatible Dialog */}
-      <Dialog open={incompatibleOpen} onOpenChange={setIncompatibleOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Código Incompatível
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 space-y-1">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">Este código não foi reconhecido.</p>
-              <p className="text-xs text-amber-700 dark:text-amber-300">Reporte ao HelpDesk para análise.</p>
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">Conteúdo capturado</p>
-              <div className="bg-muted rounded-lg p-3 max-h-24 overflow-y-auto">
-                <code className="text-xs break-all">{rawQR || "—"}</code>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button onClick={() => setIncompatibleOpen(false)} className="w-full gap-2 min-h-[44px]">
-                <Pencil className="w-4 h-4" />
-                Buscar manualmente
-              </Button>
-              {!reportSent ? (
-                <Button variant="outline" onClick={handleSendReport} disabled={sending} className="w-full gap-2 min-h-[44px]">
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                  Reportar ao HelpDesk
-                </Button>
-              ) : (
-                <p className="text-center text-sm text-emerald-600 dark:text-emerald-400 font-medium py-2">✓ Relatório enviado</p>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Suffix Picker Dialog */}
       <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>

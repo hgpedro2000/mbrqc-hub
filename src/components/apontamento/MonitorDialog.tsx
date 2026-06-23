@@ -641,9 +641,13 @@ export const descStyleClasses = (style?: DefectsDescStyle): string => {
 const InspecionadoExtras = ({
   setting,
   onChange,
+  flapSpeedMs,
+  onFlapSpeedChange,
 }: {
   setting: MonitorBlockSetting;
   onChange: (patch: MonitorBlockSetting) => void;
+  flapSpeedMs: number;
+  onFlapSpeedChange: (v: number) => void;
 }) => {
   const sps = setting.inspSuppliersPerSlide ?? 6;
   const ppg = setting.inspPartsPerGroup ?? 2;

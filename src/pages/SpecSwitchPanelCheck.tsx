@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Clock, RotateCcw, Upload, Database, Info } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Clock, RotateCcw, Upload, Database, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import * as XLSX from "xlsx";

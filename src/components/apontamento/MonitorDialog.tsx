@@ -52,8 +52,14 @@ export interface MonitorBlockSetting {
   inspSuppliersPerSlide?: number;
   /** Used by "inspecionado": how many part lines per rotation group (1–6). */
   inspPartsPerGroup?: number;
-  /** Used by "inspecionado": font scale multiplier (0.6 – 1.6). */
+  /** Used by "inspecionado": font scale multiplier (0.6 – 2.5). */
   inspFontScale?: number;
+  /** Used by "inspecionado": rotation interval between part groups in ms (min 2000). */
+  inspRotateMs?: number;
+  /** Used by "inspecionado": fixed grid columns (1–4). "auto" lets the layout decide. */
+  inspLayoutCols?: "auto" | 1 | 2 | 3 | 4;
+  /** Used by "inspecionado": horizontal gap between split-flap characters in px (-2 to 8). */
+  inspLetterGap?: number;
 }
 
 export interface MonitorPreferences {

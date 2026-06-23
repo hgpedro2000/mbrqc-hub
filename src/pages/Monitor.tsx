@@ -240,13 +240,18 @@ const Monitor = () => {
     return () => clearInterval(id);
   }, []);
 
-  // BroadcastChannel: answer PING with PONG, handle FOCUS, notify on close.
+  // BroadcastChannel: answer PING with PONG, handle FOCUS, react to MAIN_LOGOUT, notify on close.
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
     const ch = new BroadcastChannel("monitor_channel");
     ch.onmessage = (e) => {
       if (e.data?.type === "PING") ch.postMessage({ type: "PONG" });
       else if (e.data?.type === "FOCUS") { try { window.focus(); } catch { /* noop */ } }
+      else if (e.data?.type === "MAIN_LOGOUT") {
+        // Main app signed out — monitor stays alive on the anon client.
+        setLogoutToast("Sessão principal encerrada — monitor mantido");
+        setTimeout(() => setLogoutToast(null), 3000);
+      }
     };
     const onUnload = () => { try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ } };
     window.addEventListener("beforeunload", onUnload);

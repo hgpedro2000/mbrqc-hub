@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.7.8', 'patch', 'Checar SPEC/ALC com paleta industrial', 'Substituidas as cores violeta/fuchsia/pink do botao e do dialog Checar SPEC/ALC (em Consulta Pecas) por tons slate/preto e destaque ambar no ALC, adequado a ambiente fabril.');

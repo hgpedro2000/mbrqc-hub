@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // persistence). It must NOT import the main `supabase` client nor any auth
 // listener/hook — the monitor session is independent of the main app login.
 import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
-import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig } from "@/components/apontamento/MonitorDialog";
+import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig, descStyleClasses } from "@/components/apontamento/MonitorDialog";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,

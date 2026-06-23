@@ -501,13 +501,13 @@ const ChoiceCard = ({ active, onClick, title, desc }: { active: boolean; onClick
     type="button"
     onClick={onClick}
     className={cn(
-      "flex-1 min-w-[180px] text-left rounded-lg border p-3 transition-all",
+      "flex-1 basis-[260px] min-w-0 text-left rounded-lg border p-3 transition-all",
       active ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border bg-card hover:bg-muted/50",
     )}
   >
     <p className="text-sm font-medium flex items-center gap-1.5">
-      {title}
-      {active && <Check className="w-3.5 h-3.5 text-primary" />}
+      <span className="truncate">{title}</span>
+      {active && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
     </p>
     <p className="text-xs text-muted-foreground">{desc}</p>
   </button>

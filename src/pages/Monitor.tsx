@@ -1198,6 +1198,8 @@ const Monitor = () => {
                       perGroup={partsPerGroup}
                       fontScale={fontScale}
                       intervalMs={rotateMs}
+                      intervalMs={rotateMs}
+                      postFlapDelayMs={postFlapDelayMs}
                       gapPx={gapPx}
                       storageKey={`insp::${sup.fornecedor}`}
                     />

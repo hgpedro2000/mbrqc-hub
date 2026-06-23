@@ -190,6 +190,12 @@ const Monitor = () => {
   const [flash, setFlash] = useState<{ type: "alert" | "contencao"; title: string } | null>(null);
   const [photoSource, setPhotoSource] = useState<PhotoSource | null>(null);
   const [logoutToast, setLogoutToast] = useState<string | null>(null);
+  const [debugOpen, setDebugOpen] = useState(() => new URLSearchParams(window.location.search).has("debug"));
+  const [debugEvents, setDebugEvents] = useState<{ t: number; kind: string; detail?: string }[]>([]);
+  const [lastFetchAt, setLastFetchAt] = useState<Record<string, number>>({});
+  const logEvt = useCallback((kind: string, detail?: string) => {
+    setDebugEvents((prev) => [{ t: Date.now(), kind, detail }, ...prev].slice(0, 50));
+  }, []);
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();

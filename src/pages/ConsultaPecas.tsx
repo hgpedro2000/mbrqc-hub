@@ -14,9 +14,11 @@ import { useToast } from "@/hooks/use-toast";
 
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,9 +26,25 @@ const ConsultaPecas = () => {
   const [specDialogOpen, setSpecDialogOpen] = useState(false);
   const [specPart, setSpecPart] = useState<any>(null);
   const [hkmcOpen, setHkmcOpen] = useState(false);
+  const [specReaderOpen, setSpecReaderOpen] = useState(false);
+  const [specReaderInput, setSpecReaderInput] = useState("");
+  const specReaderInputRef = useRef<HTMLInputElement | null>(null);
 
   // Scanner refs (reuse Apontamento incoming logic)
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
+
+  // Open SPEC/ALC: camera on mobile, barcode-reader dialog on desktop
+  const openSpecScanner = useCallback(() => {
+    setScanMode("check");
+    if (isMobile) {
+      qrScannerRef.current?.openScanner();
+    } else {
+      setSpecReaderInput("");
+      setSpecReaderOpen(true);
+      setTimeout(() => specReaderInputRef.current?.focus(), 100);
+    }
+  }, [isMobile]);
+
 
   // Suffix picker
   const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);
@@ -84,15 +102,26 @@ const ConsultaPecas = () => {
     );
 
     const openMatch = (part: any) => {
+      // Feedback tátil/sonoro ao capturar
+      try { navigator.vibrate?.([60, 30, 60]); } catch { /* noop */ }
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = 880; g.gain.value = 0.08;
+        o.start(); o.stop(ctx.currentTime + 0.12);
+      } catch { /* noop */ }
       if (scanMode === "check") {
+        setSpecReaderOpen(false);
         setSpecPart(part);
         setSpecDialogOpen(true);
-        toast({ title: "Peça identificada!", description: `PN: ${part.part_number}` });
+        toast({ title: "✓ Peça identificada!", description: `PN: ${part.part_number}` });
       } else {
         setSearchTerm(part.part_number);
-        toast({ title: "Peça encontrada!", description: `PN: ${part.part_number}` });
+        toast({ title: "✓ Peça encontrada!", description: `PN: ${part.part_number}` });
       }
     };
+
 
     if (exactMatch) {
       openMatch(exactMatch);
@@ -235,7 +264,7 @@ const ConsultaPecas = () => {
                 type="button"
                 variant="default"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md min-w-0"
-                onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
+                onClick={openSpecScanner}
                 title="Checar SPEC/ALC"
               >
                 <ScanSearch className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
@@ -446,8 +475,7 @@ const ConsultaPecas = () => {
                   className="flex-1 min-h-[44px] bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
                   onClick={() => {
                     setSpecDialogOpen(false);
-                    setScanMode("check");
-                    qrScannerRef.current?.openScanner();
+                    setTimeout(() => openSpecScanner(), 150);
                   }}
                 >
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra
@@ -468,6 +496,59 @@ const ConsultaPecas = () => {
           <div className="p-2">
             <HKMCScanner />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Desktop SPEC/ALC Barcode Reader Dialog (HW scanner / manual) */}
+      <Dialog open={specReaderOpen} onOpenChange={setSpecReaderOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+          <div className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 px-5 py-4 text-white">
+            <div className="flex items-center gap-2 mb-1 opacity-90">
+              <ScanSearch className="w-4 h-4" />
+              <span className="text-xs font-medium tracking-wider uppercase">Leitor de Código de Barras</span>
+            </div>
+            <DialogTitle className="text-xl font-bold text-white">Checar SPEC / ALC</DialogTitle>
+            <DialogDescription className="text-white/85 text-sm">
+              Aponte o leitor de código de barras para o Part Number — ou digite e pressione Enter.
+            </DialogDescription>
+          </div>
+          <form
+            className="p-5 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = specReaderInput.trim();
+              if (!val) return;
+              void applyScannedPartNumber(val);
+              setSpecReaderInput("");
+            }}
+          >
+            <div className="relative">
+              <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-violet-500" />
+              <Input
+                ref={specReaderInputRef}
+                value={specReaderInput}
+                onChange={(e) => setSpecReaderInput(e.target.value)}
+                placeholder="Part Number..."
+                autoFocus
+                className="h-14 text-lg font-mono pl-11 border-2 border-violet-300 focus-visible:ring-violet-500 focus-visible:ring-2"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1" onClick={() => setSpecReaderOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                disabled={!specReaderInput.trim()}
+              >
+                <ScanSearch className="w-4 h-4 mr-2" /> Checar
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Dica: a maioria dos leitores envia <kbd className="px-1 rounded bg-muted">Enter</kbd> automaticamente.
+            </p>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -141,7 +141,7 @@ const PERIOD_OPTIONS: { id: MonitorPeriod; label: string }[] = [
   { id: "custom", label: "Personalizado" },
 ];
 
-const DURATION_OPTIONS = [5000, 8000, 10000, 15000, 20000, 30000, 45000, 60000];
+const DURATION_OPTIONS = Array.from({ length: 56 }, (_, i) => (i + 5) * 1000);
 
 interface Props {
   open: boolean;

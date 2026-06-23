@@ -190,6 +190,12 @@ const Monitor = () => {
   const [flash, setFlash] = useState<{ type: "alert" | "contencao"; title: string } | null>(null);
   const [photoSource, setPhotoSource] = useState<PhotoSource | null>(null);
   const [logoutToast, setLogoutToast] = useState<string | null>(null);
+  const [debugOpen, setDebugOpen] = useState(() => new URLSearchParams(window.location.search).has("debug"));
+  const [debugEvents, setDebugEvents] = useState<{ t: number; kind: string; detail?: string }[]>([]);
+  const [lastFetchAt, setLastFetchAt] = useState<Record<string, number>>({});
+  const logEvt = useCallback((kind: string, detail?: string) => {
+    setDebugEvents((prev) => [{ t: Date.now(), kind, detail }, ...prev].slice(0, 50));
+  }, []);
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
@@ -240,27 +246,51 @@ const Monitor = () => {
     return () => clearInterval(id);
   }, []);
 
-  // BroadcastChannel: answer PING with PONG, handle FOCUS, react to MAIN_LOGOUT, notify on close.
+  // BroadcastChannel + localStorage fallback: PING/PONG/FOCUS/MAIN_LOGOUT.
   useEffect(() => {
-    if (typeof BroadcastChannel === "undefined") return;
-    const ch = new BroadcastChannel("monitor_channel");
-    ch.onmessage = (e) => {
-      if (e.data?.type === "PING") ch.postMessage({ type: "PONG" });
-      else if (e.data?.type === "FOCUS") { try { window.focus(); } catch { /* noop */ } }
-      else if (e.data?.type === "MAIN_LOGOUT") {
-        // Main app signed out — monitor stays alive on the anon client.
-        setLogoutToast("Sessão principal encerrada — monitor mantido");
-        setTimeout(() => setLogoutToast(null), 3000);
-      }
+    const handleMainLogout = () => {
+      logEvt("MAIN_LOGOUT");
+      setLogoutToast("Sessão principal encerrada — monitor mantido");
+      setTimeout(() => setLogoutToast(null), 3000);
     };
-    const onUnload = () => { try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ } };
+
+    let ch: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        ch = new BroadcastChannel("monitor_channel");
+        ch.onmessage = (e) => {
+          const t = e.data?.type;
+          if (t === "PING") { logEvt("PING→PONG"); ch?.postMessage({ type: "PONG" }); }
+          else if (t === "FOCUS") { logEvt("FOCUS"); try { window.focus(); } catch { /* noop */ } }
+          else if (t === "MAIN_LOGOUT") handleMainLogout();
+        };
+      } catch (err) { logEvt("BC_ERROR", String(err)); ch = null; }
+    } else {
+      logEvt("BC_UNAVAILABLE", "usando fallback localStorage");
+    }
+
+    // localStorage fallback — fires across windows via `storage` event.
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key !== "monitor_channel_evt" || !ev.newValue) return;
+      try {
+        const msg = JSON.parse(ev.newValue);
+        if (msg?.type === "MAIN_LOGOUT") { logEvt("MAIN_LOGOUT(ls)"); handleMainLogout(); }
+      } catch { /* noop */ }
+    };
+    window.addEventListener("storage", onStorage);
+
+    const onUnload = () => {
+      try { ch?.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
+      try { localStorage.setItem("monitor_channel_evt", JSON.stringify({ type: "MONITOR_CLOSED", t: Date.now() })); } catch { /* noop */ }
+    };
     window.addEventListener("beforeunload", onUnload);
     return () => {
       window.removeEventListener("beforeunload", onUnload);
-      try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
-      ch.close();
+      window.removeEventListener("storage", onStorage);
+      try { ch?.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
+      ch?.close();
     };
-  }, []);
+  }, [logEvt]);
 
   const fetchTable = async (table: string) => {
     const startISO = range.start.toISOString();
@@ -280,6 +310,7 @@ const Monitor = () => {
       const { data } = await supabase.from("consumable_items").select("*").eq("active", true);
       if (data) setConsumiveis(data);
     }
+    setLastFetchAt((prev) => ({ ...prev, [table]: Date.now() }));
   };
 
   useEffect(() => {
@@ -863,6 +894,53 @@ const Monitor = () => {
       {logoutToast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 rounded-lg bg-black/80 text-white text-sm shadow-lg animate-fade-in">
           {logoutToast}
+        </div>
+      )}
+
+      {/* Debug panel — toggle with `D` key or ?debug query param */}
+      <button
+        onClick={() => setDebugOpen((v) => !v)}
+        className="fixed bottom-2 right-2 z-[250] px-2 py-1 rounded bg-black/40 text-white/60 text-[10px] font-mono hover:bg-black/70"
+        aria-label="Toggle debug"
+      >DBG</button>
+      {debugOpen && (
+        <div className="fixed bottom-10 right-2 z-[250] w-[360px] max-h-[60vh] overflow-auto rounded-lg bg-black/85 text-white text-xs font-mono shadow-2xl border border-white/10">
+          <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+            <span className="font-bold">Monitor Debug</span>
+            <span className="text-white/50">
+              BC: {typeof BroadcastChannel !== "undefined" ? "ok" : "fallback(ls)"}
+            </span>
+          </div>
+          <div className="px-3 py-2 border-b border-white/10 space-y-0.5">
+            <div className="text-white/60">Última atualização dos dados:</div>
+            {(["apontamentos","alertas_qualidade","contencao","consumable_items"] as const).map((t) => {
+              const ts = lastFetchAt[t];
+              const ago = ts ? Math.round((Date.now() - ts) / 1000) : null;
+              return (
+                <div key={t} className="flex justify-between">
+                  <span>{t}</span>
+                  <span className={cn(ago === null ? "text-white/40" : ago > 60 ? "text-amber-400" : "text-emerald-400")}>
+                    {ago === null ? "—" : `${ago}s atrás`}
+                  </span>
+                </div>
+              );
+            })}
+            <div className="flex justify-between pt-1 border-t border-white/10 mt-1">
+              <span>Realtime</span>
+              <span className={cn(conn === "connected" ? "text-emerald-400" : conn === "error" ? "text-red-400" : "text-amber-400")}>{conn}</span>
+            </div>
+          </div>
+          <div className="px-3 py-2">
+            <div className="text-white/60 mb-1">Eventos BroadcastChannel ({debugEvents.length}):</div>
+            {debugEvents.length === 0 && <div className="text-white/40">nenhum evento ainda</div>}
+            {debugEvents.map((e, i) => (
+              <div key={i} className="flex gap-2">
+                <span className="text-white/40">{new Date(e.t).toLocaleTimeString()}</span>
+                <span className="text-cyan-300">{e.kind}</span>
+                {e.detail && <span className="text-white/60 truncate">{e.detail}</span>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

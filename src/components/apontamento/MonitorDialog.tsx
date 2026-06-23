@@ -160,9 +160,9 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
   useEffect(() => {
     if (open) {
       setPrefs(initial ?? loadPrefs());
-      setTab("geral");
+      setTab(initialTab ?? "geral");
     }
-  }, [open, initial]);
+  }, [open, initial, initialTab]);
 
   // Auto-persist preferences (including per-slide overrides) so reloads keep them.
   // Show a subtle toast confirming save, debounced so rapid changes only fire once.

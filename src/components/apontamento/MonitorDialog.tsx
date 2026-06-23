@@ -52,6 +52,8 @@ export interface MonitorBlockSetting {
   inspSuppliersPerSlide?: number;
   /** Used by "inspecionado": how many part lines per rotation group (1–6). */
   inspPartsPerGroup?: number;
+  /** Used by "inspecionado": font scale multiplier (0.6 – 1.6). */
+  inspFontScale?: number;
 }
 
 export interface MonitorPreferences {
@@ -666,6 +668,7 @@ const InspecionadoExtras = ({
 }) => {
   const sps = setting.inspSuppliersPerSlide ?? 6;
   const ppg = setting.inspPartsPerGroup ?? 2;
+  const fs = setting.inspFontScale ?? 1;
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -708,6 +711,27 @@ const InspecionadoExtras = ({
               {n}
             </button>
           ))}
+        </div>
+      </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Tamanho da fonte</p>
+            <p className="text-xs text-muted-foreground">Escala do nome do fornecedor, peças e quantidades. Atual: {Math.round(fs * 100)}%</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{Math.round(fs * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0.6}
+          max={1.6}
+          step={0.05}
+          value={fs}
+          onChange={(e) => onChange({ inspFontScale: Number(e.target.value) })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>60%</span><span>100%</span><span>160%</span>
         </div>
       </div>
     </div>

@@ -654,23 +654,29 @@ const SlidePreview = ({
         </div>
       )}
 
-      <div className="relative h-48 sm:h-56 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
+      <div className="relative h-64 sm:h-80 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
         <div
           key={runKey}
           className={cn(
-            "absolute inset-0 p-3 flex flex-col",
+            "absolute inset-0 flex flex-col",
             animations && "animate-enter",
           )}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl leading-none">{emoji}</span>
-            <span className="text-sm font-semibold">{title}</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 border-b bg-background/60">
+            <span className="text-base leading-none">{emoji}</span>
+            <span className="text-xs font-semibold">{title}</span>
             <span className="ml-auto text-[9px] uppercase tracking-wider text-muted-foreground">
-              preview
+              espelho do monitor
             </span>
           </div>
-          <div className="flex-1 min-h-0">
-            <BlockMock id={blockId} data={data} />
+          <div className="flex-1 min-h-0 bg-background">
+            <iframe
+              key={`iframe-${blockId}-${runKey}`}
+              src={`/monitor?preview=${blockId}&chrome=off`}
+              title={`Pré-visualização ${title}`}
+              className="w-full h-full border-0"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>

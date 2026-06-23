@@ -208,7 +208,21 @@ const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number })
 
 
 const Monitor = () => {
-  const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());
+  // Preview-embed mode: when ?preview=<blockId>&chrome=off is set, render a single
+  // block without header/footer/ticker and without auto-fullscreen — so the page can be
+  // safely iframed from the MonitorDialog preview.
+  const _qp = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const previewBlock = _qp.get("preview") as MonitorBlock | null;
+  const chromeOff = _qp.get("chrome") === "off";
+  const isPreviewMode = !!previewBlock;
+
+  const [prefs, setPrefs] = useState<MonitorPreferences>(() => {
+    const base = loadPrefs();
+    if (previewBlock) {
+      return { ...base, blocks: [previewBlock] };
+    }
+    return base;
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(new Date());
   const [conn, setConn] = useState<ConnState>("connecting");
@@ -246,7 +260,9 @@ const Monitor = () => {
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
 
   // Auto-enter fullscreen on mount; if the browser blocks it (no gesture), show a one-tap prompt.
+  // Skipped in preview-embed mode.
   useEffect(() => {
+    if (isPreviewMode) return;
     if (autoFsTried.current) return;
     autoFsTried.current = true;
     const tryFs = async () => {
@@ -257,7 +273,7 @@ const Monitor = () => {
       }
     };
     tryFs();
-  }, []);
+  }, [isPreviewMode]);
 
   useEffect(() => {
     if (isFs) setNeedsFsGesture(false);
@@ -965,6 +981,7 @@ const Monitor = () => {
         )}
 
         {/* Header */}
+        {!chromeOff && (
         <header className="relative z-10 flex items-center justify-between px-10 py-6 border-b border-border/40 backdrop-blur-md bg-background/40">
           <div className="flex items-center gap-5">
             {Icon && <Icon className={cn("w-14 h-14", meta!.accent)} />}
@@ -1005,9 +1022,10 @@ const Monitor = () => {
             </Button>
           </div>
         </header>
+        )}
 
         {/* Auto-advance progress bar */}
-        {!isPaused && blocks.length > 1 && (
+        {!chromeOff && !isPaused && blocks.length > 1 && (
           <div className="relative z-10 h-1.5 bg-muted/30">
             <div
               key={`pb-${safeIdx}-${rangeKey}`}
@@ -1058,7 +1076,7 @@ const Monitor = () => {
         </main>
 
         {/* Live ticker */}
-        {apontamentos.length > 0 && (
+        {!chromeOff && apontamentos.length > 0 && (
           <div className="relative z-10 overflow-hidden border-t border-border/40 bg-background/60 backdrop-blur-md py-3">
             <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : "ticker 45s linear infinite", width: "max-content" }}>
               {[...apontamentos.slice(0, 20), ...apontamentos.slice(0, 20)].map((a, i) => (
@@ -1075,6 +1093,7 @@ const Monitor = () => {
         )}
 
         {/* Footer */}
+        {!chromeOff && (
         <footer className="relative z-10 flex items-center justify-between px-10 py-4 border-t border-border/40 bg-background/60 backdrop-blur-md text-xl">
           <span className="font-mono">
             {now.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })} · <span className="font-bold">{now.toLocaleTimeString("pt-BR")}</span>
@@ -1092,6 +1111,7 @@ const Monitor = () => {
               conn === "error" && "bg-red-500")} />
           </span>
         </footer>
+        )}
       </div>
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}
@@ -1103,6 +1123,8 @@ const Monitor = () => {
       )}
 
       {/* Debug panel — toggle with `D` key or ?debug query param */}
+      {!isPreviewMode && (
+        <>
       <button
         onClick={() => setDebugOpen((v) => !v)}
         className="fixed bottom-2 right-2 z-[250] px-2 py-1 rounded bg-black/40 text-white/60 text-[10px] font-mono hover:bg-black/70"
@@ -1147,6 +1169,8 @@ const Monitor = () => {
             ))}
           </div>
         </div>
+      )}
+        </>
       )}
 
       {needsFsGesture && !isFs && (

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // persistence). It must NOT import the main `supabase` client nor any auth
 // listener/hook — the monitor session is independent of the main app login.
 import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
-import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig, descStyleClasses } from "@/components/apontamento/MonitorDialog";
+import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig, descStyleClasses, defaultPrefs } from "@/components/apontamento/MonitorDialog";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
@@ -189,9 +189,17 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 // through a small set until we reach the target. Each step does a two-half flip
 // (top of OLD drops down, then bottom of NEW rises up). Per-digit `delayMs`
 // enables a left-to-right cascade on first paint.
-const FLAP_HALF_MS = 70;          // each half-flip duration (fast, board-like)
-const FLAP_STEP_MS = FLAP_HALF_MS * 2; // total per intermediate flip
+// Dynamic flap speed — controlled by Monitor preferences (flapSpeedMs).
+// Default 70ms half-flip; readers below pull live value each render so the
+// global slider effect is felt immediately by every digit.
+let CURRENT_FLAP_HALF_MS = 70;
+export const setFlapHalfMs = (n: number) => {
+  CURRENT_FLAP_HALF_MS = Math.max(15, Math.min(400, Math.round(n)));
+};
+const flapHalfMs = () => CURRENT_FLAP_HALF_MS;
+const flapStepMs = () => CURRENT_FLAP_HALF_MS * 2;
 const FLAP_CASCADE_MS = 90;
+
 
 // Inject keyframes once.
 if (typeof document !== "undefined" && !document.getElementById("splitflap-keyframes")) {
@@ -270,7 +278,7 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
           } else {
             setNext(null);
           }
-        }, FLAP_STEP_MS);
+        }, flapStepMs());
         timersRef.current.push(commitId);
       };
       step();
@@ -335,7 +343,7 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
               top: 0,
               borderBottom: "1px solid rgba(255,255,255,0.18)",
               transformOrigin: "bottom",
-              animation: `splitflap-top ${FLAP_HALF_MS}ms ease-in forwards`,
+              animation: `splitflap-top ${flapHalfMs()}ms ease-in forwards`,
               backfaceVisibility: "hidden",
               zIndex: 2,
             }}
@@ -349,7 +357,7 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
               bottom: 0,
               transformOrigin: "top",
               transform: "rotateX(90deg)",
-              animation: `splitflap-bottom ${FLAP_HALF_MS}ms ease-out ${FLAP_HALF_MS}ms forwards`,
+              animation: `splitflap-bottom ${flapHalfMs()}ms ease-out ${flapHalfMs()}ms forwards`,
               backfaceVisibility: "hidden",
               zIndex: 2,
             }}
@@ -396,12 +404,13 @@ export const SplitFlapText = ({
 
 // --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
 type InspPart = { part_number: string; part_name: string; qty: number };
-const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number }) => {
+const RotatingParts = ({ parts, qtySize, perGroup = 2 }: { parts: InspPart[]; qtySize: number; perGroup?: number }) => {
   const groups = useMemo(() => {
+    const step = Math.max(1, perGroup);
     const out: InspPart[][] = [];
-    for (let i = 0; i < parts.length; i += 2) out.push(parts.slice(i, i + 2));
+    for (let i = 0; i < parts.length; i += step) out.push(parts.slice(i, i + step));
     return out;
-  }, [parts]);
+  }, [parts, perGroup]);
   const total = groups.length;
   const interval = total <= 4 ? 4000 : Math.max(1500, Math.floor(16000 / total));
 
@@ -555,6 +564,11 @@ const Monitor = () => {
     if (prefs.theme === "dark") root.classList.add("dark");
     return () => { if (!had && prefs.theme === "dark") root.classList.remove("dark"); };
   }, [prefs.theme]);
+
+  // Sync split-flap speed from prefs.
+  useEffect(() => {
+    setFlapHalfMs(prefs.flapSpeedMs ?? 70);
+  }, [prefs.flapSpeedMs]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -1090,7 +1104,10 @@ const Monitor = () => {
         );
       }
       case "inspecionado": {
-        const suppliers = isV2 ? inspecionadoData : inspecionadoData.slice(0, 4);
+        const inspSetting = prefs.blockSettings?.inspecionado ?? {};
+        const supsPerSlide = inspSetting.inspSuppliersPerSlide ?? (isV2 ? 9 : 4);
+        const partsPerGroup = inspSetting.inspPartsPerGroup ?? 2;
+        const suppliers = inspecionadoData.slice(0, supsPerSlide);
         const cols = suppliers.length <= 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" : suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" : "grid-cols-3 grid-rows-3";
         return (
           <div className="w-full h-full overflow-hidden">
@@ -1106,7 +1123,7 @@ const Monitor = () => {
                       <SplitFlapText value={sup.fornecedor} size={32} maxChars={18} className="text-cyan-300 font-bold" />
                       <SplitFlapNumber value={sup.total} size={isV2 ? 44 : 48} />
                     </div>
-                    <RotatingParts parts={sup.parts} qtySize={26} />
+                    <RotatingParts parts={sup.parts} qtySize={26} perGroup={partsPerGroup} />
                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
                   </div>
                 ))}

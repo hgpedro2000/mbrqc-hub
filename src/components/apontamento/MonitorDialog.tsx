@@ -48,6 +48,10 @@ export interface MonitorBlockSetting {
   perSlide?: 2 | 3 | 4 | 5;
   /** Used by "ultimos_defeitos": visual style for the "Descrição" text. */
   descStyle?: DefectsDescStyle;
+  /** Used by "inspecionado": how many supplier cards to show per slide (1–9). */
+  inspSuppliersPerSlide?: number;
+  /** Used by "inspecionado": how many part lines per rotation group (1–6). */
+  inspPartsPerGroup?: number;
 }
 
 export interface MonitorPreferences {
@@ -59,6 +63,8 @@ export interface MonitorPreferences {
   profile?: MonitorProfile;
   slideDurationMs?: number;
   animationsEnabled?: boolean;
+  /** Split-flap (airport) half-flip duration in ms. Lower = faster. */
+  flapSpeedMs?: number;
   blockSettings?: Partial<Record<MonitorBlock, MonitorBlockSetting>>;
 }
 
@@ -71,8 +77,10 @@ export const defaultPrefs: MonitorPreferences = {
   profile: "default",
   slideDurationMs: 10000,
   animationsEnabled: true,
+  flapSpeedMs: 70,
   blockSettings: {},
 };
+
 
 export const loadPrefs = (): MonitorPreferences => {
   try {
@@ -373,8 +381,32 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                       </select>
                     </div>
                   </div>
+                  <div className="rounded-lg border bg-card p-3 sm:col-span-2">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-sm font-medium">Velocidade do efeito aeroporto (split-flap)</p>
+                        <p className="text-xs text-muted-foreground">
+                          Tempo de cada meio-giro. Menor = mais rápido. Atual: {prefs.flapSpeedMs ?? 70}ms
+                        </p>
+                      </div>
+                      <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{prefs.flapSpeedMs ?? 70}ms</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={20}
+                      max={250}
+                      step={5}
+                      value={prefs.flapSpeedMs ?? 70}
+                      onChange={(e) => setPrefs((p) => ({ ...p, flapSpeedMs: Number(e.target.value) }))}
+                      className="w-full accent-primary"
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                      <span>Rápido (20ms)</span><span>Padrão (70ms)</span><span>Lento (250ms)</span>
+                    </div>
+                  </div>
                 </div>
               </Section>
+
 
               {isAdmin && (
                 <Section title="Gerenciamento (Admin)">
@@ -540,6 +572,14 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                     />
                   )}
 
+                  {b.id === "inspecionado" && (
+                    <InspecionadoExtras
+                      setting={s}
+                      onChange={(patch) => setBlockSetting(b.id, patch)}
+                    />
+                  )}
+
+
                   <SlidePreview
                     blockId={b.id}
                     emoji={b.emoji}
@@ -554,10 +594,39 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           </div>
         </Tabs>
 
-        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 gap-2 shrink-0 flex-row justify-end pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 gap-2 shrink-0 flex flex-col sm:flex-row sm:justify-between sm:items-center pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                savePrefs(prefs);
+                toast.success("Configurações salvas", { description: "Estas serão usadas na próxima abertura.", duration: 1800 });
+              }}
+            >
+              <Check className="w-3.5 h-3.5" /> Salvar configurações
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-destructive hover:text-destructive"
+              onClick={() => {
+                const reset = { ...defaultPrefs, blockSettings: {} };
+                setPrefs(reset);
+                savePrefs(reset);
+                toast.success("Padrão de fábrica restaurado", { description: "Todas as configurações voltaram ao original.", duration: 2000 });
+              }}
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Padrão de Fábrica
+            </Button>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
+          </div>
         </DialogFooter>
+
       </DialogContent>
     </Dialog>
   );
@@ -588,7 +657,65 @@ export const descStyleClasses = (style?: DefectsDescStyle): string => {
   return cn(colorCls, weightCls, sizeCls, style?.italic && "italic");
 };
 
+const InspecionadoExtras = ({
+  setting,
+  onChange,
+}: {
+  setting: MonitorBlockSetting;
+  onChange: (patch: MonitorBlockSetting) => void;
+}) => {
+  const sps = setting.inspSuppliersPerSlide ?? 6;
+  const ppg = setting.inspPartsPerGroup ?? 2;
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-medium">Fornecedores por slide</p>
+          <p className="text-xs text-muted-foreground">Quantos cards de fornecedor mostrar por vez.</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {[2, 3, 4, 6, 9].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ inspSuppliersPerSlide: n })}
+              className={cn(
+                "h-8 w-10 text-sm rounded-sm transition-colors tabular-nums",
+                sps === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap pt-3 border-t">
+        <div>
+          <p className="text-sm font-medium">Linhas (peças) por fornecedor</p>
+          <p className="text-xs text-muted-foreground">Peças visíveis simultaneamente em cada card (rotaciona o restante).</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ inspPartsPerGroup: n })}
+              className={cn(
+                "h-8 w-10 text-sm rounded-sm transition-colors tabular-nums",
+                ppg === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UltimosDefeitosExtras = ({
+
   setting,
   onChange,
 }: {

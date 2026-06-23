@@ -140,10 +140,16 @@ export default function MonitorAdmin() {
 
   return (
     <div className="min-h-screen bg-background p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Button variant="ghost" onClick={() => navigate("/monitor")} className="gap-2"><ArrowLeft className="w-4 h-4" /> Voltar ao Monitor</Button>
         <h1 className="text-2xl font-bold">Mídia dos Slides do Monitor</h1>
-        <div />
+        <Button
+          variant="default"
+          onClick={() => window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no")}
+          className="gap-2"
+        >
+          <MonitorIcon className="w-4 h-4" /> Monitor
+        </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">

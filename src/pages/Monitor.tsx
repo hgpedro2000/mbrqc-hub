@@ -373,6 +373,27 @@ export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS 
   );
 };
 
+// Split-flap text: each character (letter/digit) flips like an airport board.
+// Uppercases input so it maps onto the ALPHA_SEQ flip path.
+export const SplitFlapText = ({
+  value,
+  size = 22,
+  cascadeMs = 60,
+  maxChars,
+  className,
+}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string }) => {
+  let str = (value || "").toUpperCase();
+  if (maxChars && str.length > maxChars) str = str.slice(0, maxChars);
+  return (
+    <span className={cn("inline-flex gap-[2px] items-center align-middle", className)} style={{ lineHeight: 1 }}>
+      {str.split("").map((ch, i) => (
+        <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
+      ))}
+    </span>
+  );
+};
+
+
 // --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
 type InspPart = { part_number: string; part_name: string; qty: number };
 const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number }) => {
@@ -423,8 +444,8 @@ const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number 
           {current.map((p, i) => (
             <li key={`${idx}-${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
               <div className="min-w-0">
-                <p className="font-mono text-base truncate">{p.part_number}</p>
-                {p.part_name && <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>}
+                <SplitFlapText value={p.part_number} size={16} maxChars={18} className="font-mono" />
+                {p.part_name && <div className="mt-1"><SplitFlapText value={p.part_name} size={11} maxChars={28} className="text-muted-foreground" /></div>}
               </div>
               <SplitFlapNumber value={p.qty} size={qtySize} />
             </li>
@@ -1082,7 +1103,7 @@ const Monitor = () => {
                 {suppliers.map((sup, si) => (
                   <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 pb-8 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
-                      <h3 className="text-xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
+                      <SplitFlapText value={sup.fornecedor} size={20} maxChars={22} className="text-cyan-300 font-bold" />
                       <SplitFlapNumber value={sup.total} size={isV2 ? 40 : 44} />
                     </div>
                     <RotatingParts parts={sup.parts} qtySize={isV2 ? 22 : 26} />

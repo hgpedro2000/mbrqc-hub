@@ -30,9 +30,24 @@ export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";
 export type MonitorProfile = "default" | "v2";
 
+export type DescStyleColor = "default" | "rose" | "amber" | "emerald" | "sky" | "violet";
+export type DescStyleWeight = "normal" | "semibold" | "bold";
+export type DescStyleSize = "sm" | "md" | "lg";
+
+export interface DefectsDescStyle {
+  color?: DescStyleColor;
+  weight?: DescStyleWeight;
+  italic?: boolean;
+  size?: DescStyleSize;
+}
+
 export interface MonitorBlockSetting {
   durationMs?: number;
   animations?: boolean;
+  /** Used by "ultimos_defeitos": how many defect cards per slide (2–5). */
+  perSlide?: 2 | 3 | 4 | 5;
+  /** Used by "ultimos_defeitos": visual style for the "Descrição" text. */
+  descStyle?: DefectsDescStyle;
 }
 
 export interface MonitorPreferences {

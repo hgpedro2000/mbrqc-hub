@@ -338,7 +338,7 @@ const ConsultaPecas = () => {
                   {filtered.map((p: any) => {
                     const hasAlc = p.alc_code && p.alc_code !== "N/A";
                     return (
-                    <tr key={p.id} className={`border-t border-border/60 hover:bg-accent/5 ${hasAlc ? "bg-orange-50/60" : ""}`}>
+                    <tr key={p.id} className={`border-t border-border/60 hover:bg-accent/5 ${hasAlc ? "bg-rose-50/60" : ""}`}>
                       <td className="px-2 py-1.5 font-heading font-bold text-foreground whitespace-nowrap">{p.part_number}</td>
                       <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[220px]">{p.part_name}</td>
                       <td className="px-2 py-1.5 font-semibold text-blue-700 whitespace-nowrap">{p.suppliers?.name || "—"}</td>

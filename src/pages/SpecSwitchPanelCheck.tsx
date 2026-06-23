@@ -102,6 +102,7 @@ function loadDb(): DbRow[] {
 export default function SpecSwitchPanelCheck() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const [db, setDb] = useState<DbRow[]>(() => loadDb());
   const [panelRaw, setPanelRaw] = useState("");
   const [switchRaw, setSwitchRaw] = useState("");
   const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);

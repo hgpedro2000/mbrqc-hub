@@ -30,7 +30,7 @@ const prefetchPhotos = (urls: string[]) => {
 
 type ConnState = "connecting" | "connected" | "error";
 
-const DEFAULT_SLIDE_DURATION_MS = 10000;
+const DEFAULT_slideDurationMs = 10000;
 const STAGE_W = 1920;
 const STAGE_H = 1080;
 
@@ -454,7 +454,7 @@ const Monitor = () => {
     const id = setInterval(() => {
       setDirection(1);
       setSlideIdx((i) => (i + 1) % blocks.length);
-    }, SLIDE_DURATION_MS);
+    }, slideDurationMs);
     return () => clearInterval(id);
   }, [isPaused, blocks.length]);
 
@@ -993,7 +993,7 @@ const Monitor = () => {
             <div
               key={`pb-${safeIdx}-${rangeKey}`}
               className="h-full bg-gradient-to-r from-primary via-cyan-400 to-primary"
-              style={{ animation: reducedMotion ? undefined : `slide-in-right ${SLIDE_DURATION_MS}ms linear forwards`, transformOrigin: "left" }}
+              style={{ animation: reducedMotion ? undefined : `slide-in-right ${slideDurationMs}ms linear forwards`, transformOrigin: "left" }}
             />
           </div>
         )}
@@ -1061,7 +1061,7 @@ const Monitor = () => {
             {now.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })} · <span className="font-bold">{now.toLocaleTimeString("pt-BR")}</span>
           </span>
           <span className="text-muted-foreground text-base uppercase tracking-widest">
-            Slide {safeIdx + 1} / {blocks.length} · {isPaused ? "Pausado" : `Auto ${SLIDE_DURATION_MS / 1000}s`}{isFs ? " · Kiosk" : ""}
+            Slide {safeIdx + 1} / {blocks.length} · {isPaused ? "Pausado" : `Auto ${slideDurationMs / 1000}s`}{isFs ? " · Kiosk" : ""}
           </span>
           <span data-testid="monitor-conn" data-state={conn} className="flex items-center gap-2">
             {conn === "connected" && (<><Wifi className="w-6 h-6 text-emerald-500" /><span className="text-emerald-500">Conectado</span></>)}

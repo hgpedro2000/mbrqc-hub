@@ -370,10 +370,10 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
   );
 };
 
-export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS }: { value: number; size?: number; cascadeMs?: number }) => {
+export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS, gapPx = 2 }: { value: number; size?: number; cascadeMs?: number; gapPx?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-[2px] items-center align-middle" style={{ lineHeight: 1 }}>
+    <span className="inline-flex items-center align-middle" style={{ lineHeight: 1, gap: `${gapPx}px` }}>
       {str.split("").map((ch, i) => (
         <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
       ))}
@@ -389,11 +389,12 @@ export const SplitFlapText = ({
   cascadeMs = 60,
   maxChars,
   className,
-}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string }) => {
+  gapPx = 2,
+}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string; gapPx?: number }) => {
   let str = (value || "").toUpperCase();
   if (maxChars && str.length > maxChars) str = str.slice(0, maxChars);
   return (
-    <span className={cn("inline-flex gap-[2px] items-center align-middle", className)} style={{ lineHeight: 1 }}>
+    <span className={cn("inline-flex items-center align-middle", className)} style={{ lineHeight: 1, gap: `${gapPx}px` }}>
       {str.split("").map((ch, i) => (
         <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
       ))}

@@ -272,7 +272,7 @@ const ConsultaPecas = () => {
               <Button
                 type="button"
                 variant="default"
-                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md min-w-0"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-md min-w-0"
                 onClick={openSpecScanner}
                 title="Checar SPEC/ALC"
               >

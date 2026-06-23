@@ -14,17 +14,22 @@ export type MonitorBlock =
   | "consumiveis"
   | "ranking"
   | "defects"
-  | "inspecionado";
+  | "inspecionado"
+  | "comunicados"
+  | "alteracoes_4m"
+  | "ultimos_defeitos";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";
+export type MonitorProfile = "default" | "v2";
 
 export interface MonitorPreferences {
   blocks: MonitorBlock[];
   period: MonitorPeriod;
-  customFrom?: string; // YYYY-MM-DD
-  customTo?: string;   // YYYY-MM-DD
+  customFrom?: string;
+  customTo?: string;
   theme: MonitorTheme;
+  profile?: MonitorProfile;
 }
 
 const STORAGE_KEY = "monitor_preferences";
@@ -33,6 +38,7 @@ export const defaultPrefs: MonitorPreferences = {
   blocks: ["summary", "recent", "alerts"],
   period: "today",
   theme: "dark",
+  profile: "default",
 };
 
 export const loadPrefs = (): MonitorPreferences => {

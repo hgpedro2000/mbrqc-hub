@@ -60,6 +60,8 @@ export interface MonitorBlockSetting {
   inspLayoutCols?: "auto" | 1 | 2 | 3 | 4;
   /** Used by "inspecionado": horizontal gap between split-flap characters in px (-2 to 8). */
   inspLetterGap?: number;
+  /** Used by "inspecionado": extra delay (ms) after the split-flap settles, before starting the rotation timer. */
+  inspPostFlapDelayMs?: number;
 }
 
 export interface MonitorPreferences {

@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();

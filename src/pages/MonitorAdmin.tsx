@@ -139,17 +139,19 @@ export default function MonitorAdmin() {
   const filtered = items.filter((m) => m.tipo === tab);
 
   return (
-    <div className="min-h-screen bg-background p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-2">
-        <Button variant="ghost" onClick={() => navigate("/monitor")} className="gap-2"><ArrowLeft className="w-4 h-4" /> Voltar ao Monitor</Button>
-        <h1 className="text-2xl font-bold">Mídia dos Slides do Monitor</h1>
+    <div className="min-h-screen bg-background p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button variant="ghost" onClick={() => navigate("/monitor")} className="gap-2 order-1">
+          <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Voltar ao Monitor</span><span className="sm:hidden">Voltar</span>
+        </Button>
         <Button
           variant="default"
           onClick={() => window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no")}
-          className="gap-2"
+          className="gap-2 order-2 sm:order-3"
         >
           <MonitorIcon className="w-4 h-4" /> Monitor
         </Button>
+        <h1 className="text-xl sm:text-2xl font-bold w-full sm:w-auto order-3 sm:order-2 text-center sm:text-left">Mídia dos Slides do Monitor</h1>
       </div>
 
       <div className="flex gap-2 flex-wrap">

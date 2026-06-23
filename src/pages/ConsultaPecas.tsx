@@ -429,7 +429,7 @@ const ConsultaPecas = () => {
           {specPart && (
             <div className="flex flex-col max-h-[92vh]">
               {/* Header */}
-              <div className="bg-gradient-to-br from-violet-600 via-fuchsia-600 to-pink-600 px-3 sm:px-5 py-3 sm:py-4 text-white relative">
+              <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-3 sm:px-5 py-3 sm:py-4 text-white relative">
                 <div className="flex items-center gap-2 mb-1 opacity-90">
                   <ScanSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">Resultado da Leitura</span>

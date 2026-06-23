@@ -481,7 +481,7 @@ const RotatingParts = ({
     }, 1);
     // Settle ≈ longest cascade + a few flap half-flips for the path.
     const settleMs = maxChars * FLAP_CASCADE_MS + flapHalfMs() * 2 * 5;
-    const totalDelay = settleMs + interval;
+    const totalDelay = settleMs + Math.max(0, postFlapDelayMs) + interval;
     const startExit = window.setTimeout(() => {
       setPhase("exit");
       window.setTimeout(() => {
@@ -490,7 +490,7 @@ const RotatingParts = ({
       }, 400);
     }, totalDelay);
     return () => clearTimeout(startExit);
-  }, [total, interval, phase, idx, groups]);
+  }, [total, interval, postFlapDelayMs, phase, idx, groups]);
 
   const current = groups[idx] || [];
   const cls =

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X } from "lucide-react";
+import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X, Monitor as MonitorIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tipo = "comunicado" | "alteracao_4m";
@@ -140,10 +140,16 @@ export default function MonitorAdmin() {
 
   return (
     <div className="min-h-screen bg-background p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <Button variant="ghost" onClick={() => navigate("/monitor")} className="gap-2"><ArrowLeft className="w-4 h-4" /> Voltar ao Monitor</Button>
         <h1 className="text-2xl font-bold">Mídia dos Slides do Monitor</h1>
-        <div />
+        <Button
+          variant="default"
+          onClick={() => window.open("/monitor", "_blank", "width=1920,height=1080,menubar=no,toolbar=no,location=no,status=no")}
+          className="gap-2"
+        >
+          <MonitorIcon className="w-4 h-4" /> Monitor
+        </Button>
       </div>
 
       <div className="flex gap-2 flex-wrap">

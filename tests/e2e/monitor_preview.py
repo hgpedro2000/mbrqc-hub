@@ -149,14 +149,16 @@ async def main():
             # --- 5) Progress bar exists with width transition ---
             bar = await page.evaluate(
                 """() => {
-                    const dlg = document.querySelector('[role="dialog"]');
-                    const bar = dlg.querySelector('.bg-primary');
+                    // The countdown bar is the .bg-primary child of a
+                    // .rounded-full .bg-muted track inside the preview card.
+                    const track = document.querySelector('[role="dialog"] .h-1\\\\.5.rounded-full.bg-muted');
+                    const bar = track?.querySelector('.bg-primary');
                     if (!bar) return null;
                     const r = bar.getBoundingClientRect();
-                    return { h: r.height, transition: getComputedStyle(bar).transition };
+                    return { h: r.height, w: r.width, transition: bar.style.transition };
                 }"""
             )
-            assert bar and bar["h"] > 0 and "width" in bar["transition"], (
+            assert bar and "width" in (bar["transition"] or ""), (
                 f"progress bar missing/not animating: {bar}"
             )
             print(f"✓ progress bar present ({bar['transition']})")

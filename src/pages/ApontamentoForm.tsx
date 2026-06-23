@@ -609,6 +609,21 @@ const ApontamentoForm = () => {
     enabled: isEdit,
   });
 
+  const handleDeleteExistingPhoto = async (photo: any) => {
+    if (!confirm("Excluir esta foto?")) return;
+    try {
+      if (photo.file_path) {
+        await supabase.storage.from("checklist-photos").remove([photo.file_path]);
+      }
+      const { error } = await supabase.from("checklist_photos").delete().eq("id", photo.id);
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["apontamento-photos", id] });
+      toast.success("Foto excluída");
+    } catch (e: any) {
+      toast.error("Erro ao excluir foto: " + (e?.message || ""));
+    }
+  };
+
   // Auto-fill turno from profile
   useEffect(() => {
     if (activeProfile && !isEdit && activeProfile.turno) {
@@ -1709,6 +1724,7 @@ const ApontamentoForm = () => {
             {existingPhotos.map((photo) => (
               <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden border">
                 <img src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/checklist-photos/${photo.file_path}`} alt={photo.file_name} className="w-full h-full object-cover" />
+                <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => handleDeleteExistingPhoto(photo)} title="Excluir foto"><Trash2 className="w-3 h-3" /></Button>
               </div>
             ))}
             {photoPreviews.map((preview, idx) => (

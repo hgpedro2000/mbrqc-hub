@@ -33,8 +33,8 @@ const ConsultaPecas = () => {
   const cycleViewMode = () =>
     setViewMode((m) => (m === "list" ? "grid" : m === "grid" ? "compact" : "list"));
   const viewModeMeta = {
-    list: { icon: LayoutList, label: "1 / linha" },
-    grid: { icon: LayoutGrid, label: "2 / linha" },
+    list: { icon: LayoutList, label: "Grande" },
+    grid: { icon: LayoutGrid, label: "Normal" },
     compact: { icon: Rows3, label: "Compacto" },
   } as const;
   const ViewIcon = viewModeMeta[viewMode].icon;

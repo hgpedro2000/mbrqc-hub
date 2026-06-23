@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.3', 'patch', 'Modos de exibição renomeados', 'Modos de exibição da Consulta de Peças renomeados: 1/linha → Grande, 2/linha → Normal.');

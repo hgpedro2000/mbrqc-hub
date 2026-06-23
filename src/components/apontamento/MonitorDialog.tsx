@@ -664,6 +664,7 @@ const InspecionadoExtras = ({
   const rot = setting.inspRotateMs ?? 4000;
   const layout = setting.inspLayoutCols ?? "auto";
   const gap = setting.inspLetterGap ?? 2;
+  const postDelay = setting.inspPostFlapDelayMs ?? 0;
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">

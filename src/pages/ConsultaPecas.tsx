@@ -434,7 +434,7 @@ const ConsultaPecas = () => {
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setScanMode("check");
-                    setTypeChooserOpen(true);
+                    qrScannerCheckRef.current?.openScanner();
                   }}
                 >
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra

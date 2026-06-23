@@ -311,17 +311,20 @@ const Monitor = () => {
       const { data } = await supabase.from("alertas_qualidade").select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(50);
       if (data) setAlertas(data);
     } else if (table === "contencao") {
-      const { data } = await supabase.from("contencao").select("*").in("status", ["aberta", "em_andamento", "iniciada", "ativo"]).order("created_at", { ascending: false }).limit(50);
+      const { data } = await supabase.from("contencao").select("*").order("created_at", { ascending: false }).limit(100);
       if (data) setContencoes(data);
     } else if (table === "consumable_items") {
       const { data } = await supabase.from("consumable_items").select("*").eq("active", true);
       if (data) setConsumiveis(data);
+    } else if (table === "monitor_slides_media") {
+      const { data } = await supabase.from("monitor_slides_media").select("*").eq("ativo", true).order("ordem", { ascending: true });
+      if (data) setSlidesMedia(data);
     }
     setLastFetchAt((prev) => ({ ...prev, [table]: Date.now() }));
   };
 
   useEffect(() => {
-    Promise.all([fetchTable("apontamentos"), fetchTable("alertas_qualidade"), fetchTable("contencao"), fetchTable("consumable_items")]);
+    Promise.all([fetchTable("apontamentos"), fetchTable("alertas_qualidade"), fetchTable("contencao"), fetchTable("consumable_items"), fetchTable("monitor_slides_media")]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeKey]);
 

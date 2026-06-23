@@ -278,7 +278,7 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
           } else {
             setNext(null);
           }
-        }, FLAP_STEP_MS);
+        }, flapStepMs());
         timersRef.current.push(commitId);
       };
       step();

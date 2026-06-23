@@ -232,7 +232,7 @@ const ConsultaPecas = () => {
             </div>
           </div>
           <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">Leitor Hyundai, Pesquise detalhes sobre Part Name/Number, Fornecedor, CodeVendor, Módulo e Origem e Checagem de ALC code, Checagem de Spec de PNL LWR x Switch.</p>
+          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">Busca em detalhe peças, fornecedores e códigos, com Leitor Hyundai, Checagem de ALC e Spec PNL LWR x Switch.</p>
         </div>
       </header>
 

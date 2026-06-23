@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, useCallback, ReactNode, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+// IMPORTANT: /monitor uses a dedicated anon-only Supabase client (no session
+// persistence). It must NOT import the main `supabase` client nor any auth
+// listener/hook — the monitor session is independent of the main app login.
+import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
 import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock } from "@/components/apontamento/MonitorDialog";
-import { useUserRole } from "@/hooks/useUserRole";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
@@ -187,10 +189,10 @@ const Monitor = () => {
   const [paused, setPaused] = useState(false);
   const [flash, setFlash] = useState<{ type: "alert" | "contencao"; title: string } | null>(null);
   const [photoSource, setPhotoSource] = useState<PhotoSource | null>(null);
+  const [logoutToast, setLogoutToast] = useState<string | null>(null);
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
-  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const autoFsTried = useRef(false);
   const [needsFsGesture, setNeedsFsGesture] = useState(false);

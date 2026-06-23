@@ -176,40 +176,47 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-5 pb-3 border-b">
-          <DialogTitle className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5 text-primary" />
-            Configurar Monitor
-            <span className="ml-auto text-xs font-normal text-muted-foreground">
-              {activeCount} slide{activeCount === 1 ? "" : "s"} ativo{activeCount === 1 ? "" : "s"}
+      <DialogContent
+        className={cn(
+          "p-0 gap-0 flex flex-col overflow-hidden",
+          // Full-page on mobile, large centered panel on desktop
+          "w-screen h-[100dvh] max-w-none rounded-none border-0",
+          "sm:w-[96vw] sm:h-[92vh] sm:max-w-[1400px] sm:rounded-lg sm:border",
+        )}
+      >
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Settings2 className="w-5 h-5 text-primary shrink-0" />
+            <span className="truncate">Configurar Monitor</span>
+            <span className="ml-auto text-xs font-normal text-muted-foreground whitespace-nowrap">
+              {activeCount} slide{activeCount === 1 ? "" : "s"}
             </span>
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={setTab} className="flex flex-col">
-          <ScrollArea className="w-full border-b">
-            <TabsList className="h-auto p-1 m-2 inline-flex w-max bg-muted/40">
-              <TabsTrigger value="geral" className="gap-1.5">
+        <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0">
+          <ScrollArea className="w-full border-b shrink-0">
+            <TabsList className="h-auto p-1 mx-2 my-2 inline-flex w-max bg-muted/40 gap-0.5">
+              <TabsTrigger value="geral" className="gap-1.5 whitespace-nowrap">
                 <Settings2 className="w-3.5 h-3.5" /> Geral
               </TabsTrigger>
-              <TabsTrigger value="slides" className="gap-1.5">
+              <TabsTrigger value="slides" className="gap-1.5 whitespace-nowrap">
                 📑 Slides
                 <span className="ml-1 text-[10px] rounded-full bg-primary/15 text-primary px-1.5 py-0.5">
                   {activeCount}
                 </span>
               </TabsTrigger>
               {enabledBlocks.map((b) => (
-                <TabsTrigger key={b.id} value={`b:${b.id}`} className="gap-1.5">
+                <TabsTrigger key={b.id} value={`b:${b.id}`} className="gap-1.5 whitespace-nowrap">
                   <span>{b.emoji}</span>
-                  <span className="max-w-[140px] truncate">{b.title}</span>
+                  <span>{b.title}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
 
-          <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">
             {/* ======= GERAL ======= */}
             <TabsContent value="geral" className="mt-0 space-y-5">
               <Section title="Perfil do Monitor">
@@ -470,7 +477,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           </div>
         </Tabs>
 
-        <DialogFooter className="px-6 py-3 border-t bg-muted/30 gap-2 sm:justify-end">
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 gap-2 shrink-0 flex-row justify-end pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
         </DialogFooter>
@@ -494,13 +501,13 @@ const ChoiceCard = ({ active, onClick, title, desc }: { active: boolean; onClick
     type="button"
     onClick={onClick}
     className={cn(
-      "flex-1 min-w-[180px] text-left rounded-lg border p-3 transition-all",
+      "flex-1 basis-[260px] min-w-0 text-left rounded-lg border p-3 transition-all",
       active ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border bg-card hover:bg-muted/50",
     )}
   >
     <p className="text-sm font-medium flex items-center gap-1.5">
-      {title}
-      {active && <Check className="w-3.5 h-3.5 text-primary" />}
+      <span className="truncate">{title}</span>
+      {active && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
     </p>
     <p className="text-xs text-muted-foreground">{desc}</p>
   </button>

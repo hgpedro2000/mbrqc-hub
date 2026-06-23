@@ -373,6 +373,27 @@ export const SplitFlapNumber = ({ value, size = 80, cascadeMs = FLAP_CASCADE_MS 
   );
 };
 
+// Split-flap text: each character (letter/digit) flips like an airport board.
+// Uppercases input so it maps onto the ALPHA_SEQ flip path.
+export const SplitFlapText = ({
+  value,
+  size = 22,
+  cascadeMs = 60,
+  maxChars,
+  className,
+}: { value: string; size?: number; cascadeMs?: number; maxChars?: number; className?: string }) => {
+  let str = (value || "").toUpperCase();
+  if (maxChars && str.length > maxChars) str = str.slice(0, maxChars);
+  return (
+    <span className={cn("inline-flex gap-[2px] items-center align-middle", className)} style={{ lineHeight: 1 }}>
+      {str.split("").map((ch, i) => (
+        <SplitFlapDigit key={i} ch={ch} size={size} delayMs={i * cascadeMs} />
+      ))}
+    </span>
+  );
+};
+
+
 // --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
 type InspPart = { part_number: string; part_name: string; qty: number };
 const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number }) => {

@@ -899,12 +899,15 @@ const Monitor = () => {
         if (!all.length) {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Sem defeitos detectados no período.</div>;
         }
-        const pageSize = 4;
+        const udSetting = prefs.blockSettings?.ultimos_defeitos ?? {};
+        const pageSize = udSetting.perSlide ?? 4;
         const totalPages = Math.max(1, Math.ceil(all.length / pageSize));
         const page = Math.floor(now.getTime() / 12000) % totalPages;
         const items = all.slice(page * pageSize, page * pageSize + pageSize);
+        const gridCols = pageSize === 2 ? "grid-cols-2" : pageSize === 3 ? "grid-cols-3" : pageSize === 5 ? "grid-cols-5" : "grid-cols-4";
+        const descCls = descStyleClasses(udSetting.descStyle);
         return (
-          <div key={page} className="grid grid-cols-4 gap-5 w-full h-full">
+          <div key={page} className={cn("grid gap-5 w-full h-full", gridCols)}>
             {items.map((a, i) => {
               const photos = ngPhotos[a.id] || [];
               const photo = photos[0];
@@ -928,7 +931,7 @@ const Monitor = () => {
                     </div>
                     <p className="text-2xl font-bold text-rose-300 line-clamp-2">{a.modo_falha || "—"}</p>
                     {(a.descricao_problema || a.descricao) && (
-                      <p className="text-base text-foreground/90 line-clamp-3">{a.descricao_problema || a.descricao}</p>
+                      <p className={cn("line-clamp-3", descCls)}>{a.descricao_problema || a.descricao}</p>
                     )}
                     <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"} · {a.fornecedor || "—"}</p>
                     <p className="text-xs text-muted-foreground mt-auto">{new Date(a.created_at).toLocaleString("pt-BR")}</p>

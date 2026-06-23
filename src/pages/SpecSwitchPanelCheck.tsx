@@ -78,6 +78,28 @@ function extractPart(
   };
 }
 
+const hasHyundaiPayloadMarkers = (raw: string) =>
+  /(?:\[\)>|<gs>|<rs>|<eot>|\\x1d|\\x1e|\\x04|\\u001d|\\u001e|\\u0004|%1d|%1e|%04|[\x1d\x1e\x04])/i.test(raw);
+
+const looksLikeHyundaiStructuredPayload = (raw: string) => {
+  const compact = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return hasHyundaiPayloadMarkers(raw) || /(?:^|.*)06V[A-Z0-9]{4}P/.test(compact) || /^V[A-Z0-9]{4}P/.test(compact);
+};
+
+const isReadyForScannerAction = (raw: string, knownPrefixes: string[]) => {
+  const extracted = extractPart(raw, knownPrefixes);
+  if (!extracted.code || extracted.error) return false;
+
+  const parsed = parseHyundaiQR(raw);
+  if (looksLikeHyundaiStructuredPayload(raw)) {
+    return Boolean(parsed?.partNumber && parsed.lotNumber);
+  }
+
+  const normalizedRaw = normalize(raw);
+  const normalizedCode = normalize(extracted.code);
+  return normalizedRaw === normalizedCode || /^[A-Z0-9]{8,16}$/.test(normalizedRaw);
+};
+
 type Status = "waiting" | "ok" | "alc_diff" | "not_found" | "parse_error";
 
 interface LogEntry {
@@ -246,28 +268,9 @@ export default function SpecSwitchPanelCheck() {
     }
   }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
 
-  // Auto-jump from panel to switch when a valid PN was extracted
-  useEffect(() => {
-    if (panelPn && !switchRaw && document.activeElement === panelRef.current) {
-      switchRef.current?.focus();
-    }
-  }, [panelPn, switchRaw]);
-
-  // Auto-validate assim que SWITCH também é extraído com sucesso (fluxo bipa-bipa)
-  const autoValidatedRef = useRef<string>("");
-  useEffect(() => {
-    if (!panelPn || !switchPn) return;
-    if (panelExtract.error || switchExtract.error) return;
-    const key = `${panelPn}|${switchPn}`;
-    if (autoValidatedRef.current === key) return;
-    autoValidatedRef.current = key;
-    handleValidate();
-  }, [panelPn, switchPn, panelExtract.error, switchExtract.error, handleValidate]);
-
-  // Debounced field-jump: scanners that embed CR/LF inside the QR payload fire
-  // Enter mid-stream. We only jump when no more characters arrive for ~300ms AND
-  // the originating field already contains a valid extractable PN — guaranteeing
-  // the full QR stayed in the correct field.
+  // Debounced scanner actions: Hyundai QR payloads contain control separators
+  // that some USB readers emit as Enter mid-stream. Never move fields just
+  // because a PN was found; wait for a complete structured QR with lot data.
   const panelJumpTimer = useRef<number | null>(null);
   const switchValidateTimer = useRef<number | null>(null);
   const panelRawRef = useRef("");
@@ -293,9 +296,7 @@ export default function SpecSwitchPanelCheck() {
       e.preventDefault();
       clearPanelJump();
       panelJumpTimer.current = window.setTimeout(() => {
-        // Only advance to SWITCH if PAINEL already has a valid extracted PN.
-        const extracted = extractPart(panelRawRef.current, panelPrefixes);
-        if (extracted.code && !extracted.error) {
+        if (isReadyForScannerAction(panelRawRef.current, panelPrefixes)) {
           switchRef.current?.focus();
         }
       }, 300);
@@ -306,8 +307,7 @@ export default function SpecSwitchPanelCheck() {
       e.preventDefault();
       clearSwitchValidate();
       switchValidateTimer.current = window.setTimeout(() => {
-        const extracted = extractPart(switchRawRef.current, switchPrefixes);
-        if (extracted.code && !extracted.error) {
+        if (isReadyForScannerAction(switchRawRef.current, switchPrefixes)) {
           handleValidate();
         }
       }, 300);

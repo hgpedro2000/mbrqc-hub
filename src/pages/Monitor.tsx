@@ -580,7 +580,7 @@ const Monitor = () => {
   const [consumiveis, setConsumiveis] = useState<any[]>([]);
   const [slidesMedia, setSlidesMedia] = useState<any[]>([]);
   const [ngPhotos, setNgPhotos] = useState<Record<string, string[]>>({});
-  const isV2 = (prefs.profile ?? "default") === "v2";
+  const isV2 = true;
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;

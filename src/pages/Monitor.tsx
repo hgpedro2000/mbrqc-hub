@@ -1123,6 +1123,8 @@ const Monitor = () => {
       )}
 
       {/* Debug panel — toggle with `D` key or ?debug query param */}
+      {!isPreviewMode && (
+        <>
       <button
         onClick={() => setDebugOpen((v) => !v)}
         className="fixed bottom-2 right-2 z-[250] px-2 py-1 rounded bg-black/40 text-white/60 text-[10px] font-mono hover:bg-black/70"
@@ -1167,6 +1169,8 @@ const Monitor = () => {
             ))}
           </div>
         </div>
+      )}
+        </>
       )}
 
       {needsFsGesture && !isFs && (

@@ -415,6 +415,7 @@ const RotatingParts = ({
   perGroup = 2,
   fontScale = 1,
   intervalMs,
+  postFlapDelayMs = 0,
   gapPx = 2,
   storageKey,
 }: {
@@ -423,6 +424,7 @@ const RotatingParts = ({
   perGroup?: number;
   fontScale?: number;
   intervalMs?: number;
+  postFlapDelayMs?: number;
   gapPx?: number;
   storageKey: string;
 }) => {

@@ -109,10 +109,7 @@ async def check_dialog(page, label):
     if not triggered:
         print(f"  ! [{label}] could not find Monitor trigger on /apontamentos — skipping dialog")
         return
-    try:
-        await page.wait_for_selector('[role="dialog"]', timeout: 4000)  # type: ignore
-    except TypeError:
-        await page.wait_for_selector('[role="dialog"]', timeout=4000)
+    await page.wait_for_selector('[role="dialog"]', timeout=4000)
 
     for tab_name in ["Geral", "Slides"]:
         await page.evaluate(

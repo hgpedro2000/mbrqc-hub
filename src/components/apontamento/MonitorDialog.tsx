@@ -713,6 +713,27 @@ const InspecionadoExtras = ({
           ))}
         </div>
       </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Tamanho da fonte</p>
+            <p className="text-xs text-muted-foreground">Escala do nome do fornecedor, peças e quantidades. Atual: {Math.round(fs * 100)}%</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{Math.round(fs * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0.6}
+          max={1.6}
+          step={0.05}
+          value={fs}
+          onChange={(e) => onChange({ inspFontScale: Number(e.target.value) })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>60%</span><span>100%</span><span>160%</span>
+        </div>
+      </div>
     </div>
   );
 };

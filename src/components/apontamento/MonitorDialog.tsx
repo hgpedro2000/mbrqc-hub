@@ -147,11 +147,12 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   initial?: MonitorPreferences;
+  initialTab?: string;
   onConfirm: (prefs: MonitorPreferences) => void;
   confirmLabel?: string;
 }
 
-export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmLabel = "Abrir Monitor" }: Props) => {
+export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfirm, confirmLabel = "Abrir Monitor" }: Props) => {
   const { isAdmin } = useAuth();
   const [prefs, setPrefs] = useState<MonitorPreferences>(initial ?? loadPrefs());
   const [tab, setTab] = useState<string>("geral");

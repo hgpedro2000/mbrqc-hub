@@ -1037,26 +1037,12 @@ const Monitor = () => {
             ) : (
               <div className={cn("grid gap-6 w-full h-full", cols)}>
                 {suppliers.map((sup, si) => (
-                  <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
+                  <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 pb-8 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
                       <h3 className="text-xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
-                      {isV2
-                        ? <SplitFlapNumber value={sup.total} size={40} />
-                        : <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>}
+                      <SplitFlapNumber value={sup.total} size={isV2 ? 40 : 44} />
                     </div>
-                    <ul className="flex-1 overflow-hidden mt-2 divide-y divide-border/30">
-                      {sup.parts.slice(0, 8).map((p, i) => (
-                        <li key={`${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
-                          <div className="min-w-0">
-                            <p className="font-mono text-base truncate">{p.part_number}</p>
-                            {p.part_name && <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>}
-                          </div>
-                          {isV2
-                            ? <SplitFlapNumber value={p.qty} size={22} />
-                            : <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>}
-                        </li>
-                      ))}
-                    </ul>
+                    <RotatingParts parts={sup.parts} qtySize={isV2 ? 22 : 26} />
                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
                   </div>
                 ))}

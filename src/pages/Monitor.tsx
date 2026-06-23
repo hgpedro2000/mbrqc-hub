@@ -189,9 +189,17 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 // through a small set until we reach the target. Each step does a two-half flip
 // (top of OLD drops down, then bottom of NEW rises up). Per-digit `delayMs`
 // enables a left-to-right cascade on first paint.
-const FLAP_HALF_MS = 70;          // each half-flip duration (fast, board-like)
-const FLAP_STEP_MS = FLAP_HALF_MS * 2; // total per intermediate flip
+// Dynamic flap speed — controlled by Monitor preferences (flapSpeedMs).
+// Default 70ms half-flip; readers below pull live value each render so the
+// global slider effect is felt immediately by every digit.
+let CURRENT_FLAP_HALF_MS = 70;
+export const setFlapHalfMs = (n: number) => {
+  CURRENT_FLAP_HALF_MS = Math.max(15, Math.min(400, Math.round(n)));
+};
+const flapHalfMs = () => CURRENT_FLAP_HALF_MS;
+const flapStepMs = () => CURRENT_FLAP_HALF_MS * 2;
 const FLAP_CASCADE_MS = 90;
+
 
 // Inject keyframes once.
 if (typeof document !== "undefined" && !document.getElementById("splitflap-keyframes")) {

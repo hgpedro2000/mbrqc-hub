@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X } from "lucide-react";
+import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X, Monitor as MonitorIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Tipo = "comunicado" | "alteracao_4m";

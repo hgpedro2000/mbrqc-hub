@@ -383,29 +383,6 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                       </select>
                     </div>
                   </div>
-                  <div className="rounded-lg border bg-card p-3 sm:col-span-2">
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <div>
-                        <p className="text-sm font-medium">Velocidade do efeito aeroporto (split-flap)</p>
-                        <p className="text-xs text-muted-foreground">
-                          Tempo de cada meio-giro. Menor = mais rápido. Atual: {prefs.flapSpeedMs ?? 70}ms
-                        </p>
-                      </div>
-                      <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{prefs.flapSpeedMs ?? 70}ms</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={20}
-                      max={250}
-                      step={5}
-                      value={prefs.flapSpeedMs ?? 70}
-                      onChange={(e) => setPrefs((p) => ({ ...p, flapSpeedMs: Number(e.target.value) }))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                      <span>Rápido (20ms)</span><span>Padrão (70ms)</span><span>Lento (250ms)</span>
-                    </div>
-                  </div>
                 </div>
               </Section>
 

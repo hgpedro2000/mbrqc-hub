@@ -138,9 +138,26 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
   }, [open, initial]);
 
   // Auto-persist preferences (including per-slide overrides) so reloads keep them.
+  // Show a subtle toast confirming save, debounced so rapid changes only fire once.
+  const skipInitialSaveToast = useRef(true);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      skipInitialSaveToast.current = true;
+      return;
+    }
     savePrefs(prefs);
+    if (skipInitialSaveToast.current) {
+      skipInitialSaveToast.current = false;
+      return;
+    }
+    const handle = window.setTimeout(() => {
+      toast.success("Configurações salvas", {
+        description: "Tempo e animação atualizados.",
+        duration: 1500,
+        id: "monitor-prefs-saved",
+      });
+    }, 400);
+    return () => window.clearTimeout(handle);
   }, [prefs, open]);
 
   const toggle = (id: MonitorBlock) => {
@@ -155,6 +172,19 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
       ...p,
       blockSettings: { ...(p.blockSettings ?? {}), [id]: { ...(p.blockSettings?.[id] ?? {}), ...patch } },
     }));
+  };
+
+  /** Remove all per-slide overrides for a block, falling back to global defaults. */
+  const resetBlock = (id: MonitorBlock) => {
+    setPrefs((p) => {
+      const next = { ...(p.blockSettings ?? {}) };
+      delete next[id];
+      return { ...p, blockSettings: next };
+    });
+    toast.success("Slide redefinido", {
+      description: "Voltou a usar o padrão global.",
+      duration: 1800,
+    });
   };
 
   const customValid = prefs.period !== "custom" || (!!prefs.customFrom && !!prefs.customTo && prefs.customFrom <= prefs.customTo);

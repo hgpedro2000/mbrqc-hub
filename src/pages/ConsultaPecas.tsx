@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,9 +26,25 @@ const ConsultaPecas = () => {
   const [specDialogOpen, setSpecDialogOpen] = useState(false);
   const [specPart, setSpecPart] = useState<any>(null);
   const [hkmcOpen, setHkmcOpen] = useState(false);
+  const [specReaderOpen, setSpecReaderOpen] = useState(false);
+  const [specReaderInput, setSpecReaderInput] = useState("");
+  const specReaderInputRef = useRef<HTMLInputElement | null>(null);
 
   // Scanner refs (reuse Apontamento incoming logic)
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
+
+  // Open SPEC/ALC: camera on mobile, barcode-reader dialog on desktop
+  const openSpecScanner = useCallback(() => {
+    setScanMode("check");
+    if (isMobile) {
+      qrScannerRef.current?.openScanner();
+    } else {
+      setSpecReaderInput("");
+      setSpecReaderOpen(true);
+      setTimeout(() => specReaderInputRef.current?.focus(), 100);
+    }
+  }, [isMobile]);
+
 
   // Suffix picker
   const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);

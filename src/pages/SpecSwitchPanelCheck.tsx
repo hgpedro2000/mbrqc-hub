@@ -774,6 +774,33 @@ export default function SpecSwitchPanelCheck() {
           Importe CSV/Excel com colunas <b>SWITCH</b>, <b>PANEL</b>, <b>ALC CODE</b> (aba opcional "BANCO"). Os prefixos de extração do QR são derivados automaticamente do banco carregado.
         </p>
       </div>
+
+      <AlertDialog open={deleteIdx !== null} onOpenChange={(o) => { if (!o) setDeleteIdx(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir spec?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>Esta ação não pode ser desfeita. A seguinte spec será removida do banco:</div>
+                {deleteIdx !== null && db[deleteIdx] && (
+                  <div className="rounded border border-border bg-muted/40 p-3 font-mono text-sm">
+                    <div><span className="text-muted-foreground">SWITCH:</span> <b>{db[deleteIdx].switch}</b></div>
+                    <div><span className="text-muted-foreground">PANEL:</span> <b>{db[deleteIdx].panel}</b></div>
+                    <div><span className="text-muted-foreground">ALC:</span> <b>{db[deleteIdx].alc}</b></div>
+                    <div className="text-xs text-muted-foreground mt-1">Linha {deleteIdx + 1} de {db.length}</div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

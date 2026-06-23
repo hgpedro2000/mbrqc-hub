@@ -1,0 +1,1 @@
+INSERT INTO app_changelog (version, change_type, title, description) VALUES ('1.2.4.9','patch','Monitor: split-flap roll','Substituído por animação vertical com translateY: garante animação em toda mudança de valor.');

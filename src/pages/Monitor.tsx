@@ -607,7 +607,15 @@ const Monitor = () => {
 
   const exitMonitor = async () => {
     try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* noop */ }
-    navigate("/apontamentos");
+    // Try to close the window/tab (works when opened via window.open)
+    try { window.close(); } catch { /* noop */ }
+    // Fallback: if the window didn't close (e.g. not opened by script), go back or to apontamentos
+    setTimeout(() => {
+      if (!window.closed) {
+        if (window.history.length > 1) window.history.back();
+        else navigate("/apontamentos");
+      }
+    }, 100);
   };
 
   useEffect(() => {

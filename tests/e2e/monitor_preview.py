@@ -69,9 +69,22 @@ async def main():
             await page.wait_for_timeout(1000)
             await page.screenshot(path=str(OUT / "1_monitor.png"))
 
-            await page.locator('button[aria-label="Configurações do monitor"]').click(force=True)
-            await page.wait_for_selector('[role="dialog"]', timeout=4000)
-            await page.screenshot(path=str(OUT / "2_dialog_open.png"))
+            # Seed prefs so the dialog opens reliably (also forces 3 enabled slides).
+            await page.evaluate("""() => localStorage.setItem(
+                'monitor_preferences',
+                JSON.stringify({ blocks: ['summary','recent','alerts'], period:'today', theme:'dark' })
+            )""")
+            await page.reload(wait_until="domcontentloaded")
+            await page.wait_for_timeout(1200)
+
+            # Try the always-mounted Settings icon; fall back to "Configurar" CTA.
+            icon = page.locator('button[aria-label="Configurações do monitor"]')
+            cfg = page.locator('button:has-text("Configurar")').first
+            if await icon.count() > 0:
+                await icon.first.click(force=True)
+            else:
+                await cfg.click()
+            await page.wait_for_selector('[role="dialog"]', timeout=6000)
 
             # Open Slides master list and make sure Resumo is enabled.
             await page.locator('[role="tab"]:has-text("Slides")').click()

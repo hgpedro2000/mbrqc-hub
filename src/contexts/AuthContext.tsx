@@ -232,11 +232,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (typeof BroadcastChannel !== "undefined") {
         const ch = new BroadcastChannel("monitor_channel");
         ch.postMessage({ type: "MAIN_LOGOUT" });
-        // Give the monitor ~300ms to react before tearing down auth.
-        await new Promise((r) => setTimeout(r, 300));
-        ch.close();
+        setTimeout(() => ch.close(), 350);
       }
     } catch { /* ignore */ }
+    // localStorage fallback — works even when BroadcastChannel is unavailable/blocked.
+    try {
+      localStorage.setItem("monitor_channel_evt", JSON.stringify({ type: "MAIN_LOGOUT", t: Date.now() }));
+    } catch { /* ignore */ }
+    // Give listeners ~300ms to react before tearing down auth.
+    await new Promise((r) => setTimeout(r, 300));
     // Fire-and-forget audit before clearing the session
     try {
       const { logAction } = await import("@/lib/logAction");

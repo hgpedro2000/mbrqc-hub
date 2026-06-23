@@ -415,6 +415,7 @@ const RotatingParts = ({
   perGroup = 2,
   fontScale = 1,
   intervalMs,
+  postFlapDelayMs = 0,
   gapPx = 2,
   storageKey,
 }: {
@@ -423,6 +424,7 @@ const RotatingParts = ({
   perGroup?: number;
   fontScale?: number;
   intervalMs?: number;
+  postFlapDelayMs?: number;
   gapPx?: number;
   storageKey: string;
 }) => {
@@ -479,7 +481,7 @@ const RotatingParts = ({
     }, 1);
     // Settle ≈ longest cascade + a few flap half-flips for the path.
     const settleMs = maxChars * FLAP_CASCADE_MS + flapHalfMs() * 2 * 5;
-    const totalDelay = settleMs + interval;
+    const totalDelay = settleMs + Math.max(0, postFlapDelayMs) + interval;
     const startExit = window.setTimeout(() => {
       setPhase("exit");
       window.setTimeout(() => {
@@ -488,7 +490,7 @@ const RotatingParts = ({
       }, 400);
     }, totalDelay);
     return () => clearTimeout(startExit);
-  }, [total, interval, phase, idx, groups]);
+  }, [total, interval, postFlapDelayMs, phase, idx, groups]);
 
   const current = groups[idx] || [];
   const cls =
@@ -1159,6 +1161,7 @@ const Monitor = () => {
         const partsPerGroup = inspSetting.inspPartsPerGroup ?? 2;
         const fontScale = inspSetting.inspFontScale ?? 1;
         const rotateMs = inspSetting.inspRotateMs;
+        const postFlapDelayMs = inspSetting.inspPostFlapDelayMs ?? 0;
         const layoutCols = inspSetting.inspLayoutCols ?? "auto";
         const gapPx = inspSetting.inspLetterGap ?? 2;
         const suppliers = inspecionadoData.slice(0, supsPerSlide);
@@ -1195,6 +1198,7 @@ const Monitor = () => {
                       perGroup={partsPerGroup}
                       fontScale={fontScale}
                       intervalMs={rotateMs}
+                      postFlapDelayMs={postFlapDelayMs}
                       gapPx={gapPx}
                       storageKey={`insp::${sup.fornecedor}`}
                     />

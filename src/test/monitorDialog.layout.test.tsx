@@ -72,7 +72,7 @@ describe("MonitorDialog — responsive layout contract", () => {
 
   it("renders BOTH profile cards fully (V2 card no longer cut off on the right)", () => {
     renderOpen();
-    expect(screen.getByText("Padrão")).toBeInTheDocument();
+    expect(screen.getByText(/Layout original com slides essenciais/i)).toBeInTheDocument();
     expect(screen.getByText(/V2 — Detalhado/)).toBeInTheDocument();
     // ChoiceCard must use min-w-0 so flex children can shrink instead of overflowing
     const v2 = screen.getByText(/V2 — Detalhado/).closest("button")!;

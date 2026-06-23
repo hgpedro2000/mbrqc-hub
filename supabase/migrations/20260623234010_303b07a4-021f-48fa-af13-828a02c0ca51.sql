@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.4', 'patch', 'Botões simétricos na Consulta de Peças', 'QR, H/KMC, SPEC/ALC e Painel×Switch agora têm a mesma largura para manter simetria visual.');

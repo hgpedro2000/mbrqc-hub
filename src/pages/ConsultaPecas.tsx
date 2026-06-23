@@ -248,11 +248,11 @@ const ConsultaPecas = () => {
                 className="pl-10 h-12 text-base w-full"
               />
             </div>
-            <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-4 gap-2 w-full sm:w-auto sm:flex">
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-primary/30 bg-primary/5 hover:bg-primary/10 min-w-0"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-primary/30 bg-primary/5 hover:bg-primary/10 w-full sm:w-32 justify-center"
                 onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
                 title="Buscar por QR / Código de Barras"
               >
@@ -262,7 +262,7 @@ const ConsultaPecas = () => {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 min-w-0"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 w-full sm:w-32 justify-center"
                 onClick={() => setHkmcOpen(true)}
                 title="Barcode Scanner H/KMC"
               >
@@ -272,7 +272,7 @@ const ConsultaPecas = () => {
               <Button
                 type="button"
                 variant="default"
-                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-md min-w-0"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={openSpecScanner}
                 title="Checar SPEC/ALC"
               >
@@ -282,7 +282,7 @@ const ConsultaPecas = () => {
               <Button
                 type="button"
                 variant="default"
-                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md min-w-0"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={() => navigate("/spec-switch-panel")}
                 title="Validar Painel × Switch"
               >

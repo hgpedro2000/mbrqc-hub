@@ -236,7 +236,7 @@ const ConsultaPecas = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 flex flex-col" style={{ height: "calc(100vh - 180px)" }}>
+      <main className="container mx-auto px-3 sm:px-4 mt-3 sm:-mt-6 pb-12 flex flex-col" style={{ height: "calc(100vh - 180px)" }}>
         <div className="form-section shrink-0 sticky top-0 z-10 bg-card shadow-sm">
           <div className="flex flex-col sm:flex-row gap-2 w-full">
             <div className="relative w-full sm:flex-1 min-w-0">

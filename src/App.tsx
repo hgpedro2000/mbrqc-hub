@@ -46,6 +46,7 @@ import AuditLogsPage from "./pages/AuditLogsPage";
 import AdminPartNameFix from "./pages/AdminPartNameFix";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
+import SplitFlapHarness from "./pages/SplitFlapHarness";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -144,6 +145,7 @@ const App = () => (
           <UpdateBanner />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/dev/splitflap" element={<SplitFlapHarness />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/esqueci-senha" element={<ForgotPassword />} />
             <Route path="/solicitar-reset-admin" element={<SolicitarResetAdmin />} />

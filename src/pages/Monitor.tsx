@@ -269,7 +269,7 @@ const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
   );
 };
 
-const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
+export const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
   const str = fmtNum(value);
   return (
     <span className="inline-flex gap-1 items-center align-middle" style={{ lineHeight: 1 }}>

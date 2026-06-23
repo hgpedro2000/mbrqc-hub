@@ -6,6 +6,50 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import * as XLSX from "xlsx";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/** Validation regexes for DB rows. */
+const PN_RE = /^[A-Z0-9]{8,14}$/;
+const ALC_RE = /^[A-Z0-9]{2,8}$/;
+
+/**
+ * Validate a candidate row against the DB.
+ * Returns null when valid; otherwise a user-facing error message.
+ */
+function validateDbRow(
+  candidate: DbRow,
+  existing: DbRow[],
+  excludeIdx: number | null = null
+): string | null {
+  if (!candidate.switch || !candidate.panel || !candidate.alc) {
+    return "Preencha SWITCH, PANEL e ALC.";
+  }
+  if (!PN_RE.test(candidate.switch)) {
+    return "SWITCH inválido: use 8–14 caracteres alfanuméricos (sem espaços/símbolos).";
+  }
+  if (!PN_RE.test(candidate.panel)) {
+    return "PANEL inválido: use 8–14 caracteres alfanuméricos (sem espaços/símbolos).";
+  }
+  if (!ALC_RE.test(candidate.alc)) {
+    return "ALC inválido: use 2–8 caracteres alfanuméricos (ex.: LL31).";
+  }
+  const dupIdx = existing.findIndex(
+    (x) => x.switch === candidate.switch && x.panel === candidate.panel
+  );
+  if (dupIdx !== -1 && dupIdx !== excludeIdx) {
+    return `Spec duplicada: já existe SWITCH=${candidate.switch} + PANEL=${candidate.panel} (linha ${dupIdx + 1}).`;
+  }
+  return null;
+}
 
 interface DbRow {
   switch: string;
@@ -133,6 +177,7 @@ export default function SpecSwitchPanelCheck() {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editRow, setEditRow] = useState<DbRow>({ switch: "", panel: "", alc: "" });
   const [newRow, setNewRow] = useState<DbRow>({ switch: "", panel: "", alc: "" });
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [validated, setValidated] = useState(false);
   const panelRef = useRef<HTMLInputElement>(null);
@@ -382,18 +427,23 @@ export default function SpecSwitchPanelCheck() {
     const r: DbRow = {
       switch: normalize(newRow.switch),
       panel: normalize(newRow.panel),
-      alc: newRow.alc.trim().toUpperCase(),
+      alc: newRow.alc.trim().toUpperCase().replace(/[\s\-_.]/g, ""),
     };
-    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
-    if (db.some((x) => x.switch === r.switch && x.panel === r.panel)) { toast.error("Combinação já existe"); return; }
+    const err = validateDbRow(r, db, null);
+    if (err) { toast.error(err); return; }
     persistDb([...db, r]);
     setNewRow({ switch: "", panel: "", alc: "" });
-    toast.success("Linha adicionada");
+    toast.success("Spec adicionada");
   };
   const handleDeleteRow = (idx: number) => {
-    if (!confirm("Excluir esta linha?")) return;
-    persistDb(db.filter((_, i) => i !== idx));
-    if (editingIdx === idx) setEditingIdx(null);
+    setDeleteIdx(idx);
+  };
+  const confirmDelete = () => {
+    if (deleteIdx === null) return;
+    persistDb(db.filter((_, i) => i !== deleteIdx));
+    if (editingIdx === deleteIdx) setEditingIdx(null);
+    setDeleteIdx(null);
+    toast.success("Spec removida");
   };
   const startEdit = (idx: number) => {
     setEditingIdx(idx);
@@ -404,13 +454,14 @@ export default function SpecSwitchPanelCheck() {
     const r: DbRow = {
       switch: normalize(editRow.switch),
       panel: normalize(editRow.panel),
-      alc: editRow.alc.trim().toUpperCase(),
+      alc: editRow.alc.trim().toUpperCase().replace(/[\s\-_.]/g, ""),
     };
-    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
+    const err = validateDbRow(r, db, editingIdx);
+    if (err) { toast.error(err); return; }
     const next = db.map((x, i) => (i === editingIdx ? r : x));
     persistDb(next);
     setEditingIdx(null);
-    toast.success("Linha atualizada");
+    toast.success("Spec atualizada");
   };
 
   const palette: Record<Status, { bg: string; border: string; text: string; icon: JSX.Element; label: string }> = {
@@ -723,6 +774,33 @@ export default function SpecSwitchPanelCheck() {
           Importe CSV/Excel com colunas <b>SWITCH</b>, <b>PANEL</b>, <b>ALC CODE</b> (aba opcional "BANCO"). Os prefixos de extração do QR são derivados automaticamente do banco carregado.
         </p>
       </div>
+
+      <AlertDialog open={deleteIdx !== null} onOpenChange={(o) => { if (!o) setDeleteIdx(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir spec?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>Esta ação não pode ser desfeita. A seguinte spec será removida do banco:</div>
+                {deleteIdx !== null && db[deleteIdx] && (
+                  <div className="rounded border border-border bg-muted/40 p-3 font-mono text-sm">
+                    <div><span className="text-muted-foreground">SWITCH:</span> <b>{db[deleteIdx].switch}</b></div>
+                    <div><span className="text-muted-foreground">PANEL:</span> <b>{db[deleteIdx].panel}</b></div>
+                    <div><span className="text-muted-foreground">ALC:</span> <b>{db[deleteIdx].alc}</b></div>
+                    <div className="text-xs text-muted-foreground mt-1">Linha {deleteIdx + 1} de {db.length}</div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

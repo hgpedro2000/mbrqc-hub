@@ -226,9 +226,8 @@ const Monitor = () => {
   }, []);
 
   const systemReducedMotion = useReducedMotion();
-  const animationsEnabled = prefs.animationsEnabled ?? true;
-  const reducedMotion = systemReducedMotion || !animationsEnabled;
-  const slideDurationMs = prefs.slideDurationMs ?? DEFAULT_slideDurationMs;
+  const globalAnimationsEnabled = prefs.animationsEnabled ?? true;
+  const globalSlideDurationMs = prefs.slideDurationMs ?? DEFAULT_slideDurationMs;
 
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
   const navigate = useNavigate();

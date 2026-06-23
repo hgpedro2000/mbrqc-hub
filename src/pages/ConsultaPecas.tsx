@@ -446,19 +446,19 @@ const ConsultaPecas = () => {
                 {/* ALC Highlight */}
                 <div className={`rounded-xl p-3 sm:p-4 border-2 ${
                   specPart.alc_code
-                    ? "bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-950/40 dark:to-fuchsia-950/40 border-violet-400 dark:border-violet-600 shadow-lg shadow-violet-200/50 dark:shadow-violet-900/30"
+                    ? "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-amber-500 dark:border-amber-600 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30"
                     : "bg-muted/40 border-dashed border-muted-foreground/30"
                 }`}>
                   <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                    <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-violet-600 dark:text-violet-400" : "text-muted-foreground"}`} />
+                    <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
                     <span className={`text-[11px] sm:text-sm font-bold uppercase tracking-wider ${
-                      specPart.alc_code ? "text-violet-700 dark:text-violet-300" : "text-muted-foreground"
+                      specPart.alc_code ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
                     }`}>
                       ALC Code
                     </span>
                   </div>
                   {specPart.alc_code ? (
-                    <p className="font-mono font-bold text-2xl sm:text-3xl md:text-4xl text-violet-900 dark:text-violet-100 break-all text-center py-1 sm:py-2">
+                    <p className="font-mono font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 dark:text-amber-100 break-all text-center py-1 sm:py-2">
                       {specPart.alc_code}
                     </p>
                   ) : (

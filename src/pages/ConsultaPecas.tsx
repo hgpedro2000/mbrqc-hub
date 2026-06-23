@@ -282,7 +282,6 @@ const ConsultaPecas = () => {
       {/* Scanners ocultos — reaproveitam toda a lógica do Apontamento (Incoming) */}
       <div className="hidden">
         <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
-        <QRScannerButton ref={qrScannerRef} onScan={handleQRScan} />
       </div>
 
 

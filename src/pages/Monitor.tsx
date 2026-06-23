@@ -1111,6 +1111,7 @@ const Monitor = () => {
               conn === "error" && "bg-red-500")} />
           </span>
         </footer>
+        )}
       </div>
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}

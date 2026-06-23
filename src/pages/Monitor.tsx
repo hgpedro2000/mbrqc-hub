@@ -444,8 +444,8 @@ const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number 
           {current.map((p, i) => (
             <li key={`${idx}-${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
               <div className="min-w-0">
-                <SplitFlapText value={p.part_number} size={16} maxChars={18} className="font-mono" />
-                {p.part_name && <div className="mt-1"><SplitFlapText value={p.part_name} size={11} maxChars={28} className="text-muted-foreground" /></div>}
+                <SplitFlapText value={p.part_number} size={26} maxChars={16} className="font-mono" />
+                {p.part_name && <div className="mt-1.5"><SplitFlapText value={p.part_name} size={18} maxChars={26} className="text-muted-foreground" /></div>}
               </div>
               <SplitFlapNumber value={p.qty} size={qtySize} />
             </li>

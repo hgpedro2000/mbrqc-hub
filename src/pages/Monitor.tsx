@@ -1161,6 +1161,7 @@ const Monitor = () => {
         const partsPerGroup = inspSetting.inspPartsPerGroup ?? 2;
         const fontScale = inspSetting.inspFontScale ?? 1;
         const rotateMs = inspSetting.inspRotateMs;
+        const postFlapDelayMs = inspSetting.inspPostFlapDelayMs ?? 0;
         const layoutCols = inspSetting.inspLayoutCols ?? "auto";
         const gapPx = inspSetting.inspLetterGap ?? 2;
         const suppliers = inspecionadoData.slice(0, supsPerSlide);

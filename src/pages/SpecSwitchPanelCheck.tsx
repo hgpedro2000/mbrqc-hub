@@ -226,14 +226,37 @@ export default function SpecSwitchPanelCheck() {
 
   const handleValidate = useCallback(() => {
     if (isValidating) return;
+    if (!panelRaw || !switchRaw) {
+      toast.error("Preencha QR PAINEL e QR SWITCH antes de validar");
+      return;
+    }
+    if (panelExtract.error || switchExtract.error) {
+      toast.error("QR inválido em um dos campos. Releia e tente novamente.");
+      return;
+    }
     setIsValidating(true);
+    toast.loading("Validando combinação...", { id: "spec-validate" });
     panelRef.current?.blur();
     switchRef.current?.blur();
     setTimeout(() => {
       setIsValidating(false);
       setValidated(true);
+      if (result.status === "ok") {
+        toast.success(`SPEC OK — ALC ${result.alc}`, { id: "spec-validate" });
+      } else if (result.status === "alc_diff") {
+        toast.error(`ALC divergente: ${result.alc}`, { id: "spec-validate" });
+      } else {
+        toast.error("Combinação não encontrada no banco", { id: "spec-validate" });
+      }
     }, 350);
-  }, [isValidating]);
+  }, [isValidating, panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
+
+  // Auto-jump from panel to switch when a valid PN was extracted
+  useEffect(() => {
+    if (panelPn && !switchRaw && document.activeElement === panelRef.current) {
+      switchRef.current?.focus();
+    }
+  }, [panelPn, switchRaw]);
 
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {
@@ -242,7 +265,10 @@ export default function SpecSwitchPanelCheck() {
     }
   };
   const handleSwitchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") e.preventDefault();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleValidate();
+    }
   };
 
   /** Import CSV or Excel. Accepts columns SWITCH, PANEL, ALC CODE (any case, with spaces). */

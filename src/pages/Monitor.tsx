@@ -924,6 +924,8 @@ const Monitor = () => {
       <style>{`
         @keyframes slide-in-left { 0% { transform: translateX(-100%); opacity: 0 } 100% { transform: translateX(0); opacity: 1 } }
         @keyframes ticker { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+        @keyframes flap-down { 0% { transform: rotateX(-90deg); opacity: 0 } 60% { transform: rotateX(10deg); opacity: 1 } 100% { transform: rotateX(0deg); opacity: 1 } }
+        @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 0 0 hsl(0 90% 55% / 0.45) } 50% { box-shadow: 0 0 0 14px hsl(0 90% 55% / 0) } }
         @media (prefers-reduced-motion: reduce) {
           .reduced-motion * { animation: none !important; transition: none !important; }
         }

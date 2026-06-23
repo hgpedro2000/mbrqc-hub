@@ -390,7 +390,14 @@ export default function SpecSwitchPanelCheck() {
                 onChange={(e) => setPanelRaw(e.target.value)}
                 onKeyDown={handlePanelKey}
                 placeholder="Leia o QR do PAINEL..."
-                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                aria-invalid={!!panelExtract.error}
+                className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${
+                  panelExtract.error
+                    ? "border-red-500 focus:border-red-600 bg-red-50"
+                    : panelPn
+                    ? "border-emerald-500 focus:border-emerald-600"
+                    : "border-blue-400 focus:border-blue-600"
+                }`}
                 autoComplete="off"
               />
             </div>
@@ -406,7 +413,14 @@ export default function SpecSwitchPanelCheck() {
                 onChange={(e) => setSwitchRaw(e.target.value)}
                 onKeyDown={handleSwitchKey}
                 placeholder="Leia o QR do SWITCH..."
-                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                aria-invalid={!!switchExtract.error}
+                className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${
+                  switchExtract.error
+                    ? "border-red-500 focus:border-red-600 bg-red-50"
+                    : switchPn
+                    ? "border-emerald-500 focus:border-emerald-600"
+                    : "border-blue-400 focus:border-blue-600"
+                }`}
                 autoComplete="off"
               />
             </div>

@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.0', 'minor', 'Consulta Peças: modo compacto em tabela', 'Modo compacto agora exibe uma linha por peça em formato de tabela, com cabeçalho fixo e somente a lista rolando.');

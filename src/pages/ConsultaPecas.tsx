@@ -318,54 +318,72 @@ const ConsultaPecas = () => {
             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground">{searchTerm ? "Nenhuma peça encontrada" : "Digite para buscar peças"}</p>
           </div>
+        ) : viewMode === "compact" ? (
+          <div className="form-section p-0 overflow-hidden">
+            <div className="max-h-[70vh] overflow-auto">
+              <table className="w-full text-xs border-collapse">
+                <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur shadow-sm">
+                  <tr className="text-left">
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Part Number</th>
+                    <th className="px-2 py-2 font-semibold">Descrição</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Fornecedor</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Code Vendor</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">ALC Code</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Projeto</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Linha/Módulo</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Origem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p: any) => (
+                    <tr key={p.id} className="border-t border-border/60 hover:bg-accent/5">
+                      <td className="px-2 py-1.5 font-heading font-bold text-foreground whitespace-nowrap">{p.part_number}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[220px]">{p.part_name}</td>
+                      <td className="px-2 py-1.5 font-semibold text-blue-700 whitespace-nowrap">{p.suppliers?.name || "—"}</td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 bg-amber-50">{p.suppliers?.code || "—"}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-violet-400 text-violet-700 bg-violet-50">{p.alc_code || "N/A"}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50">{p.project || "—"}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-400 text-cyan-700 bg-cyan-50">{p.line_module || "—"}</Badge></td>
+                      <td className="px-2 py-1.5">{origemBadge(p.origem)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted-foreground text-center py-2 border-t border-border/60">{filtered.length} peça(s) encontrada(s)</p>
+          </div>
         ) : (
           <div className={
             viewMode === "grid"
               ? "grid gap-3 sm:grid-cols-2"
-              : viewMode === "compact"
-              ? "grid gap-1.5"
               : "grid gap-3"
           }>
             {filtered.map((p: any) => (
-              viewMode === "compact" ? (
-                <div key={p.id} className="form-section py-2 px-3 hover:border-accent/30 transition-colors">
-                  <div className="flex items-center gap-2 flex-wrap text-xs">
-                    <span className="font-heading font-bold text-foreground text-sm md:text-base">{p.part_number}</span>
-                    {origemBadge(p.origem)}
-                    <span className="text-muted-foreground truncate max-w-[40%]">{p.part_name}</span>
-                    <span className="text-muted-foreground">• <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
-                    <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 bg-amber-50">{p.suppliers?.code || "—"}</Badge>
-                    <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-violet-400 text-violet-700 bg-violet-50">{p.alc_code || "N/A"}</Badge>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50">{p.project || "—"}</Badge>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-400 text-cyan-700 bg-cyan-50">{p.line_module || "—"}</Badge>
-                  </div>
-                </div>
-              ) : (
-                <div key={p.id} className={`form-section ${viewMode === "grid" ? "p-3 md:p-4" : "md:p-5"} hover:border-accent/30 transition-colors`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className={`${viewMode === "grid" ? "space-y-1.5" : "space-y-1.5 md:space-y-2.5"} flex-1 min-w-0`}>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`font-heading font-bold text-foreground ${viewMode === "grid" ? "text-base md:text-lg" : "text-base md:text-2xl"}`}>{p.part_number}</span>
-                        {origemBadge(p.origem)}
-                      </div>
-                      <p className={`font-medium text-foreground ${viewMode === "grid" ? "text-sm" : "text-sm md:text-lg"}`}>{p.part_name}</p>
-                      <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                        <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
-                        <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
-                        <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-violet-400 text-violet-700 bg-violet-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
-                      </div>
-                      <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                        <span className="text-muted-foreground">Projeto: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
-                        <span className="text-muted-foreground">Linha/Módulo: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
-                      </div>
+              <div key={p.id} className={`form-section ${viewMode === "grid" ? "p-3 md:p-4" : "md:p-5"} hover:border-accent/30 transition-colors`}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className={`${viewMode === "grid" ? "space-y-1.5" : "space-y-1.5 md:space-y-2.5"} flex-1 min-w-0`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`font-heading font-bold text-foreground ${viewMode === "grid" ? "text-base md:text-lg" : "text-base md:text-2xl"}`}>{p.part_number}</span>
+                      {origemBadge(p.origem)}
+                    </div>
+                    <p className={`font-medium text-foreground ${viewMode === "grid" ? "text-sm" : "text-sm md:text-lg"}`}>{p.part_name}</p>
+                    <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
+                      <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
+                      <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
+                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-violet-400 text-violet-700 bg-violet-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
+                    </div>
+                    <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
+                      <span className="text-muted-foreground">Projeto: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
+                      <span className="text-muted-foreground">Linha/Módulo: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
                     </div>
                   </div>
                 </div>
-              )
+              </div>
             ))}
             <p className="text-xs text-muted-foreground text-center sm:col-span-2">{filtered.length} peça(s) encontrada(s)</p>
           </div>
         )}
+
         </div>
       </main>
 

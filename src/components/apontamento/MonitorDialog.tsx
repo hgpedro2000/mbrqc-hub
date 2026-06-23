@@ -657,7 +657,65 @@ export const descStyleClasses = (style?: DefectsDescStyle): string => {
   return cn(colorCls, weightCls, sizeCls, style?.italic && "italic");
 };
 
+const InspecionadoExtras = ({
+  setting,
+  onChange,
+}: {
+  setting: MonitorBlockSetting;
+  onChange: (patch: MonitorBlockSetting) => void;
+}) => {
+  const sps = setting.inspSuppliersPerSlide ?? 6;
+  const ppg = setting.inspPartsPerGroup ?? 2;
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm font-medium">Fornecedores por slide</p>
+          <p className="text-xs text-muted-foreground">Quantos cards de fornecedor mostrar por vez.</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {[2, 3, 4, 6, 9].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ inspSuppliersPerSlide: n })}
+              className={cn(
+                "h-8 w-10 text-sm rounded-sm transition-colors tabular-nums",
+                sps === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap pt-3 border-t">
+        <div>
+          <p className="text-sm font-medium">Linhas (peças) por fornecedor</p>
+          <p className="text-xs text-muted-foreground">Peças visíveis simultaneamente em cada card (rotaciona o restante).</p>
+        </div>
+        <div className="inline-flex rounded-md border bg-background p-0.5">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => onChange({ inspPartsPerGroup: n })}
+              className={cn(
+                "h-8 w-10 text-sm rounded-sm transition-colors tabular-nums",
+                ppg === n ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UltimosDefeitosExtras = ({
+
   setting,
   onChange,
 }: {

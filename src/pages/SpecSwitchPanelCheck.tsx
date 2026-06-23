@@ -225,7 +225,6 @@ export default function SpecSwitchPanelCheck() {
   }, []);
 
   const handleValidate = useCallback(() => {
-    if (isValidating) return;
     if (!panelRaw || !switchRaw) {
       toast.error("Preencha QR PAINEL e QR SWITCH antes de validar");
       return;
@@ -234,22 +233,18 @@ export default function SpecSwitchPanelCheck() {
       toast.error("QR inválido em um dos campos. Releia e tente novamente.");
       return;
     }
-    setIsValidating(true);
-    toast.loading("Validando combinação...", { id: "spec-validate" });
+    // Síncrono — lookup direto, sem delay artificial
+    setValidated(true);
     panelRef.current?.blur();
     switchRef.current?.blur();
-    setTimeout(() => {
-      setIsValidating(false);
-      setValidated(true);
-      if (result.status === "ok") {
-        toast.success(`SPEC OK — ALC ${result.alc}`, { id: "spec-validate" });
-      } else if (result.status === "alc_diff") {
-        toast.error(`ALC divergente: ${result.alc}`, { id: "spec-validate" });
-      } else {
-        toast.error("Combinação não encontrada no banco", { id: "spec-validate" });
-      }
-    }, 350);
-  }, [isValidating, panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
+    if (result.status === "ok") {
+      toast.success(`SPEC OK — ALC ${result.alc}`, { duration: 1500 });
+    } else if (result.status === "alc_diff") {
+      toast.error(`ALC divergente: ${result.alc}`, { duration: 2500 });
+    } else {
+      toast.error("Combinação não encontrada no banco", { duration: 2500 });
+    }
+  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
 
   // Auto-jump from panel to switch when a valid PN was extracted
   useEffect(() => {
@@ -257,6 +252,17 @@ export default function SpecSwitchPanelCheck() {
       switchRef.current?.focus();
     }
   }, [panelPn, switchRaw]);
+
+  // Auto-validate assim que SWITCH também é extraído com sucesso (fluxo bipa-bipa)
+  const autoValidatedRef = useRef<string>("");
+  useEffect(() => {
+    if (!panelPn || !switchPn) return;
+    if (panelExtract.error || switchExtract.error) return;
+    const key = `${panelPn}|${switchPn}`;
+    if (autoValidatedRef.current === key) return;
+    autoValidatedRef.current = key;
+    handleValidate();
+  }, [panelPn, switchPn, panelExtract.error, switchExtract.error, handleValidate]);
 
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {

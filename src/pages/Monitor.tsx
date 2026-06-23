@@ -310,6 +310,7 @@ const Monitor = () => {
       const { data } = await supabase.from("consumable_items").select("*").eq("active", true);
       if (data) setConsumiveis(data);
     }
+    setLastFetchAt((prev) => ({ ...prev, [table]: Date.now() }));
   };
 
   useEffect(() => {

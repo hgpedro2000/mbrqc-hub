@@ -24,8 +24,7 @@ const ConsultaPecas = () => {
   const [specPart, setSpecPart] = useState<any>(null);
 
   // Scanner refs (reuse Apontamento incoming logic)
-  const qrScannerSearchRef = useRef<QRScannerButtonHandle | null>(null);
-  const qrScannerCheckRef = useRef<QRScannerButtonHandle | null>(null);
+  const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);
 
   // Suffix picker
   const [suffixPickerOpen, setSuffixPickerOpen] = useState(false);

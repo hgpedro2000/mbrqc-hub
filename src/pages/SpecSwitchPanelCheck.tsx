@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, AlertTriangle, XCircle, Clock, RotateCcw, Upload, Database, Info, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import * as XLSX from "xlsx";
 
@@ -99,6 +101,7 @@ function loadDb(): DbRow[] {
 
 export default function SpecSwitchPanelCheck() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [db, setDb] = useState<DbRow[]>(() => loadDb());
   const [panelRaw, setPanelRaw] = useState("");
   const [switchRaw, setSwitchRaw] = useState("");
@@ -223,14 +226,37 @@ export default function SpecSwitchPanelCheck() {
 
   const handleValidate = useCallback(() => {
     if (isValidating) return;
+    if (!panelRaw || !switchRaw) {
+      toast.error("Preencha QR PAINEL e QR SWITCH antes de validar");
+      return;
+    }
+    if (panelExtract.error || switchExtract.error) {
+      toast.error("QR inválido em um dos campos. Releia e tente novamente.");
+      return;
+    }
     setIsValidating(true);
+    toast.loading("Validando combinação...", { id: "spec-validate" });
     panelRef.current?.blur();
     switchRef.current?.blur();
     setTimeout(() => {
       setIsValidating(false);
       setValidated(true);
+      if (result.status === "ok") {
+        toast.success(`SPEC OK — ALC ${result.alc}`, { id: "spec-validate" });
+      } else if (result.status === "alc_diff") {
+        toast.error(`ALC divergente: ${result.alc}`, { id: "spec-validate" });
+      } else {
+        toast.error("Combinação não encontrada no banco", { id: "spec-validate" });
+      }
     }, 350);
-  }, [isValidating]);
+  }, [isValidating, panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc]);
+
+  // Auto-jump from panel to switch when a valid PN was extracted
+  useEffect(() => {
+    if (panelPn && !switchRaw && document.activeElement === panelRef.current) {
+      switchRef.current?.focus();
+    }
+  }, [panelPn, switchRaw]);
 
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {
@@ -239,7 +265,10 @@ export default function SpecSwitchPanelCheck() {
     }
   };
   const handleSwitchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") e.preventDefault();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleValidate();
+    }
   };
 
   /** Import CSV or Excel. Accepts columns SWITCH, PANEL, ALC CODE (any case, with spaces). */
@@ -315,15 +344,16 @@ export default function SpecSwitchPanelCheck() {
           </Button>
           <h1 className="text-xl md:text-2xl font-bold tracking-wide">VALIDAÇÃO SPEC — PAINEL × SWITCH</h1>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="text-slate-900">
-              <Upload className="w-4 h-4 mr-2" /> Importar Banco
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowDb((s) => !s)} className="text-slate-900">
-              <Database className="w-4 h-4 mr-2" /> Banco ({db.length})
-            </Button>
-            <Button variant="outline" size="sm" onClick={reset} className="text-slate-900">
-              <RotateCcw className="w-4 h-4 mr-2" /> Nova Leitura
-            </Button>
+            {isAdmin && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="text-slate-900">
+                  <Upload className="w-4 h-4 mr-2" /> Importar Banco
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowDb((s) => !s)} className="text-slate-900">
+                  <Database className="w-4 h-4 mr-2" /> Banco ({db.length})
+                </Button>
+              </>
+            )}
           </div>
           <input
             ref={fileRef}
@@ -360,7 +390,14 @@ export default function SpecSwitchPanelCheck() {
                 onChange={(e) => setPanelRaw(e.target.value)}
                 onKeyDown={handlePanelKey}
                 placeholder="Leia o QR do PAINEL..."
-                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                aria-invalid={!!panelExtract.error}
+                className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${
+                  panelExtract.error
+                    ? "border-red-500 focus:border-red-600 bg-red-50"
+                    : panelPn
+                    ? "border-emerald-500 focus:border-emerald-600"
+                    : "border-blue-400 focus:border-blue-600"
+                }`}
                 autoComplete="off"
               />
             </div>
@@ -376,7 +413,14 @@ export default function SpecSwitchPanelCheck() {
                 onChange={(e) => setSwitchRaw(e.target.value)}
                 onKeyDown={handleSwitchKey}
                 placeholder="Leia o QR do SWITCH..."
-                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                aria-invalid={!!switchExtract.error}
+                className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${
+                  switchExtract.error
+                    ? "border-red-500 focus:border-red-600 bg-red-50"
+                    : switchPn
+                    ? "border-emerald-500 focus:border-emerald-600"
+                    : "border-blue-400 focus:border-blue-600"
+                }`}
                 autoComplete="off"
               />
             </div>
@@ -444,8 +488,8 @@ export default function SpecSwitchPanelCheck() {
             </div>
           )}
 
-          {/* Botões LIMPAR / VALIDAR */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-200">
+          {/* Botões LIMPAR / NOVA LEITURA / VALIDAR */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-200">
             <button
               type="button"
               onClick={reset}
@@ -453,6 +497,14 @@ export default function SpecSwitchPanelCheck() {
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               LIMPAR
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              disabled={isValidating}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" /> NOVA LEITURA
             </button>
             <button
               type="button"

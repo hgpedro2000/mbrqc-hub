@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.6', 'patch', 'Consulta de Peças: descrição encurtada', 'Descrição reduzida para melhor legibilidade.');

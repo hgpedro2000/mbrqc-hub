@@ -1473,6 +1473,7 @@ const Monitor = () => {
           }
         }}
         initial={prefs}
+        initialTab={currentBlock ? `b:${currentBlock}` : undefined}
         confirmLabel="Aplicar"
         onConfirm={(p) => { setPrefs(p); setSlideIdx(0); }}
       />

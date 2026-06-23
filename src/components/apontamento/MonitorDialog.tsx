@@ -514,6 +514,13 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                       </div>
                     </div>
                   </div>
+
+                  <SlidePreview
+                    emoji={b.emoji}
+                    title={b.title}
+                    durationMs={effDur}
+                    animations={effAnim}
+                  />
                 </TabsContent>
               );
             })}
@@ -555,3 +562,108 @@ const ChoiceCard = ({ active, onClick, title, desc }: { active: boolean; onClick
     <p className="text-xs text-muted-foreground">{desc}</p>
   </button>
 );
+
+/**
+ * Live preview of how this slide will enter and how long it will stay on screen.
+ * Replays automatically when duration/animations change, with a Repetir button.
+ */
+const SlidePreview = ({
+  emoji,
+  title,
+  durationMs,
+  animations,
+}: {
+  emoji: string;
+  title: string;
+  durationMs: number;
+  animations: boolean;
+}) => {
+  const [runKey, setRunKey] = useState(0);
+  const [phase, setPhase] = useState<"idle" | "running">("idle");
+  const [remaining, setRemaining] = useState(durationMs);
+
+  // Restart preview whenever the slide config changes.
+  useEffect(() => {
+    setRunKey((k) => k + 1);
+    setPhase("running");
+    setRemaining(durationMs);
+  }, [durationMs, animations]);
+
+  useEffect(() => {
+    if (phase !== "running") return;
+    const start = Date.now();
+    const tick = window.setInterval(() => {
+      const left = Math.max(0, durationMs - (Date.now() - start));
+      setRemaining(left);
+      if (left <= 0) {
+        setPhase("idle");
+        window.clearInterval(tick);
+      }
+    }, 100);
+    return () => window.clearInterval(tick);
+  }, [phase, durationMs, runKey]);
+
+  const replay = () => {
+    setRunKey((k) => k + 1);
+    setPhase("running");
+    setRemaining(durationMs);
+  };
+
+  return (
+    <div className="rounded-lg border bg-card p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Pré-visualização</p>
+          <p className="text-xs text-muted-foreground">
+            Veja como o slide entra e quanto tempo permanece ({(durationMs / 1000).toFixed(0)}s
+            {animations ? ", com animação" : ", sem animação"}).
+          </p>
+        </div>
+        <Button size="sm" variant="outline" onClick={replay} className="gap-1.5">
+          <RotateCcw className="w-3.5 h-3.5" />
+          Repetir
+        </Button>
+      </div>
+
+      <div className="relative h-32 sm:h-36 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden flex items-center justify-center">
+        <div
+          key={runKey}
+          className={cn(
+            "flex flex-col items-center gap-2 text-center px-4",
+            animations && "animate-enter",
+          )}
+        >
+          <span className="text-4xl leading-none">{emoji}</span>
+          <span className="text-sm font-medium">{title}</span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            preview do slide
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-1">
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+          <div
+            key={`bar-${runKey}`}
+            className="h-full bg-primary"
+            style={{
+              width: phase === "running" ? "0%" : "100%",
+              transition: phase === "running" ? `width ${durationMs}ms linear` : "none",
+            }}
+            ref={(el) => {
+              if (el && phase === "running") {
+                // Force reflow then animate to 100% — visual countdown.
+                el.getBoundingClientRect();
+                el.style.width = "100%";
+              }
+            }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
+          <span>{phase === "running" ? "Em exibição…" : "Concluído"}</span>
+          <span>{(remaining / 1000).toFixed(1)}s restantes</span>
+        </div>
+      </div>
+    </div>
+  );
+};

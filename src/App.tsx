@@ -37,6 +37,7 @@ import AlertaQualidadeView from "./pages/AlertaQualidadeView";
 import AlertaQualidadeFeed from "./pages/AlertaQualidadeFeed";
 import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
+import SpecSwitchPanelCheck from "./pages/SpecSwitchPanelCheck";
 import QrProfilePage from "./pages/QrProfilePage";
 import MatrizVersatilidade from "./pages/MatrizVersatilidade";
 import BarcodeScanner from "./pages/BarcodeScanner";
@@ -205,6 +206,7 @@ const App = () => (
             
             {/* Consulta de Peças */}
             <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />
+            <Route path="/spec-switch-panel" element={<ProtectedRoute><SpecSwitchPanelCheck /></ProtectedRoute>} />
             
             {/* Matriz de Versatilidade */}
             <Route path="/matriz-versatilidade" element={<ProtectedRoute><MatrizVersatilidade /></ProtectedRoute>} />

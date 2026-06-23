@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash } from "lucide-react";
+import { ArrowLeft, Search, Package, QrCode, AlertTriangle, ScanSearch, Sparkles, Factory, Layers, Hash, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -236,6 +236,26 @@ const ConsultaPecas = () => {
               onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
             >
               <ScanSearch className="w-5 h-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              className="h-12 shrink-0 gap-2 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hidden sm:flex"
+              onClick={() => window.open("/spec-switch-panel", "_blank", "noopener")}
+              title="Validar Painel × Switch (nova aba)"
+            >
+              <ShieldCheck className="w-5 h-5" />
+              <span className="font-semibold">Validar Painel×Switch</span>
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="icon"
+              title="Validar Painel × Switch"
+              className="h-12 w-12 shrink-0 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md sm:hidden"
+              onClick={() => window.open("/spec-switch-panel", "_blank", "noopener")}
+            >
+              <ShieldCheck className="w-5 h-5" />
             </Button>
           </div>
         </div>

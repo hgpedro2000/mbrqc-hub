@@ -85,6 +85,8 @@ async def main():
             else:
                 await cfg.click()
             await page.wait_for_selector('[role="dialog"]', timeout=6000)
+            await page.screenshot(path=str(OUT / "2_dialog_open.png"))
+
 
             # Open Slides master list and make sure Resumo is enabled.
             await page.locator('[role="tab"]:has-text("Slides")').click()

@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.7.7', 'patch', 'Switch Extraido sem sufixo', 'No SPEC PANEL x SWITCH o campo Switch Extraido agora mostra apenas os 10 primeiros caracteres (ex.: 93700BP030), sem o sufixo YJT/NNB.');

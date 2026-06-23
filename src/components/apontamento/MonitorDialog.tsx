@@ -791,7 +791,28 @@ const InspecionadoExtras = ({
         />
         <div className="flex justify-between text-[10px] text-muted-foreground">
           <span>Compacto (-2)</span><span>Padrão (2)</span><span>Largo (8)</span>
+      </div>
+      <div className="pt-3 border-t space-y-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <p className="text-sm font-medium">Delay após o split-flap</p>
+            <p className="text-xs text-muted-foreground">Pausa adicional depois que o efeito termina, antes de começar a contar o tempo de rotação.</p>
+          </div>
+          <span className="text-xs tabular-nums px-2 py-1 rounded bg-muted">{(postDelay / 1000).toFixed(1)}s</span>
         </div>
+        <input
+          type="range"
+          min={0}
+          max={10000}
+          step={250}
+          value={postDelay}
+          onChange={(e) => onChange({ inspPostFlapDelayMs: Number(e.target.value) })}
+          className="w-full accent-primary"
+        />
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>0s</span><span>5s</span><span>10s</span>
+        </div>
+      </div>
       </div>
       <div className="pt-3 border-t space-y-2">
         <div className="flex items-center justify-between gap-3 flex-wrap">

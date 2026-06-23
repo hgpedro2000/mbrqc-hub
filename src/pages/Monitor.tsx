@@ -1162,7 +1162,21 @@ const Monitor = () => {
         </div>
       )}
 
-      <MonitorDialog open={showSettings} onOpenChange={setShowSettings} initial={prefs} confirmLabel="Aplicar" onConfirm={(p) => { setPrefs(p); setSlideIdx(0); }} />
+      <MonitorDialog
+        open={showSettings}
+        onOpenChange={(v) => {
+          setShowSettings(v);
+          if (!v) {
+            // Pull any autosaved per-slide changes back into Monitor state.
+            const fresh = loadPrefs();
+            setPrefs(fresh);
+            setSlideIdx(0);
+          }
+        }}
+        initial={prefs}
+        confirmLabel="Aplicar"
+        onConfirm={(p) => { setPrefs(p); setSlideIdx(0); }}
+      />
     </ScaledStage>
   );
 };

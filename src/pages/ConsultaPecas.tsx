@@ -521,7 +521,7 @@ const ConsultaPecas = () => {
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
+                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white"
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setTimeout(() => openSpecScanner(), 150);

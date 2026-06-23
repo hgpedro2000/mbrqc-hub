@@ -184,10 +184,14 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 };
 
 // --- SplitFlap digit (airport-board style two-half flip) ---
-// Top half of OLD char flips down (rotateX 0 → -90), then bottom half of NEW
-// char flips up (rotateX 90 → 0). Per-digit `delayMs` enables L→R cascade.
-const FLAP_HALF_MS = 300;
-const FLAP_CASCADE_MS = 80;
+// Each character change flips through intermediate characters like a real
+// airport board. For digits we step 0→1→2…→target; for other chars we step
+// through a small set until we reach the target. Each step does a two-half flip
+// (top of OLD drops down, then bottom of NEW rises up). Per-digit `delayMs`
+// enables a left-to-right cascade on first paint.
+const FLAP_HALF_MS = 70;          // each half-flip duration (fast, board-like)
+const FLAP_STEP_MS = FLAP_HALF_MS * 2; // total per intermediate flip
+const FLAP_CASCADE_MS = 90;
 
 // Inject keyframes once.
 if (typeof document !== "undefined" && !document.getElementById("splitflap-keyframes")) {
@@ -199,6 +203,27 @@ if (typeof document !== "undefined" && !document.getElementById("splitflap-keyfr
   `;
   document.head.appendChild(s);
 }
+
+// Build the ordered flip sequence from `from` → `to`.
+const DIGIT_SEQ = "0123456789";
+const ALPHA_SEQ = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:-/+%";
+const buildFlipPath = (from: string, to: string): string[] => {
+  if (from === to) return [];
+  const isD = /[0-9]/.test(from) && /[0-9]/.test(to);
+  const seq = isD ? DIGIT_SEQ : ALPHA_SEQ;
+  const a = seq.indexOf(from);
+  const b = seq.indexOf(to);
+  if (a < 0 || b < 0) return [to];
+  const len = seq.length;
+  const steps: string[] = [];
+  let i = a;
+  // Always go forward (wrap around) — like a real flap board.
+  while (i !== b) {
+    i = (i + 1) % len;
+    steps.push(seq[i]);
+  }
+  return steps;
+};
 
 const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; delayMs?: number }) => {
   const isDigit = /[0-9]/.test(ch);
@@ -213,23 +238,45 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
   const [flipKey, setFlipKey] = useState(0);
   const timersRef = useRef<number[]>([]);
   const chRef = useRef(ch);
+  const currentRef = useRef(current);
+  currentRef.current = current;
 
   useEffect(() => {
     chRef.current = ch;
-    if (ch === current && next === null) return;
+    if (ch === currentRef.current && next === null) return;
+    // Cancel any pending steps and restart from whatever is currently shown.
     timersRef.current.forEach((id) => clearTimeout(id));
     timersRef.current = [];
 
-    const startId = window.setTimeout(() => {
+    const run = () => {
       if (chRef.current !== ch) return;
-      setNext(ch);
-      setFlipKey((k) => k + 1);
-      const commitId = window.setTimeout(() => {
-        setCurrent(ch);
+      const path = buildFlipPath(currentRef.current, ch);
+      if (path.length === 0) {
         setNext(null);
-      }, FLAP_HALF_MS * 2 + 20);
-      timersRef.current.push(commitId);
-    }, delayMs);
+        return;
+      }
+      let idx = 0;
+      const step = () => {
+        if (chRef.current !== ch) return;
+        const target = path[idx];
+        setNext(target);
+        setFlipKey((k) => k + 1);
+        const commitId = window.setTimeout(() => {
+          setCurrent(target);
+          currentRef.current = target;
+          idx += 1;
+          if (idx < path.length) {
+            step();
+          } else {
+            setNext(null);
+          }
+        }, FLAP_STEP_MS);
+        timersRef.current.push(commitId);
+      };
+      step();
+    };
+
+    const startId = window.setTimeout(run, delayMs);
     timersRef.current.push(startId);
 
     return () => {
@@ -240,8 +287,8 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
   }, [ch]);
 
   const animating = next !== null && next !== current;
-  const bgTop = animating ? next! : current;     // revealed after old top flips away
-  const bgBottom = current;                       // hidden when new bottom drops on top
+  const bgTop = animating ? next! : current;
+  const bgBottom = current;
 
   const half: React.CSSProperties = {
     position: "absolute",
@@ -272,18 +319,15 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
       className="relative inline-block rounded-md border border-white/15 shadow-inner align-middle"
       style={{ width: w, height: h, perspective: 400, background: "#0a0a0a", verticalAlign: "middle" }}
     >
-      {/* bg top (NEW) */}
       <span style={{ ...half, top: 0, borderBottom: "1px solid rgba(255,255,255,0.18)" }}>
         <span style={{ ...innerFull, top: 0 }}>{bgTop}</span>
       </span>
-      {/* bg bottom (OLD) */}
       <span style={{ ...half, bottom: 0 }}>
         <span style={{ ...innerFull, bottom: 0 }}>{bgBottom}</span>
       </span>
 
       {animating && (
         <>
-          {/* flap-top: OLD top flips down */}
           <span
             key={`t${flipKey}`}
             style={{
@@ -298,7 +342,6 @@ const SplitFlapDigit = ({ ch, size, delayMs = 0 }: { ch: string; size: number; d
           >
             <span style={{ ...innerFull, top: 0 }}>{current}</span>
           </span>
-          {/* flap-bottom: NEW bottom flips up */}
           <span
             key={`b${flipKey}`}
             style={{

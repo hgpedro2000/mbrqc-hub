@@ -374,6 +374,45 @@ export default function SpecSwitchPanelCheck() {
     setImportMsg({ kind: "ok", text: `Banco padrão restaurado (${DEFAULT_DB.length} linhas).` });
   };
 
+  const persistDb = (next: DbRow[]) => {
+    localStorage.setItem(DB_STORAGE_KEY, JSON.stringify(next));
+    setDb(next);
+  };
+  const handleAddRow = () => {
+    const r: DbRow = {
+      switch: normalize(newRow.switch),
+      panel: normalize(newRow.panel),
+      alc: newRow.alc.trim().toUpperCase(),
+    };
+    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
+    if (db.some((x) => x.switch === r.switch && x.panel === r.panel)) { toast.error("Combinação já existe"); return; }
+    persistDb([...db, r]);
+    setNewRow({ switch: "", panel: "", alc: "" });
+    toast.success("Linha adicionada");
+  };
+  const handleDeleteRow = (idx: number) => {
+    if (!confirm("Excluir esta linha?")) return;
+    persistDb(db.filter((_, i) => i !== idx));
+    if (editingIdx === idx) setEditingIdx(null);
+  };
+  const startEdit = (idx: number) => {
+    setEditingIdx(idx);
+    setEditRow({ ...db[idx] });
+  };
+  const saveEdit = () => {
+    if (editingIdx === null) return;
+    const r: DbRow = {
+      switch: normalize(editRow.switch),
+      panel: normalize(editRow.panel),
+      alc: editRow.alc.trim().toUpperCase(),
+    };
+    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
+    const next = db.map((x, i) => (i === editingIdx ? r : x));
+    persistDb(next);
+    setEditingIdx(null);
+    toast.success("Linha atualizada");
+  };
+
   const palette: Record<Status, { bg: string; border: string; text: string; icon: JSX.Element; label: string }> = {
     waiting: { bg: "bg-slate-700", border: "border-slate-500", text: "text-slate-100", icon: <Clock className="w-16 h-16" />, label: "AGUARDANDO" },
     ok: { bg: "bg-emerald-600", border: "border-emerald-400", text: "text-white", icon: <CheckCircle2 className="w-16 h-16" />, label: "SPEC OK" },

@@ -144,9 +144,19 @@ const ConsultaPecas = () => {
       p.part_number === pn || p.part_number.replace(/-/g, "") === pnNormalized
     );
 
+    const openMatch = (part: any) => {
+      if (scanMode === "check") {
+        setSpecPart(part);
+        setSpecDialogOpen(true);
+        toast({ title: "Peça identificada!", description: `PN: ${part.part_number}` });
+      } else {
+        setSearchTerm(part.part_number);
+        toast({ title: "Peça encontrada!", description: `PN: ${part.part_number}` });
+      }
+    };
+
     if (exactMatch) {
-      setSearchTerm(exactMatch.part_number);
-      toast({ title: "Peça encontrada!", description: `PN: ${exactMatch.part_number}` });
+      openMatch(exactMatch);
       return;
     }
 
@@ -186,8 +196,7 @@ const ConsultaPecas = () => {
     }
 
     if (matches.length === 1) {
-      setSearchTerm(matches[0].part_number);
-      toast({ title: "Peça encontrada!", description: `PN: ${matches[0].part_number}` });
+      openMatch(matches[0]);
     } else if (matches.length > 1) {
       const options = matches.map((m: any) => ({
         part_number: m.part_number,
@@ -205,7 +214,7 @@ const ConsultaPecas = () => {
       setSearchTerm(pn);
       toast({ title: "Part Number não cadastrado", description: `Buscando por: ${pn}`, variant: "destructive" });
     }
-  }, [partNumbers, toast]);
+  }, [partNumbers, toast, scanMode]);
 
   const handleDecodedText = useCallback((decoded: string) => {
     const parsed = parseHyundaiQR(decoded);

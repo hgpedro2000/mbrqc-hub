@@ -206,6 +206,8 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
     [prefs.blocks],
   );
 
+  const previewData = usePreviewData(open);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent

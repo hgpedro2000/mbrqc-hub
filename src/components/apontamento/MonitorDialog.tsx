@@ -281,7 +281,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                 </TabsTrigger>
               ))}
             </TabsList>
-            <ScrollBar orientation="horizontal" />
+            <ScrollBar orientation="horizontal" className="h-3 bg-muted/50 hover:bg-muted [&>div]:bg-primary/60 hover:[&>div]:bg-primary" />
           </ScrollArea>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4">

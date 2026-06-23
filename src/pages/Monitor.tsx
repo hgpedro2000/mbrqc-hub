@@ -745,33 +745,32 @@ const Monitor = () => {
         );
       case "ranking": {
         const max = Math.max(...supplierRanking.map((s) => s.ppm), 1);
-        const fmtPpm = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}k` : fmtNum(n);
         return (
-          <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
-            <div className="grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40 tabular-nums">
+          <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 px-8 py-6 flex flex-col">
+            <div className="grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_5rem_9rem] gap-4 text-xs uppercase tracking-wider text-muted-foreground pb-2 border-b border-border/40 tabular-nums">
               <span className="text-center">#</span>
               <span>Fornecedor</span>
               <span className="text-right">Insp.</span>
               <span className="text-right">NG</span>
               <span className="text-right">PPM</span>
             </div>
-            <ol className="divide-y divide-border/30">
-              {supplierRanking.length === 0 && <li className="h-[60vh] flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
+            <ol className="divide-y divide-border/30 flex-1 overflow-hidden">
+              {supplierRanking.length === 0 && <li className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
               {supplierRanking.slice(0, 8).map((s, i) => {
                 const isWorst = isV2 && i < 3;
                 return (
-                  <li key={s.fornecedor} className={cn("grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] items-center gap-6 py-4 tabular-nums", isWorst && "rounded-xl px-3 -mx-3 bg-red-500/5 border border-red-500/30")}
+                  <li key={s.fornecedor} className={cn("grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_5rem_9rem] items-center gap-4 py-2.5 tabular-nums", isWorst && "rounded-xl px-2 -mx-2 bg-red-500/5 border border-red-500/30")}
                       style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>
-                    <span className={cn("text-5xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
+                    <span className={cn("text-3xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
                     <div className="min-w-0">
-                      <p className="font-semibold text-3xl truncate">{s.fornecedor}{isWorst && <span className="ml-3 text-xs uppercase tracking-widest px-2 py-1 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
-                      <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
+                      <p className="font-semibold text-2xl truncate">{s.fornecedor}{isWorst && <span className="ml-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
+                      <div className="h-2 rounded-full bg-muted/40 overflow-hidden mt-1.5">
                         <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
                       </div>
                     </div>
-                    <span className="text-3xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
-                    <span className="text-3xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
-                    <span className="text-4xl font-black text-red-500 text-right">{isV2 ? fmtPpm(s.ppm) : fmtNum(s.ppm)}</span>
+                    <span className="text-2xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
+                    <span className="text-2xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
+                    <span className="text-3xl font-black text-red-500 text-right">{fmtNum(s.ppm)}</span>
                   </li>
                 );
               })}
@@ -779,6 +778,7 @@ const Monitor = () => {
           </div>
         );
       }
+
       case "defects": {
         const stripNum = (s: string) => (s || "").replace(/^\s*\d+\s*[-–.)]\s*/, "");
         const data = defectsData.map((d) => ({ ...d, name: stripNum(d.name) }));

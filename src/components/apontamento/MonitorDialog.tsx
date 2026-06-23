@@ -572,6 +572,14 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                     />
                   )}
 
+                  {b.id === "inspecionado" && (
+                    <InspecionadoExtras
+                      setting={s}
+                      onChange={(patch) => setBlockSetting(b.id, patch)}
+                    />
+                  )}
+
+
                   <SlidePreview
                     blockId={b.id}
                     emoji={b.emoji}

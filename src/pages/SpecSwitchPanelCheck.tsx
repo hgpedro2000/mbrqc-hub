@@ -351,8 +351,8 @@ export default function SpecSwitchPanelCheck() {
 
         <div className="bg-slate-100 text-slate-900 rounded-lg overflow-hidden shadow-2xl border-2 border-slate-400">
           {/* QR PAINEL */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR PAINEL</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">QR PAINEL</div>
             <div className="p-2 flex items-center gap-2">
               <input
                 ref={panelRef}
@@ -367,8 +367,8 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* QR SWITCH */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR SWITCH</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">QR SWITCH</div>
             <div className="p-2 flex items-center gap-2">
               <input
                 ref={switchRef}
@@ -383,32 +383,32 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* PAINEL EXTRAIDO */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
             <div className="p-3 font-mono text-lg">
               {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* SWITCH EXTRAIDO */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
             <div className="p-3 font-mono text-lg">
               {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
           {/* ALC CODE */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">ALC CODE</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
             <div className="p-3 font-mono text-xl font-bold">
               {result.alc || <span className="text-slate-400 font-normal text-base">—</span>}
             </div>
           </div>
 
           {/* RESULTADO */}
-          <div className={`grid grid-cols-[160px_1fr] border-b-2 border-slate-400 ${p.bg} ${p.text}`}>
-            <div className="bg-black/20 p-3 font-bold border-r-2 border-slate-400 flex items-center">RESULTADO</div>
+          <div className={`grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400 ${p.bg} ${p.text}`}>
+            <div className="bg-black/20 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">RESULTADO</div>
             <div className="p-4 flex items-center gap-4">
               <div className="shrink-0">{p.icon}</div>
               <div className="text-3xl md:text-4xl font-black tracking-tight">{p.label}</div>
@@ -416,15 +416,15 @@ export default function SpecSwitchPanelCheck() {
           </div>
 
           {/* MENSAGEM */}
-          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
+          <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
             <div className="p-3 text-base">{result.message}</div>
           </div>
 
           {/* Detalhes esperados quando divergência */}
           {(result.status === "alc_diff" || result.status === "not_found") && result.expectedRows.length > 0 && (
-            <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
-              <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
+            <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
+              <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
               <div className="p-3 overflow-x-auto">
                 <table className="w-full text-sm font-mono">
                   <thead className="text-xs text-slate-600">

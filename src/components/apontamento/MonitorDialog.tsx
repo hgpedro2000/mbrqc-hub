@@ -52,11 +52,12 @@ export const loadPrefs = (): MonitorPreferences => {
     if (!raw) return defaultPrefs;
     const p = JSON.parse(raw);
     if (!Array.isArray(p.blocks) || !p.period) return defaultPrefs;
-    return { theme: "dark", ...p } as MonitorPreferences;
+    return { theme: "dark", slideDurationMs: 10000, animationsEnabled: true, ...p } as MonitorPreferences;
   } catch {
     return defaultPrefs;
   }
 };
+
 
 export const savePrefs = (p: MonitorPreferences) => {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }

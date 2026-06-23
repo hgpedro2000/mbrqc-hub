@@ -427,18 +427,23 @@ export default function SpecSwitchPanelCheck() {
     const r: DbRow = {
       switch: normalize(newRow.switch),
       panel: normalize(newRow.panel),
-      alc: newRow.alc.trim().toUpperCase(),
+      alc: newRow.alc.trim().toUpperCase().replace(/[\s\-_.]/g, ""),
     };
-    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
-    if (db.some((x) => x.switch === r.switch && x.panel === r.panel)) { toast.error("Combinação já existe"); return; }
+    const err = validateDbRow(r, db, null);
+    if (err) { toast.error(err); return; }
     persistDb([...db, r]);
     setNewRow({ switch: "", panel: "", alc: "" });
-    toast.success("Linha adicionada");
+    toast.success("Spec adicionada");
   };
   const handleDeleteRow = (idx: number) => {
-    if (!confirm("Excluir esta linha?")) return;
-    persistDb(db.filter((_, i) => i !== idx));
-    if (editingIdx === idx) setEditingIdx(null);
+    setDeleteIdx(idx);
+  };
+  const confirmDelete = () => {
+    if (deleteIdx === null) return;
+    persistDb(db.filter((_, i) => i !== deleteIdx));
+    if (editingIdx === deleteIdx) setEditingIdx(null);
+    setDeleteIdx(null);
+    toast.success("Spec removida");
   };
   const startEdit = (idx: number) => {
     setEditingIdx(idx);
@@ -449,13 +454,14 @@ export default function SpecSwitchPanelCheck() {
     const r: DbRow = {
       switch: normalize(editRow.switch),
       panel: normalize(editRow.panel),
-      alc: editRow.alc.trim().toUpperCase(),
+      alc: editRow.alc.trim().toUpperCase().replace(/[\s\-_.]/g, ""),
     };
-    if (!r.switch || !r.panel || !r.alc) { toast.error("Preencha SWITCH, PANEL e ALC"); return; }
+    const err = validateDbRow(r, db, editingIdx);
+    if (err) { toast.error(err); return; }
     const next = db.map((x, i) => (i === editingIdx ? r : x));
     persistDb(next);
     setEditingIdx(null);
-    toast.success("Linha atualizada");
+    toast.success("Spec atualizada");
   };
 
   const palette: Record<Status, { bg: string; border: string; text: string; icon: JSX.Element; label: string }> = {

@@ -9,6 +9,7 @@ import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
+  Megaphone, Wrench, Microscope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
@@ -47,14 +48,17 @@ const periodRange = (p: MonitorPreferences): { start: Date; end?: Date } => {
 const fmtNum = (n: number) => new Intl.NumberFormat("pt-BR").format(n);
 
 const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: string; gradient: string }> = {
-  summary:    { title: "Resumo do Período",       icon: TrendingUp,   accent: "text-primary",     gradient: "from-blue-500/20 via-transparent to-purple-500/20" },
-  recent:     { title: "Últimos Registros",       icon: ListChecks,   accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-blue-500/20" },
-  alerts:     { title: "Alertas Vigentes",        icon: AlertTriangle,accent: "text-amber-500",  gradient: "from-amber-500/25 via-transparent to-orange-500/20" },
-  contencao:  { title: "Contenções Ativas",       icon: ShieldAlert,  accent: "text-red-500",     gradient: "from-red-500/25 via-transparent to-rose-500/20" },
-  consumiveis:{ title: "Consumíveis Críticos",    icon: Package,      accent: "text-orange-500",  gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
-  ranking:    { title: "Ranking de Fornecedores", icon: Trophy,       accent: "text-yellow-500",  gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
-  defects:    { title: "Gráfico de Defeitos",     icon: BarChart3,    accent: "text-destructive", gradient: "from-red-500/20 via-transparent to-pink-500/20" },
-  inspecionado:{ title: "Quantidade Inspecionada", icon: Package,     accent: "text-cyan-400",    gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
+  summary:        { title: "Resumo do Período",                  icon: TrendingUp,    accent: "text-primary",      gradient: "from-blue-500/20 via-transparent to-purple-500/20" },
+  recent:         { title: "Últimos Lançamentos",                 icon: ListChecks,    accent: "text-cyan-400",     gradient: "from-cyan-500/20 via-transparent to-blue-500/20" },
+  alerts:         { title: "Alertas de Qualidade",                icon: AlertTriangle, accent: "text-amber-500",    gradient: "from-amber-500/25 via-transparent to-orange-500/20" },
+  contencao:      { title: "Contenções",                          icon: ShieldAlert,   accent: "text-red-500",      gradient: "from-red-500/25 via-transparent to-rose-500/20" },
+  consumiveis:    { title: "Consumíveis Críticos",                icon: Package,       accent: "text-orange-500",   gradient: "from-orange-500/20 via-transparent to-yellow-500/20" },
+  ranking:        { title: "Performance de Fornecedores",         icon: Trophy,        accent: "text-yellow-500",   gradient: "from-yellow-500/20 via-transparent to-amber-500/20" },
+  defects:        { title: "Principais Modos de Falhas Detectados", icon: BarChart3,   accent: "text-destructive",  gradient: "from-red-500/20 via-transparent to-pink-500/20" },
+  inspecionado:   { title: "Monitoramento de Inspeção",           icon: Package,       accent: "text-cyan-400",     gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
+  comunicados:    { title: "Comunicados",                         icon: Megaphone,     accent: "text-sky-400",      gradient: "from-sky-500/20 via-transparent to-indigo-500/20" },
+  alteracoes_4m:  { title: "Alterações 4M/EO e Validações",       icon: Wrench,        accent: "text-violet-400",   gradient: "from-violet-500/20 via-transparent to-fuchsia-500/20" },
+  ultimos_defeitos:{ title: "Últimos Defeitos Detectados",        icon: Microscope,    accent: "text-rose-400",     gradient: "from-rose-500/20 via-transparent to-red-500/20" },
 };
 
 // --- Hooks ---
@@ -179,6 +183,28 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
   );
 };
 
+// --- SplitFlap digit (airport-board style) ---
+const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
+  const str = fmtNum(value);
+  return (
+    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1 }}>
+      {str.split("").map((ch, i) => (
+        <span
+          key={`${i}-${ch}`}
+          className="inline-block bg-zinc-950 border border-zinc-700 rounded-md text-emerald-300 font-mono font-black tabular-nums shadow-inner overflow-hidden"
+          style={{
+            minWidth: ch.match(/[0-9]/) ? size * 0.65 : size * 0.35,
+            padding: `${size * 0.05}px ${size * 0.1}px`,
+            animation: "flap-down 0.45s ease-out both",
+          }}
+        >
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+};
+
 const Monitor = () => {
   const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());
   const [showSettings, setShowSettings] = useState(false);
@@ -207,6 +233,9 @@ const Monitor = () => {
   const [alertas, setAlertas] = useState<any[]>([]);
   const [contencoes, setContencoes] = useState<any[]>([]);
   const [consumiveis, setConsumiveis] = useState<any[]>([]);
+  const [slidesMedia, setSlidesMedia] = useState<any[]>([]);
+  const [ngPhotos, setNgPhotos] = useState<Record<string, string[]>>({});
+  const isV2 = (prefs.profile ?? "default") === "v2";
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
@@ -304,17 +333,20 @@ const Monitor = () => {
       const { data } = await supabase.from("alertas_qualidade").select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(50);
       if (data) setAlertas(data);
     } else if (table === "contencao") {
-      const { data } = await supabase.from("contencao").select("*").in("status", ["aberta", "em_andamento", "iniciada", "ativo"]).order("created_at", { ascending: false }).limit(50);
+      const { data } = await supabase.from("contencao").select("*").order("created_at", { ascending: false }).limit(100);
       if (data) setContencoes(data);
     } else if (table === "consumable_items") {
       const { data } = await supabase.from("consumable_items").select("*").eq("active", true);
       if (data) setConsumiveis(data);
+    } else if (table === "monitor_slides_media") {
+      const { data } = await supabase.from("monitor_slides_media").select("*").eq("ativo", true).order("ordem", { ascending: true });
+      if (data) setSlidesMedia(data);
     }
     setLastFetchAt((prev) => ({ ...prev, [table]: Date.now() }));
   };
 
   useEffect(() => {
-    Promise.all([fetchTable("apontamentos"), fetchTable("alertas_qualidade"), fetchTable("contencao"), fetchTable("consumable_items")]);
+    Promise.all([fetchTable("apontamentos"), fetchTable("alertas_qualidade"), fetchTable("contencao"), fetchTable("consumable_items"), fetchTable("monitor_slides_media")]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeKey]);
 
@@ -363,6 +395,51 @@ const Monitor = () => {
     contencoes.forEach((c) => urls.push(...allPhotos(c)));
     if (urls.length) prefetchPhotos(urls);
   }, [alertas, contencoes]);
+
+  // Resolve signed URLs for monitor-comunicados media (bucket is private but has anon-read RLS).
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const updates: Record<string, string> = {};
+      for (const m of slidesMedia) {
+        if (mediaUrls[m.file_path]) continue;
+        const { data } = await supabase.storage.from("monitor-comunicados").createSignedUrl(m.file_path, 60 * 60 * 6);
+        if (data?.signedUrl) updates[m.file_path] = data.signedUrl;
+      }
+      if (!cancelled && Object.keys(updates).length) setMediaUrls((prev) => ({ ...prev, ...updates }));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slidesMedia]);
+
+  // Fetch NG checklist_photos for "Últimos Defeitos Detectados"
+  const ngApontamentos = useMemo(
+    () => apontamentos.filter((a) => (a.quantidade_ng || 0) > 0).slice(0, 12),
+    [apontamentos]
+  );
+  useEffect(() => {
+    if (!ngApontamentos.length) return;
+    let cancelled = false;
+    (async () => {
+      const ids = ngApontamentos.map((a) => a.id);
+      const { data } = await supabase
+        .from("checklist_photos")
+        .select("checklist_id,file_path")
+        .eq("checklist_type", "apontamento")
+        .in("checklist_id", ids);
+      if (!data || cancelled) return;
+      const byId: Record<string, string[]> = {};
+      for (const ph of data) {
+        const { data: signed } = await supabase.storage.from("checklist-photos").createSignedUrl(ph.file_path, 60 * 60 * 6);
+        if (signed?.signedUrl) {
+          (byId[ph.checklist_id] ||= []).push(signed.signedUrl);
+        }
+      }
+      if (!cancelled) setNgPhotos(byId);
+    })();
+    return () => { cancelled = true; };
+  }, [ngApontamentos]);
 
   const blocks = prefs.blocks;
   const safeIdx = blocks.length ? slideIdx % blocks.length : 0;
@@ -508,13 +585,16 @@ const Monitor = () => {
                   <th className="text-right py-5 px-5">Insp.</th>
                   <th className="text-right py-5 px-5">OK</th>
                   <th className="text-right py-5 px-5">NG</th>
+                  {isV2 && <th className="text-right py-5 px-5">Rate Aprov.</th>}
                   <th className="text-right py-5 px-5">Hora</th>
                 </tr>
               </thead>
               <tbody>
-                {apontamentos.slice(0, 11).map((a, i) => {
+                {apontamentos.slice(0, isV2 ? 10 : 11).map((a, i) => {
                   const insp = a.quantidade_inspecionada || a.quantidade || 0;
                   const ok = a.quantidade_ok ?? Math.max(insp - (a.quantidade_ng || 0), 0);
+                  const rate = insp > 0 ? (ok / insp) * 100 : 0;
+                  const rateColor = rate >= 98 ? "text-emerald-400" : rate >= 90 ? "text-amber-400" : "text-red-500";
                   return (
                     <tr key={a.id} className="border-t border-border/40" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 60}ms both` }}>
                       <td className="py-4 px-5 font-mono text-xl">{a.numero || "—"}</td>
@@ -524,12 +604,17 @@ const Monitor = () => {
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-cyan-300">{fmtNum(insp)}</td>
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-emerald-400">{fmtNum(ok)}</td>
                       <td className={cn("py-4 px-5 text-right font-black text-3xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>
+                      {isV2 && (
+                        <td className={cn("py-4 px-5 text-right font-black text-2xl tabular-nums", rateColor)}>
+                          {insp > 0 ? `${rate.toFixed(1)}%` : "—"}
+                        </td>
+                      )}
                       <td className="py-4 px-5 text-right text-xl text-muted-foreground">{new Date(a.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</td>
                     </tr>
                   );
                 })}
                 {apontamentos.length === 0 && (
-                  <tr><td colSpan={8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
+                  <tr><td colSpan={isV2 ? 9 : 8} className="text-center py-20 text-4xl text-muted-foreground">Sem registros no período.</td></tr>
                 )}
               </tbody>
             </table>
@@ -569,40 +654,64 @@ const Monitor = () => {
             })}
           </div>
         );
-      case "contencao":
-        return (
-          <div className="grid grid-cols-3 grid-rows-2 gap-6 w-full h-full">
-            {contencoes.length === 0 && <div className="col-span-3 row-span-2 flex items-center justify-center text-5xl text-muted-foreground">Nenhuma contenção ativa.</div>}
-            {contencoes.slice(0, 6).map((c, i) => {
-              const photos = allPhotos(c);
-              const photo = photos[0];
-              const hasPhotos = photos.length > 0;
-              return (
-                <div
-                  key={c.id}
-                  onClick={() => hasPhotos && openPhotoModal(c, "contencao")}
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-red-500/40 flex flex-col",
-                    hasPhotos && "cursor-pointer transition-transform hover:scale-[1.02]",
-                  )}
-                  style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}
-                >
-                  {photo && <img src={photo} alt="" className="w-full h-44 object-cover" loading="lazy" />}
-                  <div className="p-5 flex-1 flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-2xl font-bold truncate">{c.titulo || c.numero || "Contenção"}</h3>
-                      <span className="text-base px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-semibold uppercase">{c.status}</span>
+      case "contencao": {
+        const ativas = contencoes.filter((c) => ["aberta", "em_andamento", "iniciada", "ativo"].includes(c.status));
+        const finalizadas = contencoes.filter((c) => ["concluida", "encerrada", "fechada", "cancelada"].includes(c.status));
+        if (!isV2) {
+          const list = ativas.slice(0, 6);
+          return (
+            <div className="grid grid-cols-3 grid-rows-2 gap-6 w-full h-full">
+              {list.length === 0 && <div className="col-span-3 row-span-2 flex items-center justify-center text-5xl text-muted-foreground">Nenhuma contenção ativa.</div>}
+              {list.map((c, i) => {
+                const photos = allPhotos(c);
+                const photo = photos[0];
+                const hasPhotos = photos.length > 0;
+                return (
+                  <div key={c.id} onClick={() => hasPhotos && openPhotoModal(c, "contencao")} className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-red-500/40 flex flex-col", hasPhotos && "cursor-pointer transition-transform hover:scale-[1.02]")} style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
+                    {photo && <img src={photo} alt="" className="w-full h-44 object-cover" loading="lazy" />}
+                    <div className="p-5 flex-1 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3"><h3 className="text-2xl font-bold truncate">{c.titulo || c.numero || "Contenção"}</h3><span className="text-base px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-semibold uppercase">{c.status}</span></div>
+                      <p className="text-xl text-muted-foreground line-clamp-2">{c.part_number} · {c.fornecedor || ""}</p>
                     </div>
-                    <p className="text-xl text-muted-foreground line-clamp-2">{c.part_number} · {c.fornecedor || ""}</p>
-                    {c.descricao && <p className="text-lg text-muted-foreground line-clamp-2">{c.descricao}</p>}
+                    <div className="absolute left-0 top-0 bottom-0 w-2 bg-red-500" />
                   </div>
-                  <div className="absolute left-0 top-0 bottom-0 w-2 bg-red-500" />
-                  {photos.length > 1 && <span className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-black/60 text-white">+{photos.length - 1}</span>}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          );
+        }
+        const Row = ({ c, i, color }: { c: any; i: number; color: string }) => (
+          <li key={c.id}
+              onClick={() => allPhotos(c).length && openPhotoModal(c, "contencao")}
+              className={cn("grid grid-cols-[auto_1fr_auto] items-center gap-4 py-3 px-4 rounded-xl border", color, "bg-card/40 hover:bg-card/70 cursor-pointer")}
+              style={reducedMotion ? undefined : { animation: `slide-in-right 0.45s ease-out ${i * 60}ms both` }}>
+            <span className="font-mono text-lg text-muted-foreground">{c.numero || "—"}</span>
+            <div className="min-w-0">
+              <p className="text-xl font-bold truncate">{c.titulo || "Contenção"}</p>
+              <p className="text-sm text-muted-foreground truncate">{c.part_number} · {c.fornecedor || "—"}</p>
+            </div>
+            <span className="text-xs uppercase tracking-wider px-2 py-1 rounded-full bg-background/60 font-semibold">{c.status}</span>
+          </li>
+        );
+        return (
+          <div className="grid grid-cols-2 gap-6 w-full h-full">
+            <div className="rounded-3xl bg-card/60 backdrop-blur-md border border-red-500/30 p-6 flex flex-col">
+              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2 text-red-400"><ShieldAlert className="w-7 h-7 animate-pulse" /> Em Andamento ({ativas.length})</h3>
+              <ul className="space-y-2 overflow-hidden flex-1">
+                {ativas.length === 0 && <li className="h-full flex items-center justify-center text-2xl text-muted-foreground">Nenhuma</li>}
+                {ativas.slice(0, 10).map((c, i) => <Row key={c.id} c={c} i={i} color="border-red-500/30" />)}
+              </ul>
+            </div>
+            <div className="rounded-3xl bg-card/60 backdrop-blur-md border border-emerald-500/30 p-6 flex flex-col">
+              <h3 className="text-2xl font-bold mb-3 flex items-center gap-2 text-emerald-400"><CheckCircle2 className="w-7 h-7" /> Finalizadas ({finalizadas.length})</h3>
+              <ul className="space-y-2 overflow-hidden flex-1">
+                {finalizadas.length === 0 && <li className="h-full flex items-center justify-center text-2xl text-muted-foreground">Nenhuma</li>}
+                {finalizadas.slice(0, 10).map((c, i) => <Row key={c.id} c={c} i={i} color="border-emerald-500/30" />)}
+              </ul>
+            </div>
           </div>
         );
+      }
       case "consumiveis":
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
@@ -630,9 +739,10 @@ const Monitor = () => {
         );
       case "ranking": {
         const max = Math.max(...supplierRanking.map((s) => s.ppm), 1);
+        const fmtPpm = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}k` : fmtNum(n);
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
-            <div className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40">
+            <div className="grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40 tabular-nums">
               <span className="text-center">#</span>
               <span>Fornecedor</span>
               <span className="text-right">Insp.</span>
@@ -641,38 +751,44 @@ const Monitor = () => {
             </div>
             <ol className="divide-y divide-border/30">
               {supplierRanking.length === 0 && <li className="h-[60vh] flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
-              {supplierRanking.slice(0, 8).map((s, i) => (
-                <li key={s.fornecedor} className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] items-center gap-6 py-4" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both` }}>
-                  <span className={cn("text-5xl font-black text-center", i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-amber-700" : "text-muted-foreground")}>{i + 1}</span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-3xl truncate">{s.fornecedor}</p>
-                    <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
-                      <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
+              {supplierRanking.slice(0, 8).map((s, i) => {
+                const isWorst = isV2 && i < 3;
+                return (
+                  <li key={s.fornecedor} className={cn("grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] items-center gap-6 py-4 tabular-nums", isWorst && "rounded-xl px-3 -mx-3 bg-red-500/5 border border-red-500/30")}
+                      style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>
+                    <span className={cn("text-5xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-3xl truncate">{s.fornecedor}{isWorst && <span className="ml-3 text-xs uppercase tracking-widest px-2 py-1 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
+                      <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
+                        <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-3xl font-bold text-cyan-300 tabular-nums text-right">{fmtNum(s.insp)}</span>
-                  <span className="text-3xl font-bold text-red-400 tabular-nums text-right">{fmtNum(s.ng)}</span>
-                  <span className="text-5xl font-black text-red-500 tabular-nums text-right">{fmtNum(s.ppm)}</span>
-                </li>
-              ))}
+                    <span className="text-3xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
+                    <span className="text-3xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
+                    <span className="text-4xl font-black text-red-500 text-right">{isV2 ? fmtPpm(s.ppm) : fmtNum(s.ppm)}</span>
+                  </li>
+                );
+              })}
             </ol>
           </div>
         );
       }
-      case "defects":
+      case "defects": {
+        const stripNum = (s: string) => (s || "").replace(/^\s*\d+\s*[-–.)]\s*/, "");
+        const data = defectsData.map((d) => ({ ...d, name: stripNum(d.name) }));
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-8">
-            {defectsData.length === 0 ? (
+            {data.length === 0 ? (
               <div className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem defeitos no período.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={defectsData} layout="vertical" margin={{ left: 200, right: 120, top: 20, bottom: 20 }}>
+                <BarChart data={data} layout="vertical" margin={{ left: 200, right: 120, top: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                   <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <YAxis dataKey="name" type="category" width={260} stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 18 }} />
-                  <Bar dataKey="value" radius={[0, 8, 8, 0]} isAnimationActive={!reducedMotion} animationDuration={800}>
-                    {defectsData.map((_, i) => <Cell key={i} fill={`hsl(${10 + i * 8}, 85%, ${55 - i * 2}%)`} />)}
+                  <Bar dataKey="value" radius={[0, 8, 8, 0]} isAnimationActive={!reducedMotion} animationDuration={isV2 ? 1400 : 800} animationEasing="ease-out">
+                    {data.map((_, i) => <Cell key={i} fill={`hsl(${10 + i * 8}, 85%, ${55 - i * 2}%)`} />)}
                     <LabelList dataKey="value" position="right" fill="hsl(var(--foreground))" fontSize={26} fontWeight={900} formatter={(v: number) => fmtNum(v)} />
                   </Bar>
                 </BarChart>
@@ -680,8 +796,10 @@ const Monitor = () => {
             )}
           </div>
         );
+      }
       case "inspecionado": {
-        const suppliers = inspecionadoData.slice(0, 4);
+        const suppliers = isV2 ? inspecionadoData : inspecionadoData.slice(0, 4);
+        const cols = suppliers.length <= 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" : suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" : "grid-cols-3 grid-rows-3";
         return (
           <div className="w-full h-full overflow-hidden">
             {suppliers.length === 0 ? (
@@ -689,28 +807,25 @@ const Monitor = () => {
                 Sem peças inspecionadas no período.
               </div>
             ) : (
-              <div className={cn(
-                "grid gap-6 w-full h-full",
-                suppliers.length === 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2",
-              )}>
+              <div className={cn("grid gap-6 w-full h-full", cols)}>
                 {suppliers.map((sup, si) => (
-                  <div
-                    key={sup.fornecedor}
-                    className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col"
-                    style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}
-                  >
+                  <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
-                      <h3 className="text-2xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
-                      <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>
+                      <h3 className="text-xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
+                      {isV2
+                        ? <SplitFlapNumber value={sup.total} size={40} />
+                        : <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>}
                     </div>
                     <ul className="flex-1 overflow-hidden mt-2 divide-y divide-border/30">
                       {sup.parts.slice(0, 8).map((p, i) => (
                         <li key={`${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
                           <div className="min-w-0">
-                            <p className="font-mono text-lg truncate">{p.part_number}</p>
-                            {p.part_name && <p className="text-sm text-muted-foreground truncate">{p.part_name}</p>}
+                            <p className="font-mono text-base truncate">{p.part_number}</p>
+                            {p.part_name && <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>}
                           </div>
-                          <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>
+                          {isV2
+                            ? <SplitFlapNumber value={p.qty} size={22} />
+                            : <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>}
                         </li>
                       ))}
                     </ul>
@@ -719,6 +834,70 @@ const Monitor = () => {
                 ))}
               </div>
             )}
+          </div>
+        );
+      }
+      case "comunicados":
+      case "alteracoes_4m": {
+        const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
+        const items = slidesMedia.filter((m) => m.tipo === tipo);
+        const mi = Math.floor(now.getTime() / 8000) % Math.max(items.length, 1);
+        const current = items[mi];
+        if (!items.length) {
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
+        }
+        const url = current ? mediaUrls[current.file_path] : undefined;
+        return (
+          <div key={current?.id} className="w-full h-full grid grid-rows-[1fr_auto] gap-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-6 animate-fade-in">
+            <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
+              {url ? <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" /> : <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />}
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                {current?.titulo && <h3 className="text-3xl font-bold truncate">{current.titulo}</h3>}
+                {current?.descricao && <p className="text-xl text-muted-foreground truncate">{current.descricao}</p>}
+              </div>
+              <span className="text-sm uppercase tracking-widest text-muted-foreground tabular-nums">{mi + 1} / {items.length}</span>
+            </div>
+          </div>
+        );
+      }
+      case "ultimos_defeitos": {
+        const items = ngApontamentos;
+        if (!items.length) {
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Sem defeitos detectados no período.</div>;
+        }
+        return (
+          <div className="grid grid-cols-3 grid-rows-2 gap-5 w-full h-full">
+            {items.slice(0, 6).map((a, i) => {
+              const photos = ngPhotos[a.id] || [];
+              const photo = photos[0];
+              return (
+                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.numero || "Apontamento", meta: [
+                  { label: "Modo de Falha", value: a.modo_falha || "" },
+                  { label: "Fornecedor", value: a.fornecedor || "" },
+                  { label: "Part Number", value: a.part_number || "" },
+                  { label: "NG", value: String(a.quantidade_ng || 0) },
+                  { label: "Data", value: new Date(a.created_at).toLocaleString("pt-BR") },
+                ] })}
+                  className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-rose-500/40 flex flex-col", photo && "cursor-pointer transition-transform hover:scale-[1.02]")}
+                  style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
+                  {photo
+                    ? <img src={photo} alt="" className="w-full h-40 object-cover" loading="lazy" />
+                    : <div className="w-full h-40 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-10 h-10" /></div>}
+                  <div className="p-4 flex-1 flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-sm text-muted-foreground">{a.numero || "—"}</span>
+                      <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold">NG {a.quantidade_ng}</span>
+                    </div>
+                    <p className="text-lg font-bold truncate text-rose-300">{a.modo_falha || "—"}</p>
+                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"} · {a.fornecedor || "—"}</p>
+                    <p className="text-xs text-muted-foreground mt-auto">{new Date(a.created_at).toLocaleString("pt-BR")}</p>
+                  </div>
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
+                </div>
+              );
+            })}
           </div>
         );
       }
@@ -745,6 +924,8 @@ const Monitor = () => {
       <style>{`
         @keyframes slide-in-left { 0% { transform: translateX(-100%); opacity: 0 } 100% { transform: translateX(0); opacity: 1 } }
         @keyframes ticker { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
+        @keyframes flap-down { 0% { transform: rotateX(-90deg); opacity: 0 } 60% { transform: rotateX(10deg); opacity: 1 } 100% { transform: rotateX(0deg); opacity: 1 } }
+        @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 0 0 hsl(0 90% 55% / 0.45) } 50% { box-shadow: 0 0 0 14px hsl(0 90% 55% / 0) } }
         @media (prefers-reduced-motion: reduce) {
           .reduced-motion * { animation: none !important; transition: none !important; }
         }

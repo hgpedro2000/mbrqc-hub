@@ -30,6 +30,7 @@ import Apontamentos from "./pages/Apontamentos";
 import ApontamentoForm from "./pages/ApontamentoForm";
 import ApontamentoDashboard from "./pages/ApontamentoDashboard";
 import Monitor from "./pages/Monitor";
+import MonitorAdmin from "./pages/MonitorAdmin";
 import AlertaQualidade from "./pages/AlertaQualidade";
 import AlertaQualidadeForm from "./pages/AlertaQualidadeForm";
 import AlertaQualidadeView from "./pages/AlertaQualidadeView";
@@ -184,6 +185,8 @@ const App = () => (
             <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ApontamentoDashboard /></ProtectedRoute>} />
             <Route path="/apontamentos/admin/part-name" element={<ProtectedRoute><AdminRoute><AdminPartNameFix /></AdminRoute></ProtectedRoute>} />
             <Route path="/monitor" element={<Monitor />} />
+            <Route path="/monitor/admin" element={<ProtectedRoute><AdminRoute><MonitorAdmin /></AdminRoute></ProtectedRoute>} />
+
             
             {/* Alertas de Qualidade */}
             <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />

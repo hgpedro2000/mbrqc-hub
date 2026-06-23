@@ -1545,6 +1545,48 @@ export type Database = {
         }
         Relationships: []
       }
+      monitor_slides_media: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          descricao: string | null
+          file_name: string | null
+          file_path: string
+          id: string
+          ordem: number
+          tipo: string
+          titulo: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          file_name?: string | null
+          file_path: string
+          id?: string
+          ordem?: number
+          tipo: string
+          titulo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          descricao?: string | null
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          ordem?: number
+          tipo?: string
+          titulo?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       painting_checklists: {
         Row: {
           checked_items: Json

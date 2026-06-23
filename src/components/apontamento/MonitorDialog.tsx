@@ -14,17 +14,22 @@ export type MonitorBlock =
   | "consumiveis"
   | "ranking"
   | "defects"
-  | "inspecionado";
+  | "inspecionado"
+  | "comunicados"
+  | "alteracoes_4m"
+  | "ultimos_defeitos";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";
+export type MonitorProfile = "default" | "v2";
 
 export interface MonitorPreferences {
   blocks: MonitorBlock[];
   period: MonitorPeriod;
-  customFrom?: string; // YYYY-MM-DD
-  customTo?: string;   // YYYY-MM-DD
+  customFrom?: string;
+  customTo?: string;
   theme: MonitorTheme;
+  profile?: MonitorProfile;
 }
 
 const STORAGE_KEY = "monitor_preferences";
@@ -33,6 +38,7 @@ export const defaultPrefs: MonitorPreferences = {
   blocks: ["summary", "recent", "alerts"],
   period: "today",
   theme: "dark",
+  profile: "default",
 };
 
 export const loadPrefs = (): MonitorPreferences => {
@@ -52,14 +58,17 @@ export const savePrefs = (p: MonitorPreferences) => {
 };
 
 const BLOCK_OPTIONS: { id: MonitorBlock; emoji: string; title: string; desc: string }[] = [
-  { id: "summary", emoji: "📊", title: "Resumo do Dia", desc: "Total de registros, NG, OK e PPM do dia" },
-  { id: "recent", emoji: "📋", title: "Últimos Registros", desc: "Tabela com lançamentos em tempo real" },
-  { id: "alerts", emoji: "⚠️", title: "Alertas Vigentes", desc: "Lista de alertas ativos com status" },
-  { id: "contencao", emoji: "🔴", title: "Contenções Ativas", desc: "Contenções em andamento" },
+  { id: "summary", emoji: "📊", title: "Resumo do Período", desc: "Total de registros, NG, OK e PPM" },
+  { id: "recent", emoji: "📋", title: "Últimos Lançamentos", desc: "Tabela em tempo real (V2 mostra Rate de Aprovação)" },
+  { id: "alerts", emoji: "⚠️", title: "Alertas de Qualidade", desc: "Lista mestra de alertas com detalhes" },
+  { id: "contencao", emoji: "🔴", title: "Contenções", desc: "Em andamento e finalizadas (V2)" },
   { id: "consumiveis", emoji: "📦", title: "Consumíveis Críticos", desc: "Itens abaixo do estoque mínimo" },
-  { id: "ranking", emoji: "🏆", title: "Ranking de Fornecedores", desc: "Ranking por NG do período" },
-  { id: "defects", emoji: "📈", title: "Gráfico de Defeitos", desc: "Defeitos do período em gráfico" },
-  { id: "inspecionado", emoji: "🔍", title: "Quantidade Inspecionada", desc: "Peças por Part Number/Name por fornecedor" },
+  { id: "ranking", emoji: "🏆", title: "Performance de Fornecedores", desc: "Top piores em destaque (V2)" },
+  { id: "defects", emoji: "📈", title: "Principais Modos de Falhas", desc: "Modos de falha mais detectados" },
+  { id: "inspecionado", emoji: "🔍", title: "Monitoramento de Inspeção", desc: "Split-flap por fornecedor (V2)" },
+  { id: "comunicados", emoji: "📣", title: "Comunicados", desc: "Imagens enviadas pela Mobis (V2)" },
+  { id: "alteracoes_4m", emoji: "🛠️", title: "Alterações 4M/EO e Validações", desc: "Avisos de engenharia (V2)" },
+  { id: "ultimos_defeitos", emoji: "🔬", title: "Últimos Defeitos Detectados", desc: "Últimos NG com fotos (V2)" },
 ];
 
 const PERIOD_OPTIONS: { id: MonitorPeriod; label: string }[] = [
@@ -106,6 +115,27 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
         <DialogHeader>
           <DialogTitle>O que deseja exibir no monitor?</DialogTitle>
         </DialogHeader>
+
+        {/* Profile */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-muted-foreground">Perfil:</span>
+          <Button
+            type="button"
+            variant={(prefs.profile ?? "default") === "default" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPrefs((p) => ({ ...p, profile: "default" }))}
+          >
+            Padrão
+          </Button>
+          <Button
+            type="button"
+            variant={prefs.profile === "v2" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPrefs((p) => ({ ...p, profile: "v2" }))}
+          >
+            V2 — Detalhado
+          </Button>
+        </div>
 
         {/* Theme */}
         <div className="flex items-center gap-2 flex-wrap">

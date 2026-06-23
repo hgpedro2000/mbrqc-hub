@@ -860,6 +860,12 @@ const Monitor = () => {
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}
 
+      {logoutToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 rounded-lg bg-black/80 text-white text-sm shadow-lg animate-fade-in">
+          {logoutToast}
+        </div>
+      )}
+
       {needsFsGesture && !isFs && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="bg-card border border-border rounded-2xl p-8 max-w-md text-center space-y-4 shadow-2xl">

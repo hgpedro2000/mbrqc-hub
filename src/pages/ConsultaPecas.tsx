@@ -335,18 +335,22 @@ const ConsultaPecas = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((p: any) => (
-                    <tr key={p.id} className="border-t border-border/60 hover:bg-accent/5">
+                  {filtered.map((p: any) => {
+                    const hasAlc = p.alc_code && p.alc_code !== "N/A";
+                    return (
+                    <tr key={p.id} className={`border-t border-border/60 hover:bg-accent/5 ${hasAlc ? "bg-orange-50/60" : ""}`}>
                       <td className="px-2 py-1.5 font-heading font-bold text-foreground whitespace-nowrap">{p.part_number}</td>
                       <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[220px]">{p.part_name}</td>
                       <td className="px-2 py-1.5 font-semibold text-blue-700 whitespace-nowrap">{p.suppliers?.name || "—"}</td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 bg-amber-50">{p.suppliers?.code || "—"}</Badge></td>
-                      <td className="px-2 py-1.5"><Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-violet-400 text-violet-700 bg-violet-50">{p.alc_code || "N/A"}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className={`font-mono text-[10px] px-1.5 py-0 ${hasAlc ? "border-orange-500 text-orange-800 bg-orange-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"}`}>{p.alc_code || "N/A"}</Badge></td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50">{p.project || "—"}</Badge></td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-400 text-cyan-700 bg-cyan-50">{p.line_module || "—"}</Badge></td>
                       <td className="px-2 py-1.5">{origemBadge(p.origem)}</td>
                     </tr>
-                  ))}
+                    );
+                  })}
+
                 </tbody>
               </table>
             </div>

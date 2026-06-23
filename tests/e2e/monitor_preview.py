@@ -84,13 +84,18 @@ async def main():
 
             opened = await page.evaluate(
                 """() => {
-                    const b = [...document.querySelectorAll('button')]
-                        .find(x => /monitor/i.test(x.textContent || ''));
-                    if (b) { b.click(); return true; }
+                    const btns = [...document.querySelectorAll('button')];
+                    // Prefer a button whose visible text is exactly "Monitor"
+                    let b = btns.find(x => (x.textContent || '').trim() === 'Monitor');
+                    if (!b) b = btns.find(x => /monitor/i.test(x.textContent || '') && !/admin|fechad/i.test(x.textContent || ''));
+                    if (b) { b.scrollIntoView(); b.click(); return true; }
                     return false;
                 }"""
             )
-            assert opened, "could not open Monitor config dialog"
+            assert opened, "could not click Monitor trigger"
+            # handleMonitorClick waits up to 500ms for a PONG from an existing monitor
+            # window before opening the dialog. Give it ~800ms before asserting.
+            await page.wait_for_timeout(800)
             await page.wait_for_selector('[role="dialog"]', timeout=4000)
             await page.screenshot(path=str(OUT / "2_dialog_open.png"))
 

@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 
 export type MonitorBlock =
   | "summary"
@@ -93,6 +95,7 @@ interface Props {
 }
 
 export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmLabel = "Abrir Monitor" }: Props) => {
+  const { isAdmin } = useAuth();
   const [prefs, setPrefs] = useState<MonitorPreferences>(initial ?? loadPrefs());
 
   useEffect(() => {
@@ -254,9 +257,18 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           })}
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
+        <DialogFooter className="gap-2 sm:justify-between">
+          {isAdmin ? (
+            <Button asChild variant="secondary" className="gap-2">
+              <Link to="/monitor/admin" onClick={() => onOpenChange(false)}>
+                <Settings2 className="w-4 h-4" /> Gerenciar Comunicados / 4M-EO
+              </Link>
+            </Button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

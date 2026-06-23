@@ -98,11 +98,14 @@ function loadDb(): DbRow[] {
 }
 
 export default function SpecSwitchPanelCheck() {
+  const navigate = useNavigate();
   const [db, setDb] = useState<DbRow[]>(() => loadDb());
   const [panelRaw, setPanelRaw] = useState("");
   const [switchRaw, setSwitchRaw] = useState("");
   const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [showDb, setShowDb] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+  const [validated, setValidated] = useState(false);
   const panelRef = useRef<HTMLInputElement>(null);
   const switchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,9 @@ export default function SpecSwitchPanelCheck() {
   useEffect(() => {
     panelRef.current?.focus();
   }, []);
+
+  // Reset validation flag when inputs change
+  useEffect(() => { setValidated(false); }, [panelRaw, switchRaw]);
 
   // Build prefix sets from current DB (first 5 chars of each PN)
   const { panelPrefixes, switchPrefixes } = useMemo(() => {

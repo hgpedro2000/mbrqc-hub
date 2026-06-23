@@ -246,27 +246,51 @@ const Monitor = () => {
     return () => clearInterval(id);
   }, []);
 
-  // BroadcastChannel: answer PING with PONG, handle FOCUS, react to MAIN_LOGOUT, notify on close.
+  // BroadcastChannel + localStorage fallback: PING/PONG/FOCUS/MAIN_LOGOUT.
   useEffect(() => {
-    if (typeof BroadcastChannel === "undefined") return;
-    const ch = new BroadcastChannel("monitor_channel");
-    ch.onmessage = (e) => {
-      if (e.data?.type === "PING") ch.postMessage({ type: "PONG" });
-      else if (e.data?.type === "FOCUS") { try { window.focus(); } catch { /* noop */ } }
-      else if (e.data?.type === "MAIN_LOGOUT") {
-        // Main app signed out — monitor stays alive on the anon client.
-        setLogoutToast("Sessão principal encerrada — monitor mantido");
-        setTimeout(() => setLogoutToast(null), 3000);
-      }
+    const handleMainLogout = () => {
+      logEvt("MAIN_LOGOUT");
+      setLogoutToast("Sessão principal encerrada — monitor mantido");
+      setTimeout(() => setLogoutToast(null), 3000);
     };
-    const onUnload = () => { try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ } };
+
+    let ch: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        ch = new BroadcastChannel("monitor_channel");
+        ch.onmessage = (e) => {
+          const t = e.data?.type;
+          if (t === "PING") { logEvt("PING→PONG"); ch?.postMessage({ type: "PONG" }); }
+          else if (t === "FOCUS") { logEvt("FOCUS"); try { window.focus(); } catch { /* noop */ } }
+          else if (t === "MAIN_LOGOUT") handleMainLogout();
+        };
+      } catch (err) { logEvt("BC_ERROR", String(err)); ch = null; }
+    } else {
+      logEvt("BC_UNAVAILABLE", "usando fallback localStorage");
+    }
+
+    // localStorage fallback — fires across windows via `storage` event.
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key !== "monitor_channel_evt" || !ev.newValue) return;
+      try {
+        const msg = JSON.parse(ev.newValue);
+        if (msg?.type === "MAIN_LOGOUT") { logEvt("MAIN_LOGOUT(ls)"); handleMainLogout(); }
+      } catch { /* noop */ }
+    };
+    window.addEventListener("storage", onStorage);
+
+    const onUnload = () => {
+      try { ch?.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
+      try { localStorage.setItem("monitor_channel_evt", JSON.stringify({ type: "MONITOR_CLOSED", t: Date.now() })); } catch { /* noop */ }
+    };
     window.addEventListener("beforeunload", onUnload);
     return () => {
       window.removeEventListener("beforeunload", onUnload);
-      try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
-      ch.close();
+      window.removeEventListener("storage", onStorage);
+      try { ch?.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ }
+      ch?.close();
     };
-  }, []);
+  }, [logEvt]);
 
   const fetchTable = async (table: string) => {
     const startISO = range.start.toISOString();

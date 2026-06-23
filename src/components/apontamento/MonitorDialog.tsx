@@ -676,3 +676,141 @@ const SlidePreview = ({
     </div>
   );
 };
+
+/**
+ * Stylized mini-mock of each Monitor block so users see the actual layout
+ * being previewed (bars, lists, cards) instead of just the slide title.
+ * Pure presentational — no data fetching, instant render.
+ */
+const BlockMock = ({ id }: { id: MonitorBlock }) => {
+  const wrap = "h-full w-full text-[10px] leading-tight";
+  switch (id) {
+    case "summary":
+      return (
+        <div className={cn(wrap, "grid grid-cols-4 gap-2")}>
+          {[
+            { l: "Total", v: "1.248", c: "bg-primary/10 text-primary" },
+            { l: "OK", v: "1.190", c: "bg-emerald-500/10 text-emerald-600" },
+            { l: "NG", v: "58", c: "bg-destructive/10 text-destructive" },
+            { l: "PPM", v: "46.5", c: "bg-amber-500/10 text-amber-600" },
+          ].map((k) => (
+            <div key={k.l} className={cn("rounded-md p-2 flex flex-col justify-center", k.c)}>
+              <span className="opacity-70">{k.l}</span>
+              <span className="text-base font-bold">{k.v}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "recent":
+      return (
+        <div className={cn(wrap, "space-y-1")}>
+          <div className="flex gap-2 px-2 py-1 bg-muted/60 rounded text-[9px] font-semibold uppercase">
+            <span className="flex-1">Peça</span><span className="w-12">Forn.</span><span className="w-10 text-right">Qtd</span>
+          </div>
+          {["A123","B477","C902","D118"].map((p, i) => (
+            <div key={p} className="flex gap-2 px-2 py-1 rounded bg-card border">
+              <span className="flex-1 truncate">PN-{p}</span>
+              <span className="w-12 truncate text-muted-foreground">F{i+1}</span>
+              <span className={cn("w-10 text-right font-medium", i===1 && "text-destructive")}>{[24,3,18,9][i]}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "alerts":
+    case "contencao":
+      return (
+        <div className={cn(wrap, "space-y-1.5")}>
+          {[
+            { c: "bg-destructive", t: "Risco crítico — PN-B477" },
+            { c: "bg-amber-500", t: "Atenção — PN-C902" },
+            { c: "bg-primary", t: "Informativo — PN-D118" },
+          ].map((a) => (
+            <div key={a.t} className="flex items-center gap-2 px-2 py-1.5 rounded border bg-card">
+              <span className={cn("w-1.5 h-6 rounded-full", a.c)} />
+              <span className="truncate">{a.t}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "consumiveis":
+      return (
+        <div className={cn(wrap, "grid grid-cols-2 gap-2")}>
+          {["Luvas","Cones","Adesivo","Sacos"].map((n, i) => (
+            <div key={n} className="rounded border bg-card p-2">
+              <div className="flex justify-between"><span>{n}</span><span className="text-destructive font-bold">{[2,5,1,3][i]}</span></div>
+              <div className="h-1 mt-1 bg-muted rounded"><div className="h-full bg-destructive rounded" style={{ width: `${[15,30,8,22][i]}%` }} /></div>
+            </div>
+          ))}
+        </div>
+      );
+    case "ranking":
+      return (
+        <div className={cn(wrap, "space-y-1")}>
+          {["Fornec. A","Fornec. B","Fornec. C","Fornec. D"].map((n, i) => (
+            <div key={n} className="flex items-center gap-2">
+              <span className="w-16 truncate">{n}</span>
+              <div className="flex-1 h-2 bg-muted rounded"><div className="h-full bg-primary rounded" style={{ width: `${[90,70,50,30][i]}%` }} /></div>
+              <span className="w-8 text-right">{[18,42,67,93][i]}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "defects":
+      return (
+        <div className={cn(wrap, "flex items-end gap-2 h-full pb-4")}>
+          {[80,55,45,30,22,15].map((h, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="w-full bg-primary rounded-t" style={{ height: `${h}%` }} />
+              <span className="text-[8px] truncate">MF{i+1}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "inspecionado":
+      return (
+        <div className={cn(wrap, "grid grid-cols-3 gap-1.5")}>
+          {Array.from({length:6}).map((_,i) => (
+            <div key={i} className="rounded border bg-card p-1.5 text-center">
+              <div className="text-[8px] text-muted-foreground">Forn. {String.fromCharCode(65+i)}</div>
+              <div className="font-mono font-bold text-sm tabular-nums">{(123 + i*47).toString().padStart(4,"0")}</div>
+            </div>
+          ))}
+        </div>
+      );
+    case "comunicados":
+      return (
+        <div className={cn(wrap, "grid grid-cols-3 gap-1.5 h-full")}>
+          {[1,2,3].map((i) => (
+            <div key={i} className="rounded border bg-card p-2 flex flex-col items-center justify-center gap-1">
+              <div className="w-full h-8 bg-gradient-to-br from-primary/30 to-primary/10 rounded" />
+              <span className="text-[9px]">Comunicado {i}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "alteracoes_4m":
+      return (
+        <div className={cn(wrap, "space-y-1")}>
+          {["Material — Lote X","Método — Setup A","Máquina — Inj. 03"].map((t) => (
+            <div key={t} className="flex items-center gap-2 px-2 py-1.5 rounded border bg-card">
+              <span className="w-6 h-6 rounded bg-primary/15 text-primary flex items-center justify-center font-bold">M</span>
+              <span className="flex-1 truncate">{t}</span>
+            </div>
+          ))}
+        </div>
+      );
+    case "ultimos_defeitos":
+      return (
+        <div className={cn(wrap, "grid grid-cols-4 gap-1.5 h-full")}>
+          {Array.from({length:4}).map((_,i) => (
+            <div key={i} className="rounded border bg-card overflow-hidden flex flex-col">
+              <div className="flex-1 bg-gradient-to-br from-destructive/30 to-destructive/10" />
+              <div className="px-1 py-0.5 text-[9px] truncate">NG #{1000+i}</div>
+            </div>
+          ))}
+        </div>
+      );
+    default:
+      return <div className="h-full w-full bg-muted/30 rounded" />;
+  }
+};

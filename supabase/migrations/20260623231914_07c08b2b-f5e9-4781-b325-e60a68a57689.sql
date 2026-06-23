@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.7.9', 'patch', 'Direct input H/KMC aceita <gs>/<rs>/<eot>', 'O Barcode Scanner H/KMC agora normaliza os separadores textuais <gs>, <rs> e <eot> (alem de [GS]/[RS]/[EOT] e escapes unicode) no Direct Input, permitindo colar payloads como [)><rs>06<gs>VBZWC<gs>P84705BP060YJT...');

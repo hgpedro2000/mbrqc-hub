@@ -27,12 +27,18 @@ export interface HKMCParsed {
 
 function normalizeRaw(input: string): string {
   return input
-    .replace(/\\x1D/g, "\x1D")
-    .replace(/\\x1E/g, "\x1E")
-    .replace(/\\x04/g, "\x04")
-    .replace(/\[GS\]/g, "\x1D")
-    .replace(/\[RS\]/g, "\x1E")
-    .replace(/\[EOT\]/g, "\x04");
+    .replace(/\\x1D/gi, "\x1D")
+    .replace(/\\x1E/gi, "\x1E")
+    .replace(/\\x04/gi, "\x04")
+    .replace(/\\u001d/gi, "\x1D")
+    .replace(/\\u001e/gi, "\x1E")
+    .replace(/\\u0004/gi, "\x04")
+    .replace(/<gs>/gi, "\x1D")
+    .replace(/<rs>/gi, "\x1E")
+    .replace(/<eot>/gi, "\x04")
+    .replace(/\[GS\]/gi, "\x1D")
+    .replace(/\[RS\]/gi, "\x1E")
+    .replace(/\[EOT\]/gi, "\x04");
 }
 
 export function parseHKMC(input: string): HKMCParsed {

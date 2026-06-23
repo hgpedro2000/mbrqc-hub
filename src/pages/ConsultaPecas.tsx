@@ -253,7 +253,7 @@ const ConsultaPecas = () => {
               size="icon"
               title="Validar Painel × Switch"
               className="h-12 w-12 shrink-0 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md sm:hidden"
-              onClick={() => window.open("/spec-switch-panel", "_blank", "noopener")}
+              onClick={() => window.open("/spec-switch-panel", "_blank")}
             >
               <ShieldCheck className="w-5 h-5" />
             </Button>

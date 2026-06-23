@@ -183,6 +183,28 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
   );
 };
 
+// --- SplitFlap digit (airport-board style) ---
+const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
+  const str = fmtNum(value);
+  return (
+    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1 }}>
+      {str.split("").map((ch, i) => (
+        <span
+          key={`${i}-${ch}`}
+          className="inline-block bg-zinc-950 border border-zinc-700 rounded-md text-emerald-300 font-mono font-black tabular-nums shadow-inner overflow-hidden"
+          style={{
+            minWidth: ch.match(/[0-9]/) ? size * 0.65 : size * 0.35,
+            padding: `${size * 0.05}px ${size * 0.1}px`,
+            animation: "flap-down 0.45s ease-out both",
+          }}
+        >
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+};
+
 const Monitor = () => {
   const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());
   const [showSettings, setShowSettings] = useState(false);

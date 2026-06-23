@@ -475,8 +475,7 @@ const ConsultaPecas = () => {
                   className="flex-1 min-h-[44px] bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white"
                   onClick={() => {
                     setSpecDialogOpen(false);
-                    setScanMode("check");
-                    qrScannerRef.current?.openScanner();
+                    setTimeout(() => openSpecScanner(), 150);
                   }}
                 >
                   <ScanSearch className="w-4 h-4 mr-2" /> Ler outra

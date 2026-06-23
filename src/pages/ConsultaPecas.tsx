@@ -16,7 +16,7 @@ import { QRScannerButton, type QRScannerButtonHandle } from "@/components/aponta
 
 const ConsultaPecas = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [scanMode, setScanMode] = useState<"search" | "check">("search");

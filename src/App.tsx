@@ -30,6 +30,7 @@ import Apontamentos from "./pages/Apontamentos";
 import ApontamentoForm from "./pages/ApontamentoForm";
 import ApontamentoDashboard from "./pages/ApontamentoDashboard";
 import Monitor from "./pages/Monitor";
+import MonitorAdmin from "./pages/MonitorAdmin";
 import AlertaQualidade from "./pages/AlertaQualidade";
 import AlertaQualidadeForm from "./pages/AlertaQualidadeForm";
 import AlertaQualidadeView from "./pages/AlertaQualidadeView";

@@ -177,6 +177,7 @@ export default function SpecSwitchPanelCheck() {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editRow, setEditRow] = useState<DbRow>({ switch: "", panel: "", alc: "" });
   const [newRow, setNewRow] = useState<DbRow>({ switch: "", panel: "", alc: "" });
+  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [validated, setValidated] = useState(false);
   const panelRef = useRef<HTMLInputElement>(null);

@@ -208,7 +208,21 @@ const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number })
 
 
 const Monitor = () => {
-  const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());
+  // Preview-embed mode: when ?preview=<blockId>&chrome=off is set, render a single
+  // block without header/footer/ticker and without auto-fullscreen — so the page can be
+  // safely iframed from the MonitorDialog preview.
+  const _qp = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const previewBlock = _qp.get("preview") as MonitorBlock | null;
+  const chromeOff = _qp.get("chrome") === "off";
+  const isPreviewMode = !!previewBlock;
+
+  const [prefs, setPrefs] = useState<MonitorPreferences>(() => {
+    const base = loadPrefs();
+    if (previewBlock) {
+      return { ...base, blocks: [previewBlock] };
+    }
+    return base;
+  });
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(new Date());
   const [conn, setConn] = useState<ConnState>("connecting");

@@ -30,7 +30,7 @@ const prefetchPhotos = (urls: string[]) => {
 
 type ConnState = "connecting" | "connected" | "error";
 
-const SLIDE_DURATION_MS = 10000;
+const DEFAULT_slideDurationMs = 10000;
 const STAGE_W = 1920;
 const STAGE_H = 1080;
 
@@ -187,15 +187,16 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
 const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number }) => {
   const str = fmtNum(value);
   return (
-    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1 }}>
+    <span className="inline-flex gap-1" style={{ fontSize: size, lineHeight: 1, perspective: "400px" }}>
       {str.split("").map((ch, i) => (
         <span
-          key={`${i}-${ch}`}
-          className="inline-block bg-zinc-950 border border-zinc-700 rounded-md text-emerald-300 font-mono font-black tabular-nums shadow-inner overflow-hidden"
+          key={`${i}-${ch}-${value}`}
+          className="inline-block bg-black border border-white/20 rounded-md text-white font-mono font-black tabular-nums shadow-inner overflow-hidden"
           style={{
-            minWidth: ch.match(/[0-9]/) ? size * 0.65 : size * 0.35,
-            padding: `${size * 0.05}px ${size * 0.1}px`,
-            animation: "flap-down 0.45s ease-out both",
+            minWidth: ch.match(/[0-9]/) ? size * 0.7 : size * 0.35,
+            padding: `${size * 0.08}px ${size * 0.1}px`,
+            animation: `flap-down 0.6s ease-out ${i * 100}ms both`,
+            transformStyle: "preserve-3d",
           }}
         >
           {ch}
@@ -204,6 +205,7 @@ const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number })
     </span>
   );
 };
+
 
 const Monitor = () => {
   const [prefs, setPrefs] = useState<MonitorPreferences>(loadPrefs());
@@ -223,7 +225,11 @@ const Monitor = () => {
     setDebugEvents((prev) => [{ t: Date.now(), kind, detail }, ...prev].slice(0, 50));
   }, []);
 
-  const reducedMotion = useReducedMotion();
+  const systemReducedMotion = useReducedMotion();
+  const animationsEnabled = prefs.animationsEnabled ?? true;
+  const reducedMotion = systemReducedMotion || !animationsEnabled;
+  const slideDurationMs = prefs.slideDurationMs ?? DEFAULT_slideDurationMs;
+
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
   const navigate = useNavigate();
   const autoFsTried = useRef(false);
@@ -454,7 +460,7 @@ const Monitor = () => {
     const id = setInterval(() => {
       setDirection(1);
       setSlideIdx((i) => (i + 1) % blocks.length);
-    }, SLIDE_DURATION_MS);
+    }, slideDurationMs);
     return () => clearInterval(id);
   }, [isPaused, blocks.length]);
 
@@ -739,33 +745,32 @@ const Monitor = () => {
         );
       case "ranking": {
         const max = Math.max(...supplierRanking.map((s) => s.ppm), 1);
-        const fmtPpm = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}k` : fmtNum(n);
         return (
-          <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
-            <div className="grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40 tabular-nums">
+          <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 px-8 py-6 flex flex-col">
+            <div className="grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_5rem_9rem] gap-4 text-xs uppercase tracking-wider text-muted-foreground pb-2 border-b border-border/40 tabular-nums">
               <span className="text-center">#</span>
               <span>Fornecedor</span>
               <span className="text-right">Insp.</span>
               <span className="text-right">NG</span>
               <span className="text-right">PPM</span>
             </div>
-            <ol className="divide-y divide-border/30">
-              {supplierRanking.length === 0 && <li className="h-[60vh] flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
+            <ol className="divide-y divide-border/30 flex-1 overflow-hidden">
+              {supplierRanking.length === 0 && <li className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
               {supplierRanking.slice(0, 8).map((s, i) => {
                 const isWorst = isV2 && i < 3;
                 return (
-                  <li key={s.fornecedor} className={cn("grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] items-center gap-6 py-4 tabular-nums", isWorst && "rounded-xl px-3 -mx-3 bg-red-500/5 border border-red-500/30")}
+                  <li key={s.fornecedor} className={cn("grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_5rem_9rem] items-center gap-4 py-2.5 tabular-nums", isWorst && "rounded-xl px-2 -mx-2 bg-red-500/5 border border-red-500/30")}
                       style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>
-                    <span className={cn("text-5xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
+                    <span className={cn("text-3xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
                     <div className="min-w-0">
-                      <p className="font-semibold text-3xl truncate">{s.fornecedor}{isWorst && <span className="ml-3 text-xs uppercase tracking-widest px-2 py-1 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
-                      <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
+                      <p className="font-semibold text-2xl truncate">{s.fornecedor}{isWorst && <span className="ml-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
+                      <div className="h-2 rounded-full bg-muted/40 overflow-hidden mt-1.5">
                         <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
                       </div>
                     </div>
-                    <span className="text-3xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
-                    <span className="text-3xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
-                    <span className="text-4xl font-black text-red-500 text-right">{isV2 ? fmtPpm(s.ppm) : fmtNum(s.ppm)}</span>
+                    <span className="text-2xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
+                    <span className="text-2xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
+                    <span className="text-3xl font-black text-red-500 text-right">{fmtNum(s.ppm)}</span>
                   </li>
                 );
               })}
@@ -773,6 +778,7 @@ const Monitor = () => {
           </div>
         );
       }
+
       case "defects": {
         const stripNum = (s: string) => (s || "").replace(/^\s*\d+\s*[-–.)]\s*/, "");
         const data = defectsData.map((d) => ({ ...d, name: stripNum(d.name) }));
@@ -847,10 +853,15 @@ const Monitor = () => {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
         }
         const url = current ? mediaUrls[current.file_path] : undefined;
+        const isPdf = /\.pdf($|\?)/i.test(current?.file_name || current?.file_path || "");
         return (
           <div key={current?.id} className="w-full h-full grid grid-rows-[1fr_auto] gap-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-6 animate-fade-in">
             <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
-              {url ? <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" /> : <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />}
+              {!url
+                ? <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />
+                : isPdf
+                  ? <iframe title={current?.titulo || "PDF"} src={`${url}#toolbar=0&navpanes=0&view=FitH`} className="w-full h-full bg-white rounded-xl" />
+                  : <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" />}
             </div>
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
@@ -867,18 +878,19 @@ const Monitor = () => {
         if (!all.length) {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Sem defeitos detectados no período.</div>;
         }
-        const pageSize = 5;
+        const pageSize = 4;
         const totalPages = Math.max(1, Math.ceil(all.length / pageSize));
-        const page = Math.floor(now.getTime() / 8000) % totalPages;
+        const page = Math.floor(now.getTime() / 12000) % totalPages;
         const items = all.slice(page * pageSize, page * pageSize + pageSize);
         return (
-          <div key={page} className="grid grid-cols-5 gap-4 w-full h-full">
+          <div key={page} className="grid grid-cols-4 gap-5 w-full h-full">
             {items.map((a, i) => {
               const photos = ngPhotos[a.id] || [];
               const photo = photos[0];
               return (
-                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.numero || "Apontamento", meta: [
+                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.modo_falha || "Defeito", meta: [
                   { label: "Modo de Falha", value: a.modo_falha || "" },
+                  { label: "Descrição", value: a.descricao_problema || a.descricao || "" },
                   { label: "Fornecedor", value: a.fornecedor || "" },
                   { label: "Part Number", value: a.part_number || "" },
                   { label: "NG", value: String(a.quantidade_ng || 0) },
@@ -887,16 +899,17 @@ const Monitor = () => {
                   className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-rose-500/40 flex flex-col", photo && "cursor-pointer transition-transform hover:scale-[1.02]")}
                   style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
                   {photo
-                    ? <img src={photo} alt="" className="w-full h-56 object-cover" loading="lazy" />
-                    : <div className="w-full h-56 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-12 h-12" /></div>}
-                  <div className="p-4 flex-1 flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-sm text-muted-foreground">{a.numero || "—"}</span>
-                      <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold">NG {a.quantidade_ng}</span>
+                    ? <img src={photo} alt="" className="w-full h-72 object-cover" loading="lazy" />
+                    : <div className="w-full h-72 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-16 h-16" /></div>}
+                  <div className="p-5 flex-1 flex flex-col gap-2">
+                    <div className="flex items-center justify-end">
+                      <span className="text-sm uppercase px-3 py-1 rounded-full bg-red-500/20 text-red-300 font-bold tabular-nums">NG {a.quantidade_ng}</span>
                     </div>
-                    <p className="text-lg font-bold text-rose-300 line-clamp-2">{a.modo_falha || "—"}</p>
-                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"}</p>
-                    <p className="text-sm text-muted-foreground truncate">{a.fornecedor || "—"}</p>
+                    <p className="text-2xl font-bold text-rose-300 line-clamp-2">{a.modo_falha || "—"}</p>
+                    {(a.descricao_problema || a.descricao) && (
+                      <p className="text-base text-foreground/90 line-clamp-3">{a.descricao_problema || a.descricao}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"} · {a.fornecedor || "—"}</p>
                     <p className="text-xs text-muted-foreground mt-auto">{new Date(a.created_at).toLocaleString("pt-BR")}</p>
                   </div>
                   <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
@@ -906,6 +919,7 @@ const Monitor = () => {
           </div>
         );
       }
+
     }
   };
 
@@ -993,7 +1007,7 @@ const Monitor = () => {
             <div
               key={`pb-${safeIdx}-${rangeKey}`}
               className="h-full bg-gradient-to-r from-primary via-cyan-400 to-primary"
-              style={{ animation: reducedMotion ? undefined : `slide-in-right ${SLIDE_DURATION_MS}ms linear forwards`, transformOrigin: "left" }}
+              style={{ animation: reducedMotion ? undefined : `slide-in-right ${slideDurationMs}ms linear forwards`, transformOrigin: "left" }}
             />
           </div>
         )}
@@ -1061,7 +1075,7 @@ const Monitor = () => {
             {now.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })} · <span className="font-bold">{now.toLocaleTimeString("pt-BR")}</span>
           </span>
           <span className="text-muted-foreground text-base uppercase tracking-widest">
-            Slide {safeIdx + 1} / {blocks.length} · {isPaused ? "Pausado" : `Auto ${SLIDE_DURATION_MS / 1000}s`}{isFs ? " · Kiosk" : ""}
+            Slide {safeIdx + 1} / {blocks.length} · {isPaused ? "Pausado" : `Auto ${slideDurationMs / 1000}s`}{isFs ? " · Kiosk" : ""}
           </span>
           <span data-testid="monitor-conn" data-state={conn} className="flex items-center gap-2">
             {conn === "connected" && (<><Wifi className="w-6 h-6 text-emerald-500" /><span className="text-emerald-500">Conectado</span></>)}

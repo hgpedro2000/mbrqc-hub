@@ -30,6 +30,8 @@ export interface MonitorPreferences {
   customTo?: string;
   theme: MonitorTheme;
   profile?: MonitorProfile;
+  slideDurationMs?: number;
+  animationsEnabled?: boolean;
 }
 
 const STORAGE_KEY = "monitor_preferences";
@@ -39,7 +41,10 @@ export const defaultPrefs: MonitorPreferences = {
   period: "today",
   theme: "dark",
   profile: "default",
+  slideDurationMs: 10000,
+  animationsEnabled: true,
 };
+
 
 export const loadPrefs = (): MonitorPreferences => {
   try {
@@ -47,11 +52,12 @@ export const loadPrefs = (): MonitorPreferences => {
     if (!raw) return defaultPrefs;
     const p = JSON.parse(raw);
     if (!Array.isArray(p.blocks) || !p.period) return defaultPrefs;
-    return { theme: "dark", ...p } as MonitorPreferences;
+    return { theme: "dark", slideDurationMs: 10000, animationsEnabled: true, ...p } as MonitorPreferences;
   } catch {
     return defaultPrefs;
   }
 };
+
 
 export const savePrefs = (p: MonitorPreferences) => {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }
@@ -197,7 +203,30 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
           </div>
         )}
 
-        {/* Blocks grid */}
+        {/* Animations + Slide duration */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-muted-foreground">Animações:</span>
+          <Button
+            type="button"
+            variant={(prefs.animationsEnabled ?? true) ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPrefs((p) => ({ ...p, animationsEnabled: !(p.animationsEnabled ?? true) }))}
+          >
+            {(prefs.animationsEnabled ?? true) ? "Ativadas" : "Desativadas"}
+          </Button>
+          <span className="text-sm text-muted-foreground ml-2">Tempo/slide:</span>
+          <select
+            value={prefs.slideDurationMs ?? 10000}
+            onChange={(e) => setPrefs((p) => ({ ...p, slideDurationMs: Number(e.target.value) }))}
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          >
+            {[5000, 8000, 10000, 15000, 20000, 30000, 45000, 60000].map((v) => (
+              <option key={v} value={v}>{v / 1000}s</option>
+            ))}
+          </select>
+        </div>
+
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-[45vh] overflow-y-auto pr-1">
           {BLOCK_OPTIONS.map((opt) => {
             const active = prefs.blocks.includes(opt.id);

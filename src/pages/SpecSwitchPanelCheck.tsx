@@ -445,20 +445,38 @@ export default function SpecSwitchPanelCheck() {
           )}
 
           {/* Botões LIMPAR / VALIDAR */}
-          <div className="grid grid-cols-2 gap-3 p-4 bg-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-slate-200">
             <button
               type="button"
               onClick={reset}
-              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+              disabled={isValidating}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               LIMPAR
             </button>
             <button
               type="button"
-              onClick={() => { switchRef.current?.blur(); panelRef.current?.blur(); }}
-              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+              onClick={handleValidate}
+              disabled={isValidating || (!panelRaw && !switchRaw)}
+              className={`py-3 border-2 rounded font-bold flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isValidating
+                  ? "bg-blue-100 border-blue-400 text-blue-800"
+                  : validated && result.status === "ok"
+                  ? "bg-emerald-100 border-emerald-500 text-emerald-800"
+                  : validated && (result.status === "alc_diff" || result.status === "not_found" || result.status === "parse_error")
+                  ? "bg-red-100 border-red-500 text-red-800"
+                  : "bg-white border-slate-400 text-slate-800 hover:bg-slate-50"
+              }`}
             >
-              VALIDAR
+              {isValidating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> VALIDANDO...</>
+              ) : validated && result.status === "ok" ? (
+                <><CheckCircle2 className="w-4 h-4" /> VÁLIDO</>
+              ) : validated && result.status !== "waiting" ? (
+                <><XCircle className="w-4 h-4" /> INVÁLIDO</>
+              ) : (
+                "VALIDAR"
+              )}
             </button>
           </div>
         </div>

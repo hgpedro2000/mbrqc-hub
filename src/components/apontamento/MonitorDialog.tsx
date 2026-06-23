@@ -136,6 +136,12 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
     }
   }, [open, initial]);
 
+  // Auto-persist preferences (including per-slide overrides) so reloads keep them.
+  useEffect(() => {
+    if (!open) return;
+    savePrefs(prefs);
+  }, [prefs, open]);
+
   const toggle = (id: MonitorBlock) => {
     setPrefs((p) => ({
       ...p,

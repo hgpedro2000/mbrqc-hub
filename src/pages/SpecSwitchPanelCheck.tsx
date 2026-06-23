@@ -443,7 +443,7 @@ export default function SpecSwitchPanelCheck() {
               <input
                 ref={switchRef}
                 value={switchRaw}
-                onChange={(e) => setSwitchRaw(e.target.value)}
+                onChange={(e) => { clearSwitchValidate(); setSwitchRaw(e.target.value); }}
                 onKeyDown={handleSwitchKey}
                 placeholder="Leia o QR do SWITCH..."
                 aria-invalid={!!switchExtract.error}

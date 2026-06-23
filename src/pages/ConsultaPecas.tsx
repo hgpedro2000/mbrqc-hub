@@ -23,6 +23,7 @@ const ConsultaPecas = () => {
   const [scanMode, setScanMode] = useState<"search" | "check">("search");
   const [specDialogOpen, setSpecDialogOpen] = useState(false);
   const [specPart, setSpecPart] = useState<any>(null);
+  const [hkmcOpen, setHkmcOpen] = useState(false);
 
   // Scanner refs (reuse Apontamento incoming logic)
   const qrScannerRef = useRef<QRScannerButtonHandle | null>(null);

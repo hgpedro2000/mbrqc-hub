@@ -514,6 +514,13 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                       </div>
                     </div>
                   </div>
+
+                  <SlidePreview
+                    emoji={b.emoji}
+                    title={b.title}
+                    durationMs={effDur}
+                    animations={effAnim}
+                  />
                 </TabsContent>
               );
             })}

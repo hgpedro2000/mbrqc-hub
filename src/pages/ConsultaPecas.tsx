@@ -200,85 +200,58 @@ const ConsultaPecas = () => {
 
       <main className="container mx-auto px-3 sm:px-4 -mt-6 pb-12 flex flex-col" style={{ height: "calc(100vh - 180px)" }}>
         <div className="form-section shrink-0 sticky top-0 z-10 bg-card shadow-sm">
-          <div className="flex gap-2 w-full">
-            <div className="relative flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
+            <div className="relative w-full sm:flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por Part Number, nome, fornecedor..."
-                className="pl-10 h-12 text-base"
+                placeholder="Buscar por PN, nome, fornecedor..."
+                className="pl-10 h-12 text-base w-full"
               />
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              title="Buscar por QR / Código de Barras"
-              className="h-12 w-12 shrink-0 border-primary/30 bg-primary/5 hover:bg-primary/10"
-              onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
-            >
-              <QrCode className="w-5 h-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 shrink-0 gap-2 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 hidden sm:flex"
-              onClick={() => setHkmcOpen(true)}
-              title="Barcode Scanner H/KMC"
-            >
-              <Barcode className="w-5 h-5" />
-              <span className="font-semibold">H/KMC</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              title="Barcode Scanner H/KMC"
-              className="h-12 w-12 shrink-0 border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 sm:hidden"
-              onClick={() => setHkmcOpen(true)}
-            >
-              <Barcode className="w-5 h-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="h-12 shrink-0 gap-2 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md hidden sm:flex"
-              onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
-            >
-              <ScanSearch className="w-5 h-5" />
-              <span className="font-semibold">Checar SPEC/ALC</span>
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="icon"
-              title="Checar SPEC/ALC"
-              className="h-12 w-12 shrink-0 bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md sm:hidden"
-              onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
-            >
-              <ScanSearch className="w-5 h-5" />
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              className="h-12 shrink-0 gap-2 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md hidden sm:flex"
-              onClick={() => navigate("/spec-switch-panel")}
-              title="Validar Painel × Switch"
-            >
-              <ShieldCheck className="w-5 h-5" />
-              <span className="font-semibold">Validar Painel×Switch</span>
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="icon"
-              title="Validar Painel × Switch"
-              className="h-12 w-12 shrink-0 bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md sm:hidden"
-              onClick={() => navigate("/spec-switch-panel")}
-            >
-              <ShieldCheck className="w-5 h-5" />
-            </Button>
+            <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-primary/30 bg-primary/5 hover:bg-primary/10 min-w-0"
+                onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
+                title="Buscar por QR / Código de Barras"
+              >
+                <QrCode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="font-semibold truncate">QR</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 min-w-0"
+                onClick={() => setHkmcOpen(true)}
+                title="Barcode Scanner H/KMC"
+              >
+                <Barcode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="font-semibold truncate">H/KMC</span>
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white shadow-md min-w-0"
+                onClick={() => { setScanMode("check"); qrScannerRef.current?.openScanner(); }}
+                title="Checar SPEC/ALC"
+              >
+                <ScanSearch className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="font-semibold truncate">SPEC/ALC</span>
+              </Button>
+              <Button
+                type="button"
+                variant="default"
+                className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md min-w-0"
+                onClick={() => navigate("/spec-switch-panel")}
+                title="Validar Painel × Switch"
+              >
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                <span className="font-semibold truncate">Painel×Switch</span>
+              </Button>
+            </div>
           </div>
         </div>
 

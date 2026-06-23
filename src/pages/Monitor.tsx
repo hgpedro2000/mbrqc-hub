@@ -211,6 +211,9 @@ const Monitor = () => {
   const [alertas, setAlertas] = useState<any[]>([]);
   const [contencoes, setContencoes] = useState<any[]>([]);
   const [consumiveis, setConsumiveis] = useState<any[]>([]);
+  const [slidesMedia, setSlidesMedia] = useState<any[]>([]);
+  const [ngPhotos, setNgPhotos] = useState<Record<string, string[]>>({});
+  const isV2 = (prefs.profile ?? "default") === "v2";
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;

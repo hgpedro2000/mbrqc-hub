@@ -330,104 +330,117 @@ export default function SpecSwitchPanelCheck() {
           </div>
         )}
 
-        <div className="bg-slate-100 text-slate-900 rounded-lg overflow-hidden shadow-2xl border-2 border-slate-300">
-          <div className="grid grid-cols-[60px_1fr] bg-slate-300 border-b border-slate-400 font-mono text-xs">
-            <div className="p-2 text-center border-r border-slate-400">　</div>
-            <div className="p-2 text-center font-bold">A</div>
-          </div>
-
-          <div className="grid grid-cols-[60px_1fr] border-b border-slate-300">
-            <div className="bg-slate-300 p-3 text-center font-mono text-sm font-bold border-r border-slate-400 flex items-center justify-center">B2</div>
-            <div className="p-3 flex items-center gap-3 flex-wrap">
-              <label className="font-bold w-32 shrink-0">PAINEL (QR):</label>
+        <div className="bg-slate-100 text-slate-900 rounded-lg overflow-hidden shadow-2xl border-2 border-slate-400">
+          {/* QR PAINEL */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR PAINEL</div>
+            <div className="p-2 flex items-center gap-2">
               <input
                 ref={panelRef}
                 value={panelRaw}
                 onChange={(e) => setPanelRaw(e.target.value)}
                 onKeyDown={handlePanelKey}
                 placeholder="Leia o QR do PAINEL..."
-                className="flex-1 min-w-[200px] px-3 py-2 text-lg font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
                 autoComplete="off"
               />
-              {panelPn ? (
-                <span className="font-mono text-sm bg-blue-100 px-2 py-1 rounded border border-blue-300">{panelPn}</span>
-              ) : panelExtract.error ? (
-                <span className="font-mono text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded border border-orange-300">⚠ {panelExtract.error}</span>
-              ) : null}
             </div>
           </div>
 
-          <div className="grid grid-cols-[60px_1fr] border-b border-slate-300">
-            <div className="bg-slate-300 p-3 text-center font-mono text-sm font-bold border-r border-slate-400 flex items-center justify-center">B3</div>
-            <div className="p-3 flex items-center gap-3 flex-wrap">
-              <label className="font-bold w-32 shrink-0">SWITCH (QR):</label>
+          {/* QR SWITCH */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">QR SWITCH</div>
+            <div className="p-2 flex items-center gap-2">
               <input
                 ref={switchRef}
                 value={switchRaw}
                 onChange={(e) => setSwitchRaw(e.target.value)}
                 onKeyDown={handleSwitchKey}
                 placeholder="Leia o QR do SWITCH..."
-                className="flex-1 min-w-[200px] px-3 py-2 text-lg font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
+                className="flex-1 px-3 py-2 text-base font-mono bg-white border-2 border-blue-400 rounded outline-none focus:border-blue-600"
                 autoComplete="off"
               />
-              {switchPn ? (
-                <span className="font-mono text-sm bg-blue-100 px-2 py-1 rounded border border-blue-300">{switchPn}</span>
-              ) : switchExtract.error ? (
-                <span className="font-mono text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded border border-orange-300">⚠ {switchExtract.error}</span>
-              ) : null}
             </div>
           </div>
 
-          {["B4", "B5", "B6", "B7", "B8"].map((r) => (
-            <div key={r} className="grid grid-cols-[60px_1fr] border-b border-slate-300">
-              <div className="bg-slate-300 p-2 text-center font-mono text-xs text-slate-500 border-r border-slate-400">{r}</div>
-              <div className="p-2 bg-slate-50 text-slate-400 text-xs italic">🔒 bloqueado</div>
+          {/* PAINEL EXTRAIDO */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">PAINEL EXTRAIDO</div>
+            <div className="p-3 font-mono text-lg">
+              {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
-          ))}
+          </div>
 
-          <div className={`grid grid-cols-[60px_1fr] ${p.bg} ${p.text} border-y-4 ${p.border} transition-all duration-200`}>
-            <div className="bg-black/20 p-3 text-center font-mono text-sm font-bold border-r border-black/30 flex items-center justify-center">B9:B11</div>
-            <div className="p-6 flex items-start gap-6">
+          {/* SWITCH EXTRAIDO */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">SWITCH EXTRAIDO</div>
+            <div className="p-3 font-mono text-lg">
+              {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
+            </div>
+          </div>
+
+          {/* ALC CODE */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">ALC CODE</div>
+            <div className="p-3 font-mono text-xl font-bold">
+              {result.alc || <span className="text-slate-400 font-normal text-base">—</span>}
+            </div>
+          </div>
+
+          {/* RESULTADO */}
+          <div className={`grid grid-cols-[160px_1fr] border-b-2 border-slate-400 ${p.bg} ${p.text}`}>
+            <div className="bg-black/20 p-3 font-bold border-r-2 border-slate-400 flex items-center">RESULTADO</div>
+            <div className="p-4 flex items-center gap-4">
               <div className="shrink-0">{p.icon}</div>
-              <div className="flex-1 min-w-0">
-                <div className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{p.label}</div>
-                <div className="text-base md:text-xl font-semibold opacity-90 mt-1">{result.message}</div>
-                {result.alc && (
-                  <div className="text-2xl md:text-3xl font-mono font-bold mt-2 bg-black/20 inline-block px-3 py-1 rounded">ALC: {result.alc}</div>
-                )}
-                {(result.status === "alc_diff" || result.status === "not_found") && (
-                  <div className="mt-4 bg-black/25 rounded p-3">
-                    <div className="flex items-center gap-2 text-sm font-bold mb-2 opacity-90">
-                      <Info className="w-4 h-4" /> Esperado no banco
-                    </div>
-                    {result.expectedRows.length === 0 ? (
-                      <div className="text-sm italic opacity-80">
-                        Nenhuma linha contém o PAINEL <b>{panelPn}</b> nem o SWITCH <b>{switchPn}</b>.
-                      </div>
-                    ) : (
-                      <table className="w-full text-sm font-mono">
-                        <thead className="opacity-80 text-xs">
-                          <tr>
-                            <th className="text-left pr-3 pb-1">SWITCH</th>
-                            <th className="text-left pr-3 pb-1">PANEL</th>
-                            <th className="text-left pb-1">ALC</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {result.expectedRows.slice(0, 6).map((r, i) => (
-                            <tr key={i} className="border-t border-white/20">
-                              <td className={`pr-3 py-1 ${r.switch === switchPn ? "font-bold" : ""}`}>{r.switch}</td>
-                              <td className={`pr-3 py-1 ${r.panel === panelPn ? "font-bold" : ""}`}>{r.panel}</td>
-                              <td className="py-1 font-bold">{r.alc}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
-                )}
+              <div className="text-3xl md:text-4xl font-black tracking-tight">{p.label}</div>
+            </div>
+          </div>
+
+          {/* MENSAGEM */}
+          <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+            <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
+            <div className="p-3 text-base">{result.message}</div>
+          </div>
+
+          {/* Detalhes esperados quando divergência */}
+          {(result.status === "alc_diff" || result.status === "not_found") && result.expectedRows.length > 0 && (
+            <div className="grid grid-cols-[160px_1fr] border-b-2 border-slate-400">
+              <div className="bg-slate-300 p-3 font-bold border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
+              <div className="p-3 overflow-x-auto">
+                <table className="w-full text-sm font-mono">
+                  <thead className="text-xs text-slate-600">
+                    <tr><th className="text-left pr-3 pb-1">SWITCH</th><th className="text-left pr-3 pb-1">PANEL</th><th className="text-left pb-1">ALC</th></tr>
+                  </thead>
+                  <tbody>
+                    {result.expectedRows.slice(0, 6).map((r, i) => (
+                      <tr key={i} className="border-t border-slate-300">
+                        <td className={`pr-3 py-1 ${r.switch === switchPn ? "font-bold" : ""}`}>{r.switch}</td>
+                        <td className={`pr-3 py-1 ${r.panel === panelPn ? "font-bold" : ""}`}>{r.panel}</td>
+                        <td className="py-1 font-bold">{r.alc}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
+          )}
+
+          {/* Botões LIMPAR / VALIDAR */}
+          <div className="grid grid-cols-2 gap-3 p-4 bg-slate-200">
+            <button
+              type="button"
+              onClick={reset}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+            >
+              LIMPAR
+            </button>
+            <button
+              type="button"
+              onClick={() => { switchRef.current?.blur(); panelRef.current?.blur(); }}
+              className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100"
+            >
+              VALIDAR
+            </button>
           </div>
         </div>
 

@@ -338,12 +338,12 @@ const ConsultaPecas = () => {
                   {filtered.map((p: any) => {
                     const hasAlc = p.alc_code && p.alc_code !== "N/A";
                     return (
-                    <tr key={p.id} className={`border-t border-border/60 hover:bg-accent/5 ${hasAlc ? "bg-orange-50/60" : ""}`}>
+                    <tr key={p.id} className={`border-t border-border/60 hover:bg-accent/5 ${hasAlc ? "bg-rose-50/60" : ""}`}>
                       <td className="px-2 py-1.5 font-heading font-bold text-foreground whitespace-nowrap">{p.part_number}</td>
                       <td className="px-2 py-1.5 text-muted-foreground truncate max-w-[220px]">{p.part_name}</td>
                       <td className="px-2 py-1.5 font-semibold text-blue-700 whitespace-nowrap">{p.suppliers?.name || "—"}</td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 border-amber-400 text-amber-700 bg-amber-50">{p.suppliers?.code || "—"}</Badge></td>
-                      <td className="px-2 py-1.5"><Badge variant="outline" className={`font-mono text-[10px] px-1.5 py-0 ${hasAlc ? "border-orange-500 text-orange-800 bg-orange-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"}`}>{p.alc_code || "N/A"}</Badge></td>
+                      <td className="px-2 py-1.5"><Badge variant="outline" className={`font-mono text-[10px] px-1.5 py-0 ${hasAlc ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"}`}>{p.alc_code || "N/A"}</Badge></td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-400 text-emerald-700 bg-emerald-50">{p.project || "—"}</Badge></td>
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-cyan-400 text-cyan-700 bg-cyan-50">{p.line_module || "—"}</Badge></td>
                       <td className="px-2 py-1.5">{origemBadge(p.origem)}</td>
@@ -374,7 +374,7 @@ const ConsultaPecas = () => {
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
                       <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
                       <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
-                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-orange-500 text-orange-800 bg-orange-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
+                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
                     </div>
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
                       <span className="text-muted-foreground">Projeto: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>

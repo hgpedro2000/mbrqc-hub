@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.2', 'patch', 'Cor do badge de ALC cadastrado', 'Badge de ALC Code cadastrado agora usa tom rosé para diferenciar do badge âmbar de Code Vendor.');

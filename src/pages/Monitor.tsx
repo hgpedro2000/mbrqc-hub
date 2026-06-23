@@ -565,6 +565,11 @@ const Monitor = () => {
     return () => { if (!had && prefs.theme === "dark") root.classList.remove("dark"); };
   }, [prefs.theme]);
 
+  // Sync split-flap speed from prefs.
+  useEffect(() => {
+    setFlapHalfMs(prefs.flapSpeedMs ?? 70);
+  }, [prefs.flapSpeedMs]);
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);

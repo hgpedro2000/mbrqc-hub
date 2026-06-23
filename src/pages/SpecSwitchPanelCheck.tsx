@@ -344,15 +344,16 @@ export default function SpecSwitchPanelCheck() {
           </Button>
           <h1 className="text-xl md:text-2xl font-bold tracking-wide">VALIDAÇÃO SPEC — PAINEL × SWITCH</h1>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="text-slate-900">
-              <Upload className="w-4 h-4 mr-2" /> Importar Banco
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowDb((s) => !s)} className="text-slate-900">
-              <Database className="w-4 h-4 mr-2" /> Banco ({db.length})
-            </Button>
-            <Button variant="outline" size="sm" onClick={reset} className="text-slate-900">
-              <RotateCcw className="w-4 h-4 mr-2" /> Nova Leitura
-            </Button>
+            {isAdmin && (
+              <>
+                <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="text-slate-900">
+                  <Upload className="w-4 h-4 mr-2" /> Importar Banco
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowDb((s) => !s)} className="text-slate-900">
+                  <Database className="w-4 h-4 mr-2" /> Banco ({db.length})
+                </Button>
+              </>
+            )}
           </div>
           <input
             ref={fileRef}

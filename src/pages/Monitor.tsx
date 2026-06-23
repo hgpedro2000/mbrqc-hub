@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, useCallback, ReactNode, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+// IMPORTANT: /monitor uses a dedicated anon-only Supabase client (no session
+// persistence). It must NOT import the main `supabase` client nor any auth
+// listener/hook — the monitor session is independent of the main app login.
+import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
 import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock } from "@/components/apontamento/MonitorDialog";
-import { useUserRole } from "@/hooks/useUserRole";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
@@ -187,10 +189,10 @@ const Monitor = () => {
   const [paused, setPaused] = useState(false);
   const [flash, setFlash] = useState<{ type: "alert" | "contencao"; title: string } | null>(null);
   const [photoSource, setPhotoSource] = useState<PhotoSource | null>(null);
+  const [logoutToast, setLogoutToast] = useState<string | null>(null);
 
   const reducedMotion = useReducedMotion();
   const { isFs, toggle: toggleFullscreen } = useFullscreen();
-  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const autoFsTried = useRef(false);
   const [needsFsGesture, setNeedsFsGesture] = useState(false);
@@ -238,13 +240,18 @@ const Monitor = () => {
     return () => clearInterval(id);
   }, []);
 
-  // BroadcastChannel: answer PING with PONG, handle FOCUS, notify on close.
+  // BroadcastChannel: answer PING with PONG, handle FOCUS, react to MAIN_LOGOUT, notify on close.
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
     const ch = new BroadcastChannel("monitor_channel");
     ch.onmessage = (e) => {
       if (e.data?.type === "PING") ch.postMessage({ type: "PONG" });
       else if (e.data?.type === "FOCUS") { try { window.focus(); } catch { /* noop */ } }
+      else if (e.data?.type === "MAIN_LOGOUT") {
+        // Main app signed out — monitor stays alive on the anon client.
+        setLogoutToast("Sessão principal encerrada — monitor mantido");
+        setTimeout(() => setLogoutToast(null), 3000);
+      }
     };
     const onUnload = () => { try { ch.postMessage({ type: "MONITOR_CLOSED" }); } catch { /* noop */ } };
     window.addEventListener("beforeunload", onUnload);
@@ -752,16 +759,14 @@ const Monitor = () => {
             <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)} className="opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Configurações do monitor">
               <Settings className="w-7 h-7" />
             </Button>
-            {isAdmin && (
-              <Button
-                variant="destructive"
-                onClick={exitMonitor}
-                className="ml-2 gap-2 font-bold uppercase tracking-wider shadow-lg"
-                aria-label="Sair do monitor"
-              >
-                <LogOut className="w-5 h-5" /> Sair
-              </Button>
-            )}
+            <Button
+              variant="destructive"
+              onClick={exitMonitor}
+              className="ml-2 gap-2 font-bold uppercase tracking-wider shadow-lg"
+              aria-label="Sair do monitor"
+            >
+              <LogOut className="w-5 h-5" /> Sair
+            </Button>
           </div>
         </header>
 
@@ -854,6 +859,12 @@ const Monitor = () => {
       </div>
 
       {photoSource && <PhotoModal source={photoSource} onClose={() => setPhotoSource(null)} />}
+
+      {logoutToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] px-4 py-2 rounded-lg bg-black/80 text-white text-sm shadow-lg animate-fade-in">
+          {logoutToast}
+        </div>
+      )}
 
       {needsFsGesture && !isFs && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">

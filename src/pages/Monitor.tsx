@@ -739,9 +739,10 @@ const Monitor = () => {
         );
       case "ranking": {
         const max = Math.max(...supplierRanking.map((s) => s.ppm), 1);
+        const fmtPpm = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}k` : fmtNum(n);
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-10">
-            <div className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40">
+            <div className="grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] gap-6 text-xs uppercase tracking-wider text-muted-foreground pb-3 border-b border-border/40 tabular-nums">
               <span className="text-center">#</span>
               <span>Fornecedor</span>
               <span className="text-right">Insp.</span>
@@ -750,38 +751,44 @@ const Monitor = () => {
             </div>
             <ol className="divide-y divide-border/30">
               {supplierRanking.length === 0 && <li className="h-[60vh] flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
-              {supplierRanking.slice(0, 8).map((s, i) => (
-                <li key={s.fornecedor} className="grid grid-cols-[5rem_1fr_8rem_8rem_10rem] items-center gap-6 py-4" style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both` }}>
-                  <span className={cn("text-5xl font-black text-center", i === 0 ? "text-yellow-400" : i === 1 ? "text-zinc-300" : i === 2 ? "text-amber-700" : "text-muted-foreground")}>{i + 1}</span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-3xl truncate">{s.fornecedor}</p>
-                    <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
-                      <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
+              {supplierRanking.slice(0, 8).map((s, i) => {
+                const isWorst = isV2 && i < 3;
+                return (
+                  <li key={s.fornecedor} className={cn("grid grid-cols-[5rem_minmax(0,1fr)_7rem_6rem_7rem] items-center gap-6 py-4 tabular-nums", isWorst && "rounded-xl px-3 -mx-3 bg-red-500/5 border border-red-500/30")}
+                      style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>
+                    <span className={cn("text-5xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-3xl truncate">{s.fornecedor}{isWorst && <span className="ml-3 text-xs uppercase tracking-widest px-2 py-1 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
+                      <div className="h-3 rounded-full bg-muted/40 overflow-hidden mt-2">
+                        <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-3xl font-bold text-cyan-300 tabular-nums text-right">{fmtNum(s.insp)}</span>
-                  <span className="text-3xl font-bold text-red-400 tabular-nums text-right">{fmtNum(s.ng)}</span>
-                  <span className="text-5xl font-black text-red-500 tabular-nums text-right">{fmtNum(s.ppm)}</span>
-                </li>
-              ))}
+                    <span className="text-3xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
+                    <span className="text-3xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
+                    <span className="text-4xl font-black text-red-500 text-right">{isV2 ? fmtPpm(s.ppm) : fmtNum(s.ppm)}</span>
+                  </li>
+                );
+              })}
             </ol>
           </div>
         );
       }
-      case "defects":
+      case "defects": {
+        const stripNum = (s: string) => (s || "").replace(/^\s*\d+\s*[-–.)]\s*/, "");
+        const data = defectsData.map((d) => ({ ...d, name: stripNum(d.name) }));
         return (
           <div className="w-full h-full overflow-hidden rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-8">
-            {defectsData.length === 0 ? (
+            {data.length === 0 ? (
               <div className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem defeitos no período.</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={defectsData} layout="vertical" margin={{ left: 200, right: 120, top: 20, bottom: 20 }}>
+                <BarChart data={data} layout="vertical" margin={{ left: 200, right: 120, top: 20, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                   <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <YAxis dataKey="name" type="category" width={260} stroke="hsl(var(--muted-foreground))" fontSize={20} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 18 }} />
-                  <Bar dataKey="value" radius={[0, 8, 8, 0]} isAnimationActive={!reducedMotion} animationDuration={800}>
-                    {defectsData.map((_, i) => <Cell key={i} fill={`hsl(${10 + i * 8}, 85%, ${55 - i * 2}%)`} />)}
+                  <Bar dataKey="value" radius={[0, 8, 8, 0]} isAnimationActive={!reducedMotion} animationDuration={isV2 ? 1400 : 800} animationEasing="ease-out">
+                    {data.map((_, i) => <Cell key={i} fill={`hsl(${10 + i * 8}, 85%, ${55 - i * 2}%)`} />)}
                     <LabelList dataKey="value" position="right" fill="hsl(var(--foreground))" fontSize={26} fontWeight={900} formatter={(v: number) => fmtNum(v)} />
                   </Bar>
                 </BarChart>
@@ -789,8 +796,10 @@ const Monitor = () => {
             )}
           </div>
         );
+      }
       case "inspecionado": {
-        const suppliers = inspecionadoData.slice(0, 4);
+        const suppliers = isV2 ? inspecionadoData : inspecionadoData.slice(0, 4);
+        const cols = suppliers.length <= 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" : suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" : "grid-cols-3 grid-rows-3";
         return (
           <div className="w-full h-full overflow-hidden">
             {suppliers.length === 0 ? (
@@ -798,28 +807,25 @@ const Monitor = () => {
                 Sem peças inspecionadas no período.
               </div>
             ) : (
-              <div className={cn(
-                "grid gap-6 w-full h-full",
-                suppliers.length === 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : "grid-cols-2 grid-rows-2",
-              )}>
+              <div className={cn("grid gap-6 w-full h-full", cols)}>
                 {suppliers.map((sup, si) => (
-                  <div
-                    key={sup.fornecedor}
-                    className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col"
-                    style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}
-                  >
+                  <div key={sup.fornecedor} className="relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-cyan-500/30 p-6 flex flex-col" style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${si * 100}ms both` }}>
                     <div className="flex items-center justify-between gap-3 pb-3 border-b border-border/40">
-                      <h3 className="text-2xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
-                      <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>
+                      <h3 className="text-xl font-bold truncate text-cyan-300">{sup.fornecedor}</h3>
+                      {isV2
+                        ? <SplitFlapNumber value={sup.total} size={40} />
+                        : <span className="text-4xl font-black tabular-nums text-cyan-400">{fmtNum(sup.total)}</span>}
                     </div>
                     <ul className="flex-1 overflow-hidden mt-2 divide-y divide-border/30">
                       {sup.parts.slice(0, 8).map((p, i) => (
                         <li key={`${p.part_number}-${i}`} className="grid grid-cols-[1fr_auto] items-center gap-4 py-2">
                           <div className="min-w-0">
-                            <p className="font-mono text-lg truncate">{p.part_number}</p>
-                            {p.part_name && <p className="text-sm text-muted-foreground truncate">{p.part_name}</p>}
+                            <p className="font-mono text-base truncate">{p.part_number}</p>
+                            {p.part_name && <p className="text-xs text-muted-foreground truncate">{p.part_name}</p>}
                           </div>
-                          <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>
+                          {isV2
+                            ? <SplitFlapNumber value={p.qty} size={22} />
+                            : <span className="text-2xl font-bold tabular-nums text-emerald-400">{fmtNum(p.qty)}</span>}
                         </li>
                       ))}
                     </ul>
@@ -828,6 +834,70 @@ const Monitor = () => {
                 ))}
               </div>
             )}
+          </div>
+        );
+      }
+      case "comunicados":
+      case "alteracoes_4m": {
+        const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
+        const items = slidesMedia.filter((m) => m.tipo === tipo);
+        const [mi, setMi] = [Math.floor(Date.now() / 8000) % Math.max(items.length, 1), null] as any;
+        const current = items[mi];
+        if (!items.length) {
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
+        }
+        const url = current ? mediaUrls[current.file_path] : undefined;
+        return (
+          <div key={current?.id} className="w-full h-full grid grid-rows-[1fr_auto] gap-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-6 animate-fade-in">
+            <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
+              {url ? <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" /> : <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />}
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                {current?.titulo && <h3 className="text-3xl font-bold truncate">{current.titulo}</h3>}
+                {current?.descricao && <p className="text-xl text-muted-foreground truncate">{current.descricao}</p>}
+              </div>
+              <span className="text-sm uppercase tracking-widest text-muted-foreground tabular-nums">{mi + 1} / {items.length}</span>
+            </div>
+          </div>
+        );
+      }
+      case "ultimos_defeitos": {
+        const items = ngApontamentos;
+        if (!items.length) {
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Sem defeitos detectados no período.</div>;
+        }
+        return (
+          <div className="grid grid-cols-3 grid-rows-2 gap-5 w-full h-full">
+            {items.slice(0, 6).map((a, i) => {
+              const photos = ngPhotos[a.id] || [];
+              const photo = photos[0];
+              return (
+                <div key={a.id} onClick={() => photos.length && setPhotoSource({ photos, title: a.numero || "Apontamento", meta: [
+                  { label: "Modo de Falha", value: a.modo_falha || "" },
+                  { label: "Fornecedor", value: a.fornecedor || "" },
+                  { label: "Part Number", value: a.part_number || "" },
+                  { label: "NG", value: String(a.quantidade_ng || 0) },
+                  { label: "Data", value: new Date(a.created_at).toLocaleString("pt-BR") },
+                ] })}
+                  className={cn("relative overflow-hidden rounded-2xl bg-card/60 backdrop-blur-md border border-rose-500/40 flex flex-col", photo && "cursor-pointer transition-transform hover:scale-[1.02]")}
+                  style={reducedMotion ? undefined : { animation: `fade-in 0.5s ease-out ${i * 80}ms both` }}>
+                  {photo
+                    ? <img src={photo} alt="" className="w-full h-40 object-cover" loading="lazy" />
+                    : <div className="w-full h-40 bg-muted/30 flex items-center justify-center text-muted-foreground"><Microscope className="w-10 h-10" /></div>}
+                  <div className="p-4 flex-1 flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-sm text-muted-foreground">{a.numero || "—"}</span>
+                      <span className="text-xs uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 font-bold">NG {a.quantidade_ng}</span>
+                    </div>
+                    <p className="text-lg font-bold truncate text-rose-300">{a.modo_falha || "—"}</p>
+                    <p className="text-sm text-muted-foreground truncate">{a.part_number || "—"} · {a.fornecedor || "—"}</p>
+                    <p className="text-xs text-muted-foreground mt-auto">{new Date(a.created_at).toLocaleString("pt-BR")}</p>
+                  </div>
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
+                </div>
+              );
+            })}
           </div>
         );
       }

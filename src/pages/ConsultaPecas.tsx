@@ -457,8 +457,17 @@ const ConsultaPecas = () => {
   };
 
   const applySuffixSelection = (option: typeof suffixOptions[0]) => {
-    setSearchTerm(option.part_number);
     setSuffixPickerOpen(false);
+    if (scanMode === "check") {
+      const full = partNumbers.find((p: any) => p.part_number === option.part_number);
+      if (full) {
+        setSpecPart(full);
+        setSpecDialogOpen(true);
+        toast({ title: "Peça identificada!", description: `PN: ${option.part_number}` });
+        return;
+      }
+    }
+    setSearchTerm(option.part_number);
     toast({ title: "Peça selecionada!", description: `PN: ${option.part_number}` });
   };
 

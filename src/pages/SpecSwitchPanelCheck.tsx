@@ -264,18 +264,44 @@ export default function SpecSwitchPanelCheck() {
     handleValidate();
   }, [panelPn, switchPn, panelExtract.error, switchExtract.error, handleValidate]);
 
+  // Debounced field-jump: scanners that embed CR/LF inside the QR payload fire
+  // Enter mid-stream. We only jump when no more characters arrive for ~120ms,
+  // ensuring the entire QR ended up in the originating field.
+  const panelJumpTimer = useRef<number | null>(null);
+  const switchValidateTimer = useRef<number | null>(null);
+
+  const clearPanelJump = () => {
+    if (panelJumpTimer.current) {
+      window.clearTimeout(panelJumpTimer.current);
+      panelJumpTimer.current = null;
+    }
+  };
+  const clearSwitchValidate = () => {
+    if (switchValidateTimer.current) {
+      window.clearTimeout(switchValidateTimer.current);
+      switchValidateTimer.current = null;
+    }
+  };
+
   const handlePanelKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-      switchRef.current?.focus();
+      clearPanelJump();
+      panelJumpTimer.current = window.setTimeout(() => {
+        switchRef.current?.focus();
+      }, 120);
     }
   };
   const handleSwitchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleValidate();
+      clearSwitchValidate();
+      switchValidateTimer.current = window.setTimeout(() => {
+        handleValidate();
+      }, 120);
     }
   };
+
 
   /** Import CSV or Excel. Accepts columns SWITCH, PANEL, ALC CODE (any case, with spaces). */
   const handleImport = async (file: File) => {
@@ -393,8 +419,9 @@ export default function SpecSwitchPanelCheck() {
               <input
                 ref={panelRef}
                 value={panelRaw}
-                onChange={(e) => setPanelRaw(e.target.value)}
+                onChange={(e) => { clearPanelJump(); setPanelRaw(e.target.value); }}
                 onKeyDown={handlePanelKey}
+
                 placeholder="Leia o QR do PAINEL..."
                 aria-invalid={!!panelExtract.error}
                 className={`flex-1 px-3 py-2 text-base font-mono bg-white border-2 rounded outline-none transition-colors ${
@@ -416,7 +443,7 @@ export default function SpecSwitchPanelCheck() {
               <input
                 ref={switchRef}
                 value={switchRaw}
-                onChange={(e) => setSwitchRaw(e.target.value)}
+                onChange={(e) => { clearSwitchValidate(); setSwitchRaw(e.target.value); }}
                 onKeyDown={handleSwitchKey}
                 placeholder="Leia o QR do SWITCH..."
                 aria-invalid={!!switchExtract.error}

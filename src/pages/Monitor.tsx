@@ -183,129 +183,88 @@ const ScaledStage = ({ children, className }: { children: ReactNode; className?:
   );
 };
 
-// --- SplitFlap digit (airport-board style) ---
-// Queue-based: each character change is enqueued; we animate them one by one
-// so rapid updates produce a true cascading flip instead of skipping frames.
-const FLAP_TOP_MS = 260;
-const FLAP_BOTTOM_MS = 260;
-const FLAP_DELAY_MS = 230;
-const FLAP_TOTAL_MS = FLAP_DELAY_MS + FLAP_BOTTOM_MS;
+// --- SplitFlap digit (airport-board style, vertical roll) ---
+// Robust: every change animates because we drive translateY off a numeric
+// `absIndex` that only increases; modulo strip length gives the actual
+// position, so React always commits a new transform and the CSS transition
+// fires reliably even on rapid updates.
+const FLAP_MS = 480;
+const FLAP_CHARS = "0123456789 .,:-/+%";
 
 const SplitFlapDigit = ({ ch, size }: { ch: string; size: number }) => {
-  // `shown` = currently displayed (post-animation) value.
-  // `prev`  = value the flipping flap shows on its front face (the "from").
-  // `next`  = value to flip TO next; when set, animation runs and then shown=next.
-  const [shown, setShown] = useState<string>(ch === " " ? " " : " ");
-  const [next, setNext] = useState<string | null>(ch === " " ? null : ch);
-  const [animKey, setAnimKey] = useState(0);
-  const queueRef = useRef<string[]>([]);
-  const animatingRef = useRef(false);
+  const isDigit = /[0-9]/.test(ch);
+  const w = isDigit ? size * 0.7 : size * 0.5;
+  const h = size;
+  const fontSize = size * 0.72;
 
-  const runNext = () => {
-    const q = queueRef.current;
-    if (q.length === 0) { animatingRef.current = false; return; }
-    animatingRef.current = true;
-    const target = q.shift()!;
-    setNext(target);
-    setAnimKey((k) => k + 1);
-    window.setTimeout(() => {
-      setShown(target);
-      setNext(null);
-      // chain next on a microtask so React commits `shown` first
-      window.setTimeout(runNext, 16);
-    }, FLAP_TOTAL_MS);
-  };
+  const strip = useMemo(() => FLAP_CHARS.split(""), []);
+  const targetPos = (() => {
+    const i = strip.indexOf(ch);
+    return i >= 0 ? i : strip.indexOf(" ");
+  })();
+
+  const [absIndex, setAbsIndex] = useState(targetPos);
+  const lastTargetRef = useRef(targetPos);
 
   useEffect(() => {
-    const q = queueRef.current;
-    const last = q.length ? q[q.length - 1] : (next ?? shown);
-    if (ch !== last) {
-      q.push(ch);
-      if (!animatingRef.current) runNext();
-    }
+    if (targetPos === lastTargetRef.current) return;
+    const len = strip.length;
+    const cur = ((absIndex % len) + len) % len;
+    let delta = (targetPos - cur + len) % len;
+    if (delta === 0) delta = len;
+    setAbsIndex(absIndex + delta);
+    lastTargetRef.current = targetPos;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ch]);
-
-  const isDigit = /[0-9]/.test(ch);
-  const w = isDigit ? size * 0.7 : size * 0.35;
-  const h = size;
-  const half = h / 2;
-  const fontSize = size * 0.9;
-  const renderText = (c: string, offset = 0) => (
-    <div
-      style={{
-        height: h,
-        lineHeight: `${h}px`,
-        textAlign: "center",
-        fontSize,
-        marginTop: offset,
-      }}
-    >
-      {c}
-    </div>
-  );
-  const halfBase: React.CSSProperties = {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: half,
-    overflow: "hidden",
-    background: "#000",
-    color: "#fff",
-  };
-
-  const animating = next !== null;
-  const topNew = animating ? next! : shown;       // revealed under flipping top
-  const bottomOld = shown;                          // covered by flipping bottom
-  const flipFromTop = shown;                        // flap face flipping down
-  const flipToBottom = animating ? next! : shown;   // flap face flipping up
+  }, [targetPos]);
 
   return (
     <span
       className="relative inline-block rounded-md border border-white/20 shadow-inner overflow-hidden align-middle font-mono font-black tabular-nums"
-      style={{ width: w, height: h, perspective: 600 }}
+      style={{
+        width: w,
+        height: h,
+        background: "#000",
+        color: "#fff",
+        verticalAlign: "middle",
+      }}
     >
-      {/* Static top — new value (revealed once flap clears) */}
-      <div style={{ ...halfBase, top: 0, borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-        {renderText(topNew, 0)}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: "50%",
+          height: 1,
+          background: "rgba(255,255,255,0.18)",
+          zIndex: 2,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          transform: `translateY(${-absIndex * h}px)`,
+          transition: `transform ${FLAP_MS}ms cubic-bezier(.2,.85,.3,1)`,
+          willChange: "transform",
+        }}
+      >
+        {Array.from({ length: absIndex + strip.length }).map((_, i) => {
+          const c = strip[((i % strip.length) + strip.length) % strip.length];
+          return (
+            <div
+              key={i}
+              style={{
+                height: h,
+                lineHeight: `${h}px`,
+                textAlign: "center",
+                fontSize,
+              }}
+            >
+              {c}
+            </div>
+          );
+        })}
       </div>
-      {/* Static bottom — old value (covered by flipping bottom) */}
-      <div style={{ ...halfBase, bottom: 0 }}>
-        {renderText(bottomOld, -half)}
-      </div>
-      {animating && (
-        <>
-          {/* Animated top half flipping down (shows old value) */}
-          <div
-            key={`t-${animKey}`}
-            style={{
-              ...halfBase,
-              top: 0,
-              borderBottom: "1px solid rgba(255,255,255,0.15)",
-              transformOrigin: "bottom",
-              transformStyle: "preserve-3d",
-              backfaceVisibility: "hidden",
-              animation: `flap-top ${FLAP_TOP_MS}ms cubic-bezier(.55,.05,.95,.6) both`,
-            }}
-          >
-            {renderText(flipFromTop, 0)}
-          </div>
-          {/* Animated bottom half flipping up (shows new value) */}
-          <div
-            key={`b-${animKey}`}
-            style={{
-              ...halfBase,
-              bottom: 0,
-              transformOrigin: "top",
-              transformStyle: "preserve-3d",
-              backfaceVisibility: "hidden",
-              animation: `flap-bottom ${FLAP_BOTTOM_MS}ms cubic-bezier(.25,.5,.5,1) ${FLAP_DELAY_MS}ms both`,
-            }}
-          >
-            {renderText(flipToBottom, -half)}
-          </div>
-        </>
-      )}
     </span>
   );
 };
@@ -320,6 +279,8 @@ const SplitFlapNumber = ({ value, size = 80 }: { value: number; size?: number })
     </span>
   );
 };
+
+
 
 
 const Monitor = () => {

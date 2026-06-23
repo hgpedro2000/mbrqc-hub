@@ -555,6 +555,8 @@ export const MonitorDialog = ({ open, onOpenChange, initial, onConfirm, confirmL
                     <InspecionadoExtras
                       setting={s}
                       onChange={(patch) => setBlockSetting(b.id, patch)}
+                      flapSpeedMs={prefs.flapSpeedMs ?? 70}
+                      onFlapSpeedChange={(v) => setPrefs((p) => ({ ...p, flapSpeedMs: v }))}
                     />
                   )}
 

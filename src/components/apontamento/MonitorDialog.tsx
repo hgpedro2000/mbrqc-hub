@@ -668,6 +668,7 @@ const InspecionadoExtras = ({
 }) => {
   const sps = setting.inspSuppliersPerSlide ?? 6;
   const ppg = setting.inspPartsPerGroup ?? 2;
+  const fs = setting.inspFontScale ?? 1;
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">

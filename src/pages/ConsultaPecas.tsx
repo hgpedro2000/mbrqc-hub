@@ -294,7 +294,23 @@ const ConsultaPecas = () => {
         </div>
 
 
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">Modo de exibição:</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={cycleViewMode}
+            className="h-9 gap-2 border-accent/40 hover:bg-accent/10"
+            title="Alternar modo de exibição"
+          >
+            <ViewIcon className="w-4 h-4" />
+            <span className="font-semibold">{viewModeMeta[viewMode].label}</span>
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto mt-4 space-y-4">
+
         {isLoading ? (
           <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
         ) : filtered.length === 0 ? (

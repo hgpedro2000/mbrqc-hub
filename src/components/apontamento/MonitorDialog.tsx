@@ -48,6 +48,10 @@ export interface MonitorBlockSetting {
   perSlide?: 2 | 3 | 4 | 5;
   /** Used by "ultimos_defeitos": visual style for the "Descrição" text. */
   descStyle?: DefectsDescStyle;
+  /** Used by "inspecionado": how many supplier cards to show per slide (1–9). */
+  inspSuppliersPerSlide?: number;
+  /** Used by "inspecionado": how many part lines per rotation group (1–6). */
+  inspPartsPerGroup?: number;
 }
 
 export interface MonitorPreferences {
@@ -59,6 +63,8 @@ export interface MonitorPreferences {
   profile?: MonitorProfile;
   slideDurationMs?: number;
   animationsEnabled?: boolean;
+  /** Split-flap (airport) half-flip duration in ms. Lower = faster. */
+  flapSpeedMs?: number;
   blockSettings?: Partial<Record<MonitorBlock, MonitorBlockSetting>>;
 }
 
@@ -71,8 +77,10 @@ export const defaultPrefs: MonitorPreferences = {
   profile: "default",
   slideDurationMs: 10000,
   animationsEnabled: true,
+  flapSpeedMs: 70,
   blockSettings: {},
 };
+
 
 export const loadPrefs = (): MonitorPreferences => {
   try {

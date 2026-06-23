@@ -439,6 +439,14 @@ export default function SpecSwitchPanelCheck() {
                 <Button variant="outline" size="sm" onClick={() => setShowDb((s) => !s)} className="text-slate-900">
                   <Database className="w-4 h-4 mr-2" /> Banco ({db.length})
                 </Button>
+                <Button
+                  variant={editMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => { setShowDb(true); setEditMode((m) => !m); setEditingIdx(null); }}
+                  className={editMode ? "" : "text-slate-900"}
+                >
+                  <Settings className="w-4 h-4 mr-2" /> {editMode ? "Sair Edição" : "Alterar Banco"}
+                </Button>
               </>
             )}
           </div>

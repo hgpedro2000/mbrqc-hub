@@ -265,10 +265,15 @@ export default function SpecSwitchPanelCheck() {
   }, [panelPn, switchPn, panelExtract.error, switchExtract.error, handleValidate]);
 
   // Debounced field-jump: scanners that embed CR/LF inside the QR payload fire
-  // Enter mid-stream. We only jump when no more characters arrive for ~120ms,
-  // ensuring the entire QR ended up in the originating field.
+  // Enter mid-stream. We only jump when no more characters arrive for ~300ms AND
+  // the originating field already contains a valid extractable PN — guaranteeing
+  // the full QR stayed in the correct field.
   const panelJumpTimer = useRef<number | null>(null);
   const switchValidateTimer = useRef<number | null>(null);
+  const panelRawRef = useRef("");
+  const switchRawRef = useRef("");
+  useEffect(() => { panelRawRef.current = panelRaw; }, [panelRaw]);
+  useEffect(() => { switchRawRef.current = switchRaw; }, [switchRaw]);
 
   const clearPanelJump = () => {
     if (panelJumpTimer.current) {
@@ -288,8 +293,12 @@ export default function SpecSwitchPanelCheck() {
       e.preventDefault();
       clearPanelJump();
       panelJumpTimer.current = window.setTimeout(() => {
-        switchRef.current?.focus();
-      }, 120);
+        // Only advance to SWITCH if PAINEL already has a valid extracted PN.
+        const extracted = extractPart(panelRawRef.current, panelPrefixes);
+        if (extracted.code && !extracted.error) {
+          switchRef.current?.focus();
+        }
+      }, 300);
     }
   };
   const handleSwitchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -297,8 +306,11 @@ export default function SpecSwitchPanelCheck() {
       e.preventDefault();
       clearSwitchValidate();
       switchValidateTimer.current = window.setTimeout(() => {
-        handleValidate();
-      }, 120);
+        const extracted = extractPart(switchRawRef.current, switchPrefixes);
+        if (extracted.code && !extracted.error) {
+          handleValidate();
+        }
+      }, 300);
     }
   };
 

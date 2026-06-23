@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { HyundaiQRData } from "@/lib/parseHyundaiQR";
+import { HyundaiQRData, parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import { useToast } from "@/hooks/use-toast";
 
 import ReportErrorButton from "@/components/ReportErrorButton";
@@ -559,7 +559,7 @@ const ConsultaPecas = () => {
             </div>
             <DialogTitle className="text-xl font-bold text-white">Checar SPEC / ALC</DialogTitle>
             <DialogDescription className="text-white/85 text-sm">
-              Aponte o leitor de código de barras para o Part Number — ou digite e pressione Enter.
+              Aponte o leitor para o QR Code Hyundai/Mobis — o Part Number será extraído automaticamente. Você também pode digitar e pressionar Enter.
             </DialogDescription>
           </div>
           <form
@@ -568,7 +568,12 @@ const ConsultaPecas = () => {
               e.preventDefault();
               const val = specReaderInput.trim();
               if (!val) return;
-              void applyScannedPartNumber(val);
+              // Try to extract the Part Number from a full Hyundai QR payload
+              // (e.g. "[)><rs>06<gs>VBZWC<gs>P84705BP050YJT<gs>SLL43<gs>T...").
+              // Falls back to the raw value when it's already a clean PN.
+              const parsed = parseHyundaiQR(val);
+              const pn = parsed?.partNumber || val;
+              void applyScannedPartNumber(pn);
               setSpecReaderInput("");
             }}
           >
@@ -578,7 +583,7 @@ const ConsultaPecas = () => {
                 ref={specReaderInputRef}
                 value={specReaderInput}
                 onChange={(e) => setSpecReaderInput(e.target.value)}
-                placeholder="Part Number..."
+                placeholder="Leia o QR Code ou digite o Part Number..."
                 autoFocus
                 className="h-14 text-lg font-mono pl-11 border-2 border-violet-300 focus-visible:ring-violet-500 focus-visible:ring-2"
               />
@@ -596,7 +601,7 @@ const ConsultaPecas = () => {
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground text-center">
-              Dica: a maioria dos leitores envia <kbd className="px-1 rounded bg-muted">Enter</kbd> automaticamente.
+              Dica: leitores de QR Hyundai/Mobis enviam o payload completo — o Part Number é detectado automaticamente.
             </p>
           </form>
         </DialogContent>

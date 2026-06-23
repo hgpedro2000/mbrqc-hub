@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.5', 'patch', 'Consulta de Peças: descrição atualizada', 'Atualizada descrição do módulo para refletir leitor Hyundai, checagem de ALC code e Spec PNL LWR x Switch.');

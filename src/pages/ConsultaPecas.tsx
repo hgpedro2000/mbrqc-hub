@@ -239,6 +239,7 @@ const ConsultaPecas = () => {
               onClick={() => setHkmcOpen(true)}
             >
               <Barcode className="w-5 h-5" />
+            </Button>
             <Button
               type="button"
               variant="default"

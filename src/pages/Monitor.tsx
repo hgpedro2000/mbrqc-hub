@@ -404,12 +404,13 @@ export const SplitFlapText = ({
 
 // --- Rotating parts list for supplier cards (groups of 2, 4s tick, max 16s cycle) ---
 type InspPart = { part_number: string; part_name: string; qty: number };
-const RotatingParts = ({ parts, qtySize }: { parts: InspPart[]; qtySize: number }) => {
+const RotatingParts = ({ parts, qtySize, perGroup = 2 }: { parts: InspPart[]; qtySize: number; perGroup?: number }) => {
   const groups = useMemo(() => {
+    const step = Math.max(1, perGroup);
     const out: InspPart[][] = [];
-    for (let i = 0; i < parts.length; i += 2) out.push(parts.slice(i, i + 2));
+    for (let i = 0; i < parts.length; i += step) out.push(parts.slice(i, i + step));
     return out;
-  }, [parts]);
+  }, [parts, perGroup]);
   const total = groups.length;
   const interval = total <= 4 ? 4000 : Math.max(1500, Math.floor(16000 / total));
 

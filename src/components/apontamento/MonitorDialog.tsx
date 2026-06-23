@@ -578,18 +578,19 @@ const SlidePreview = ({
   title,
   durationMs,
   animations,
+  data,
 }: {
   blockId: MonitorBlock;
   emoji: string;
   title: string;
   durationMs: number;
   animations: boolean;
+  data: PreviewData;
 }) => {
   const [runKey, setRunKey] = useState(0);
   const [phase, setPhase] = useState<"idle" | "running">("idle");
   const [remaining, setRemaining] = useState(durationMs);
 
-  // Restart preview whenever the slide config changes.
   useEffect(() => {
     setRunKey((k) => k + 1);
     setPhase("running");
@@ -616,6 +617,8 @@ const SlidePreview = ({
     setRemaining(durationMs);
   };
 
+  const hasRealData = data.loading ? null : blockHasRealData(blockId, data);
+
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -631,6 +634,25 @@ const SlidePreview = ({
           Repetir
         </Button>
       </div>
+
+      {data.loading && (
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground px-2 py-1.5 rounded border bg-muted/30">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Carregando dados reais do monitor…
+        </div>
+      )}
+      {!data.loading && hasRealData === false && (
+        <div className="flex items-center gap-2 text-[11px] text-amber-600 dark:text-amber-400 px-2 py-1.5 rounded border border-amber-500/30 bg-amber-500/10">
+          <AlertTriangle className="w-3 h-3 shrink-0" />
+          <span>Sem dados reais para este slide — exibindo um exemplo ilustrativo.</span>
+        </div>
+      )}
+      {!data.loading && hasRealData === true && (
+        <div className="flex items-center gap-2 text-[11px] text-emerald-600 dark:text-emerald-400 px-2 py-1.5 rounded border border-emerald-500/30 bg-emerald-500/10">
+          <Check className="w-3 h-3 shrink-0" />
+          <span>Pré-visualizando com dados reais do monitor.</span>
+        </div>
+      )}
 
       <div className="relative h-48 sm:h-56 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
         <div
@@ -648,7 +670,7 @@ const SlidePreview = ({
             </span>
           </div>
           <div className="flex-1 min-h-0">
-            <BlockMock id={blockId} />
+            <BlockMock id={blockId} data={data} />
           </div>
         </div>
       </div>
@@ -665,7 +687,6 @@ const SlidePreview = ({
             }}
             ref={(el) => {
               if (el && phase === "running") {
-                // Force reflow then animate to 100% — visual countdown.
                 el.getBoundingClientRect();
                 el.style.width = "100%";
               }
@@ -681,23 +702,110 @@ const SlidePreview = ({
   );
 };
 
-/**
- * Stylized mini-mock of each Monitor block so users see the actual layout
- * being previewed (bars, lists, cards) instead of just the slide title.
- * Pure presentational — no data fetching, instant render.
- */
-const BlockMock = ({ id }: { id: MonitorBlock }) => {
-  const wrap = "h-full w-full text-[10px] leading-tight";
+// ---- Real-data fetching for previews -------------------------------------------------
+
+interface PreviewData {
+  loading: boolean;
+  apontamentos: any[];
+  alertas: any[];
+  contencoes: any[];
+  consumiveis: any[];
+  slidesMedia: any[];
+}
+
+const EMPTY_PREVIEW: PreviewData = {
+  loading: false,
+  apontamentos: [],
+  alertas: [],
+  contencoes: [],
+  consumiveis: [],
+  slidesMedia: [],
+};
+
+const usePreviewData = (open: boolean): PreviewData => {
+  const [data, setData] = useState<PreviewData>({ ...EMPTY_PREVIEW, loading: true });
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setData((d) => ({ ...d, loading: true }));
+
+    const startISO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    Promise.all([
+      monitorClient.from("apontamentos").select("*").gte("created_at", startISO).order("created_at", { ascending: false }).limit(100),
+      monitorClient.from("alertas_qualidade").select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(10),
+      monitorClient.from("contencao").select("*").order("created_at", { ascending: false }).limit(10),
+      monitorClient.from("consumable_items").select("*").eq("active", true),
+      monitorClient.from("monitor_slides_media").select("*").eq("ativo", true).order("ordem", { ascending: true }),
+    ])
+      .then(([ap, al, co, cs, sm]) => {
+        if (cancelled) return;
+        setData({
+          loading: false,
+          apontamentos: ap.data ?? [],
+          alertas: al.data ?? [],
+          contencoes: co.data ?? [],
+          consumiveis: cs.data ?? [],
+          slidesMedia: sm.data ?? [],
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setData({ ...EMPTY_PREVIEW, loading: false });
+      });
+
+    return () => { cancelled = true; };
+  }, [open]);
+
+  return data;
+};
+
+const blockHasRealData = (id: MonitorBlock, d: PreviewData): boolean => {
   switch (id) {
     case "summary":
-      return (
-        <div className={cn(wrap, "grid grid-cols-4 gap-2")}>
-          {[
+    case "recent":
+    case "ranking":
+    case "defects":
+    case "inspecionado":
+    case "ultimos_defeitos":
+    case "alteracoes_4m":
+      return d.apontamentos.length > 0;
+    case "alerts": return d.alertas.length > 0;
+    case "contencao": return d.contencoes.length > 0;
+    case "consumiveis": return d.consumiveis.filter((c: any) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0)).length > 0;
+    case "comunicados": return d.slidesMedia.length > 0;
+    default: return false;
+  }
+};
+
+/**
+ * Mini-mock of each Monitor block. Uses real data when present, falls back
+ * to a stylized example otherwise (with a warning banner in SlidePreview).
+ */
+const BlockMock = ({ id, data }: { id: MonitorBlock; data: PreviewData }) => {
+  const wrap = "h-full w-full text-[10px] leading-tight";
+  const hasReal = blockHasRealData(id, data);
+  switch (id) {
+    case "summary": {
+      const total = data.apontamentos.length;
+      const ng = data.apontamentos.filter((a: any) => (a.ng_qty ?? a.qty_ng ?? 0) > 0).length;
+      const ok = total - ng;
+      const ppm = total ? ((ng / total) * 1_000_000).toFixed(0) : "0";
+      const cells = hasReal
+        ? [
+            { l: "Total", v: total.toString(), c: "bg-primary/10 text-primary" },
+            { l: "OK", v: ok.toString(), c: "bg-emerald-500/10 text-emerald-600" },
+            { l: "NG", v: ng.toString(), c: "bg-destructive/10 text-destructive" },
+            { l: "PPM", v: ppm, c: "bg-amber-500/10 text-amber-600" },
+          ]
+        : [
             { l: "Total", v: "1.248", c: "bg-primary/10 text-primary" },
             { l: "OK", v: "1.190", c: "bg-emerald-500/10 text-emerald-600" },
             { l: "NG", v: "58", c: "bg-destructive/10 text-destructive" },
             { l: "PPM", v: "46.5", c: "bg-amber-500/10 text-amber-600" },
-          ].map((k) => (
+          ];
+      return (
+        <div className={cn(wrap, "grid grid-cols-4 gap-2")}>
+          {cells.map((k) => (
             <div key={k.l} className={cn("rounded-md p-2 flex flex-col justify-center", k.c)}>
               <span className="opacity-70">{k.l}</span>
               <span className="text-base font-bold">{k.v}</span>
@@ -705,93 +813,157 @@ const BlockMock = ({ id }: { id: MonitorBlock }) => {
           ))}
         </div>
       );
-    case "recent":
+    }
+    case "recent": {
+      const rows = hasReal
+        ? data.apontamentos.slice(0, 4).map((a: any, i: number) => ({
+            pn: a.part_number || a.pn || `PN-${i}`,
+            forn: (a.supplier || a.fornecedor || "—").toString().slice(0, 6),
+            qty: a.qty ?? a.total_qty ?? 0,
+            ng: (a.ng_qty ?? 0) > 0,
+          }))
+        : ["A123","B477","C902","D118"].map((p, i) => ({ pn: `PN-${p}`, forn: `F${i+1}`, qty: [24,3,18,9][i], ng: i===1 }));
       return (
         <div className={cn(wrap, "space-y-1")}>
           <div className="flex gap-2 px-2 py-1 bg-muted/60 rounded text-[9px] font-semibold uppercase">
             <span className="flex-1">Peça</span><span className="w-12">Forn.</span><span className="w-10 text-right">Qtd</span>
           </div>
-          {["A123","B477","C902","D118"].map((p, i) => (
-            <div key={p} className="flex gap-2 px-2 py-1 rounded bg-card border">
-              <span className="flex-1 truncate">PN-{p}</span>
-              <span className="w-12 truncate text-muted-foreground">F{i+1}</span>
-              <span className={cn("w-10 text-right font-medium", i===1 && "text-destructive")}>{[24,3,18,9][i]}</span>
+          {rows.map((r, i) => (
+            <div key={i} className="flex gap-2 px-2 py-1 rounded bg-card border">
+              <span className="flex-1 truncate">{r.pn}</span>
+              <span className="w-12 truncate text-muted-foreground">{r.forn}</span>
+              <span className={cn("w-10 text-right font-medium", r.ng && "text-destructive")}>{r.qty}</span>
             </div>
           ))}
         </div>
       );
+    }
     case "alerts":
-    case "contencao":
-      return (
-        <div className={cn(wrap, "space-y-1.5")}>
-          {[
+    case "contencao": {
+      const list = id === "alerts" ? data.alertas : data.contencoes;
+      const items = hasReal
+        ? list.slice(0, 3).map((x: any) => ({
+            c: x.severity === "alta" || x.criticidade === "alta" ? "bg-destructive" : x.severity === "media" ? "bg-amber-500" : "bg-primary",
+            t: x.titulo || x.title || x.descricao || "Registro",
+          }))
+        : [
             { c: "bg-destructive", t: "Risco crítico — PN-B477" },
             { c: "bg-amber-500", t: "Atenção — PN-C902" },
             { c: "bg-primary", t: "Informativo — PN-D118" },
-          ].map((a) => (
-            <div key={a.t} className="flex items-center gap-2 px-2 py-1.5 rounded border bg-card">
+          ];
+      return (
+        <div className={cn(wrap, "space-y-1.5")}>
+          {items.map((a, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded border bg-card">
               <span className={cn("w-1.5 h-6 rounded-full", a.c)} />
               <span className="truncate">{a.t}</span>
             </div>
           ))}
         </div>
       );
-    case "consumiveis":
+    }
+    case "consumiveis": {
+      const crit = data.consumiveis.filter((c: any) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0));
+      const items = hasReal
+        ? crit.slice(0, 4).map((c: any) => ({
+            n: (c.name || c.nome || "Item").toString().slice(0, 10),
+            qty: c.stock_qty ?? 0,
+            pct: Math.min(100, ((c.stock_qty ?? 0) / Math.max(1, c.min_qty ?? 1)) * 100),
+          }))
+        : ["Luvas","Cones","Adesivo","Sacos"].map((n, i) => ({ n, qty: [2,5,1,3][i], pct: [15,30,8,22][i] }));
       return (
         <div className={cn(wrap, "grid grid-cols-2 gap-2")}>
-          {["Luvas","Cones","Adesivo","Sacos"].map((n, i) => (
-            <div key={n} className="rounded border bg-card p-2">
-              <div className="flex justify-between"><span>{n}</span><span className="text-destructive font-bold">{[2,5,1,3][i]}</span></div>
-              <div className="h-1 mt-1 bg-muted rounded"><div className="h-full bg-destructive rounded" style={{ width: `${[15,30,8,22][i]}%` }} /></div>
+          {items.map((c, i) => (
+            <div key={i} className="rounded border bg-card p-2">
+              <div className="flex justify-between"><span>{c.n}</span><span className="text-destructive font-bold">{c.qty}</span></div>
+              <div className="h-1 mt-1 bg-muted rounded"><div className="h-full bg-destructive rounded" style={{ width: `${c.pct}%` }} /></div>
             </div>
           ))}
         </div>
       );
-    case "ranking":
+    }
+    case "ranking": {
+      const counts: Record<string, number> = {};
+      data.apontamentos.forEach((a: any) => {
+        const k = (a.supplier || a.fornecedor || "—").toString();
+        if (!k) return;
+        counts[k] = (counts[k] || 0) + ((a.ng_qty ?? 0) > 0 ? 1 : 0);
+      });
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 4);
+      const max = sorted[0]?.[1] || 1;
+      const rows = hasReal && sorted.length
+        ? sorted.map(([n, v]) => ({ n: n.slice(0, 8), v, pct: (v / max) * 100 }))
+        : ["Fornec. A","Fornec. B","Fornec. C","Fornec. D"].map((n, i) => ({ n, v: [18,42,67,93][i], pct: [90,70,50,30][i] }));
       return (
         <div className={cn(wrap, "space-y-1")}>
-          {["Fornec. A","Fornec. B","Fornec. C","Fornec. D"].map((n, i) => (
-            <div key={n} className="flex items-center gap-2">
-              <span className="w-16 truncate">{n}</span>
-              <div className="flex-1 h-2 bg-muted rounded"><div className="h-full bg-primary rounded" style={{ width: `${[90,70,50,30][i]}%` }} /></div>
-              <span className="w-8 text-right">{[18,42,67,93][i]}</span>
+          {rows.map((r, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="w-16 truncate">{r.n}</span>
+              <div className="flex-1 h-2 bg-muted rounded"><div className="h-full bg-primary rounded" style={{ width: `${r.pct}%` }} /></div>
+              <span className="w-8 text-right">{r.v}</span>
             </div>
           ))}
         </div>
       );
-    case "defects":
+    }
+    case "defects": {
+      const counts: Record<string, number> = {};
+      data.apontamentos.forEach((a: any) => {
+        const fm = a.failure_mode || a.modo_falha;
+        if (!fm) return;
+        counts[fm] = (counts[fm] || 0) + 1;
+      });
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+      const max = sorted[0]?.[1] || 1;
+      const bars = hasReal && sorted.length
+        ? sorted.map(([n, v]) => ({ h: (v / max) * 100, label: n.slice(0, 4) }))
+        : [80,55,45,30,22,15].map((h, i) => ({ h, label: `MF${i+1}` }));
       return (
         <div className={cn(wrap, "flex items-end gap-2 h-full pb-4")}>
-          {[80,55,45,30,22,15].map((h, i) => (
+          {bars.map((b, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full bg-primary rounded-t" style={{ height: `${h}%` }} />
-              <span className="text-[8px] truncate">MF{i+1}</span>
+              <div className="w-full bg-primary rounded-t" style={{ height: `${b.h}%` }} />
+              <span className="text-[8px] truncate">{b.label}</span>
             </div>
           ))}
         </div>
       );
-    case "inspecionado":
+    }
+    case "inspecionado": {
+      const counts: Record<string, number> = {};
+      data.apontamentos.forEach((a: any) => {
+        const k = (a.supplier || a.fornecedor || "—").toString();
+        counts[k] = (counts[k] || 0) + (a.qty ?? 1);
+      });
+      const cells = hasReal
+        ? Object.entries(counts).slice(0, 6).map(([n, v]) => ({ n: n.slice(0, 6), v: v.toString().padStart(4, "0") }))
+        : Array.from({ length: 6 }).map((_, i) => ({ n: `Forn. ${String.fromCharCode(65+i)}`, v: (123 + i*47).toString().padStart(4,"0") }));
       return (
         <div className={cn(wrap, "grid grid-cols-3 gap-1.5")}>
-          {Array.from({length:6}).map((_,i) => (
+          {cells.map((c, i) => (
             <div key={i} className="rounded border bg-card p-1.5 text-center">
-              <div className="text-[8px] text-muted-foreground">Forn. {String.fromCharCode(65+i)}</div>
-              <div className="font-mono font-bold text-sm tabular-nums">{(123 + i*47).toString().padStart(4,"0")}</div>
+              <div className="text-[8px] text-muted-foreground">{c.n}</div>
+              <div className="font-mono font-bold text-sm tabular-nums">{c.v}</div>
             </div>
           ))}
         </div>
       );
-    case "comunicados":
+    }
+    case "comunicados": {
+      const items = hasReal
+        ? data.slidesMedia.slice(0, 3).map((m: any, i: number) => ({ t: m.titulo || m.title || `Comunicado ${i+1}` }))
+        : [1,2,3].map((i) => ({ t: `Comunicado ${i}` }));
       return (
         <div className={cn(wrap, "grid grid-cols-3 gap-1.5 h-full")}>
-          {[1,2,3].map((i) => (
+          {items.map((m, i) => (
             <div key={i} className="rounded border bg-card p-2 flex flex-col items-center justify-center gap-1">
               <div className="w-full h-8 bg-gradient-to-br from-primary/30 to-primary/10 rounded" />
-              <span className="text-[9px]">Comunicado {i}</span>
+              <span className="text-[9px] truncate w-full text-center">{m.t}</span>
             </div>
           ))}
         </div>
       );
+    }
     case "alteracoes_4m":
       return (
         <div className={cn(wrap, "space-y-1")}>
@@ -803,18 +975,24 @@ const BlockMock = ({ id }: { id: MonitorBlock }) => {
           ))}
         </div>
       );
-    case "ultimos_defeitos":
+    case "ultimos_defeitos": {
+      const ngs = data.apontamentos.filter((a: any) => (a.ng_qty ?? 0) > 0).slice(0, 4);
+      const cards = hasReal && ngs.length
+        ? ngs.map((a: any, i: number) => ({ label: `NG #${a.sequence_number ?? a.id?.toString().slice(0, 4) ?? 1000 + i}` }))
+        : Array.from({ length: 4 }).map((_, i) => ({ label: `NG #${1000 + i}` }));
       return (
         <div className={cn(wrap, "grid grid-cols-4 gap-1.5 h-full")}>
-          {Array.from({length:4}).map((_,i) => (
+          {cards.map((c, i) => (
             <div key={i} className="rounded border bg-card overflow-hidden flex flex-col">
               <div className="flex-1 bg-gradient-to-br from-destructive/30 to-destructive/10" />
-              <div className="px-1 py-0.5 text-[9px] truncate">NG #{1000+i}</div>
+              <div className="px-1 py-0.5 text-[9px] truncate">{c.label}</div>
             </div>
           ))}
         </div>
       );
+    }
     default:
       return <div className="h-full w-full bg-muted/30 rounded" />;
   }
 };
+

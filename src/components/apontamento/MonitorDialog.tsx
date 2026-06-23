@@ -84,7 +84,7 @@ export const defaultPrefs: MonitorPreferences = {
   blocks: ["summary", "recent", "alerts"],
   period: "today",
   theme: "dark",
-  profile: "default",
+  profile: "v2",
   slideDurationMs: 10000,
   animationsEnabled: true,
   flapSpeedMs: 70,

@@ -1099,7 +1099,10 @@ const Monitor = () => {
         );
       }
       case "inspecionado": {
-        const suppliers = isV2 ? inspecionadoData : inspecionadoData.slice(0, 4);
+        const inspSetting = prefs.blockSettings?.inspecionado ?? {};
+        const supsPerSlide = inspSetting.inspSuppliersPerSlide ?? (isV2 ? 9 : 4);
+        const partsPerGroup = inspSetting.inspPartsPerGroup ?? 2;
+        const suppliers = inspecionadoData.slice(0, supsPerSlide);
         const cols = suppliers.length <= 1 ? "grid-cols-1" : suppliers.length === 2 ? "grid-cols-2" : suppliers.length <= 4 ? "grid-cols-2 grid-rows-2" : suppliers.length <= 6 ? "grid-cols-3 grid-rows-2" : "grid-cols-3 grid-rows-3";
         return (
           <div className="w-full h-full overflow-hidden">
@@ -1115,7 +1118,7 @@ const Monitor = () => {
                       <SplitFlapText value={sup.fornecedor} size={32} maxChars={18} className="text-cyan-300 font-bold" />
                       <SplitFlapNumber value={sup.total} size={isV2 ? 44 : 48} />
                     </div>
-                    <RotatingParts parts={sup.parts} qtySize={26} />
+                    <RotatingParts parts={sup.parts} qtySize={26} perGroup={partsPerGroup} />
                     <div className="absolute left-0 top-0 bottom-0 w-2 bg-cyan-500" />
                   </div>
                 ))}

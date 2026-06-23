@@ -628,21 +628,27 @@ const SlidePreview = ({
         </Button>
       </div>
 
-      <div className="relative h-32 sm:h-36 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden flex items-center justify-center">
+      <div className="relative h-48 sm:h-56 rounded-md border bg-gradient-to-br from-muted/40 to-muted/10 overflow-hidden">
         <div
           key={runKey}
           className={cn(
-            "flex flex-col items-center gap-2 text-center px-4",
+            "absolute inset-0 p-3 flex flex-col",
             animations && "animate-enter",
           )}
         >
-          <span className="text-4xl leading-none">{emoji}</span>
-          <span className="text-sm font-medium">{title}</span>
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            preview do slide
-          </span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xl leading-none">{emoji}</span>
+            <span className="text-sm font-semibold">{title}</span>
+            <span className="ml-auto text-[9px] uppercase tracking-wider text-muted-foreground">
+              preview
+            </span>
+          </div>
+          <div className="flex-1 min-h-0">
+            <BlockMock id={blockId} />
+          </div>
         </div>
       </div>
+
 
       <div className="space-y-1">
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">

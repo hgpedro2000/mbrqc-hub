@@ -229,11 +229,15 @@ const Contencao = () => {
                             </>
                           )}
                         </div>
-                        {viewMode === "compact" && (
-                          <div className={`w-full ${photoSize === "sm" ? "md:w-[360px]" : photoSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
-                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} debug={debugAlign} />
-                          </div>
-                        )}
+                        {viewMode === "compact" && (() => {
+                          const effSize = isAdmin ? photoSize : "lg";
+                          const effDebug = isAdmin && debugAlign;
+                          return (
+                            <div className={`w-full ${effSize === "sm" ? "md:w-[360px]" : effSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
+                              <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={effSize} debug={effDebug} />
+                            </div>
+                          );
+                        })()}
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>

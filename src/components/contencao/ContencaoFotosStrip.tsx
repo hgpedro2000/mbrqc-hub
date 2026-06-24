@@ -67,9 +67,11 @@ const Section = ({
 
   return (
     <div className="min-w-0 space-y-1.5 relative">
-      <div ref={labelRef} className={`flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide font-semibold ${color} ${debugLabelCls}`}>
-        <Icon className="w-3 h-3" /> {label} {paths.length > 0 && <span className="text-muted-foreground normal-case">({paths.length})</span>}
-        {debug && <span className={`ml-1 normal-case font-mono ${misaligned ? "text-red-500" : "text-emerald-600"}`}>Δ{offset}px</span>}
+      <div ref={labelRef} className={`block w-full text-center text-[10px] uppercase tracking-wide font-semibold ${color} ${debugLabelCls}`}>
+        <span className="inline-flex items-center gap-1 align-middle">
+          <Icon className="w-3 h-3" /> {label} {paths.length > 0 && <span className="text-muted-foreground normal-case">({paths.length})</span>}
+          {debug && <span className={`ml-1 normal-case font-mono ${misaligned ? "text-red-500" : "text-emerald-600"}`}>Δ{offset}px</span>}
+        </span>
       </div>
       <div ref={gridRef} className={`grid grid-cols-3 gap-1.5 relative ${debugGridCls}`}>
         {urls.slice(0, 3).map((u, i) => (

@@ -164,6 +164,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
             contencaoConcluida={concluida}
           />
         )}
+        <ContencaoClaimReportDialog open={claimOpen} onClose={() => setClaimOpen(false)} contencao={contencao} />
       </SheetContent>
 
       <AlertDialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>

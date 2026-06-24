@@ -233,7 +233,7 @@ const Contencao = () => {
                         </div>
                         {viewMode === "compact" && (
                           <div className={`w-full ${photoSize === "sm" ? "md:w-[360px]" : photoSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
-                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} />
+                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} debug={debugAlign} />
                           </div>
                         )}
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">

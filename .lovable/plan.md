@@ -1,58 +1,91 @@
-## Novo perfil Monitor v2
+## Visão geral
+Reformular o módulo Contenção em 4 frentes: **status em 4 etapas**, **campo Local**, **registros por turno** e **resumo mensal em tempo real**. Tudo que existe hoje (lista, formulário, dashboard, e-mails, RLS, exports) é preservado — apenas estendido.
 
-Criar um segundo perfil de monitor acessível via `/monitor?perfil=v2` (mantendo o atual em `/monitor` intacto). Um seletor de perfil será adicionado ao topo do `/monitor` para alternar entre **Padrão** e **V2 - Detalhado**.
+A tabela atual chama-se `public.contencao` (não `containments`). Vou seguir esse nome para não quebrar nada; a nova tabela será `public.contencao_registros` (não `containment_records`) pela mesma razão. Bucket de fotos: `containment-photos` (novo, público), seguindo o padrão dos outros buckets do projeto.
 
-### Slides redesenhados (perfil v2)
+## 1. Banco de dados (migração única)
 
-1. **Últimos Lançamentos** — adicionar coluna **Rate de Aprovação (%)** = `(OK / Inspecionada) × 100`, colorida (verde ≥98%, amarelo 90-97%, vermelho <90%).
+**Alterar `public.contencao`:**
+- `local text`
+- `data_conclusao timestamptz`
+- `total_horas numeric` (calculado por trigger ao inserir/editar/excluir registro)
+- `dias_andamento integer` (calculado on-the-fly em view ou no client; coluna gerada `GENERATED ALWAYS AS` para evitar trigger)
+- Alterar `status_check` para aceitar `'emitida' | 'iniciada' | 'em_andamento' | 'concluida' | 'cancelada'` (manter `aberta` como alias migrando dados antigos → `emitida`).
 
-2. **Alertas Vigentes → Alertas de Qualidade**
-   - Buscar apenas de `alertas_qualidade` (lista mestra), com mais detalhes (nº, título, fornecedor, part number, modo de falha, data, severidade, foto).
-   - Novo layout em cards com gradiente por severidade + animações `fade-in` / `pulse` em alertas críticos.
+**Criar `public.contencao_registros`:**
+```
+id, contencao_id, turno (1T|2T|3T), data, hora_inicio, hora_fim,
+horas_trabalhadas numeric GENERATED, local, inspetores jsonb,
+qtd_inspetores int, qtd_inspecionada int, qtd_ok int, qtd_ng int,
+mark_check bool, fotos jsonb, observacoes text, finaliza_contencao bool,
+created_by uuid, created_at, updated_at
+```
+GRANTs para `authenticated` + `service_role`; RLS espelhando `contencao` (todos autenticados leem, qualquer autenticado insere, admin/líder/engenharia editam, admin deleta).
 
-3. **Contenções Ativas → Contenções**
-   - Renomear, dividir em duas seções: **Em Andamento** e **Finalizadas** (da lista mestra `contencao`).
-   - Layout em lista vertical animada (`slide-in-right` escalonado), com badges de status.
+**Triggers:**
+- `trg_contencao_recompute_status_totais` → após insert/update/delete em `contencao_registros`, recalcula `total_horas`, ajusta `status` automaticamente (regra: 0 registros → `emitida`; 1 registro de 1 turno → `iniciada`; registros de ≥2 turnos OU ≥2 registros do mesmo turno → `em_andamento`; `finaliza_contencao=true` → `concluida` + `data_conclusao`).
+- Bucket `containment-photos` (público, via tool) com policies de upload por autenticado.
 
-4. **Ranking Fornecedores → Performance de Fornecedores**
-   - Os 3 piores (top-worst por PPM) ganham animação `pulse` e destaque vermelho.
-   - Alinhar cabeçalho INSP / NG / PPM com tabular-nums, larguras fixas, e formatação compacta de PPM (`1.2k`, `15k`).
+## 2. Tipos e dados gerados
+- Regenerar `src/integrations/supabase/types.ts` (automático após migração).
+- Adicionar helpers em `src/lib/contencao.ts`: `STATUS_META` (label/cor/animação), `computeDiasAndamento(c)`, `formatHoras(n)`.
 
-5. **Gráfico de Defeitos → Principais Modos de Falhas Detectados**
-   - Remover prefixos numéricos dos rótulos (já existe regra global, garantir aqui).
-   - Animação de barras com easing + contador animado dos valores.
+## 3. UI — formulário (`ContencaoForm.tsx`)
+- Adicionar campo **Local** na seção "Informações Gerais".
+- Sem outras mudanças no fluxo de criação.
 
-6. **Quantidade Inspecionada → Monitoramento de Inspeção**
-   - Implementar **split-flap display** (estilo painel de aeroporto) para os números, com flip animado a cada atualização.
-   - Grid responsivo que aceita N fornecedores (não fixo em 4).
+## 4. UI — detalhe da contenção (nova tela ou painel em `Contencao.tsx`)
+- Stepper visual de 4 etapas no topo (componente novo `ContencaoStatusStepper`).
+- Seção **"Registros de Contenção"** com botão **+ Novo Registro de Turno**.
+- Lista de registros em cards, agrupada por data desc, com chips de inspetores, contagens, ícone de câmera, botão editar (desabilitado se `concluida`).
+- Totais acumulados no topo da seção (Inspecionada/OK/NG).
+- Exibe **total de horas** e **dias em andamento**.
 
-7. **Resumo do Período** — animações `fade-in` + counter animado nos 4 KPIs, com ícones pulsantes.
+**Novo modal `ContencaoRegistroDialog`:**
+- Campos conforme spec (turno, data, horários, local pré-preenchido, co-inspetores via popover de busca em `profiles`, quantidades com NG auto-calc, mark check + upload múltiplo para `containment-photos`, observações).
+- Botões: `Salvar Registro`, `Salvar e Finalizar Contenção` (com `AlertDialog` de confirmação), `Cancelar`.
 
-### Slides novos (perfil v2)
+## 5. UI — lista mestra (`Contencao.tsx`)
+- Badges coloridas conforme status (cinza/azul/laranja-pulsando/verde) — animação via classe `animate-pulse`.
+- Linhas extras em cada card: "X dias em andamento", "Yh Zmin registradas", "Último: 2T — há 3 horas".
+- Barra horizontal OK/NG (proporção visual).
+- Card fixo no topo **"Resumo do Mês — [mês atual]"** com totais (horas, abertas, concluídas, média), atualizado via Supabase Realtime na tabela `contencao_registros` + `contencao`.
 
-8. **Comunicados** — slide que exibe imagens (JPG/PNG) em carrossel. Upload via nova página `/monitor/admin` (admin-only) para bucket `monitor-comunicados`. Tabela `monitor_slides_media` (tipo='comunicado').
+## 6. Realtime
+- `ALTER PUBLICATION supabase_realtime ADD TABLE public.contencao_registros, public.contencao` (a contenção pode já estar na publicação — usar `DO $$ ... EXCEPTION` para evitar erro).
+- Subscriber só no card de resumo mensal e na tela aberta.
 
-9. **Alterações 4M/EO e Validações** — mesma mecânica do Comunicados, tipo='alteracao_4m'.
+## 7. Compatibilidade
+- Mapear status legados ao carregar: `aberta` → `emitida`. Migration faz `UPDATE contencao SET status='emitida' WHERE status='aberta'`.
+- Dashboard, exports e e-mails continuam funcionando — eles tratam status por string, então adiciono os novos labels mas mantenho os filtros existentes.
 
-10. **Últimos Defeitos Detectados** — buscar últimos NG de `apontamentos` + fotos de `checklist_photos`, layout detalhado com foto grande, modo de falha, fornecedor, part number, data, inspetor.
+## 8. Changelog / versão
+- Bump `VITE_APP_VERSION` para `1.2.9.0` (mudança de escopo maior → minor bump).
+- Inserir entrada em `app_changelog` (change_type=`minor`).
 
-### Backend
+## Detalhes técnicos (referência)
 
-- Nova tabela `monitor_slides_media` (id, tipo, image_url, titulo, descricao, ordem, ativo, created_at, created_by) + RLS: SELECT público (anon), INSERT/UPDATE/DELETE admin.
-- Novo bucket público `monitor-comunicados`.
-- Página admin `/monitor/admin` para gerenciar uploads dos slides 8 e 9.
+```text
+Contencao.tsx
+├── ResumoMensalCard           (novo)
+├── ContencaoCard
+│   ├── StatusBadge (animado se em_andamento)
+│   ├── Métricas (dias, horas, último turno)
+│   └── Barra OK/NG
+└── ContencaoDetalheDrawer    (novo painel/rota)
+    ├── ContencaoStatusStepper (novo)
+    ├── RegistrosTotaisHeader
+    ├── RegistroCard[]
+    └── ContencaoRegistroDialog (novo modal)
+```
 
-### Estrutura técnica
+Arquivos novos: `src/components/contencao/ContencaoStatusStepper.tsx`, `ContencaoRegistroDialog.tsx`, `RegistroCard.tsx`, `ResumoMensalCard.tsx`, `ContencaoDetalheDrawer.tsx`, `src/lib/contencao.ts`.
+Arquivos alterados: `src/pages/Contencao.tsx`, `src/pages/ContencaoForm.tsx`, possivelmente `ContencaoDashboard.tsx` para refletir novos status.
 
-- `src/pages/Monitor.tsx` detecta `?perfil=v2` e renderiza `<MonitorV2 />` em vez do componente atual.
-- Novo diretório `src/components/monitor-v2/` com um arquivo por slide:
-  - `SlideLancamentosV2.tsx`, `SlideAlertasV2.tsx`, `SlideContencoesV2.tsx`, `SlidePerformanceV2.tsx`, `SlideModosFalhaV2.tsx`, `SlideMonitoramentoV2.tsx` (com `SplitFlapDigit.tsx`), `SlideResumoV2.tsx`, `SlideComunicadosV2.tsx`, `SlideAlteracoes4MV2.tsx`, `SlideUltimosDefeitosV2.tsx`.
-- Todos consomem `monitorClient` (já existente) — sem auth.
-- Animações via Tailwind keyframes existentes + novas (`flip-down`, `pulse-danger`) adicionadas a `tailwind.config.ts`.
-- Bumpar `VITE_APP_VERSION` e registrar changelog.
+## Pontos a confirmar antes de implementar
+1. **Onde abrir o detalhe?** A página atual `Contencao.tsx` é uma lista simples sem rota de detalhe. Posso abrir num **drawer lateral** ao clicar no card (mais rápido em mobile) ou criar **rota nova** `/contencao/:id`. Sugestão: drawer.
+2. **Co-inspetores** — usar `get_co_inspection_profiles()` que já existe (ativos, sem terceiros, sem TESTER)? Sugestão: sim.
+3. **Bucket `containment-photos`** — criar público (mais simples para mostrar nos cards) ou privado com signed URLs? Sugestão: público, alinhado a `checklist-photos`/`alertas-fotos`.
+4. **Detectar "Em Andamento" automaticamente** — minha regra é ≥2 turnos distintos OU ≥2 registros no mesmo turno. Confirma?
 
-### Confirmar com o usuário antes de prosseguir
-
-1. Manter `/monitor` atual 100% intacto e o V2 acessível por seletor + `?perfil=v2`? (sim/não)
-2. Página admin para upload dos slides Comunicados / 4M-EO deve ficar em `/monitor/admin` restrita a admin? (sim/não)
-3. "Últimos Defeitos Detectados" — quantos itens exibir por vez (sugestão: 5 com rotação automática a cada 8s)?
+Posso seguir com as sugestões padrão (drawer, RPC existente, bucket público, regra acima) se você só responder "ok".

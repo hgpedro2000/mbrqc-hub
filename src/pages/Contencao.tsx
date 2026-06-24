@@ -247,12 +247,25 @@ const Contencao = () => {
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
-                            {isAdmin && (
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                              </div>
-                            )}
+                            <div className="flex gap-1">
+                              {canClaim && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                  title="Gerar Relatório de Claim"
+                                  onClick={() => setClaimItem(item)}
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {isAdmin && (
+                                <>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                </>
+                              )}
+                            </div>
                           </div>
                           {viewMode === "compact" && (
                             <div className="flex flex-col gap-1 text-xs border border-border/60 rounded-md p-2 bg-muted/10 w-full">

@@ -157,6 +157,10 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-sm font-medium">{item.code}</p>
                   <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                  {hasPt && item.description_pt && (
+                    <p className="text-xs text-foreground/80 truncate">{item.description_pt}</p>
+                  )}
+
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="w-3.5 h-3.5" /></Button>

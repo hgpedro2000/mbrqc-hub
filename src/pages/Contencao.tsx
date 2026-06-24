@@ -122,9 +122,12 @@ const Contencao = () => {
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="interno_mbr">{t("contencao.internoMBR")}</TabsTrigger>
-            <TabsTrigger value="externo_hmb">{t("contencao.externoHMB")}</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="fornecedor_lp">Fornecedor LP</TabsTrigger>
+            <TabsTrigger value="fornecedor_ckd">Fornecedor CKD</TabsTrigger>
+            <TabsTrigger value="processo_mbr">Processo MBR</TabsTrigger>
+            <TabsTrigger value="processo_hmb">Processo HMB</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4">

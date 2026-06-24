@@ -138,7 +138,7 @@ const Contencao = () => {
             <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> Compacto</button>
             <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> Expandido</button>
           </div>
-          {viewMode === "compact" && (
+          {viewMode === "compact" && isAdmin && (
             <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1">
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Fotos</span>
               <input
@@ -151,7 +151,7 @@ const Contencao = () => {
               <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
             </div>
           )}
-          {viewMode === "compact" && (
+          {viewMode === "compact" && isAdmin && (
             <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none rounded-md border border-border px-2 py-1">
               <input type="checkbox" checked={debugAlign} onChange={(e) => setDebugAlign(e.target.checked)} className="accent-fuchsia-500" />
               Debug alinhamento

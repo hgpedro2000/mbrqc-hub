@@ -634,7 +634,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
                     {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                   </Button>
                   <AlertDialog>
@@ -718,7 +718,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
                           {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                         </Button>
                         <AlertDialog>

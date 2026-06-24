@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
@@ -32,6 +32,8 @@ const Contencao = () => {
   const [tab, setTab] = useState<string>("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
+  useEffect(() => { localStorage.setItem("contencao:viewMode", viewMode); }, [viewMode]);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({
@@ -127,9 +129,13 @@ const Contencao = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <ResumoMensalCard />
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
           <Button onClick={() => navigate("/contencao/nova")} className="gap-2"><Plus className="w-4 h-4" /> {t("contencao.newContencao")}</Button>
           <Button variant="outline" onClick={() => navigate("/contencao/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
+          <div className="ml-auto inline-flex rounded-md border border-border overflow-hidden">
+            <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> Compacto</button>
+            <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> Expandido</button>
+          </div>
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
@@ -196,18 +202,37 @@ const Contencao = () => {
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
-                        <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
-                        <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
-                        <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
-                      </div>
-                      {(inspecionado > 0 || estoque > 0) && (
-                        <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
-                          <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
-                          <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
+                      {viewMode === "compact" ? (
+                        <div className="mt-3 grid grid-cols-1 md:grid-cols-[auto,1fr] gap-3 md:gap-4 items-start">
+                          <div className="flex flex-col gap-1 text-xs md:text-sm border border-border/60 rounded-md p-2 bg-muted/10 min-w-[160px]">
+                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{estoque > 0 ? "Peças" : "Peças"}</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Inspecionadas</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
+                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
+                            {(inspecionado > 0 || estoque > 0) && (
+                              <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
+                                <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
+                                <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
+                              </div>
+                            )}
+                          </div>
+                          <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
                         </div>
+                      ) : (
+                        <>
+                          <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
+                            <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                            <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
+                            <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
+                          </div>
+                          {(inspecionado > 0 || estoque > 0) && (
+                            <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
+                              <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
+                              <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
+                            </div>
+                          )}
+                          <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="md" />
+                        </>
                       )}
-                      <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="lg" />
                     </div>
                   );
                 })}

@@ -63,7 +63,7 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
         pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
         heightLeft -= pageH;
       }
-      const filename = `Claim_${contencao?.numero || "contencao"}_${contencao?.fornecedor || "fornecedor"}.pdf`
+      const filename = `Contencao_${contencao?.numero || "contencao"}_${contencao?.fornecedor || "fornecedor"}.pdf`
         .replace(/\s+/g, "_");
       pdf.save(filename);
       toast.success("PDF gerado", { id: t });
@@ -79,7 +79,7 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-4 h-4" /> Relatório de Claim ao Fornecedor
+            <FileText className="w-4 h-4" /> Relatório de Contenção
           </DialogTitle>
           <DialogDescription>
             Pré-visualização idêntica ao PDF exportado. Cobrança baseada nas horas trabalhadas em contenção.

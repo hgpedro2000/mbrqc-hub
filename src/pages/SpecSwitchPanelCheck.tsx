@@ -184,6 +184,14 @@ export default function SpecSwitchPanelCheck() {
   const switchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [frozen, setFrozen] = useState<null | {
+    panelPn: string;
+    switchPn: string;
+    status: Status;
+    alc: string;
+    message: string;
+    expectedRows: DbRow[];
+  }>(null);
 
   useEffect(() => {
     panelRef.current?.focus();
@@ -294,10 +302,11 @@ export default function SpecSwitchPanelCheck() {
     );
   }, [panelPn, switchPn, result.status, displayedAlc]);
 
-  const reset = useCallback(() => {
+  const reset = useCallback((opts?: { keepFrozen?: boolean }) => {
     setPanelRaw("");
     setSwitchRaw("");
     setValidated(false);
+    if (!opts?.keepFrozen) setFrozen(null);
     lastLoggedRef.current = "";
     setTimeout(() => panelRef.current?.focus(), 50);
   }, []);
@@ -322,7 +331,23 @@ export default function SpecSwitchPanelCheck() {
     } else {
       toast.error("Combinação não encontrada no banco", { duration: 2500 });
     }
-  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc, displayedAlc]);
+    // Freeze current visual result, then auto-clear for next scan cycle
+    setFrozen({
+      panelPn,
+      switchPn,
+      status: result.status,
+      alc: displayedAlc || result.alc,
+      message: result.message,
+      expectedRows: result.expectedRows,
+    });
+    setTimeout(() => {
+      setPanelRaw("");
+      setSwitchRaw("");
+      setValidated(false);
+      lastLoggedRef.current = "";
+      panelRef.current?.focus();
+    }, 400);
+  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result, panelPn, switchPn, displayedAlc]);
 
   // Debounced scanner actions: Hyundai QR payloads contain control separators
   // that some USB readers emit as Enter mid-stream. Never move fields just
@@ -478,7 +503,16 @@ export default function SpecSwitchPanelCheck() {
     not_found: { bg: "bg-red-600", border: "border-red-400", text: "text-white", icon: <XCircle className="w-16 h-16" />, label: "SPEC INCORRETO" },
     parse_error: { bg: "bg-orange-600", border: "border-orange-400", text: "text-white", icon: <AlertTriangle className="w-16 h-16" />, label: "QR INVÁLIDO" },
   };
-  const p = palette[result.status];
+  // When inputs are empty but we have a frozen prior result, keep showing it.
+  const showFrozen = !panelRaw && !switchRaw && !!frozen;
+  const dStatus: Status = showFrozen ? frozen!.status : result.status;
+  const dPanelPn = showFrozen ? frozen!.panelPn : panelPn;
+  const dSwitchPn = showFrozen ? frozen!.switchPn : switchPn;
+  const dAlc = showFrozen ? frozen!.alc : displayedAlc;
+  const dMessage = showFrozen ? frozen!.message : result.message;
+  const dExpectedRows = showFrozen ? frozen!.expectedRows : result.expectedRows;
+  const p = palette[dStatus];
+  const handleReset = () => reset();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-6">
@@ -584,7 +618,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAÍDO</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
-              {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
+              {dPanelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
@@ -592,7 +626,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAÍDO</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
-              {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
+              {dSwitchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
@@ -600,7 +634,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-xl font-bold">
-              {displayedAlc || <span className="text-slate-400 font-normal text-base">—</span>}
+              {dAlc || <span className="text-slate-400 font-normal text-base">—</span>}
             </div>
           </div>
 
@@ -616,11 +650,11 @@ export default function SpecSwitchPanelCheck() {
           {/* MENSAGEM */}
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
-            <div className="p-3 text-base">{result.message}</div>
+            <div className="p-3 text-base">{dMessage}</div>
           </div>
 
           {/* Detalhes esperados quando divergência */}
-          {(result.status === "alc_diff" || result.status === "not_found") && result.expectedRows.length > 0 && (
+          {(dStatus === "alc_diff" || dStatus === "not_found") && dExpectedRows.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
               <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
               <div className="p-3 overflow-x-auto">
@@ -629,10 +663,10 @@ export default function SpecSwitchPanelCheck() {
                     <tr><th className="text-left pr-3 pb-1">SWITCH</th><th className="text-left pr-3 pb-1">PANEL</th><th className="text-left pb-1">ALC</th></tr>
                   </thead>
                   <tbody>
-                    {result.expectedRows.slice(0, 6).map((r, i) => (
+                    {dExpectedRows.slice(0, 6).map((r, i) => (
                       <tr key={i} className="border-t border-slate-300">
-                        <td className={`pr-3 py-1 ${r.switch === switchPn ? "font-bold" : ""}`}>{r.switch}</td>
-                        <td className={`pr-3 py-1 ${r.panel === panelPn ? "font-bold" : ""}`}>{r.panel}</td>
+                        <td className={`pr-3 py-1 ${r.switch === dSwitchPn ? "font-bold" : ""}`}>{r.switch}</td>
+                        <td className={`pr-3 py-1 ${r.panel === dPanelPn ? "font-bold" : ""}`}>{r.panel}</td>
                         <td className="py-1 font-bold">{r.alc}</td>
                       </tr>
                     ))}
@@ -642,11 +676,12 @@ export default function SpecSwitchPanelCheck() {
             </div>
           )}
 
+
           {/* Botões LIMPAR / NOVA LEITURA / VALIDAR */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-200">
             <button
               type="button"
-              onClick={reset}
+              onClick={handleReset}
               disabled={isValidating}
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -654,7 +689,7 @@ export default function SpecSwitchPanelCheck() {
             </button>
             <button
               type="button"
-              onClick={reset}
+              onClick={handleReset}
               disabled={isValidating}
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

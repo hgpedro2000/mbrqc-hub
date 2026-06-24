@@ -33,7 +33,7 @@ const BUCKET = "containment-photos";
 
 const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, initial, contencaoConcluida }: Props) => {
   const qc = useQueryClient();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [turno, setTurno] = useState<string>("1T");
   const [data, setData] = useState(getLocalDateString());

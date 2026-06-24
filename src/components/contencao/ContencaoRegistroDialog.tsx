@@ -8,17 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, Camera, Upload, X, Save, CheckCircle2, Search } from "lucide-react";
+import { Loader2, Users, Camera, Upload, X, Save, CheckCircle2, Search, AlertTriangle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { getLocalDateString } from "@/lib/localDate";
 import { compressImage } from "@/lib/compressImage";
 import { TURNOS, Inspetor, ContencaoRegistro } from "@/lib/contencao";
 import { useAuth } from "@/contexts/AuthContext";
-
 
 interface Props {
   open: boolean;
@@ -34,7 +32,8 @@ const BUCKET = "containment-photos";
 const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, initial, contencaoConcluida }: Props) => {
   const qc = useQueryClient();
   const { profile, user } = useAuth();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const markFileInputRef = useRef<HTMLInputElement>(null);
+  const falhaFileInputRef = useRef<HTMLInputElement>(null);
   const [turno, setTurno] = useState<string>("1T");
   const [data, setData] = useState(getLocalDateString());
   const [horaInicio, setHoraInicio] = useState("");
@@ -44,17 +43,55 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const [inspetorSearch, setInspetorSearch] = useState("");
   const [qtdInspetores, setQtdInspetores] = useState(0);
   const [qtdInspecionada, setQtdInspecionada] = useState(0);
-  const [qtdOk, setQtdOk] = useState(0);
-  const [qtdNg, setQtdNg] = useState(0);
-  const [ngManual, setNgManual] = useState(false);
-  const [markCheck, setMarkCheck] = useState(false);
+  const [qtdDiferenca, setQtdDiferenca] = useState(0);
+  const [justificativaDiferenca, setJustificativaDiferenca] = useState("");
+  const [showDiferenca, setShowDiferenca] = useState(false);
   const [observacoes, setObservacoes] = useState("");
   const [existingFotos, setExistingFotos] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [existingFotosFalha, setExistingFotosFalha] = useState<string[]>([]);
+  const [newFilesFalha, setNewFilesFalha] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
 
-  // Inspetores
+  // Contenção info (mark_check + estoque_mobis = quantidade_aprovada)
+  const { data: contencaoInfo } = useQuery({
+    queryKey: ["contencao-info", contencaoId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contencao")
+        .select("mark_check, quantidade_aprovada")
+        .eq("id", contencaoId)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+    enabled: open && !!contencaoId,
+  });
+
+  // Soma de inspecionado + diferença em outros registros
+  const { data: somaInspecionada = 0 } = useQuery({
+    queryKey: ["contencao-soma-inspecionada", contencaoId, initial?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contencao_registros" as any)
+        .select("qtd_inspecionada, qtd_diferenca, id")
+        .eq("contencao_id", contencaoId);
+      if (error) throw error;
+      const total = (data as any[]).reduce((sum, r) => {
+        if (initial && r.id === initial.id) return sum;
+        return sum + Number(r.qtd_inspecionada || 0) + Number(r.qtd_diferenca || 0);
+      }, 0);
+      return total;
+    },
+    enabled: open && !!contencaoId,
+  });
+
+  const markCheckObrig = !!contencaoInfo?.mark_check;
+  const estoqueMobis = Number(contencaoInfo?.quantidade_aprovada || 0);
+  const restante = Math.max(0, estoqueMobis - somaInspecionada);
+  const estoqueAcabou = estoqueMobis > 0 && restante === 0;
+
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["profiles-for-coinspecao"],
     queryFn: async () => {
@@ -66,7 +103,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     staleTime: 5 * 60 * 1000,
   });
 
-  // Initialize / reset on open
   useEffect(() => {
     if (!open) return;
     if (initial) {
@@ -78,13 +114,14 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setSelectedInspetores(Array.isArray(initial.inspetores) ? initial.inspetores : []);
       setQtdInspetores(initial.qtd_inspetores || 0);
       setQtdInspecionada(initial.qtd_inspecionada || 0);
-      setQtdOk(initial.qtd_ok || 0);
-      setQtdNg(initial.qtd_ng || 0);
-      setNgManual(true);
-      setMarkCheck(initial.mark_check);
+      setQtdDiferenca(Number((initial as any).qtd_diferenca || 0));
+      setJustificativaDiferenca((initial as any).justificativa_diferenca || "");
+      setShowDiferenca(Number((initial as any).qtd_diferenca || 0) > 0);
       setObservacoes(initial.observacoes || "");
       setExistingFotos(Array.isArray(initial.fotos) ? initial.fotos : []);
+      setExistingFotosFalha(Array.isArray((initial as any).fotos_falha) ? (initial as any).fotos_falha : []);
       setNewFiles([]);
+      setNewFilesFalha([]);
     } else {
       setTurno(profile?.turno || "1T");
       setData(getLocalDateString());
@@ -94,27 +131,28 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setSelectedInspetores([]);
       setQtdInspetores(0);
       setQtdInspecionada(0);
-      setQtdOk(0);
-      setQtdNg(0);
-      setNgManual(false);
-      setMarkCheck(false);
+      setQtdDiferenca(0);
+      setJustificativaDiferenca("");
+      setShowDiferenca(false);
       setObservacoes("");
       setExistingFotos([]);
+      setExistingFotosFalha([]);
       setNewFiles([]);
+      setNewFilesFalha([]);
     }
   }, [open, initial, defaultLocal, profile?.turno]);
 
-  // Auto-fill qtd_inspetores from selection (still editable)
   useEffect(() => {
     setQtdInspetores(selectedInspetores.length);
   }, [selectedInspetores]);
 
-  // Auto NG = inspecionada - ok unless manually edited
+  // Trava qtd inspecionada ao restante quando há estoque definido
   useEffect(() => {
-    if (!ngManual) {
-      setQtdNg(Math.max(0, qtdInspecionada - qtdOk));
+    if (!open || initial) return;
+    if (estoqueMobis > 0 && qtdInspecionada > restante) {
+      setQtdInspecionada(restante);
     }
-  }, [qtdInspecionada, qtdOk, ngManual]);
+  }, [restante, estoqueMobis, open, initial]);
 
   const filteredProfiles = useMemo(() => {
     const q = inspetorSearch.trim().toLowerCase();
@@ -130,30 +168,14 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     });
   };
 
-  const handleFilesPicked = (files: FileList | null) => {
-    if (!files) return;
-    setNewFiles((prev) => [...prev, ...Array.from(files)]);
-  };
-
-  const removeNewFile = (idx: number) => {
-    setNewFiles((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const removeExistingFoto = (path: string) => {
-    setExistingFotos((prev) => prev.filter((p) => p !== path));
-  };
-
-  const uploadFiles = async (registroId: string): Promise<string[]> => {
+  const uploadFilesList = async (files: File[], registroId: string, kind: "mark" | "falha"): Promise<string[]> => {
     const paths: string[] = [];
-    for (const file of newFiles) {
+    for (const file of files) {
       const compressed = await compressImage(file);
       const ext = (compressed.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${contencaoId}/${registroId}/${crypto.randomUUID()}.${ext}`;
+      const path = `${contencaoId}/${registroId}/${kind}-${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, compressed);
-      if (error) {
-        console.error("upload error", error);
-        continue;
-      }
+      if (error) { console.error("upload error", error); continue; }
       paths.push(path);
     }
     return paths;
@@ -162,11 +184,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const validate = (): string | null => {
     if (!turno || !data || !horaInicio || !horaFim) return "Preencha turno, data e horários.";
     if (horaFim <= horaInicio) return "Hora fim deve ser maior que a hora início.";
-    if (qtdInspecionada < 0 || qtdOk < 0 || qtdNg < 0) return "Quantidades não podem ser negativas.";
-    if (qtdOk + qtdNg > qtdInspecionada && qtdInspecionada > 0)
-      return "OK + NG não pode exceder a quantidade inspecionada.";
-    if (markCheck && existingFotos.length === 0 && newFiles.length === 0)
-      return "Mark Check exige pelo menos uma foto.";
+    if (qtdInspecionada < 0) return "Quantidade não pode ser negativa.";
+    if (markCheckObrig && existingFotos.length === 0 && newFiles.length === 0)
+      return "Mark Check é obrigatório nesta contenção — anexe a foto.";
+    if (showDiferenca) {
+      if (qtdDiferenca <= 0) return "Informe a quantidade adicional (diferença).";
+      if (!justificativaDiferenca.trim()) return "Informe a justificativa da diferença.";
+      if (existingFotosFalha.length === 0 && newFilesFalha.length === 0)
+        return "A foto da falha é obrigatória ao adicionar diferença.";
+      if (existingFotos.length === 0 && newFiles.length === 0)
+        return "A foto do Mark Check é obrigatória ao adicionar diferença.";
+    }
     return null;
   };
 
@@ -177,17 +205,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     try {
       const payload: any = {
         contencao_id: contencaoId,
-        turno,
-        data,
-        hora_inicio: horaInicio,
-        hora_fim: horaFim,
+        turno, data,
+        hora_inicio: horaInicio, hora_fim: horaFim,
         local: local || null,
         inspetores: selectedInspetores,
         qtd_inspetores: qtdInspetores,
         qtd_inspecionada: qtdInspecionada,
-        qtd_ok: qtdOk,
-        qtd_ng: qtdNg,
-        mark_check: markCheck,
+        qtd_ok: 0,
+        qtd_ng: 0,
+        qtd_diferenca: showDiferenca ? qtdDiferenca : 0,
+        justificativa_diferenca: showDiferenca ? justificativaDiferenca : null,
+        mark_check: markCheckObrig,
         observacoes: observacoes || null,
         finaliza_contencao: finalizar,
         created_by: user?.id || null,
@@ -196,25 +224,26 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       if (initial) {
         const { error } = await supabase
           .from("contencao_registros" as any)
-          .update({ ...payload, fotos: existingFotos })
+          .update({ ...payload, fotos: existingFotos, fotos_falha: existingFotosFalha })
           .eq("id", initial.id);
         if (error) throw error;
       } else {
         const { data: inserted, error } = await supabase
           .from("contencao_registros" as any)
-          .insert({ ...payload, fotos: [] })
+          .insert({ ...payload, fotos: [], fotos_falha: [] })
           .select("id")
           .single();
         if (error) throw error;
         registroId = (inserted as any).id;
       }
-      // Upload new files (if any)
-      if (newFiles.length && registroId) {
-        const uploaded = await uploadFiles(registroId);
-        const finalFotos = [...existingFotos, ...uploaded];
+      if (registroId && (newFiles.length || newFilesFalha.length)) {
+        const uploadedMark = newFiles.length ? await uploadFilesList(newFiles, registroId, "mark") : [];
+        const uploadedFalha = newFilesFalha.length ? await uploadFilesList(newFilesFalha, registroId, "falha") : [];
+        const finalFotos = [...existingFotos, ...uploadedMark];
+        const finalFotosFalha = [...existingFotosFalha, ...uploadedFalha];
         const { error: e2 } = await supabase
           .from("contencao_registros" as any)
-          .update({ fotos: finalFotos })
+          .update({ fotos: finalFotos, fotos_falha: finalFotosFalha })
           .eq("id", registroId);
         if (e2) throw e2;
       }
@@ -222,6 +251,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       qc.invalidateQueries({ queryKey: ["contencao"] });
       qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] });
       qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
+      qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] });
       onClose();
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar registro");
@@ -237,11 +267,12 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           <DialogHeader>
             <DialogTitle>{initial ? "Editar Registro de Turno" : "Novo Registro de Turno"}</DialogTitle>
             <DialogDescription>
-              Registre os dados do turno na contenção. As fotos do Mark Check são obrigatórias quando ativado.
+              {markCheckObrig
+                ? "Esta contenção exige Mark Check — anexe foto em todos os registros."
+                : "Registre os dados do turno na contenção."}
             </DialogDescription>
           </DialogHeader>
 
-          {/* Cabeçalho */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Turno</Label>
@@ -271,7 +302,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex: Linha 3 — Posto 7" />
           </div>
 
-          {/* Inspetores */}
           <div className="space-y-2">
             <Label className="text-xs">Co-inspetores</Label>
             <Popover>
@@ -301,10 +331,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
                   {filteredProfiles.map((p) => {
                     const checked = selectedInspetores.some((i) => i.id === p.id);
                     return (
-                      <label
-                        key={p.id}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm"
-                      >
+                      <label key={p.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
                         <Checkbox checked={checked} onCheckedChange={() => toggleInspetor(p)} />
                         <span className="truncate">{p.nome}</span>
                       </label>
@@ -318,11 +345,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
                 {selectedInspetores.map((i) => (
                   <Badge key={i.id} variant="secondary" className="gap-1">
                     {i.nome}
-                    <button
-                      type="button"
-                      onClick={() => toggleInspetor(i)}
-                      className="ml-1 hover:text-destructive"
-                    >
+                    <button type="button" onClick={() => toggleInspetor(i)} className="ml-1 hover:text-destructive">
                       <X className="w-3 h-3" />
                     </button>
                   </Badge>
@@ -331,87 +354,130 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             )}
             <div className="space-y-1">
               <Label className="text-xs">Qtd. de inspetores</Label>
-              <Input
-                type="number"
-                min={0}
-                value={qtdInspetores}
-                onChange={(e) => setQtdInspetores(Number(e.target.value) || 0)}
-              />
+              <Input type="number" min={0} value={qtdInspetores} onChange={(e) => setQtdInspetores(Number(e.target.value) || 0)} />
             </div>
           </div>
 
-          {/* Quantidades */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">Inspecionada</Label>
-              <Input
-                type="number"
-                min={0}
-                value={qtdInspecionada}
-                onChange={(e) => setQtdInspecionada(Number(e.target.value) || 0)}
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-emerald-600">OK</Label>
-              <Input
-                type="number"
-                min={0}
-                value={qtdOk}
-                onChange={(e) => setQtdOk(Number(e.target.value) || 0)}
-                className="border-emerald-500/40 focus-visible:ring-emerald-500/30"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-red-600">NG</Label>
-              <Input
-                type="number"
-                min={0}
-                value={qtdNg}
-                onChange={(e) => { setNgManual(true); setQtdNg(Number(e.target.value) || 0); }}
-                className="border-red-500/40 focus-visible:ring-red-500/30"
-              />
-            </div>
-          </div>
-
-          {/* Mark Check */}
+          {/* Quantidade a Inspecionar */}
           <div className="rounded-md border p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm">Mark Check realizado?</Label>
-              <Switch checked={markCheck} onCheckedChange={setMarkCheck} />
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <Label className="text-sm font-medium">Quantidade a Inspecionar</Label>
+              {estoqueMobis > 0 && (
+                <Badge variant={estoqueAcabou ? "destructive" : "secondary"}>
+                  Restante: {restante} / {estoqueMobis}
+                </Badge>
+              )}
             </div>
-            {markCheck && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">É obrigatório anexar pelo menos uma foto.</p>
-                <div className="flex flex-wrap gap-2">
-                  {existingFotos.map((path) => (
-                    <FotoThumb key={path} path={path} onRemove={() => removeExistingFoto(path)} />
-                  ))}
-                  {newFiles.map((file, idx) => (
-                    <LocalThumb key={idx} file={file} onRemove={() => removeNewFile(idx)} />
-                  ))}
+            <Input
+              type="number"
+              min={0}
+              max={estoqueMobis > 0 ? restante + (initial?.qtd_inspecionada || 0) : undefined}
+              value={qtdInspecionada}
+              disabled={estoqueMobis > 0 && estoqueAcabou && !initial}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 0;
+                if (estoqueMobis > 0) {
+                  const limit = restante + (initial?.qtd_inspecionada || 0);
+                  setQtdInspecionada(Math.min(v, limit));
+                } else {
+                  setQtdInspecionada(v);
+                }
+              }}
+            />
+            {estoqueMobis > 0 && estoqueAcabou && !showDiferenca && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+                <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs">
+                    O estoque Mobis foi totalmente inspecionado. Caso precise adicionar mais peças, registre a diferença abaixo com justificativa e fotos.
+                  </p>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onChange={(e) => { handleFilesPicked(e.target.files); e.target.value = ""; }}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="gap-2"
-                >
-                  <Upload className="w-4 h-4" /> Adicionar fotos
+                <Button type="button" size="sm" variant="outline" onClick={() => setShowDiferenca(true)} className="gap-2">
+                  <Plus className="w-4 h-4" /> Adicionar diferença
                 </Button>
+              </div>
+            )}
+
+            {showDiferenca && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-amber-700 dark:text-amber-400">Diferença adicional</Label>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setShowDiferenca(false); setQtdDiferenca(0); setJustificativaDiferenca(""); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Quantidade adicional</Label>
+                  <Input type="number" min={1} value={qtdDiferenca} onChange={(e) => setQtdDiferenca(Number(e.target.value) || 0)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Justificativa</Label>
+                  <Textarea rows={2} value={justificativaDiferenca} onChange={(e) => setJustificativaDiferenca(e.target.value)} placeholder="Por que foi necessário adicionar mais peças?" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Foto da falha <span className="text-red-500">*</span></Label>
+                  <div className="flex flex-wrap gap-2">
+                    {existingFotosFalha.map((path) => (
+                      <FotoThumb key={path} path={path} onRemove={() => setExistingFotosFalha((p) => p.filter((x) => x !== path))} />
+                    ))}
+                    {newFilesFalha.map((file, idx) => (
+                      <LocalThumb key={idx} file={file} onRemove={() => setNewFilesFalha((p) => p.filter((_, i) => i !== idx))} />
+                    ))}
+                  </div>
+                  <input ref={falhaFileInputRef} type="file" accept="image/*" multiple hidden
+                    onChange={(e) => { if (e.target.files) setNewFilesFalha((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+                  <Button variant="outline" size="sm" type="button" onClick={() => falhaFileInputRef.current?.click()} className="gap-2">
+                    <Upload className="w-4 h-4" /> Adicionar foto da falha
+                  </Button>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Observações */}
+          {/* Mark Check (apenas se contenção exige) */}
+          {markCheckObrig && (
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Foto do Mark Check <span className="text-red-500">*</span></Label>
+              </div>
+              <p className="text-xs text-muted-foreground">Esta contenção exige Mark Check em cada registro.</p>
+              <div className="flex flex-wrap gap-2">
+                {existingFotos.map((path) => (
+                  <FotoThumb key={path} path={path} onRemove={() => setExistingFotos((p) => p.filter((x) => x !== path))} />
+                ))}
+                {newFiles.map((file, idx) => (
+                  <LocalThumb key={idx} file={file} onRemove={() => setNewFiles((p) => p.filter((_, i) => i !== idx))} />
+                ))}
+              </div>
+              <input ref={markFileInputRef} type="file" accept="image/*" multiple hidden
+                onChange={(e) => { if (e.target.files) setNewFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+              <Button variant="outline" size="sm" type="button" onClick={() => markFileInputRef.current?.click()} className="gap-2">
+                <Upload className="w-4 h-4" /> Adicionar foto Mark Check
+              </Button>
+            </div>
+          )}
+
+          {/* Quando precisar de Mark Check para diferença mas contenção não exige por padrão */}
+          {!markCheckObrig && showDiferenca && (
+            <div className="rounded-md border p-3 space-y-3">
+              <Label className="text-sm font-medium">Foto do Mark Check <span className="text-red-500">*</span></Label>
+              <p className="text-xs text-muted-foreground">Obrigatória ao registrar uma diferença.</p>
+              <div className="flex flex-wrap gap-2">
+                {existingFotos.map((path) => (
+                  <FotoThumb key={path} path={path} onRemove={() => setExistingFotos((p) => p.filter((x) => x !== path))} />
+                ))}
+                {newFiles.map((file, idx) => (
+                  <LocalThumb key={idx} file={file} onRemove={() => setNewFiles((p) => p.filter((_, i) => i !== idx))} />
+                ))}
+              </div>
+              <input ref={markFileInputRef} type="file" accept="image/*" multiple hidden
+                onChange={(e) => { if (e.target.files) setNewFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+              <Button variant="outline" size="sm" type="button" onClick={() => markFileInputRef.current?.click()} className="gap-2">
+                <Upload className="w-4 h-4" /> Adicionar foto Mark Check
+              </Button>
+            </div>
+          )}
+
           <div className="space-y-1">
             <Label className="text-xs">Observações do turno</Label>
             <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} />
@@ -460,7 +526,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   );
 };
 
-// Thumbnails ------------
 const FotoThumb = ({ path, onRemove }: { path: string; onRemove: () => void }) => {
   const [url, setUrl] = useState<string>("");
   useEffect(() => {
@@ -473,11 +538,7 @@ const FotoThumb = ({ path, onRemove }: { path: string; onRemove: () => void }) =
   return (
     <div className="relative w-20 h-20 rounded overflow-hidden border bg-muted">
       {url && <img src={url} alt="foto" className="w-full h-full object-cover" />}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80"
-      >
+      <button type="button" onClick={onRemove} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80">
         <X className="w-3 h-3" />
       </button>
     </div>
@@ -490,11 +551,7 @@ const LocalThumb = ({ file, onRemove }: { file: File; onRemove: () => void }) =>
   return (
     <div className="relative w-20 h-20 rounded overflow-hidden border bg-muted">
       <img src={url} alt={file.name} className="w-full h-full object-cover" />
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80"
-      >
+      <button type="button" onClick={onRemove} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80">
         <X className="w-3 h-3" />
       </button>
       <Camera className="absolute bottom-1 left-1 w-3 h-3 text-white/90 drop-shadow" />

@@ -181,9 +181,11 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
                 <TableRow>
                   <TableHead className="w-10 pl-3"><Checkbox checked={filtered.length > 0 && filtered.every((i: any) => selectedIds.has(i.id))} onCheckedChange={() => { const allIds = filtered.map((i: any) => i.id); setSelectedIds(allIds.every((id) => selectedIds.has(id)) ? new Set() : new Set(allIds)); }} /></TableHead>
                   <TableHead>{codeLabel}</TableHead>
-                  <TableHead>Descrição</TableHead>
+                  <TableHead>{hasPt ? "Descrição (EN)" : "Descrição"}</TableHead>
+                  {hasPt && <TableHead>Descrição (PT)</TableHead>}
                   <TableHead>Ativo</TableHead>
                   <TableHead className="w-20"></TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>

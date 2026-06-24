@@ -606,37 +606,34 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
           </div>
         </Tabs>
 
-        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 gap-2 shrink-0 flex flex-col sm:flex-row sm:justify-between sm:items-center pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                savePrefs(prefs);
-                toast.success("Configurações salvas", { description: "Estas serão usadas na próxima abertura.", duration: 1800 });
-              }}
-            >
-              <Check className="w-3.5 h-3.5" /> Salvar configurações
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-destructive hover:text-destructive"
-              onClick={() => {
-                const reset = { ...defaultPrefs, blockSettings: {} };
-                setPrefs(reset);
-                savePrefs(reset);
-                toast.success("Padrão de fábrica restaurado", { description: "Todas as configurações voltaram ao original.", duration: 2000 });
-              }}
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Padrão de Fábrica
-            </Button>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
-          </div>
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              savePrefs(prefs);
+              toast.success("Configurações salvas", { description: "Estas serão usadas na próxima abertura.", duration: 1800 });
+            }}
+          >
+            <Check className="w-3.5 h-3.5" /> Salvar configurações
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-destructive hover:text-destructive"
+            onClick={() => {
+              const reset = { ...defaultPrefs, blockSettings: {} };
+              setPrefs(reset);
+              savePrefs(reset);
+              toast.success("Padrão de fábrica restaurado", { description: "Todas as configurações voltaram ao original.", duration: 2000 });
+            }}
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Padrão de Fábrica
+          </Button>
+          <div className="hidden sm:block flex-1" />
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button size="sm" disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
         </DialogFooter>
 
       </DialogContent>

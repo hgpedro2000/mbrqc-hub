@@ -135,7 +135,7 @@ const Contencao = () => {
                 {filtered.map((item) => {
                   const st = normalizeStatus(item.status);
                   const meta = STATUS_META[st];
-                  const dias = computeDiasAndamento(item.created_at, (item as any).data_conclusao, st);
+                  const dias = (item as any).dias_andamento ?? computeDiasAndamento(item.created_at, (item as any).data_conclusao, st);
                   const concluida = st === "concluida";
                   const totalOk = Number(item.quantidade_aprovada || 0);
                   const totalNg = Number(item.quantidade_rejeitada || 0);

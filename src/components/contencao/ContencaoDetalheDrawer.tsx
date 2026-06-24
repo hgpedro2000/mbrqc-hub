@@ -39,7 +39,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   });
 
   const status = normalizeStatus(contencao?.status);
-  const dias = computeDiasAndamento(contencao?.created_at, contencao?.data_conclusao, status);
+  const dias = (contencao as any)?.dias_andamento ?? computeDiasAndamento(contencao?.created_at, contencao?.data_conclusao, status);
 
   const totais = useMemo(() => {
     const t = registros.reduce(

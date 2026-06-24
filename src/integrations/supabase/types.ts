@@ -910,6 +910,7 @@ export type Database = {
           created_at: string
           data: string
           data_conclusao: string | null
+          dias_andamento: number | null
           fornecedor: string | null
           id: string
           linha: string | null
@@ -935,6 +936,7 @@ export type Database = {
           created_at?: string
           data: string
           data_conclusao?: string | null
+          dias_andamento?: number | null
           fornecedor?: string | null
           id?: string
           linha?: string | null
@@ -960,6 +962,7 @@ export type Database = {
           created_at?: string
           data?: string
           data_conclusao?: string | null
+          dias_andamento?: number | null
           fornecedor?: string | null
           id?: string
           linha?: string | null

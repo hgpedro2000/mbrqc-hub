@@ -915,6 +915,7 @@ export type Database = {
           id: string
           linha: string | null
           local: string | null
+          mark_check: boolean
           motivo: string | null
           numero: string | null
           observacoes: string | null
@@ -941,6 +942,7 @@ export type Database = {
           id?: string
           linha?: string | null
           local?: string | null
+          mark_check?: boolean
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -967,6 +969,7 @@ export type Database = {
           id?: string
           linha?: string | null
           local?: string | null
+          mark_check?: boolean
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -993,14 +996,17 @@ export type Database = {
           data: string
           finaliza_contencao: boolean
           fotos: Json
+          fotos_falha: string[]
           hora_fim: string
           hora_inicio: string
           horas_trabalhadas: number | null
           id: string
           inspetores: Json
+          justificativa_diferenca: string | null
           local: string | null
           mark_check: boolean
           observacoes: string | null
+          qtd_diferenca: number
           qtd_inspecionada: number
           qtd_inspetores: number
           qtd_ng: number
@@ -1015,14 +1021,17 @@ export type Database = {
           data?: string
           finaliza_contencao?: boolean
           fotos?: Json
+          fotos_falha?: string[]
           hora_fim: string
           hora_inicio: string
           horas_trabalhadas?: number | null
           id?: string
           inspetores?: Json
+          justificativa_diferenca?: string | null
           local?: string | null
           mark_check?: boolean
           observacoes?: string | null
+          qtd_diferenca?: number
           qtd_inspecionada?: number
           qtd_inspetores?: number
           qtd_ng?: number
@@ -1037,14 +1046,17 @@ export type Database = {
           data?: string
           finaliza_contencao?: boolean
           fotos?: Json
+          fotos_falha?: string[]
           hora_fim?: string
           hora_inicio?: string
           horas_trabalhadas?: number | null
           id?: string
           inspetores?: Json
+          justificativa_diferenca?: string | null
           local?: string | null
           mark_check?: boolean
           observacoes?: string | null
+          qtd_diferenca?: number
           qtd_inspecionada?: number
           qtd_inspetores?: number
           qtd_ng?: number

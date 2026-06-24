@@ -174,7 +174,7 @@ const Contencao = () => {
                       className="form-section hover:border-accent/40 transition-colors cursor-pointer"
                       onClick={() => setDetalheItem(item)}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4">
                         <div className="space-y-1 flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             {item.numero && <span className="text-xs font-mono text-muted-foreground bg-muted/20 px-2 py-0.5 rounded">#{item.numero}</span>}
@@ -191,48 +191,51 @@ const Contencao = () => {
                             {ultimo && <span>Último: {ultimo.turno} — {formatRelativeBR(ultimo.created_at)}</span>}
                           </div>
                           {item.motivo && <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">{t("contencao.reason")}: {item.motivo}</p>}
+                          {viewMode === "expanded" && (
+                            <>
+                              <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
+                                <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                                <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
+                                <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
+                              </div>
+                              {(inspecionado > 0 || estoque > 0) && (
+                                <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
+                                  <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
+                                  <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
+                                </div>
+                              )}
+                              <div className="mt-2"><ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="md" /></div>
+                            </>
+                          )}
                         </div>
-                        <div className="flex sm:flex-col items-center sm:items-end gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
-                          {isAdmin && (
-                            <div className="flex gap-1 sm:mt-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[360px] md:shrink-0">
+                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
+                            {isAdmin && (
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                              </div>
+                            )}
+                          </div>
+                          {viewMode === "compact" && (
+                            <div className="grid grid-cols-[auto,1fr] gap-3 items-start">
+                              <div className="flex flex-col gap-1 text-xs md:text-sm border border-border/60 rounded-md p-2 bg-muted/10 min-w-[140px]">
+                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Peças</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Inspec.</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
+                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
+                                {(inspecionado > 0 || estoque > 0) && (
+                                  <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
+                                    <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
+                                    <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
+                                  </div>
+                                )}
+                              </div>
+                              <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
                             </div>
                           )}
                         </div>
                       </div>
-                      {viewMode === "compact" ? (
-                        <div className="mt-3 grid grid-cols-1 md:grid-cols-[auto,1fr] gap-3 md:gap-4 items-start">
-                          <div className="flex flex-col gap-1 text-xs md:text-sm border border-border/60 rounded-md p-2 bg-muted/10 min-w-[160px]">
-                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">{estoque > 0 ? "Peças" : "Peças"}</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
-                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Inspecionadas</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
-                            <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
-                            {(inspecionado > 0 || estoque > 0) && (
-                              <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
-                                <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
-                                <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
-                              </div>
-                            )}
-                          </div>
-                          <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
-                            <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
-                            <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
-                            <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
-                          </div>
-                          {(inspecionado > 0 || estoque > 0) && (
-                            <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
-                              <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
-                              <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
-                            </div>
-                          )}
-                          <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="md" />
-                        </>
-                      )}
                     </div>
                   );
                 })}

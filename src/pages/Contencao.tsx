@@ -208,7 +208,7 @@ const Contencao = () => {
                             </>
                           )}
                         </div>
-                        <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[360px] md:shrink-0">
+                        <div className="flex flex-col items-stretch md:items-end gap-2 md:flex-1 md:min-w-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
                             {isAdmin && (
@@ -219,11 +219,11 @@ const Contencao = () => {
                             )}
                           </div>
                           {viewMode === "compact" && (
-                            <div className="grid grid-cols-[auto,1fr] gap-3 items-start">
-                              <div className="flex flex-col gap-1 text-xs md:text-sm border border-border/60 rounded-md p-2 bg-muted/10 min-w-[140px]">
-                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Peças</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
-                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">Inspec.</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
-                                <div className="flex items-center justify-between gap-3"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
+                            <div className="grid grid-cols-3 gap-2 w-full">
+                              <div className="flex flex-col gap-1 text-xs border border-border/60 rounded-md p-2 bg-muted/10">
+                                <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">Peças</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                                <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">Inspec.</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
+                                <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
                                 {(inspecionado > 0 || estoque > 0) && (
                                   <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
                                     <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
@@ -231,7 +231,9 @@ const Contencao = () => {
                                   </div>
                                 )}
                               </div>
-                              <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
+                              <div className="col-span-2">
+                                <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
+                              </div>
                             </div>
                           )}
                         </div>

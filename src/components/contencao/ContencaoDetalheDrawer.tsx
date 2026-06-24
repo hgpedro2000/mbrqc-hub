@@ -96,7 +96,17 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
 
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-heading font-semibold text-sm">Registros de Contenção</h3>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {canClaim && registros.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  onClick={() => setClaimOpen(true)}
+                >
+                  <FileText className="w-4 h-4" /> Gerar Relatório
+                </Button>
+              )}
               {!concluida && (
                 <Button size="sm" className="gap-1" onClick={() => { setEditing(null); setDialogOpen(true); }}>
                   <Plus className="w-4 h-4" /> Novo Registro

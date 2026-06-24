@@ -8,14 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList, FlaskConical } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { UserPlus, Loader2, Pencil, KeyRound, Trash2, LayoutGrid, Search, ClipboardList, FlaskConical, ShieldCheck, Copy, MessageCircle } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
 import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
+import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 
 const TURNOS = ["1T", "2T", "3T"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
@@ -237,38 +239,48 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     }
   };
 
-  const handleResetPassword = async (user: { id: string; full_name?: string; employee_number?: string }) => {
+  // ---- Password reset flow ----
+  const [resetTarget, setResetTarget] = useState<{ id: string; full_name?: string; employee_number?: string } | null>(null);
+  const [resetMode, setResetMode] = useState<"custom" | "default">("default");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetResult, setResetResult] = useState<{ password: string } | null>(null);
+  const resetPolicy = useMemo(() => evaluatePassword(resetPassword), [resetPassword]);
+  const resetPasswordValid = isPasswordValid(resetPolicy);
+
+  const openResetFlow = (user: { id: string; full_name?: string; employee_number?: string }, mode: "custom" | "default") => {
+    setResetTarget(user);
+    setResetMode(mode);
+    setResetPassword("");
+    setResetResult(null);
+    if (mode === "default") {
+      runResetPassword(user, "");
+    }
+  };
+
+  const runResetPassword = async (
+    user: { id: string; full_name?: string; employee_number?: string },
+    customPassword: string,
+  ) => {
     setResettingId(user.id);
     try {
       const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { user_id: user.id },
+        body: {
+          user_id: user.id,
+          new_password: customPassword || undefined,
+        },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
-      const tempPassword: string | undefined = data?.temporary_password;
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      const tempPassword: string = (data as any)?.temporary_password || customPassword;
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
-      if (tempPassword) {
-        toast.success(`Senha temporária: ${tempPassword}`, {
-          duration: 15000,
-          description: "O usuário deverá trocar a senha no próximo login.",
-          action: {
-            label: "WhatsApp",
-            onClick: () => openWhatsApp(buildResetPasswordMessage({
-              userName: user.full_name,
-              employeeNumber: user.employee_number,
-              password: tempPassword,
-              appUrl: window.location.origin,
-            })),
-          },
-        });
-      } else {
-        toast.success("Senha redefinida. Verifique no Help Desk.");
-      }
+      setResetTarget(user);
+      setResetResult({ password: tempPassword });
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setResettingId(null);
     }
   };
+
 
   const handleDeleteUser = async (userId: string) => {
     setDeletingId(userId);
@@ -634,9 +646,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
-                    {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={resettingId === p.id} className="h-8 w-8 p-0" title="Resetar senha">
+                        {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56 p-2">
+                      <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
+                        <KeyRound className="w-4 h-4" /> Senha provisória
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
+                        <ShieldCheck className="w-4 h-4" /> Gerar senha segura
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
@@ -718,9 +742,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
-                          {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                        </Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                              {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-56 p-2">
+                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
+                              <KeyRound className="w-4 h-4" /> Senha provisória
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
+                              <ShieldCheck className="w-4 h-4" /> Gerar senha segura
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
@@ -751,6 +787,86 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
           </div>
         </>
       )}
+
+      {/* Custom (provisional) password dialog */}
+      <Dialog
+        open={resetMode === "custom" && !!resetTarget && !resetResult}
+        onOpenChange={(v) => { if (!v) { setResetTarget(null); setResetPassword(""); } }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Senha provisória</DialogTitle>
+            <DialogDescription>
+              Defina uma senha provisória para <strong>{resetTarget?.full_name}</strong>. O usuário deverá trocá-la no próximo login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nova senha</Label>
+            <Input
+              type="text"
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              placeholder={`Mín. ${MIN_PASSWORD_LENGTH} chars, maiúscula, número e símbolo`}
+            />
+            {resetPassword && !resetPasswordValid && (
+              <p className="text-xs text-destructive">
+                A senha precisa ter {MIN_PASSWORD_LENGTH}+ caracteres, maiúscula, número e símbolo.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetTarget(null); setResetPassword(""); }}>Cancelar</Button>
+            <Button
+              disabled={!resetPasswordValid || resettingId === resetTarget?.id}
+              onClick={() => resetTarget && runResetPassword(resetTarget, resetPassword.trim())}
+            >
+              {resettingId === resetTarget?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Result dialog (after either mode) */}
+      <Dialog
+        open={!!resetResult}
+        onOpenChange={(v) => { if (!v) { setResetResult(null); setResetTarget(null); setResetPassword(""); } }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Senha redefinida</DialogTitle>
+            <DialogDescription>
+              Compartilhe com <strong>{resetTarget?.full_name}</strong>. Ele(a) precisará trocar a senha no próximo login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 font-mono text-sm break-all flex items-center justify-between gap-2">
+            <span>{resetResult?.password}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { navigator.clipboard.writeText(resetResult?.password || ""); toast.success("Senha copiada"); }}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => resetTarget && resetResult && openWhatsApp(buildResetPasswordMessage({
+                userName: resetTarget.full_name,
+                employeeNumber: resetTarget.employee_number,
+                password: resetResult.password,
+                appUrl: window.location.origin,
+              }))}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" /> Enviar via WhatsApp
+            </Button>
+            <Button variant="outline" onClick={() => { setResetResult(null); setResetTarget(null); setResetPassword(""); }}>
+              Concluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

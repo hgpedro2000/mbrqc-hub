@@ -680,7 +680,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-200">
             <button
               type="button"
-              onClick={reset}
+              onClick={handleReset}
               disabled={isValidating}
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -688,7 +688,7 @@ export default function SpecSwitchPanelCheck() {
             </button>
             <button
               type="button"
-              onClick={reset}
+              onClick={handleReset}
               disabled={isValidating}
               className="py-3 bg-white border-2 border-slate-400 rounded font-bold text-slate-800 hover:bg-slate-50 active:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >

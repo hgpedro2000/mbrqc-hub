@@ -28,7 +28,7 @@ const Contencao = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
-  const [tab, setTab] = useState("interno_mbr");
+  const [tab, setTab] = useState<string>("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();

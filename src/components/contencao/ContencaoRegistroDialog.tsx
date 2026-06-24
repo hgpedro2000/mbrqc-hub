@@ -190,7 +190,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         mark_check: markCheck,
         observacoes: observacoes || null,
         finaliza_contencao: finalizar,
-        created_by: profile?.id || null,
+        created_by: user?.id || null,
       };
       let registroId = initial?.id;
       if (initial) {

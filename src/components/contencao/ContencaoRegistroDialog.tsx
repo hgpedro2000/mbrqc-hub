@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, Camera, Upload, X, Save, CheckCircle2, Search, AlertTriangle, Plus } from "lucide-react";
+import { Loader2, Users, Camera, Upload, X, Save, Search, AlertTriangle, Plus } from "lucide-react";
+
 import { toast } from "sonner";
 import { getLocalDateString } from "@/lib/localDate";
 import { compressImage } from "@/lib/compressImage";
@@ -54,7 +54,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const [existingFotosFalha, setExistingFotosFalha] = useState<string[]>([]);
   const [newFilesFalha, setNewFilesFalha] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
-  const [confirmFinalize, setConfirmFinalize] = useState(false);
+
 
   // Contenção info (mark_check + estoque_mobis = quantidade_aprovada)
   const { data: contencaoInfo } = useQuery({

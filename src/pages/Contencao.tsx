@@ -63,7 +63,7 @@ const Contencao = () => {
         const t = totais[r.contencao_id] || { insp: 0, ng: 0, ok: 0 };
         t.insp += Number(r.qtd_inspecionada || 0) + Number(r.qtd_diferenca || 0);
         t.ng += Number(r.qtd_ng || 0);
-        t.ok += Number(r.qtd_ok || 0);
+        t.ok = Math.max(0, t.insp - t.ng);
         totais[r.contencao_id] = t;
       }
       return { ultimo, totais };

@@ -34,8 +34,10 @@ const Contencao = () => {
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
   const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
+  const [debugAlign, setDebugAlign] = useState<boolean>(() => localStorage.getItem("contencao:debugAlign") === "1");
   useEffect(() => { localStorage.setItem("contencao:viewMode", viewMode); }, [viewMode]);
   useEffect(() => { localStorage.setItem("contencao:photoSize", photoSize); }, [photoSize]);
+  useEffect(() => { localStorage.setItem("contencao:debugAlign", debugAlign ? "1" : "0"); }, [debugAlign]);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({

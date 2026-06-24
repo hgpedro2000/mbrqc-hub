@@ -63,7 +63,7 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
         pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
         heightLeft -= pageH;
       }
-      const filename = `Claim_${contencao?.numero || "contencao"}_${contencao?.fornecedor || "fornecedor"}.pdf`
+      const filename = `Contencao_${contencao?.numero || "contencao"}_${contencao?.fornecedor || "fornecedor"}.pdf`
         .replace(/\s+/g, "_");
       pdf.save(filename);
       toast.success("PDF gerado", { id: t });

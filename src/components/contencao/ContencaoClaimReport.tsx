@@ -75,7 +75,7 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
 
         {/* ---------- Identificação ---------- */}
         <section className="mt-4 grid grid-cols-2 gap-3 text-[11px]">
-          <Field label="Fornecedor (Claim contra)" value={contencao?.fornecedor || "—"} highlight />
+          <Field label="Fornecedor" value={contencao?.fornecedor || "—"} highlight />
           <Field label="Responsabilidade" value={contencao?.responsabilidade || "—"} />
           <Field label="Part Number" value={contencao?.part_number || "—"} />
           <Field label="Descrição da Peça" value={contencao?.part_name || "—"} />

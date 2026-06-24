@@ -46,17 +46,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   const status = normalizeStatus(contencao?.status);
   const dias = (contencao as any)?.dias_andamento ?? computeDiasAndamento(contencao?.created_at, contencao?.data_conclusao, status);
 
-  const totais = useMemo(() => {
-    const t = registros.reduce(
-      (acc, r) => ({
-        insp: acc.insp + (r.qtd_inspecionada || 0),
-        ng: acc.ng + (r.qtd_ng || 0),
-        horas: acc.horas + Number(r.horas_trabalhadas || 0),
-      }),
-      { insp: 0, ng: 0, horas: 0 },
-    );
-    return { ...t, ok: Math.max(0, t.insp - t.ng) };
-  }, [registros]);
+  const totais = useMemo(() => aggregateRegistrosDrawer(registros as any[]), [registros]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, ContencaoRegistro[]>();

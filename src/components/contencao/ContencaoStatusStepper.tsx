@@ -39,7 +39,7 @@ const ContencaoStatusStepper = ({ status, className }: Props) => {
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] sm:text-xs font-medium text-center leading-tight max-w-[68px] sm:max-w-none",
+                    "text-[9px] sm:text-xs font-medium text-center leading-tight max-w-[56px] sm:max-w-none break-words",
                     reached ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

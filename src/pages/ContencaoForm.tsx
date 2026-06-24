@@ -128,6 +128,22 @@ const ContencaoForm = () => {
     }
     setSaving(true);
     try {
+      // Pre-generate id for new records so we can upload photos BEFORE insert.
+      // (RLS only allows admin/lider/engenharia to UPDATE contencao, so we must
+      // persist the photo arrays in the INSERT itself.)
+      const savedId = id || crypto.randomUUID();
+
+      let finalMark = [...existingMarkFotos];
+      let finalProb = [...existingProbFotos];
+      if (newMarkFiles.length) {
+        const up = await uploadFiles(newMarkFiles, savedId, "markcheck");
+        finalMark = [...finalMark, ...up];
+      }
+      if (newProbFiles.length) {
+        const up = await uploadFiles(newProbFiles, savedId, "problema");
+        finalProb = [...finalProb, ...up];
+      }
+
       const payload: any = {
         tipo: form.tipo,
         responsabilidade: form.tipo,
@@ -135,7 +151,7 @@ const ContencaoForm = () => {
         setor: form.setor || null, linha: form.linha || null, local: form.local || null,
         part_number: form.part_number || null, part_name: form.part_name || null, fornecedor: form.fornecedor || null,
         estoque_indefinido: form.estoque_indefinido,
-        quantidade_contida: form.quantidade_pecas,
+        quantidade_contida: form.estoque_indefinido ? 0 : form.quantidade_pecas,
         quantidade_aprovada: form.estoque_indefinido ? 0 : form.estoque_mobis,
         quantidade_rejeitada: 0,
         motivo: form.motivo || null, acao_contencao: form.acao_contencao || null,
@@ -144,33 +160,23 @@ const ContencaoForm = () => {
         mark_check_local: form.mark_check_local,
         mark_check_como: form.mark_check_como,
         mark_check_com_que: form.mark_check_com_que,
+        mark_check_fotos: finalMark,
+        fotos_problema: finalProb,
       };
 
-      let savedId = id;
       if (isEdit) {
         const { error } = await supabase.from("contencao").update(payload).eq("id", id!);
         if (error) throw error;
       } else {
-        const { data: inserted, error } = await supabase.from("contencao").insert(payload).select("id").single();
+        const { error } = await supabase.from("contencao").insert({ id: savedId, ...payload });
         if (error) throw error;
-        savedId = (inserted as any).id;
-      }
-
-      if (savedId && (newMarkFiles.length || newProbFiles.length)) {
-        const upMark = newMarkFiles.length ? await uploadFiles(newMarkFiles, savedId, "markcheck") : [];
-        const upProb = newProbFiles.length ? await uploadFiles(newProbFiles, savedId, "problema") : [];
-        const finalMark = [...existingMarkFotos, ...upMark];
-        const finalProb = [...existingProbFotos, ...upProb];
-        const { error: e2 } = await supabase.from("contencao").update({ mark_check_fotos: finalMark, fotos_problema: finalProb } as any).eq("id", savedId);
-        if (e2) throw e2;
-      } else if (isEdit) {
-        await supabase.from("contencao").update({ mark_check_fotos: existingMarkFotos, fotos_problema: existingProbFotos } as any).eq("id", savedId!);
       }
 
       toast.success(isEdit ? t("contencao.updateSuccess") : t("contencao.saveSuccess"));
       navigate("/contencao");
     } catch (err: any) { toast.error(err.message || "Erro ao salvar"); } finally { setSaving(false); }
   };
+
 
   if (isEdit && loadingExisting) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
 
@@ -233,11 +239,14 @@ const ContencaoForm = () => {
             </label>
           </RadioGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
             {!form.estoque_indefinido && (
-              <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+              <>
+                <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
+                <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+              </>
             )}
           </div>
+
         </div>
 
         <div className="form-section">

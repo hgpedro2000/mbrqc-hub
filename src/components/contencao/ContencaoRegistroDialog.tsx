@@ -204,6 +204,24 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     setSaving(true);
     const toastId = toast.loading(initial ? "Salvando registro..." : "Lançando registro...");
     try {
+      // Pre-generate id so we can upload photos BEFORE insert.
+      // (RLS only allows admin/lider/engenharia to UPDATE contencao_registros.)
+      const registroId = initial?.id || crypto.randomUUID();
+
+      let finalFotos = [...existingFotos];
+      let finalFotosFalha = [...existingFotosFalha];
+      if (newFiles.length || newFilesFalha.length) {
+        toast.loading("Enviando fotos...", { id: toastId });
+        if (newFiles.length) {
+          const up = await uploadFilesList(newFiles, registroId, "mark");
+          finalFotos = [...finalFotos, ...up];
+        }
+        if (newFilesFalha.length) {
+          const up = await uploadFilesList(newFilesFalha, registroId, "falha");
+          finalFotosFalha = [...finalFotosFalha, ...up];
+        }
+      }
+
       const payload: any = {
         contencao_id: contencaoId,
         turno, data,
@@ -220,35 +238,23 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         observacoes: observacoes || null,
         finaliza_contencao: finalizar,
         created_by: user?.id || null,
+        fotos: finalFotos,
+        fotos_falha: finalFotosFalha,
       };
-      let registroId = initial?.id;
+
       if (initial) {
         const { error } = await supabase
           .from("contencao_registros" as any)
-          .update({ ...payload, fotos: existingFotos, fotos_falha: existingFotosFalha })
+          .update(payload)
           .eq("id", initial.id);
         if (error) throw error;
       } else {
-        const { data: inserted, error } = await supabase
+        const { error } = await supabase
           .from("contencao_registros" as any)
-          .insert({ ...payload, fotos: [], fotos_falha: [] })
-          .select("id")
-          .single();
+          .insert({ id: registroId, ...payload });
         if (error) throw error;
-        registroId = (inserted as any).id;
       }
-      if (registroId && (newFiles.length || newFilesFalha.length)) {
-        toast.loading("Enviando fotos...", { id: toastId });
-        const uploadedMark = newFiles.length ? await uploadFilesList(newFiles, registroId, "mark") : [];
-        const uploadedFalha = newFilesFalha.length ? await uploadFilesList(newFilesFalha, registroId, "falha") : [];
-        const finalFotos = [...existingFotos, ...uploadedMark];
-        const finalFotosFalha = [...existingFotosFalha, ...uploadedFalha];
-        const { error: e2 } = await supabase
-          .from("contencao_registros" as any)
-          .update({ fotos: finalFotos, fotos_falha: finalFotosFalha })
-          .eq("id", registroId);
-        if (e2) throw e2;
-      }
+
       toast.loading("Recalculando totais...", { id: toastId });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["contencao"] }),
@@ -266,6 +272,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setSaving(false);
     }
   };
+
 
 
   return (

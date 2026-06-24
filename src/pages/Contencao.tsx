@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid, FileText } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
+import { canGenerateClaimReport } from "@/lib/contencaoClaimAccess";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import ResumoMensalCard from "@/components/contencao/ResumoMensalCard";
 import ContencaoDetalheDrawer from "@/components/contencao/ContencaoDetalheDrawer";
 import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
+import ContencaoClaimReportDialog from "@/components/contencao/ContencaoClaimReportDialog";
 import { STATUS_META, normalizeStatus, computeDiasAndamento, formatHoras, formatRelativeBR, aggregateRegistrosList } from "@/lib/contencao";
 
 interface UltimoRegistro {
@@ -29,9 +32,12 @@ const Contencao = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
+  const { profile } = useAuth();
+  const canClaim = canGenerateClaimReport({ isAdmin, cargo: profile?.cargo });
   const [tab, setTab] = useState<string>("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
+  const [claimItem, setClaimItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
   const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
   const [debugAlign, setDebugAlign] = useState<boolean>(() => localStorage.getItem("contencao:debugAlign") === "1");
@@ -241,12 +247,25 @@ const Contencao = () => {
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
-                            {isAdmin && (
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
-                              </div>
-                            )}
+                            <div className="flex gap-1">
+                              {canClaim && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                  title="Gerar Relatório de Claim"
+                                  onClick={() => setClaimItem(item)}
+                                >
+                                  <FileText className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {isAdmin && (
+                                <>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => navigate(`/contencao/editar/${item.id}`)}><Pencil className="w-3.5 h-3.5" /></Button>
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                                </>
+                              )}
+                            </div>
                           </div>
                           {viewMode === "compact" && (
                             <div className="flex flex-col gap-1 text-xs border border-border/60 rounded-md p-2 bg-muted/10 w-full">
@@ -275,6 +294,7 @@ const Contencao = () => {
       </main>
 
       <ContencaoDetalheDrawer contencao={detalheItem} onClose={() => setDetalheItem(null)} />
+      <ContencaoClaimReportDialog open={!!claimItem} onClose={() => setClaimItem(null)} contencao={claimItem} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>

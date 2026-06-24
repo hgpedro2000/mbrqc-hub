@@ -1,0 +1,1 @@
+UPDATE public.contencao SET mark_check_fotos = ARRAY['8168198d-cca0-491a-bae0-1ce67ed9c2d8/contencao/markcheck-841bebab-ebbc-43f0-b8ba-538cef848e33.jpg'], fotos_problema = ARRAY['8168198d-cca0-491a-bae0-1ce67ed9c2d8/contencao/problema-a168b564-7c50-4176-81ee-dec4f2966d2e.jpg'] WHERE id='8168198d-cca0-491a-bae0-1ce67ed9c2d8';

@@ -57,15 +57,13 @@ const Contencao = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       const ultimo: Record<string, UltimoRegistro> = {};
-      const totais: Record<string, { insp: number; ng: number; ok: number }> = {};
+      const grouped: Record<string, any[]> = {};
       for (const r of (data || []) as any[]) {
         if (!ultimo[r.contencao_id]) ultimo[r.contencao_id] = r;
-        const t = totais[r.contencao_id] || { insp: 0, ng: 0, ok: 0 };
-        t.insp += Number(r.qtd_inspecionada || 0) + Number(r.qtd_diferenca || 0);
-        t.ng += Number(r.qtd_ng || 0);
-        t.ok = Math.max(0, t.insp - t.ng);
-        totais[r.contencao_id] = t;
+        (grouped[r.contencao_id] ||= []).push(r);
       }
+      const totais: Record<string, { insp: number; ng: number; ok: number }> = {};
+      for (const id in grouped) totais[id] = aggregateRegistrosList(grouped[id]);
       return { ultimo, totais };
     },
   });

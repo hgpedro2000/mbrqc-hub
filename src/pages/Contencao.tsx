@@ -190,6 +190,7 @@ const Contencao = () => {
                           <div className="h-full bg-emerald-500" style={{ width: `${okPct}%` }} />
                         </div>
                       )}
+                      <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} />
                     </div>
                   );
                 })}

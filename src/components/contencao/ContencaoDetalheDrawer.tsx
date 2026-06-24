@@ -2,14 +2,16 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Clock, Calendar, Loader2 } from "lucide-react";
+import { Plus, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import ContencaoStatusStepper from "./ContencaoStatusStepper";
 import ContencaoRegistroDialog from "./ContencaoRegistroDialog";
 import RegistroCard from "./RegistroCard";
 import { computeDiasAndamento, formatHoras, normalizeStatus, ContencaoRegistro } from "@/lib/contencao";
 import { useUserRole } from "@/hooks/useUserRole";
+
 
 interface Props {
   contencao: any | null;
@@ -22,6 +24,9 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   const open = !!contencao;
   const [editing, setEditing] = useState<ContencaoRegistro | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [confirmFinalize, setConfirmFinalize] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
+
 
   const { data: registros = [], isLoading } = useQuery({
     queryKey: ["contencao-registros", contencao?.id],
@@ -94,14 +99,27 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
             <Stat label="OK / NG" value={`${totais.ok} / ${totais.ng}`} colored />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="font-heading font-semibold text-sm">Registros de Contenção</h3>
-            {!concluida && (
-              <Button size="sm" className="gap-1" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-                <Plus className="w-4 h-4" /> Novo Registro
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!concluida && (
+                <Button size="sm" className="gap-1" onClick={() => { setEditing(null); setDialogOpen(true); }}>
+                  <Plus className="w-4 h-4" /> Novo Registro
+                </Button>
+              )}
+              {!concluida && registros.length > 0 && (
+                <Button
+                  size="sm"
+                  className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={() => setConfirmFinalize(true)}
+                  disabled={finalizing}
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Finalizar Contenção
+                </Button>
+              )}
+            </div>
           </div>
+
 
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>

@@ -105,20 +105,21 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
 
         {/* ---------- DESTAQUE: HORAS FATURÁVEIS ---------- */}
         <section className="mt-4">
-          <div className="border-2 border-amber-500 bg-amber-50 rounded p-3">
+          <div className="border-2 border-slate-700 bg-slate-50 rounded p-3">
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <div>
-                <p className="text-[10px] uppercase tracking-widest font-bold text-amber-700">
-                  Horas Faturáveis (Claim cobrado por hora trabalhada)
+                <p className="text-[10px] uppercase tracking-widest font-bold text-slate-800">
+                  Resumo da Contenção
                 </p>
-                <p className="text-[10px] text-amber-800/80">
-                  Total de horas de inspeção de contenção realizadas pela Mobis em razão do defeito acima.
+                <p className="text-[10px] text-slate-600">
+                  Total de horas de inspeção realizadas pela equipe de contenção.
                 </p>
               </div>
-              <p className="text-[34px] font-extrabold text-amber-600 leading-none">
+              <p className="text-[34px] font-extrabold text-slate-900 leading-none">
                 {formatHoras(horasTotal)}
               </p>
             </div>
+
             <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[10px]">
               <Mini label="Dias em contenção" value={String(contencao?.dias_andamento ?? "—")} />
               <Mini label="Registros (turnos)" value={String(registros.length)} />

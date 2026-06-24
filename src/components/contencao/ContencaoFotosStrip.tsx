@@ -26,9 +26,9 @@ const useSignedUrls = (paths: string[]) => {
 };
 
 const HEIGHTS: Record<NonNullable<Props["size"]>, string> = {
-  sm: "h-16",
-  md: "h-24",
-  lg: "h-28",
+  sm: "h-14 sm:h-16",
+  md: "h-20 sm:h-24",
+  lg: "h-24 sm:h-28 md:h-32",
 };
 
 const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showLabels = true }: Props) => {

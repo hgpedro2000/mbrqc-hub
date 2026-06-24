@@ -4,7 +4,7 @@ import { Camera, Pencil, Users, Clock, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { formatHoras, formatLocalDateString, ContencaoRegistro } from "@/lib/contencao";
+import { formatHoras, ContencaoRegistro } from "@/lib/contencao";
 import { formatLocalDateString as fmtDate } from "@/lib/localDate";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";

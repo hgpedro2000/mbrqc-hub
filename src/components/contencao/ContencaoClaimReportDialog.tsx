@@ -79,7 +79,7 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-4 h-4" /> Relatório de Claim ao Fornecedor
+            <FileText className="w-4 h-4" /> Relatório de Contenção
           </DialogTitle>
           <DialogDescription>
             Pré-visualização idêntica ao PDF exportado. Cobrança baseada nas horas trabalhadas em contenção.

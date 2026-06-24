@@ -26,9 +26,9 @@ const useSignedUrls = (paths: string[]) => {
 };
 
 const DIMS: Record<NonNullable<Props["size"]>, string> = {
-  sm: "w-14 h-14",
-  md: "w-20 h-20",
-  lg: "w-24 h-24 sm:w-28 sm:h-28",
+  sm: "w-12 h-12",
+  md: "w-16 h-16",
+  lg: "w-20 h-20",
 };
 
 const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showLabels = true }: Props) => {

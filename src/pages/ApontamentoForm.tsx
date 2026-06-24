@@ -1572,7 +1572,7 @@ const ApontamentoForm = () => {
                       <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>Modo de Falha *</Label>
                       <Select value={detalhe.modo_falha} onValueChange={(v) => { updateDefeitoDetalhe(idx, "modo_falha", v); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-modoFalha`); return n; }); }}>
                         <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
+                        <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">

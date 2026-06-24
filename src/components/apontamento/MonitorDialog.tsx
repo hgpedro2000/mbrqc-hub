@@ -635,7 +635,6 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
           <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancelar</Button>
           <Button size="sm" className="w-full sm:w-auto" disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
         </DialogFooter>
-        </DialogFooter>
 
       </DialogContent>
     </Dialog>

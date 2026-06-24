@@ -174,7 +174,7 @@ export default function MonitorAdmin() {
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
             <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
-          <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-fit">
+          <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-full sm:w-fit">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Enviar
           </Button>
         </CardContent>

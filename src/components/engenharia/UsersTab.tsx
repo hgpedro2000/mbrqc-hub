@@ -103,7 +103,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-for-residente"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("suppliers").select("name").eq("active", true).order("name");
+      const { data, error } = await supabase.from("suppliers").select("name, code").eq("active", true).order("name");
       if (error) throw error;
       return data;
     },
@@ -114,13 +114,66 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas_terceiras")
-        .select("name")
+        .select("name, prefix, pad")
         .eq("active", true)
         .order("name");
       if (error) throw error;
       return data || [];
     },
   });
+
+  /**
+   * Auto-generate the next available matrícula for Terceiros / Residentes.
+   *  - Residente "Residente - FORNECEDOR" -> uses supplier.code as prefix, 2-digit suffix (APF901, APF902…)
+   *  - Empresa Terceira (IL/TRIGO/ABCD/…) -> uses prefix column, 4-digit suffix (IL0001, TRI0001, AB0001…)
+   * Always checks the profiles table to skip numbers already in use.
+   */
+  const generateEmployeeNumber = async (emp: string, empTerc: string): Promise<string | null> => {
+    if (emp !== "empresa_terceira" || !empTerc) return null;
+
+    let prefix = "";
+    let pad = 4;
+
+    if (empTerc === "Residente" || empTerc.startsWith("Residente - ")) {
+      const supplierName = empTerc.replace("Residente - ", "");
+      const sup = (suppliers as any[]).find((s) => s.name === supplierName);
+      if (!sup || !sup.code || sup.code === "-") {
+        toast.error("Fornecedor sem CODE VENDOR cadastrado.");
+        return null;
+      }
+      prefix = String(sup.code).toUpperCase();
+      pad = 2;
+    } else {
+      const et = (empresasTerceirasList as any[]).find((e) => e.name === empTerc);
+      if (!et?.prefix) {
+        toast.error("Empresa terceira sem prefixo cadastrado.");
+        return null;
+      }
+      prefix = String(et.prefix).toUpperCase();
+      pad = et.pad || 4;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("employee_number")
+      .ilike("employee_number", `${prefix}%`);
+    if (error) {
+      toast.error("Erro ao verificar números existentes.");
+      return null;
+    }
+    const used = new Set(
+      (data || [])
+        .map((r: any) => String(r.employee_number || "").toUpperCase())
+        .filter((n) => n.startsWith(prefix)),
+    );
+    for (let i = 1; i < 10 ** pad; i++) {
+      const candidate = `${prefix}${String(i).padStart(pad, "0")}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    toast.error("Sequência esgotada para este prefixo.");
+    return null;
+  };
+
 
 
   const getRoleForUser = (userId: string) => {

@@ -27,8 +27,9 @@ const ContencaoForm = () => {
     tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
     data: getLocalDateString(), setor: "", linha: "", local: "",
     part_number: "", part_name: "", fornecedor: "",
-    quantidade_contida: 0, quantidade_aprovada: 0, quantidade_rejeitada: 0,
+    quantidade_pecas: 0, estoque_mobis: 0,
     motivo: "", acao_contencao: "", status: "emitida", observacoes: "",
+    mark_check: false,
   });
 
   const { data: existing, isLoading: loadingExisting } = useQuery({

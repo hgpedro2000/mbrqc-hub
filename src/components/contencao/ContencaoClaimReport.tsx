@@ -169,7 +169,7 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
             <tfoot>
               <tr className="bg-slate-100 font-bold">
                 <Td colSpan={4} className="text-right">TOTAL</Td>
-                <Td className="text-right text-amber-700">{formatHoras(horasTotal)}</Td>
+                <Td className="text-right text-slate-800">{formatHoras(horasTotal)}</Td>
                 <Td className="text-right">—</Td>
                 <Td className="text-right">{totais.insp}</Td>
                 <Td className="text-right text-red-600">{totais.ng}</Td>

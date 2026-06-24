@@ -248,7 +248,7 @@ const ConsultaPecas = () => {
                 className="pl-10 h-12 text-base w-full"
               />
             </div>
-            <div className="grid grid-cols-4 gap-2 w-full sm:w-auto sm:flex">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex">
               <Button
                 type="button"
                 variant="outline"

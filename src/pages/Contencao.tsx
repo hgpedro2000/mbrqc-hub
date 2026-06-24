@@ -238,9 +238,8 @@ const Contencao = () => {
                           <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
                         </div>
                       )}
-                        </div>
-                      </div>
                     </div>
+
                   );
                 })}
 

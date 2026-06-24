@@ -253,7 +253,7 @@ const Contencao = () => {
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                  title="Gerar Relatório de Claim"
+                                  title="Gerar Relatório de Contenção"
                                   onClick={() => setClaimItem(item)}
                                 >
                                   <FileText className="w-3.5 h-3.5" />

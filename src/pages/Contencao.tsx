@@ -34,8 +34,10 @@ const Contencao = () => {
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
   const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
+  const [debugAlign, setDebugAlign] = useState<boolean>(() => localStorage.getItem("contencao:debugAlign") === "1");
   useEffect(() => { localStorage.setItem("contencao:viewMode", viewMode); }, [viewMode]);
   useEffect(() => { localStorage.setItem("contencao:photoSize", photoSize); }, [photoSize]);
+  useEffect(() => { localStorage.setItem("contencao:debugAlign", debugAlign ? "1" : "0"); }, [debugAlign]);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({
@@ -151,6 +153,12 @@ const Contencao = () => {
               <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
             </div>
           )}
+          {viewMode === "compact" && (
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none rounded-md border border-border px-2 py-1">
+              <input type="checkbox" checked={debugAlign} onChange={(e) => setDebugAlign(e.target.checked)} className="accent-fuchsia-500" />
+              Debug alinhamento
+            </label>
+          )}
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
@@ -225,7 +233,7 @@ const Contencao = () => {
                         </div>
                         {viewMode === "compact" && (
                           <div className={`w-full ${photoSize === "sm" ? "md:w-[360px]" : photoSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
-                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} />
+                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} debug={debugAlign} />
                           </div>
                         )}
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">

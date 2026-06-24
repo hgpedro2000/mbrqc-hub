@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import ResumoMensalCard from "@/components/contencao/ResumoMensalCard";
 import ContencaoDetalheDrawer from "@/components/contencao/ContencaoDetalheDrawer";
 import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
-import { STATUS_META, normalizeStatus, computeDiasAndamento, formatHoras, formatRelativeBR } from "@/lib/contencao";
+import { STATUS_META, normalizeStatus, computeDiasAndamento, formatHoras, formatRelativeBR, aggregateRegistrosList } from "@/lib/contencao";
 
 interface UltimoRegistro {
   contencao_id: string;

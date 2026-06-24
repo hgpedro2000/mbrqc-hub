@@ -1,0 +1,1 @@
+insert into public.app_changelog (version, change_type, title, description) values ('1.2.8.8','patch','Configuração de Monitor responsiva','Revisão mobile: títulos quebram corretamente, botão Enviar full-width, ações dos cards com wrap, nome do arquivo sem overflow.');

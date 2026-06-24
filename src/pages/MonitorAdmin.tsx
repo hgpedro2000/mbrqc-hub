@@ -166,15 +166,15 @@ export default function MonitorAdmin() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base sm:text-lg break-words">Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid gap-1"><Label htmlFor="t">Título (opcional)</Label><Input id="t" value={titulo} onChange={(e) => setTitulo(e.target.value)} /></div>
           <div className="grid gap-1"><Label htmlFor="d">Descrição (opcional)</Label><Textarea id="d" rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>
           <div className="grid gap-1">
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
-            <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
-          <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-fit">
+          <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-full sm:w-fit">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Enviar
           </Button>
         </CardContent>
@@ -217,11 +217,11 @@ export default function MonitorAdmin() {
                         </>
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
-                        <span className={cn("px-2 py-0.5 rounded-full", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
-                        <span>Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
-                        {m.file_name && <span className="truncate max-w-[40%]">· {m.file_name}</span>}
+                        <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
+                        <span className="whitespace-nowrap">Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
+                        {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
-                      <div className="flex justify-between items-center gap-2 pt-2">
+                      <div className="flex flex-wrap justify-between items-center gap-2 pt-2">
                         {editing ? (
                           <>
                             <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1"><Save className="w-4 h-4" /> Salvar</Button>
@@ -229,7 +229,7 @@ export default function MonitorAdmin() {
                           </>
                         ) : (
                           <>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button variant="outline" size="sm" onClick={() => handleToggle(m)}>{m.ativo ? "Desativar" : "Ativar"}</Button>
                               <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1"><Pencil className="w-4 h-4" /> Editar</Button>
                             </div>

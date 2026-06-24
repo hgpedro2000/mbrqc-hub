@@ -131,7 +131,7 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-2">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2">
         <Section paths={problema} urls={urlsProblema} label="Defeito" Icon={AlertTriangle}
           color="text-red-600 dark:text-red-400" border="border-red-500/30" h={h} debug={debug}
           onOpen={(i) => setLightbox({ paths: problema, index: i, title: "Defeito" })} />

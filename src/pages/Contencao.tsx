@@ -251,7 +251,7 @@ const Contencao = () => {
                             </div>
                           );
                         })()}
-                        <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-[200px] lg:w-[220px] md:shrink-0">
+                        <div className="flex flex-col-reverse md:flex-col items-stretch md:items-end gap-2 w-full md:w-[200px] lg:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
                             <div className="flex gap-1">

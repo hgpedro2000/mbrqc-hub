@@ -11,10 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus, KeyRound, ShieldCheck, Copy } from "lucide-react";
+import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus, KeyRound, ShieldCheck, Copy, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
+import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 
 interface ErrorReportsTabProps {
   onCreateUserFromRequest?: (data: any) => void;
@@ -569,7 +570,18 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
               <p className="text-[11px] text-muted-foreground">
                 Compartilhe esta senha somente com o usuário solicitante.
               </p>
-              <Button className="w-full" onClick={() => { setResetOpen(false); setViewItem(null); }}>
+              <Button
+                className="w-full bg-[#25D366] hover:bg-[#1ebe57] text-white"
+                onClick={() => openWhatsApp(buildResetPasswordMessage({
+                  userName: viewItem?.user_name,
+                  employeeNumber: (viewItem as any)?.employee_number,
+                  password: resetResult.password,
+                  appUrl: window.location.origin,
+                }))}
+              >
+                <MessageCircle className="w-4 h-4 mr-1.5" /> Enviar via WhatsApp
+              </Button>
+              <Button variant="outline" className="w-full" onClick={() => { setResetOpen(false); setViewItem(null); }}>
                 Concluir
               </Button>
             </div>

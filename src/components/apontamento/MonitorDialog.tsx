@@ -606,22 +606,22 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
           </div>
         </Tabs>
 
-        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 shrink-0 flex flex-row flex-wrap items-center justify-end gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/30 shrink-0 grid grid-cols-2 sm:flex sm:flex-row sm:items-center sm:justify-end gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5"
+            className="gap-1.5 w-full sm:w-auto"
             onClick={() => {
               savePrefs(prefs);
               toast.success("Configurações salvas", { description: "Estas serão usadas na próxima abertura.", duration: 1800 });
             }}
           >
-            <Check className="w-3.5 h-3.5" /> Salvar configurações
+            <Check className="w-3.5 h-3.5" /> Salvar
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 text-destructive hover:text-destructive"
+            className="gap-1.5 text-destructive hover:text-destructive w-full sm:w-auto"
             onClick={() => {
               const reset = { ...defaultPrefs, blockSettings: {} };
               setPrefs(reset);
@@ -629,11 +629,11 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
               toast.success("Padrão de fábrica restaurado", { description: "Todas as configurações voltaram ao original.", duration: 2000 });
             }}
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Padrão de Fábrica
+            <RotateCcw className="w-3.5 h-3.5" /> Padrão Fábrica
           </Button>
           <div className="hidden sm:block flex-1" />
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button size="sm" disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button size="sm" className="w-full sm:w-auto" disabled={!canConfirm} onClick={handleConfirm}>{confirmLabel}</Button>
         </DialogFooter>
 
       </DialogContent>

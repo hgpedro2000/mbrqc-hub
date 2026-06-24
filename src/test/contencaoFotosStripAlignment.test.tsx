@@ -45,7 +45,7 @@ const findPair = (labelText: RegExp) => {
   // inline-flex span -> parent label div
   const label = span.closest("div") as HTMLDivElement;
   const section = label.parentElement as HTMLDivElement;
-  const grid = section.querySelector(":scope > div.grid") as HTMLDivElement;
+  const grid = section.querySelector(":scope > div.flex") as HTMLDivElement;
   return { label, grid, section };
 };
 

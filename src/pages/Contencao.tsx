@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid, FileText } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
+import { canGenerateClaimReport } from "@/lib/contencaoClaimAccess";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import ResumoMensalCard from "@/components/contencao/ResumoMensalCard";
 import ContencaoDetalheDrawer from "@/components/contencao/ContencaoDetalheDrawer";
 import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
+import ContencaoClaimReportDialog from "@/components/contencao/ContencaoClaimReportDialog";
 import { STATUS_META, normalizeStatus, computeDiasAndamento, formatHoras, formatRelativeBR, aggregateRegistrosList } from "@/lib/contencao";
 
 interface UltimoRegistro {

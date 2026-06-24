@@ -88,7 +88,7 @@ const Contencao = () => {
 
   const filtered = useMemo(
     () => items
-      .filter((i) => i.tipo === tab)
+      .filter((i) => tab === "todos" ? true : i.tipo === tab)
       .filter((i) => matchesSearch(i, ["numero", "titulo", "responsavel", "part_number", "part_name", "fornecedor", "local"]) && matchesFilters(i)),
     [items, tab, search, filterValues, matchesSearch, matchesFilters],
   );

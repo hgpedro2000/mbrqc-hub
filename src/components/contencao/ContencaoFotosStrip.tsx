@@ -46,7 +46,7 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
   }: { paths: string[]; urls: string[]; label: string; Icon: any; color: string; border: string }) => (
     <div className="min-w-0 space-y-1.5">
       {showLabels && (
-        <div className={`flex items-center gap-1 text-[10px] uppercase tracking-wide font-semibold ${color}`}>
+        <div className={`flex items-center justify-center gap-1 text-[10px] uppercase tracking-wide font-semibold ${color}`}>
           <Icon className="w-3 h-3" /> {label} {paths.length > 0 && <span className="text-muted-foreground normal-case">({paths.length})</span>}
         </div>
       )}

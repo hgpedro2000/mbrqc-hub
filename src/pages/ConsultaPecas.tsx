@@ -573,7 +573,7 @@ const ConsultaPecas = () => {
 
       {/* Desktop SPEC/ALC Barcode Reader Dialog (HW scanner / manual) */}
       <Dialog open={specReaderOpen} onOpenChange={setSpecReaderOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+        <DialogContent className="w-[96vw] max-w-md p-0 overflow-hidden border-0">
           <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-5 py-4 text-white">
             <div className="flex items-center gap-2 mb-1 opacity-90">
               <ScanSearch className="w-4 h-4" />

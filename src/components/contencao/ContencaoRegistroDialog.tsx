@@ -263,9 +263,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           <DialogHeader>
             <DialogTitle>{initial ? "Editar Registro de Turno" : "Novo Registro de Turno"}</DialogTitle>
             <DialogDescription>
-              {markCheckObrig
-                ? "Esta contenção exige Mark Check — anexe foto em todos os registros."
-                : "Registre os dados do turno na contenção."}
+              Registre os dados do turno. O Mark Check segue a definição da contenção.
             </DialogDescription>
           </DialogHeader>
 

@@ -13,6 +13,7 @@ import CatalogTab from "@/components/engenharia/CatalogTab";
 import ErrorReportsTab from "@/components/engenharia/ErrorReportsTab";
 import CapsuleTab from "@/components/engenharia/CapsuleTab";
 import PrivacyPolicyTab from "@/components/engenharia/PrivacyPolicyTab";
+import SecurityConfigTab from "@/components/engenharia/SecurityConfigTab";
 import AuditLogsTab from "@/components/engenharia/AuditLogsTab";
 import EmailAutomationTabs from "@/components/engenharia/EmailAutomationTabs";
 import { useTranslation } from "react-i18next";

@@ -7,7 +7,7 @@ const BUCKET = "containment-photos";
 interface Props {
   fotosProblema?: string[] | null;
   fotosMarkCheck?: string[] | null;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   showLabels?: boolean;
 }
 
@@ -24,6 +24,12 @@ const useSignedUrls = (paths: string[]) => {
   return urls;
 };
 
+const DIMS: Record<NonNullable<Props["size"]>, string> = {
+  sm: "w-12 h-12",
+  md: "w-16 h-16",
+  lg: "w-20 h-20 sm:w-24 sm:h-24",
+};
+
 const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showLabels = true }: Props) => {
   const problema = Array.isArray(fotosProblema) ? fotosProblema : [];
   const mark = Array.isArray(fotosMarkCheck) ? fotosMarkCheck : [];
@@ -31,50 +37,41 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
   const urlsMark = useSignedUrls(mark);
 
   if (problema.length === 0 && mark.length === 0) return null;
-  const dim = size === "sm" ? "w-12 h-12" : "w-16 h-16";
+  const dim = DIMS[size];
 
-  return (
-    <div className="flex flex-wrap gap-3 mt-2">
-      {problema.length > 0 && (
-        <div className="space-y-1">
-          {showLabels && (
-            <div className="flex items-center gap-1 text-[10px] text-red-600 dark:text-red-400 font-medium">
-              <AlertTriangle className="w-3 h-3" /> Defeito
-            </div>
-          )}
-          <div className="flex gap-1">
-            {urlsProblema.slice(0, 3).map((u, i) => (
-              <a key={i} href={u} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                <img src={u} alt="defeito" className={`${dim} object-cover rounded border border-red-500/30`} />
-              </a>
-            ))}
-            {problema.length > 3 && (
-              <div className={`${dim} rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground`}>+{problema.length - 3}</div>
-            )}
-          </div>
+  const Section = ({
+    urls, total, label, Icon, color, border,
+  }: { urls: string[]; total: number; label: string; Icon: any; color: string; border: string }) => (
+    <div className="flex-1 min-w-0 space-y-1">
+      {showLabels && (
+        <div className={`flex items-center gap-1 text-[10px] font-medium ${color}`}>
+          <Icon className="w-3 h-3" /> {label}
         </div>
       )}
+      <div className="flex gap-1.5 flex-wrap">
+        {urls.slice(0, 3).map((u, i) => (
+          <a key={i} href={u} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
+            <img src={u} alt={label} className={`${dim} object-cover rounded-md border ${border}`} />
+          </a>
+        ))}
+        {total > 3 && (
+          <div className={`${dim} rounded-md border bg-muted flex items-center justify-center text-xs text-muted-foreground`}>+{total - 3}</div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-3 mt-2">
+      {problema.length > 0 && (
+        <Section urls={urlsProblema} total={problema.length} label="Defeito" Icon={AlertTriangle} color="text-red-600 dark:text-red-400" border="border-red-500/30" />
+      )}
       {mark.length > 0 && (
-        <div className="space-y-1">
-          {showLabels && (
-            <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-              <CheckSquare className="w-3 h-3" /> Mark Check
-            </div>
-          )}
-          <div className="flex gap-1">
-            {urlsMark.slice(0, 3).map((u, i) => (
-              <a key={i} href={u} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                <img src={u} alt="mark check" className={`${dim} object-cover rounded border border-emerald-500/30`} />
-              </a>
-            ))}
-            {mark.length > 3 && (
-              <div className={`${dim} rounded border bg-muted flex items-center justify-center text-xs text-muted-foreground`}>+{mark.length - 3}</div>
-            )}
-          </div>
-        </div>
+        <Section urls={urlsMark} total={mark.length} label="Mark Check" Icon={CheckSquare} color="text-emerald-600 dark:text-emerald-400" border="border-emerald-500/30" />
       )}
     </div>
   );
 };
+
 
 export default ContencaoFotosStrip;

@@ -250,9 +250,12 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       toast.success(finalizar ? "Contenção finalizada" : "Registro salvo");
       qc.invalidateQueries({ queryKey: ["contencao"] });
       qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] });
+      qc.invalidateQueries({ queryKey: ["contencao-ultimos-registros"] });
       qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
       qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] });
+      qc.invalidateQueries({ queryKey: ["contencao-info", contencaoId] });
       onClose();
+
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar registro");
     } finally {
@@ -277,10 +280,11 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               <ContencaoFotosStrip
                 fotosProblema={contencaoInfo?.fotos_problema}
                 fotosMarkCheck={contencaoInfo?.mark_check_fotos}
-                size="md"
+                size="lg"
               />
             </div>
           ) : null}
+
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
@@ -462,16 +466,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
 
           <DialogFooter className="gap-2 flex-col sm:flex-row">
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-            {!contencaoConcluida && (
-              <Button
-                variant="default"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={saving}
-                onClick={() => setConfirmFinalize(true)}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" /> Salvar e Finalizar
-              </Button>
-            )}
             <Button onClick={() => persist(false)} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Salvar Registro
@@ -480,25 +474,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar Contenção?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja finalizar esta contenção? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => { setConfirmFinalize(false); persist(true); }}
-            >
-              Sim, finalizar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };

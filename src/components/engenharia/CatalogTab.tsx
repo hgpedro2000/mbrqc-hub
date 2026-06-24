@@ -94,10 +94,33 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
         <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">{title}</h2>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
           {selectedIds.size > 0 && <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1"><Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}</Button>}
-          <ExcelExportButton data={items} columns={[{ header: codeLabel, key: "code" }, { header: "Descrição", key: "description" }, { header: "Ativo", key: "active" }]} fileName={tableName} />
-          <ExcelImportDialog title={title} columns={[{ excelHeader: codeLabel, dbField: "code", label: codeLabel, required: true }, { excelHeader: "Descrição", dbField: "description", label: "Descrição", required: true }]}
+          <ExcelExportButton
+            data={items}
+            columns={[
+              { header: codeLabel, key: "code" },
+              { header: hasPt ? "Descrição (EN)" : "Descrição", key: "description" },
+              ...(hasPt ? [{ header: "Descrição (PT)", key: "description_pt" }] : []),
+              { header: "Ativo", key: "active" },
+            ]}
+            fileName={tableName}
+          />
+          <ExcelImportDialog
+            title={title}
+            columns={[
+              { excelHeader: codeLabel, dbField: "code", label: codeLabel, required: true },
+              { excelHeader: hasPt ? "Descrição (EN)" : "Descrição", dbField: "description", label: hasPt ? "Descrição (EN)" : "Descrição", required: true },
+              ...(hasPt ? [{ excelHeader: "Descrição (PT)", dbField: "description_pt", label: "Descrição (PT)", required: false }] : []),
+            ]}
             checkDuplicates={async (rows) => { const codes = rows.map((r) => r.code); const { data } = await supabase.from(tableName).select("code").in("code", codes); const existing = new Set((data || []).map((d: any) => d.code)); return rows.map((r) => existing.has(r.code)); }}
-            onImport={async (rows) => { const { error } = await supabase.from(tableName).upsert(rows.map((r) => ({ code: r.code, description: r.description })), { onConflict: "code" }); if (error) throw error; qc.invalidateQueries({ queryKey: [`eng-${tableName}`] }); toast.success(`${rows.length} item(s) importado(s)!`); }}
+            onImport={async (rows) => {
+              const payload = rows.map((r) => hasPt
+                ? { code: r.code, description: r.description, description_pt: r.description_pt || null }
+                : { code: r.code, description: r.description });
+              const { error } = await supabase.from(tableName).upsert(payload, { onConflict: "code" });
+              if (error) throw error;
+              qc.invalidateQueries({ queryKey: [`eng-${tableName}`] });
+              toast.success(`${rows.length} item(s) importado(s)!`);
+            }}
           />
           <Dialog open={open} onOpenChange={(v) => { if (!v) resetForm(); setOpen(v); }}>
             <DialogTrigger asChild><Button size="sm" className="col-span-2 sm:col-span-1"><Plus className="w-4 h-4 mr-1" /> Novo</Button></DialogTrigger>
@@ -105,11 +128,15 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
               <DialogHeader><DialogTitle>{editId ? `Editar ${title}` : `Novo ${title}`}</DialogTitle></DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2"><Label>{codeLabel} *</Label><Input value={code} onChange={(e) => setCode(e.target.value)} placeholder={codePlaceholder} /></div>
-                <div className="space-y-2"><Label>Descrição *</Label><Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição" /></div>
+                <div className="space-y-2"><Label>{hasPt ? "Descrição (EN) *" : "Descrição *"}</Label><Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={hasPt ? "Description in English" : "Descrição"} /></div>
+                {hasPt && (
+                  <div className="space-y-2"><Label>Descrição (PT)</Label><Input value={descriptionPt} onChange={(e) => setDescriptionPt(e.target.value)} placeholder="Descrição em Português" /></div>
+                )}
                 <Button onClick={() => saveMutation.mutate()} disabled={!code || !description || saveMutation.isPending} className="w-full">{saveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}Salvar</Button>
               </div>
             </DialogContent>
           </Dialog>
+
         </div>
       </div>
 

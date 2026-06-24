@@ -503,7 +503,16 @@ export default function SpecSwitchPanelCheck() {
     not_found: { bg: "bg-red-600", border: "border-red-400", text: "text-white", icon: <XCircle className="w-16 h-16" />, label: "SPEC INCORRETO" },
     parse_error: { bg: "bg-orange-600", border: "border-orange-400", text: "text-white", icon: <AlertTriangle className="w-16 h-16" />, label: "QR INVÁLIDO" },
   };
-  const p = palette[result.status];
+  // When inputs are empty but we have a frozen prior result, keep showing it.
+  const showFrozen = !panelRaw && !switchRaw && !!frozen;
+  const dStatus: Status = showFrozen ? frozen!.status : result.status;
+  const dPanelPn = showFrozen ? frozen!.panelPn : panelPn;
+  const dSwitchPn = showFrozen ? frozen!.switchPn : switchPn;
+  const dAlc = showFrozen ? frozen!.alc : displayedAlc;
+  const dMessage = showFrozen ? frozen!.message : result.message;
+  const dExpectedRows = showFrozen ? frozen!.expectedRows : result.expectedRows;
+  const p = palette[dStatus];
+  const handleReset = () => reset();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-6">

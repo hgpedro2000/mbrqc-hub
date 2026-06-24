@@ -83,8 +83,9 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
     qc.invalidateQueries({ queryKey: [`eng-${tableName}`] });
   };
 
-  const resetForm = () => { setOpen(false); setEditId(null); setCode(""); setDescription(""); };
-  const openEdit = (item: any) => { setEditId(item.id); setCode(item.code); setDescription(item.description); setOpen(true); };
+  const resetForm = () => { setOpen(false); setEditId(null); setCode(""); setDescription(""); setDescriptionPt(""); };
+  const openEdit = (item: any) => { setEditId(item.id); setCode(item.code); setDescription(item.description); setDescriptionPt(item.description_pt || ""); setOpen(true); };
+
   const toggleSelect = (id: string) => { setSelectedIds((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; }); };
 
   return (

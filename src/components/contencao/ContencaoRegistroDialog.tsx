@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Users, Camera, Upload, X, Save, CheckCircle2, Search, AlertTriangle, Plus } from "lucide-react";
+import { Loader2, Users, Camera, Upload, X, Save, Search, AlertTriangle, Plus } from "lucide-react";
+
 import { toast } from "sonner";
 import { getLocalDateString } from "@/lib/localDate";
 import { compressImage } from "@/lib/compressImage";
@@ -54,7 +54,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const [existingFotosFalha, setExistingFotosFalha] = useState<string[]>([]);
   const [newFilesFalha, setNewFilesFalha] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
-  const [confirmFinalize, setConfirmFinalize] = useState(false);
+
 
   // Contenção info (mark_check + estoque_mobis = quantidade_aprovada)
   const { data: contencaoInfo } = useQuery({
@@ -250,9 +250,12 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       toast.success(finalizar ? "Contenção finalizada" : "Registro salvo");
       qc.invalidateQueries({ queryKey: ["contencao"] });
       qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] });
+      qc.invalidateQueries({ queryKey: ["contencao-ultimos-registros"] });
       qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
       qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] });
+      qc.invalidateQueries({ queryKey: ["contencao-info", contencaoId] });
       onClose();
+
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar registro");
     } finally {
@@ -277,10 +280,11 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               <ContencaoFotosStrip
                 fotosProblema={contencaoInfo?.fotos_problema}
                 fotosMarkCheck={contencaoInfo?.mark_check_fotos}
-                size="md"
+                size="lg"
               />
             </div>
           ) : null}
+
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
@@ -462,16 +466,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
 
           <DialogFooter className="gap-2 flex-col sm:flex-row">
             <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
-            {!contencaoConcluida && (
-              <Button
-                variant="default"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                disabled={saving}
-                onClick={() => setConfirmFinalize(true)}
-              >
-                <CheckCircle2 className="w-4 h-4 mr-2" /> Salvar e Finalizar
-              </Button>
-            )}
             <Button onClick={() => persist(false)} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               Salvar Registro
@@ -480,25 +474,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar Contenção?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja finalizar esta contenção? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-              onClick={() => { setConfirmFinalize(false); persist(true); }}
-            >
-              Sim, finalizar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };

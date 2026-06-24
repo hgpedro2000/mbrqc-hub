@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.10', 'patch', 'MonitorDialog: rodapé 2x2 no mobile', 'No celular os 4 botões do rodapé ficam em grade 2 por linha, simétricos e ocupando menos espaço.');

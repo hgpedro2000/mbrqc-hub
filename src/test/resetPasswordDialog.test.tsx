@@ -8,7 +8,7 @@
  * For each path we assert:
  *   - supabase.functions.invoke('reset-user-password', ...) is called
  *     with the correct user_id and new_password
- *   - the ticket is auto-updated to status 'resolvido'
+ *   - the ticket data is sent so the backend closes it atomically
  *   - the success screen shows the applied password
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -122,15 +122,16 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
 
     await waitFor(() => expect(invokeMock).toHaveBeenCalledTimes(1));
     expect(invokeMock).toHaveBeenCalledWith("reset-user-password", {
-      body: { user_id: "user-to-reset", new_password: "Provisoria!123" },
+      body: expect.objectContaining({
+        user_id: "user-to-reset",
+        new_password: "Provisoria!123",
+        ticket_id: "ticket-1",
+      }),
     });
 
-    // Ticket auto-updated to resolvido with audit note.
-    await waitFor(() => expect(updateMock).toHaveBeenCalled());
-    const updatePayload = updateMock.mock.calls[0][0] as any;
-    expect(updatePayload.status).toBe("resolvido");
-    expect(updatePayload.admin_notes).toMatch(/provisória/i);
-    expect(updatePayload.admin_notes).toMatch(/Admin Tester/);
+    const invokePayload = invokeMock.mock.calls[0][1].body as any;
+    expect(invokePayload.admin_notes).toMatch(/provisória/i);
+    expect(invokePayload.admin_notes).toMatch(/Admin Tester/);
 
     // Success screen reveals the password.
     expect(await screen.findByText("Provisoria!123")).toBeInTheDocument();
@@ -164,10 +165,8 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
       }),
     });
 
-    await waitFor(() => expect(updateMock).toHaveBeenCalled());
-    const updatePayload = updateMock.mock.calls[0][0] as any;
-    expect(updatePayload.status).toBe("resolvido");
-    expect(updatePayload.admin_notes).toMatch(/temporária segura/i);
+    const invokePayload = invokeMock.mock.calls[0][1].body as any;
+    expect(invokePayload.admin_notes).toMatch(/temporária segura/i);
 
     // Success screen with generated password visible + copy button.
     const successDialog = await screen.findByText("Mobis@SecureA1");

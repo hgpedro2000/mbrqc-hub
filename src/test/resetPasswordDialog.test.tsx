@@ -89,7 +89,7 @@ const openTicketAndResetDialog = async (mode: "custom" | "default") => {
 
   // Detail dialog opens — contains the two reset-mode buttons.
   const triggerLabel =
-    mode === "custom" ? /Senha provisória/i : /Reset padrão/i;
+    mode === "custom" ? /Senha provisória/i : /Gerar senha segura/i;
   const trigger = await screen.findByRole("button", { name: triggerLabel });
   fireEvent.click(trigger);
 };

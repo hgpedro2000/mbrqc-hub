@@ -110,11 +110,26 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
         <p className="text-xs text-muted-foreground italic">"{registro.observacoes}"</p>
       )}
 
-      {thumbUrl && (
-        <a href={thumbUrl} target="_blank" rel="noreferrer" className="block">
-          <img src={thumbUrl} alt="Mark Check" className="mt-1 w-24 h-24 object-cover rounded border" />
-        </a>
-      )}
+      {registro.fotos?.length > 0 ? (
+        <div className="flex flex-wrap gap-2 mt-1">
+          {thumbUrls.length === 0 ? (
+            Array.from({ length: registro.fotos.length }).map((_, i) => (
+              <div key={i} className="w-20 h-20 rounded border bg-muted animate-pulse" />
+            ))
+          ) : (
+            thumbUrls.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
+                <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover rounded border hover:opacity-90 transition" loading="lazy" />
+              </a>
+            ))
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+export default RegistroCard;
     </div>
   );
 };

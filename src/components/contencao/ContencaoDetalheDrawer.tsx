@@ -96,7 +96,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h3 className="font-heading font-semibold text-sm">Registros de Contenção</h3>
-            <div className="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:flex-row sm:flex-wrap items-stretch gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-stretch gap-2 w-full sm:w-auto">
               {canClaim && registros.length > 0 && (
                 <Button
                   size="sm"

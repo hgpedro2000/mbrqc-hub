@@ -968,7 +968,7 @@ const Monitor = () => {
                       <td className="py-4 px-5 font-mono text-xl">{a.numero || "—"}</td>
                       <td className="py-4 px-5 truncate max-w-[260px]">{a.part_number || "—"}</td>
                       <td className="py-4 px-5 truncate max-w-[280px]">{a.fornecedor || "—"}</td>
-                      <td className="py-4 px-5 truncate max-w-[300px] text-amber-300">{a.modo_falha || "—"}</td>
+                      <td className="py-4 px-5 truncate max-w-[300px] text-amber-300">{(a.modo_falha || "—").replace(/^\s*\d+\s*-\s*/, "")}</td>
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-cyan-300">{fmtNum(insp)}</td>
                       <td className="py-4 px-5 text-right font-bold tabular-nums text-emerald-400">{fmtNum(ok)}</td>
                       <td className={cn("py-4 px-5 text-right font-black text-3xl tabular-nums", a.quantidade_ng > 0 ? "text-red-500" : "text-emerald-400")}>{a.quantidade_ng || 0}</td>

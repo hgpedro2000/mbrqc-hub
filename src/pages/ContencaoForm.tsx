@@ -25,10 +25,10 @@ const ContencaoForm = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
-    data: getLocalDateString(), setor: "", linha: "",
+    data: getLocalDateString(), setor: "", linha: "", local: "",
     part_number: "", part_name: "", fornecedor: "",
     quantidade_contida: 0, quantidade_aprovada: 0, quantidade_rejeitada: 0,
-    motivo: "", acao_contencao: "", status: "aberta", observacoes: "",
+    motivo: "", acao_contencao: "", status: "emitida", observacoes: "",
   });
 
   const { data: existing, isLoading: loadingExisting } = useQuery({

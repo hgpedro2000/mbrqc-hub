@@ -129,9 +129,13 @@ const Contencao = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <ResumoMensalCard />
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
           <Button onClick={() => navigate("/contencao/nova")} className="gap-2"><Plus className="w-4 h-4" /> {t("contencao.newContencao")}</Button>
           <Button variant="outline" onClick={() => navigate("/contencao/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
+          <div className="ml-auto inline-flex rounded-md border border-border overflow-hidden">
+            <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> Compacto</button>
+            <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> Expandido</button>
+          </div>
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

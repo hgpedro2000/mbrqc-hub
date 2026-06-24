@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { getLocalDateString } from "@/lib/localDate";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -8,14 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, ShieldAlert, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, Save, ShieldAlert, Loader2, Upload, X, Camera } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 import { useAuth } from "@/contexts/AuthContext";
 import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/compressImage";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+
+const BUCKET = "containment-photos";
+
+const LOCAL_OPTIONS = [
+  { value: "fornecedor_lp", label: "Fornecedor LP" },
+  { value: "fornecedor_ckd", label: "Fornecedor CKD" },
+  { value: "processo_mbr", label: "Processo MBR" },
+  { value: "processo_hmb", label: "Processo HMB" },
+];
 
 const ContencaoForm = () => {
   const { t } = useTranslation();
@@ -24,14 +34,30 @@ const ContencaoForm = () => {
   const isEdit = !!id;
   const { profile } = useAuth();
   const [saving, setSaving] = useState(false);
+  const markFileRef = useRef<HTMLInputElement>(null);
+  const probFileRef = useRef<HTMLInputElement>(null);
+
   const [form, setForm] = useState({
-    tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
-    data: getLocalDateString(), setor: "", linha: "", local: "",
+    tipo: "fornecedor_lp", // repurposed: agora é "Local" (responsabilidade)
+    titulo: "",
+    responsavel: profile?.full_name || "",
+    data: getLocalDateString(),
+    setor: "", linha: "",
+    local: "", // Local de Início de Contenção (texto livre)
     part_number: "", part_name: "", fornecedor: "",
-    quantidade_pecas: 0, estoque_mobis: 0,
+    estoque_indefinido: false,
+    quantidade_pecas: 0,
+    estoque_mobis: 0,
     motivo: "", acao_contencao: "", status: "emitida", observacoes: "",
-    mark_check: false,
+    mark_check_local: "",
+    mark_check_como: "",
+    mark_check_com_que: "",
   });
+
+  const [existingMarkFotos, setExistingMarkFotos] = useState<string[]>([]);
+  const [newMarkFiles, setNewMarkFiles] = useState<File[]>([]);
+  const [existingProbFotos, setExistingProbFotos] = useState<string[]>([]);
+  const [newProbFiles, setNewProbFiles] = useState<File[]>([]);
 
   const { data: existing, isLoading: loadingExisting } = useQuery({
     queryKey: ["contencao-edit", id],
@@ -41,7 +67,31 @@ const ContencaoForm = () => {
 
   useEffect(() => {
     if (existing) {
-      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_pecas: existing.quantidade_contida || 0, estoque_mobis: existing.quantidade_aprovada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "", mark_check: (existing as any).mark_check || false });
+      const e: any = existing;
+      setForm({
+        tipo: e.tipo,
+        titulo: e.titulo,
+        responsavel: e.responsavel,
+        data: e.data,
+        setor: e.setor || "",
+        linha: e.linha || "",
+        local: e.local || "",
+        part_number: e.part_number || "",
+        part_name: e.part_name || "",
+        fornecedor: e.fornecedor || "",
+        estoque_indefinido: !!e.estoque_indefinido,
+        quantidade_pecas: e.quantidade_contida || 0,
+        estoque_mobis: e.quantidade_aprovada || 0,
+        motivo: e.motivo || "",
+        acao_contencao: e.acao_contencao || "",
+        status: e.status,
+        observacoes: e.observacoes || "",
+        mark_check_local: e.mark_check_local || "",
+        mark_check_como: e.mark_check_como || "",
+        mark_check_com_que: e.mark_check_com_que || "",
+      });
+      setExistingMarkFotos(Array.isArray(e.mark_check_fotos) ? e.mark_check_fotos : []);
+      setExistingProbFotos(Array.isArray(e.fotos_problema) ? e.fotos_problema : []);
     }
   }, [existing]);
 
@@ -49,23 +99,75 @@ const ContencaoForm = () => {
   const { data: linhas = [] } = useDropdownOptions("linha");
   const set = (field: string, value: any) => setForm((p) => ({ ...p, [field]: value }));
 
+  const uploadFiles = async (files: File[], contencaoId: string, kind: "markcheck" | "problema"): Promise<string[]> => {
+    const paths: string[] = [];
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      const ext = (compressed.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${contencaoId}/contencao/${kind}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, compressed);
+      if (error) { console.error("upload", error); continue; }
+      paths.push(path);
+    }
+    return paths;
+  };
+
   const handleSave = async () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
+    if (!form.mark_check_local.trim() || !form.mark_check_como.trim() || !form.mark_check_com_que.trim()) {
+      toast.error("Preencha os detalhes do Mark Check (local, como, com o que).");
+      return;
+    }
+    if (existingMarkFotos.length === 0 && newMarkFiles.length === 0) {
+      toast.error("Anexe ao menos uma foto do Mark Check.");
+      return;
+    }
+    if (existingProbFotos.length === 0 && newProbFiles.length === 0) {
+      toast.error("Anexe ao menos uma foto do problema.");
+      return;
+    }
     setSaving(true);
     try {
       const payload: any = {
-        tipo: form.tipo, titulo: form.titulo, responsavel: form.responsavel, data: form.data,
+        tipo: form.tipo,
+        responsabilidade: form.tipo,
+        titulo: form.titulo, responsavel: form.responsavel, data: form.data,
         setor: form.setor || null, linha: form.linha || null, local: form.local || null,
         part_number: form.part_number || null, part_name: form.part_name || null, fornecedor: form.fornecedor || null,
+        estoque_indefinido: form.estoque_indefinido,
         quantidade_contida: form.quantidade_pecas,
-        quantidade_aprovada: form.estoque_mobis,
+        quantidade_aprovada: form.estoque_indefinido ? 0 : form.estoque_mobis,
         quantidade_rejeitada: 0,
         motivo: form.motivo || null, acao_contencao: form.acao_contencao || null,
         status: form.status, observacoes: form.observacoes || null,
-        mark_check: form.mark_check,
+        mark_check: true,
+        mark_check_local: form.mark_check_local,
+        mark_check_como: form.mark_check_como,
+        mark_check_com_que: form.mark_check_com_que,
       };
-      if (isEdit) { const { error } = await supabase.from("contencao").update(payload).eq("id", id!); if (error) throw error; toast.success(t("contencao.updateSuccess")); }
-      else { const { error } = await supabase.from("contencao").insert(payload); if (error) throw error; toast.success(t("contencao.saveSuccess")); }
+
+      let savedId = id;
+      if (isEdit) {
+        const { error } = await supabase.from("contencao").update(payload).eq("id", id!);
+        if (error) throw error;
+      } else {
+        const { data: inserted, error } = await supabase.from("contencao").insert(payload).select("id").single();
+        if (error) throw error;
+        savedId = (inserted as any).id;
+      }
+
+      if (savedId && (newMarkFiles.length || newProbFiles.length)) {
+        const upMark = newMarkFiles.length ? await uploadFiles(newMarkFiles, savedId, "markcheck") : [];
+        const upProb = newProbFiles.length ? await uploadFiles(newProbFiles, savedId, "problema") : [];
+        const finalMark = [...existingMarkFotos, ...upMark];
+        const finalProb = [...existingProbFotos, ...upProb];
+        const { error: e2 } = await supabase.from("contencao").update({ mark_check_fotos: finalMark, fotos_problema: finalProb } as any).eq("id", savedId);
+        if (e2) throw e2;
+      } else if (isEdit) {
+        await supabase.from("contencao").update({ mark_check_fotos: existingMarkFotos, fotos_problema: existingProbFotos } as any).eq("id", savedId!);
+      }
+
+      toast.success(isEdit ? t("contencao.updateSuccess") : t("contencao.saveSuccess"));
       navigate("/contencao");
     } catch (err: any) { toast.error(err.message || "Erro ao salvar"); } finally { setSaving(false); }
   };
@@ -88,30 +190,86 @@ const ContencaoForm = () => {
         <div className="form-section">
           <h2 className="form-section-title">{t("contencao.generalInfo")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2"><Label>{t("common.type")}</Label><Select value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="interno_mbr">{t("contencao.internoMBR")}</SelectItem><SelectItem value="externo_hmb">{t("contencao.externoHMB")}</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2">
+              <Label>Local (Responsabilidade)</Label>
+              <Select value={form.tipo} onValueChange={(v) => set("tipo", v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {LOCAL_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             {isEdit && (<div className="space-y-2"><Label>{t("common.status")}</Label><Select value={form.status} onValueChange={(v) => set("status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emitida">Emitida</SelectItem><SelectItem value="iniciada">Iniciada</SelectItem><SelectItem value="em_andamento">Em Andamento</SelectItem><SelectItem value="concluida">Concluída</SelectItem><SelectItem value="cancelada">Cancelada</SelectItem></SelectContent></Select></div>)}
             <div className="space-y-2"><Label>{t("common.title")}</Label><Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder={t("contencao.descPlaceholder")} /></div>
             <div className="space-y-2"><Label>{t("common.responsible")}</Label><Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} /></div>
             <div className="space-y-2"><Label>{t("common.date")}</Label><Input type="date" value={form.data} onChange={(e) => set("data", e.target.value)} /></div>
             <div className="space-y-2"><Label>{t("common.sector")}</Label><Select value={form.setor} onValueChange={(v) => set("setor", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{setores.map((s) => <SelectItem key={s.id} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>{t("common.line")}</Label><Select value={form.linha} onValueChange={(v) => set("linha", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{linhas.map((l) => <SelectItem key={l.id} value={l.value}>{l.label}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-2 md:col-span-2"><Label>Local da Contenção</Label><Input value={form.local} onChange={(e) => set("local", e.target.value)} placeholder='Ex: "Linha 3 — Posto 7", "Área de Incoming", "Sala do Áudio"' /></div>
+            <div className="space-y-2 md:col-span-2"><Label>Local de Início da Contenção</Label><Input value={form.local} onChange={(e) => set("local", e.target.value)} placeholder='Ex: "Linha 3 — Posto 7", "Área de Incoming", "Sala do Áudio"' /></div>
             <SupplierPartSelector fornecedor={form.fornecedor} partNumber={form.part_number} partName={form.part_name} onFornecedorChange={(v) => set("fornecedor", v)} onPartNumberChange={(v) => set("part_number", v)} onPartDataChange={(d) => set("part_name", d.part_name)} />
           </div>
         </div>
 
         <div className="form-section">
           <h2 className="form-section-title">{t("contencao.quantities")}</h2>
+          <RadioGroup
+            value={form.estoque_indefinido ? "indef" : "def"}
+            onValueChange={(v) => set("estoque_indefinido", v === "indef")}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"
+          >
+            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+              <RadioGroupItem value="def" id="qt-def" className="mt-0.5" />
+              <div>
+                <div className="text-sm font-medium">Tenho a quantidade em estoque</div>
+                <div className="text-xs text-muted-foreground">Estoque Mobis fixo; será descontado a cada turno.</div>
+              </div>
+            </label>
+            <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
+              <RadioGroupItem value="indef" id="qt-indef" className="mt-0.5" />
+              <div>
+                <div className="text-sm font-medium">Não sei a quantidade</div>
+                <div className="text-xs text-muted-foreground">Somatória do que for inspecionado em cada turno.</div>
+              </div>
+            </label>
+          </RadioGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
-            <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+            {!form.estoque_indefinido && (
+              <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+            )}
           </div>
-          <div className="mt-4 flex items-center justify-between rounded-md border p-3">
-            <div>
-              <Label className="text-sm font-medium">Mark Check obrigatório</Label>
-              <p className="text-xs text-muted-foreground">Quando ativo, cada registro de turno exige foto do Mark Check.</p>
+        </div>
+
+        <div className="form-section">
+          <h2 className="form-section-title">Mark Check</h2>
+          <p className="text-xs text-muted-foreground mb-3">Definido uma única vez para toda a contenção. Todos os turnos devem seguir.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="space-y-2"><Label>Local do Mark Check</Label><Input value={form.mark_check_local} onChange={(e) => set("mark_check_local", e.target.value)} placeholder="Ex: face superior, etiqueta..." /></div>
+            <div className="space-y-2"><Label>Como foi feito</Label><Input value={form.mark_check_como} onChange={(e) => set("mark_check_como", e.target.value)} placeholder="Ex: traço diagonal..." /></div>
+            <div className="space-y-2"><Label>Com o que foi feito</Label><Input value={form.mark_check_com_que} onChange={(e) => set("mark_check_com_que", e.target.value)} placeholder="Ex: caneta vermelha permanente" /></div>
+          </div>
+          <div className="space-y-2">
+            <Label>Foto do Mark Check <span className="text-red-500">*</span></Label>
+            <div className="flex flex-wrap gap-2">
+              {existingMarkFotos.map((p) => <FotoThumb key={p} path={p} onRemove={() => setExistingMarkFotos((x) => x.filter((y) => y !== p))} />)}
+              {newMarkFiles.map((f, i) => <LocalThumb key={i} file={f} onRemove={() => setNewMarkFiles((x) => x.filter((_, j) => j !== i))} />)}
             </div>
-            <Switch checked={form.mark_check} onCheckedChange={(v) => set("mark_check", v)} />
+            <input ref={markFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) setNewMarkFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+            <Button variant="outline" size="sm" type="button" onClick={() => markFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> Adicionar foto</Button>
+          </div>
+        </div>
+
+        <div className="form-section">
+          <h2 className="form-section-title">Foto do Problema</h2>
+          <p className="text-xs text-muted-foreground mb-3">Para que cada turno fique ciente do defeito a contar.</p>
+          <div className="space-y-2">
+            <Label>Foto do problema <span className="text-red-500">*</span></Label>
+            <div className="flex flex-wrap gap-2">
+              {existingProbFotos.map((p) => <FotoThumb key={p} path={p} onRemove={() => setExistingProbFotos((x) => x.filter((y) => y !== p))} />)}
+              {newProbFiles.map((f, i) => <LocalThumb key={i} file={f} onRemove={() => setNewProbFiles((x) => x.filter((_, j) => j !== i))} />)}
+            </div>
+            <input ref={probFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) setNewProbFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
+            <Button variant="outline" size="sm" type="button" onClick={() => probFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> Adicionar foto</Button>
           </div>
         </div>
 
@@ -129,6 +287,35 @@ const ContencaoForm = () => {
           <Button variant="outline" onClick={() => navigate("/contencao")}>{t("common.cancel")}</Button>
         </div>
       </main>
+    </div>
+  );
+};
+
+const FotoThumb = ({ path, onRemove }: { path: string; onRemove: () => void }) => {
+  const [url, setUrl] = useState<string>("");
+  useEffect(() => {
+    let active = true;
+    supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60).then(({ data }) => {
+      if (active && data?.signedUrl) setUrl(data.signedUrl);
+    });
+    return () => { active = false; };
+  }, [path]);
+  return (
+    <div className="relative w-20 h-20 rounded overflow-hidden border bg-muted">
+      {url && <img src={url} alt="foto" className="w-full h-full object-cover" />}
+      <button type="button" onClick={onRemove} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80"><X className="w-3 h-3" /></button>
+    </div>
+  );
+};
+
+const LocalThumb = ({ file, onRemove }: { file: File; onRemove: () => void }) => {
+  const url = useMemo(() => URL.createObjectURL(file), [file]);
+  useEffect(() => () => URL.revokeObjectURL(url), [url]);
+  return (
+    <div className="relative w-20 h-20 rounded overflow-hidden border bg-muted">
+      <img src={url} alt={file.name} className="w-full h-full object-cover" />
+      <button type="button" onClick={onRemove} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80"><X className="w-3 h-3" /></button>
+      <Camera className="absolute bottom-1 left-1 w-3 h-3 text-white/90 drop-shadow" />
     </div>
   );
 };

@@ -217,11 +217,11 @@ export default function MonitorAdmin() {
                         </>
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
-                        <span className={cn("px-2 py-0.5 rounded-full", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
-                        <span>Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
-                        {m.file_name && <span className="truncate max-w-[40%]">· {m.file_name}</span>}
+                        <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
+                        <span className="whitespace-nowrap">Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
+                        {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
-                      <div className="flex justify-between items-center gap-2 pt-2">
+                      <div className="flex flex-wrap justify-between items-center gap-2 pt-2">
                         {editing ? (
                           <>
                             <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1"><Save className="w-4 h-4" /> Salvar</Button>
@@ -229,7 +229,7 @@ export default function MonitorAdmin() {
                           </>
                         ) : (
                           <>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <Button variant="outline" size="sm" onClick={() => handleToggle(m)}>{m.ativo ? "Desativar" : "Ativar"}</Button>
                               <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1"><Pencil className="w-4 h-4" /> Editar</Button>
                             </div>

@@ -185,15 +185,11 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     if (!turno || !data || !horaInicio || !horaFim) return "Preencha turno, data e horários.";
     if (horaFim <= horaInicio) return "Hora fim deve ser maior que a hora início.";
     if (qtdInspecionada < 0) return "Quantidade não pode ser negativa.";
-    if (markCheckObrig && existingFotos.length === 0 && newFiles.length === 0)
-      return "Mark Check é obrigatório nesta contenção — anexe a foto.";
     if (showDiferenca) {
       if (qtdDiferenca <= 0) return "Informe a quantidade adicional (diferença).";
       if (!justificativaDiferenca.trim()) return "Informe a justificativa da diferença.";
       if (existingFotosFalha.length === 0 && newFilesFalha.length === 0)
         return "A foto da falha é obrigatória ao adicionar diferença.";
-      if (existingFotos.length === 0 && newFiles.length === 0)
-        return "A foto do Mark Check é obrigatória ao adicionar diferença.";
     }
     return null;
   };

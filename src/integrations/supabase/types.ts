@@ -2033,6 +2033,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_set_must_change_password: {
+        Args: { _user_id: string; _value: boolean }
+        Returns: undefined
+      }
       clear_must_change_password: { Args: never; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }

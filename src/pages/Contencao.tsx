@@ -231,13 +231,13 @@ const Contencao = () => {
                               )}
                             </div>
                           )}
+                          {viewMode === "compact" && (
+                            <div className="w-full">
+                              <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {viewMode === "compact" && (
-                        <div className="mt-3">
-                          <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
-                        </div>
-                      )}
                     </div>
 
                   );

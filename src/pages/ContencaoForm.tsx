@@ -51,7 +51,7 @@ const ContencaoForm = () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
     setSaving(true);
     try {
-      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
+      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, local: form.local || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
       if (isEdit) { const { error } = await supabase.from("contencao").update(payload).eq("id", id!); if (error) throw error; toast.success(t("contencao.updateSuccess")); }
       else { const { error } = await supabase.from("contencao").insert(payload); if (error) throw error; toast.success(t("contencao.saveSuccess")); }
       navigate("/contencao");

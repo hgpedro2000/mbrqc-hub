@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
+import { Plus, Clock, Calendar, Loader2, CheckCircle2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import ContencaoStatusStepper from "./ContencaoStatusStepper";
 import ContencaoRegistroDialog from "./ContencaoRegistroDialog";
 import RegistroCard from "./RegistroCard";
+import ContencaoClaimReportDialog from "./ContencaoClaimReportDialog";
 import { computeDiasAndamento, formatHoras, normalizeStatus, ContencaoRegistro, aggregateRegistrosDrawer } from "@/lib/contencao";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/contexts/AuthContext";
+import { canGenerateClaimReport } from "@/lib/contencaoClaimAccess";
 
 
 interface Props {

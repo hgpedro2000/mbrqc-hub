@@ -103,7 +103,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers-for-residente"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("suppliers").select("name").eq("active", true).order("name");
+      const { data, error } = await supabase.from("suppliers").select("name, code").eq("active", true).order("name");
       if (error) throw error;
       return data;
     },
@@ -114,13 +114,66 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresas_terceiras")
-        .select("name")
+        .select("name, prefix, pad")
         .eq("active", true)
         .order("name");
       if (error) throw error;
       return data || [];
     },
   });
+
+  /**
+   * Auto-generate the next available matrícula for Terceiros / Residentes.
+   *  - Residente "Residente - FORNECEDOR" -> uses supplier.code as prefix, 2-digit suffix (APF901, APF902…)
+   *  - Empresa Terceira (IL/TRIGO/ABCD/…) -> uses prefix column, 4-digit suffix (IL0001, TRI0001, AB0001…)
+   * Always checks the profiles table to skip numbers already in use.
+   */
+  const generateEmployeeNumber = async (emp: string, empTerc: string): Promise<string | null> => {
+    if (emp !== "empresa_terceira" || !empTerc) return null;
+
+    let prefix = "";
+    let pad = 4;
+
+    if (empTerc === "Residente" || empTerc.startsWith("Residente - ")) {
+      const supplierName = empTerc.replace("Residente - ", "");
+      const sup = (suppliers as any[]).find((s) => s.name === supplierName);
+      if (!sup || !sup.code || sup.code === "-") {
+        toast.error("Fornecedor sem CODE VENDOR cadastrado.");
+        return null;
+      }
+      prefix = String(sup.code).toUpperCase();
+      pad = 2;
+    } else {
+      const et = (empresasTerceirasList as any[]).find((e) => e.name === empTerc);
+      if (!et?.prefix) {
+        toast.error("Empresa terceira sem prefixo cadastrado.");
+        return null;
+      }
+      prefix = String(et.prefix).toUpperCase();
+      pad = et.pad || 4;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("employee_number")
+      .ilike("employee_number", `${prefix}%`);
+    if (error) {
+      toast.error("Erro ao verificar números existentes.");
+      return null;
+    }
+    const used = new Set(
+      (data || [])
+        .map((r: any) => String(r.employee_number || "").toUpperCase())
+        .filter((n) => n.startsWith(prefix)),
+    );
+    for (let i = 1; i < 10 ** pad; i++) {
+      const candidate = `${prefix}${String(i).padStart(pad, "0")}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    toast.error("Sequência esgotada para este prefixo.");
+    return null;
+  };
+
 
 
   const getRoleForUser = (userId: string) => {
@@ -445,8 +498,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                 {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
                 <div className="space-y-2">
                   <Label>{empresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
-                  <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL001"} />
+                  <div className="flex gap-2">
+                    <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
+                    {empresa === "empresa_terceira" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const next = await generateEmployeeNumber(empresa, empresaTerceira);
+                          if (next) {
+                            setEmployeeNumber(next);
+                            toast.success(`Gerado: ${next}`);
+                          }
+                        }}
+                        disabled={!empresaTerceira}
+                      >
+                        Gerar
+                      </Button>
+                    )}
+                  </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label>Nome Completo *</Label>
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome completo" />
@@ -566,8 +639,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
             {renderEmpresaFormFields(editEmpresa, setEditEmpresa, editEmpresaTerceira, setEditEmpresaTerceira)}
             <div className="space-y-2">
               <Label>{editEmpresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
-              <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder={editEmpresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL001"} />
+              <div className="flex gap-2">
+                <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder={editEmpresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
+                {editEmpresa === "empresa_terceira" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const next = await generateEmployeeNumber(editEmpresa, editEmpresaTerceira);
+                      if (next) {
+                        setEditEmployeeNumber(next);
+                        toast.success(`Gerado: ${next}`);
+                      }
+                    }}
+                    disabled={!editEmpresaTerceira}
+                  >
+                    Gerar
+                  </Button>
+                )}
+              </div>
             </div>
+
             <div className="space-y-2">
               <Label>Nome Completo *</Label>
               <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} placeholder="Nome completo" />

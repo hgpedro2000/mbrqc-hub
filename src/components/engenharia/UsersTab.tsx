@@ -646,9 +646,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
-                    {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                  </Button>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" disabled={resettingId === p.id} className="h-8 w-8 p-0" title="Resetar senha">
+                        {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-56 p-2">
+                      <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
+                        <KeyRound className="w-4 h-4" /> Senha provisória
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
+                        <ShieldCheck className="w-4 h-4" /> Gerar senha segura
+                      </Button>
+                    </PopoverContent>
+                  </Popover>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>

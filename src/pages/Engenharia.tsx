@@ -151,7 +151,7 @@ const Engenharia = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-hidden">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6 w-full min-w-0">
           <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
-            <TabsList className="inline-flex w-auto min-w-full xl:grid xl:grid-cols-11 h-auto gap-1 p-1">
+            <TabsList className="inline-flex w-auto min-w-full xl:grid xl:grid-cols-12 h-auto gap-1 p-1">
               <TabsTrigger value="usuarios" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
@@ -164,6 +164,7 @@ const Engenharia = () => {
                 {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="emails" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">E-mails</TabsTrigger>
+              <TabsTrigger value="seguranca" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Segurança</TabsTrigger>
               <TabsTrigger value="privacidade" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Privacidade</TabsTrigger>
               <TabsTrigger value="auditoria" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Auditoria</TabsTrigger>
             </TabsList>

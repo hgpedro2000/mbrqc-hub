@@ -184,6 +184,14 @@ export default function SpecSwitchPanelCheck() {
   const switchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [log, setLog] = useState<LogEntry[]>([]);
+  const [frozen, setFrozen] = useState<null | {
+    panelPn: string;
+    switchPn: string;
+    status: Status;
+    alc: string;
+    message: string;
+    expectedRows: DbRow[];
+  }>(null);
 
   useEffect(() => {
     panelRef.current?.focus();

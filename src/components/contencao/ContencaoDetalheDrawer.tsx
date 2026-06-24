@@ -116,7 +116,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
               {!concluida && registros.length > 0 && (
                 <Button
                   size="sm"
-                  className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto col-span-full xs:col-span-2 sm:col-auto"
+                  className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto"
                   onClick={() => setConfirmFinalize(true)}
                   disabled={finalizing}
                 >

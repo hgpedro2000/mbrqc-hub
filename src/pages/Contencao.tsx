@@ -15,6 +15,7 @@ import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
 import ResumoMensalCard from "@/components/contencao/ResumoMensalCard";
 import ContencaoDetalheDrawer from "@/components/contencao/ContencaoDetalheDrawer";
+import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
 import { STATUS_META, normalizeStatus, computeDiasAndamento, formatHoras, formatRelativeBR } from "@/lib/contencao";
 
 interface UltimoRegistro {
@@ -189,6 +190,7 @@ const Contencao = () => {
                           <div className="h-full bg-emerald-500" style={{ width: `${okPct}%` }} />
                         </div>
                       )}
+                      <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} />
                     </div>
                   );
                 })}

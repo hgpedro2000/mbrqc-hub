@@ -17,6 +17,7 @@ import { getLocalDateString } from "@/lib/localDate";
 import { compressImage } from "@/lib/compressImage";
 import { TURNOS, Inspetor, ContencaoRegistro } from "@/lib/contencao";
 import { useAuth } from "@/contexts/AuthContext";
+import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
 
 interface Props {
   open: boolean;
@@ -44,6 +45,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const [qtdInspetores, setQtdInspetores] = useState(0);
   const [qtdInspecionada, setQtdInspecionada] = useState(0);
   const [qtdDiferenca, setQtdDiferenca] = useState(0);
+  const [qtdNg, setQtdNg] = useState(0);
   const [justificativaDiferenca, setJustificativaDiferenca] = useState("");
   const [showDiferenca, setShowDiferenca] = useState(false);
   const [observacoes, setObservacoes] = useState("");
@@ -60,7 +62,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contencao")
-        .select("mark_check, quantidade_aprovada")
+        .select("mark_check, quantidade_aprovada, fotos_problema, mark_check_fotos")
         .eq("id", contencaoId)
         .single();
       if (error) throw error;
@@ -115,6 +117,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setQtdInspetores(initial.qtd_inspetores || 0);
       setQtdInspecionada(initial.qtd_inspecionada || 0);
       setQtdDiferenca(Number((initial as any).qtd_diferenca || 0));
+      setQtdNg(Number((initial as any).qtd_ng || 0));
       setJustificativaDiferenca((initial as any).justificativa_diferenca || "");
       setShowDiferenca(Number((initial as any).qtd_diferenca || 0) > 0);
       setObservacoes(initial.observacoes || "");
@@ -132,6 +135,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setQtdInspetores(0);
       setQtdInspecionada(0);
       setQtdDiferenca(0);
+      setQtdNg(0);
       setJustificativaDiferenca("");
       setShowDiferenca(false);
       setObservacoes("");
@@ -208,7 +212,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         qtd_inspetores: qtdInspetores,
         qtd_inspecionada: qtdInspecionada,
         qtd_ok: 0,
-        qtd_ng: 0,
+        qtd_ng: qtdNg,
         qtd_diferenca: showDiferenca ? qtdDiferenca : 0,
         justificativa_diferenca: showDiferenca ? justificativaDiferenca : null,
         mark_check: markCheckObrig,
@@ -266,6 +270,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               Registre os dados do turno. O Mark Check segue a definição da contenção.
             </DialogDescription>
           </DialogHeader>
+
+          {(contencaoInfo?.fotos_problema?.length || contencaoInfo?.mark_check_fotos?.length) ? (
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Referências da contenção</p>
+              <ContencaoFotosStrip
+                fotosProblema={contencaoInfo?.fotos_problema}
+                fotosMarkCheck={contencaoInfo?.mark_check_fotos}
+                size="md"
+              />
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
@@ -428,6 +443,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             )}
           </div>
 
+          <div className="space-y-1">
+            <Label className="text-xs">Qtd. peças NG detectadas em contenção</Label>
+            <Input
+              type="number"
+              min={0}
+              value={qtdNg}
+              onChange={(e) => setQtdNg(Math.max(0, Number(e.target.value) || 0))}
+              placeholder="0"
+            />
+            <p className="text-[10px] text-muted-foreground">Quantidade de peças não-conformes identificadas durante a inspeção deste turno.</p>
+          </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Observações do turno</Label>

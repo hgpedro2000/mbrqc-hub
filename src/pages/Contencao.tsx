@@ -39,21 +39,33 @@ const Contencao = () => {
     queryFn: async () => { const { data, error } = await supabase.from("contencao").select("*").order("created_at", { ascending: false }); if (error) throw error; return data; },
   });
 
-  const { data: ultimoPorContencao = {} } = useQuery<Record<string, UltimoRegistro>>({
+  const { data: registrosAgg = { ultimo: {}, totais: {} } } = useQuery<{
+    ultimo: Record<string, UltimoRegistro>;
+    totais: Record<string, { insp: number; ng: number; ok: number }>;
+  }>({
     queryKey: ["contencao-ultimos-registros"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contencao_registros" as any)
-        .select("contencao_id, turno, created_at")
+        .select("contencao_id, turno, created_at, qtd_inspecionada, qtd_diferenca, qtd_ng, qtd_ok")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      const map: Record<string, UltimoRegistro> = {};
+      const ultimo: Record<string, UltimoRegistro> = {};
+      const totais: Record<string, { insp: number; ng: number; ok: number }> = {};
       for (const r of (data || []) as any[]) {
-        if (!map[r.contencao_id]) map[r.contencao_id] = r;
+        if (!ultimo[r.contencao_id]) ultimo[r.contencao_id] = r;
+        const t = totais[r.contencao_id] || { insp: 0, ng: 0, ok: 0 };
+        t.insp += Number(r.qtd_inspecionada || 0) + Number(r.qtd_diferenca || 0);
+        t.ng += Number(r.qtd_ng || 0);
+        t.ok += Number(r.qtd_ok || 0);
+        totais[r.contencao_id] = t;
       }
-      return map;
+      return { ultimo, totais };
     },
   });
+  const ultimoPorContencao = registrosAgg.ultimo;
+  const totaisPorContencao = registrosAgg.totais;
+
 
   // Realtime: refresh list when registros or contencao change
   useEffect(() => {
@@ -141,10 +153,14 @@ const Contencao = () => {
                   const meta = STATUS_META[st];
                   const dias = (item as any).dias_andamento ?? computeDiasAndamento(item.created_at, (item as any).data_conclusao, st);
                   const concluida = st === "concluida";
-                  const totalOk = Number(item.quantidade_aprovada || 0);
-                  const totalNg = Number(item.quantidade_rejeitada || 0);
-                  const sum = totalOk + totalNg;
-                  const okPct = sum > 0 ? (totalOk / sum) * 100 : 0;
+                  const agg = (totaisPorContencao as any)[item.id] || { insp: 0, ng: 0, ok: 0 };
+                  const estoque = Number(item.quantidade_aprovada || 0);
+                  const contidas = Number(item.quantidade_contida || 0) || estoque;
+                  const inspecionado = agg.insp;
+                  const ng = agg.ng;
+                  const denom = estoque > 0 ? estoque : Math.max(inspecionado, 1);
+                  const inspPct = Math.min(100, (inspecionado / denom) * 100);
+                  const ngPct = inspecionado > 0 ? (ng / inspecionado) * 100 : 0;
                   const ultimo = (ultimoPorContencao as any)[item.id];
                   return (
                     <div
@@ -181,19 +197,21 @@ const Contencao = () => {
                         </div>
                       </div>
                       <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
-                        <div><span className="text-muted-foreground">{t("contencao.contidas")}:</span> <span className="font-semibold">{item.quantidade_contida}</span></div>
-                        <div><span className="text-muted-foreground">{t("contencao.aprovadas")}:</span> <span className="font-semibold text-emerald-600">{totalOk}</span></div>
-                        <div><span className="text-muted-foreground">{t("contencao.rejeitadas")}:</span> <span className="font-semibold text-red-600">{totalNg}</span></div>
+                        <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                        <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
+                        <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
                       </div>
-                      {sum > 0 && (
-                        <div className="mt-2 h-1.5 w-full rounded-full bg-red-500/30 overflow-hidden">
-                          <div className="h-full bg-emerald-500" style={{ width: `${okPct}%` }} />
+                      {(inspecionado > 0 || estoque > 0) && (
+                        <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
+                          <div className="h-full bg-sky-500" style={{ width: `${inspPct}%` }} />
+                          <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
                         </div>
                       )}
                       <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="lg" />
                     </div>
                   );
                 })}
+
               </div>
             )}
           </TabsContent>

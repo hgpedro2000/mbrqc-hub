@@ -130,8 +130,5 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
 };
 
 export default RegistroCard;
-    </div>
-  );
-};
 
 export default RegistroCard;

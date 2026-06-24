@@ -157,7 +157,7 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
                     <Td>{r.turno}</Td>
                     <Td>{r.hora_inicio?.slice(0, 5) || "—"}</Td>
                     <Td>{r.hora_fim?.slice(0, 5) || "—"}</Td>
-                    <Td className="text-right font-semibold text-amber-700">{formatHoras(Number(r.horas_trabalhadas || 0))}</Td>
+                    <Td className="text-right font-semibold text-slate-800">{formatHoras(Number(r.horas_trabalhadas || 0))}</Td>
                     <Td className="text-right">{r.qtd_inspetores || 0}</Td>
                     <Td className="text-right">{r.qtd_inspecionada || 0}</Td>
                     <Td className="text-right text-red-600 font-semibold">{r.qtd_ng || 0}</Td>

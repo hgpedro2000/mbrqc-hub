@@ -27,7 +27,9 @@ interface DefectEntry {
 }
 
 const InjectionForm = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isPt = (i18n.language || "pt").toLowerCase().startsWith("pt");
+  const defectLabel = (d: any) => (isPt && d?.description_pt ? d.description_pt : d?.description) || "";
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -452,7 +454,7 @@ const InjectionForm = () => {
                     <Select value={defect.failure_mode} onValueChange={(v) => updateDefect(idx, "failure_mode", v)}>
                       <SelectTrigger className="text-sm"><SelectValue placeholder={t("injectionForm.selectFailureMode")} /></SelectTrigger>
                       <SelectContent>
-                        {defectsList?.map((def) => <SelectItem key={def.id} value={def.code}>{def.code} - {def.description}</SelectItem>)}
+                        {defectsList?.map((def) => <SelectItem key={def.id} value={def.code}>{def.code} - {defectLabel(def)}</SelectItem>)}
                         {(!defectsList || defectsList.length === 0) && <SelectItem value="_empty" disabled>{t("injectionForm.noDefectsCatalog")}</SelectItem>}
                       </SelectContent>
                     </Select>

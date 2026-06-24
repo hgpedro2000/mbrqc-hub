@@ -28,6 +28,7 @@ import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 
@@ -59,6 +60,9 @@ interface DefeitoDetalhe {
 }
 
 const ApontamentoForm = () => {
+  const { i18n } = useTranslation();
+  const isPt = (i18n.language || "pt").toLowerCase().startsWith("pt");
+  const defectLabel = (d: any) => (isPt && d?.description_pt ? d.description_pt : d?.description) || "";
   const navigate = useNavigate();
   const { id, tipo: paramTipo } = useParams();
   const [searchParams] = useSearchParams();
@@ -1543,7 +1547,7 @@ const ApontamentoForm = () => {
                 <Label className={errLabelClass("modoFalha")}>Modo de Falha {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={(v) => { setModoFalha(v); setValidationErrors((p) => { const n = new Set(p); n.delete("modoFalha"); return n; }); }} disabled={ngIsZero}>
                   <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
-                  <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
+                  <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
                 </Select>
               </div>
             )}
@@ -1568,7 +1572,7 @@ const ApontamentoForm = () => {
                       <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>Modo de Falha *</Label>
                       <Select value={detalhe.modo_falha} onValueChange={(v) => { updateDefeitoDetalhe(idx, "modo_falha", v); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-modoFalha`); return n; }); }}>
                         <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>{defects.map((d) => <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{d.description}</SelectItem>)}</SelectContent>
+                        <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">

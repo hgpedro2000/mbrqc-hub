@@ -153,6 +153,12 @@ const Contencao = () => {
               <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
             </div>
           )}
+          {viewMode === "compact" && (
+            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none rounded-md border border-border px-2 py-1">
+              <input type="checkbox" checked={debugAlign} onChange={(e) => setDebugAlign(e.target.checked)} className="accent-fuchsia-500" />
+              Debug alinhamento
+            </label>
+          )}
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />

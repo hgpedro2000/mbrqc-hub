@@ -243,7 +243,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
         body: { user_id: userId },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast.success("Senha resetada para 'admin123'. O usuário será obrigado a redefinir no próximo login.");
+      toast.success(`Senha temporária gerada: ${data?.temporary_password || "verifique no Help Desk"}. O usuário será obrigado a redefinir no próximo login.`);
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
     } catch (e: any) {
       toast.error(e.message);

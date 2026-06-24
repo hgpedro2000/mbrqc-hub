@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Loader2, Eye, CheckCircle, Clock, X, Trash2, Pencil, UserPlus, KeyRound, ShieldCheck, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 
 interface ErrorReportsTabProps {
   onCreateUserFromRequest?: (data: any) => void;
@@ -70,7 +71,28 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
   const [resetting, setResetting] = useState(false);
   const [resetResult, setResetResult] = useState<{ password: string } | null>(null);
 
-  const DEFAULT_RESET_PASSWORD = "admin123*";
+  const resetPasswordCriteria = useMemo(() => evaluatePassword(resetPassword), [resetPassword]);
+  const customPasswordValid = isPasswordValid(resetPasswordCriteria);
+
+  const getFunctionErrorMessage = async (error: any, data: any) => {
+    if (data?.error) return data.error;
+    const context = error?.context;
+    try {
+      if (context?.clone) {
+        const body = await context.clone().json();
+        if (body?.error) return body.error;
+      }
+    } catch {
+      try {
+        const text = await context?.clone?.().text?.();
+        if (text) {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) return parsed.error;
+        }
+      } catch { /* ignore */ }
+    }
+    return error?.message || "Erro ao redefinir senha";
+  };
 
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ["error-reports"],
@@ -182,7 +204,7 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
 
   const openReset = (mode: "custom" | "default") => {
     setResetMode(mode);
-    setResetPassword(mode === "default" ? DEFAULT_RESET_PASSWORD : "");
+    setResetPassword("");
     setResetResult(null);
     setResetOpen(true);
   };
@@ -192,30 +214,29 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
       toast.error("Solicitação sem usuário vinculado");
       return;
     }
-    const finalPassword = resetMode === "default" ? DEFAULT_RESET_PASSWORD : resetPassword.trim();
-    if (resetMode === "custom" && finalPassword.length < 6) {
-      toast.error("A senha deve ter ao menos 6 caracteres");
+    const finalPassword = resetMode === "default" ? "" : resetPassword.trim();
+    if (resetMode === "custom" && !customPasswordValid) {
+      toast.error(`A senha deve ter ${MIN_PASSWORD_LENGTH}+ caracteres, maiúscula, número e símbolo`);
       return;
     }
     setResetting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { user_id: viewItem.user_id, new_password: finalPassword },
-      });
-      if (error) throw new Error((data as any)?.error || error.message);
-      if ((data as any)?.error) throw new Error((data as any).error);
-
-      // Auto-mark the ticket as resolved with an admin note.
-      const noteSuffix = `\n[${new Date().toLocaleString("pt-BR")}] Senha ${resetMode === "default" ? "padrão (admin123*)" : "provisória"} aplicada por ${profile?.full_name || "admin"}.`;
+      const noteSuffix = `\n[${new Date().toLocaleString("pt-BR")}] Senha ${resetMode === "default" ? "temporária segura" : "provisória"} aplicada por ${profile?.full_name || "admin"}.`;
       const nextNotes = (adminNotes ? adminNotes : "") + noteSuffix;
-      await supabase
-        .from("error_reports")
-        .update({ status: "resolvido", admin_notes: nextNotes } as any)
-        .eq("id", viewItem.id);
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: {
+          user_id: viewItem.user_id,
+          new_password: finalPassword || undefined,
+          ticket_id: viewItem.id,
+          admin_notes: nextNotes,
+        },
+      });
+      if (error) throw new Error(await getFunctionErrorMessage(error, data));
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       setAdminNotes(nextNotes);
       setNewStatus("resolvido");
-      setResetResult({ password: finalPassword });
+      setResetResult({ password: (data as any)?.temporary_password || finalPassword });
       toast.success("Senha redefinida e chamado resolvido");
       qc.invalidateQueries({ queryKey: ["error-reports"] });
       qc.invalidateQueries({ queryKey: ["pending-error-reports-count"] });
@@ -456,7 +477,7 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
                         <Pencil className="w-4 h-4" /> Senha provisória
                       </Button>
                       <Button variant="outline" className="gap-2 border-orange-400/50 text-orange-700 hover:bg-orange-500/10" onClick={() => openReset("default")}>
-                        <ShieldCheck className="w-4 h-4" /> Reset padrão (admin123*)
+                        <ShieldCheck className="w-4 h-4" /> Gerar senha segura
                       </Button>
                     </div>
                   </div>
@@ -482,37 +503,43 @@ const ErrorReportsTab = ({ onCreateUserFromRequest }: ErrorReportsTabProps = {})
               <p className="text-sm text-muted-foreground">
                 Redefinir a senha de <b className="text-foreground">{viewItem?.user_name}</b>.
                 {resetMode === "default"
-                  ? " A senha será definida como o padrão de fábrica."
+                  ? " O sistema vai gerar uma senha temporária segura."
                   : " Defina uma senha provisória — informe-a ao usuário pessoalmente."}
               </p>
-              <div className="space-y-2">
-                <Label htmlFor="reset-pw">Nova senha</Label>
-                <Input
-                  id="reset-pw"
-                  type="text"
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                  readOnly={resetMode === "default"}
-                  placeholder={resetMode === "custom" ? "Mínimo 6 caracteres" : ""}
-                  className={resetMode === "default" ? "font-mono bg-muted" : "font-mono"}
-                />
+              {resetMode === "custom" && (
+                <div className="space-y-2">
+                  <Label htmlFor="reset-pw">Nova senha</Label>
+                  <Input
+                    id="reset-pw"
+                    type="text"
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                    placeholder={`${MIN_PASSWORD_LENGTH}+ caracteres, maiúscula, número e símbolo`}
+                    className="font-mono"
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    O usuário será obrigado a trocar a senha no próximo login.
+                  </p>
+                </div>
+              )}
+              {resetMode === "default" && (
                 <p className="text-[11px] text-muted-foreground">
-                  O usuário será obrigado a trocar a senha no próximo login.
+                  A senha será exibida ao concluir. Compartilhe somente com o usuário solicitante.
                 </p>
-              </div>
-              <div className="flex gap-2">
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setResetOpen(false)} disabled={resetting}>
                   Cancelar
                 </Button>
                 <Button
                   className="flex-1 bg-orange-600 hover:bg-orange-600/90 text-white"
                   onClick={handleResetPassword}
-                  disabled={resetting || (resetMode === "custom" && resetPassword.trim().length < 6)}
+                  disabled={resetting || (resetMode === "custom" && !customPasswordValid)}
                 >
                   {resetting ? (
                     <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Aplicando...</>
                   ) : resetMode === "default" ? (
-                    <><ShieldCheck className="w-4 h-4 mr-1" /> Aplicar reset padrão</>
+                    <><ShieldCheck className="w-4 h-4 mr-1" /> Gerar e aplicar</>
                   ) : (
                     <><CheckCircle className="w-4 h-4 mr-1" /> Cadastrar senha provisória</>
                   )}

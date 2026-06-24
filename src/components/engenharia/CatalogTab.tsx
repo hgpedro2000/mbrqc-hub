@@ -23,10 +23,12 @@ interface CatalogTabProps {
 
 const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTabProps) => {
   const qc = useQueryClient();
+  const hasPt = tableName === "defects";
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionPt, setDescriptionPt] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -43,17 +45,24 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return items;
     const term = searchTerm.toLowerCase();
-    return items.filter((i: any) => i.code?.toLowerCase().includes(term) || i.description?.toLowerCase().includes(term));
-  }, [items, searchTerm]);
+    return items.filter((i: any) =>
+      i.code?.toLowerCase().includes(term) ||
+      i.description?.toLowerCase().includes(term) ||
+      (hasPt && i.description_pt?.toLowerCase().includes(term))
+    );
+  }, [items, searchTerm, hasPt]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (editId) { const { error } = await supabase.from(tableName).update({ code, description }).eq("id", editId); if (error) throw error; }
-      else { const { error } = await supabase.from(tableName).insert({ code, description }); if (error) throw error; }
+      const payload: any = { code, description };
+      if (hasPt) payload.description_pt = descriptionPt || null;
+      if (editId) { const { error } = await supabase.from(tableName).update(payload).eq("id", editId); if (error) throw error; }
+      else { const { error } = await supabase.from(tableName).insert(payload); if (error) throw error; }
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: [`eng-${tableName}`] }); toast.success(editId ? "Atualizado!" : "Criado!"); resetForm(); },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from(tableName).delete().eq("id", id); if (error) throw error; },

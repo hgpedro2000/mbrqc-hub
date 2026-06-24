@@ -294,6 +294,7 @@ const Contencao = () => {
       </main>
 
       <ContencaoDetalheDrawer contencao={detalheItem} onClose={() => setDetalheItem(null)} />
+      <ContencaoClaimReportDialog open={!!claimItem} onClose={() => setClaimItem(null)} contencao={claimItem} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>

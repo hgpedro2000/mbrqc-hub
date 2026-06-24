@@ -208,7 +208,7 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
                     </TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && (<TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum item encontrado</TableCell></TableRow>)}
+                {filtered.length === 0 && (<TableRow><TableCell colSpan={hasPt ? 6 : 5} className="text-center text-muted-foreground py-8">Nenhum item encontrado</TableCell></TableRow>)}
               </TableBody>
             </Table>
           </div>

@@ -130,3 +130,41 @@ export interface ContencaoRegistro {
   created_at: string;
   updated_at: string;
 }
+
+// ---- Aggregation helpers for OK/NG/Inspecionadas ----
+// Single source of truth so the list page and detail drawer never drift.
+// Rule: OK is ALWAYS derived as max(0, inspecionadas - ng). Never stored.
+
+export interface RegistroLike {
+  qtd_inspecionada?: number | null;
+  qtd_diferenca?: number | null;
+  qtd_ng?: number | null;
+  horas_trabalhadas?: number | string | null;
+}
+
+export const computeOk = (insp: number, ng: number): number =>
+  Math.max(0, (Number(insp) || 0) - (Number(ng) || 0));
+
+/** List aggregation: insp = qtd_inspecionada + qtd_diferenca. */
+export const aggregateRegistrosList = (registros: RegistroLike[]) => {
+  let insp = 0;
+  let ng = 0;
+  for (const r of registros || []) {
+    insp += Number(r?.qtd_inspecionada || 0) + Number(r?.qtd_diferenca || 0);
+    ng += Number(r?.qtd_ng || 0);
+  }
+  return { insp, ng, ok: computeOk(insp, ng) };
+};
+
+/** Drawer aggregation: insp = qtd_inspecionada only; also sums horas. */
+export const aggregateRegistrosDrawer = (registros: RegistroLike[]) => {
+  let insp = 0;
+  let ng = 0;
+  let horas = 0;
+  for (const r of registros || []) {
+    insp += Number(r?.qtd_inspecionada || 0);
+    ng += Number(r?.qtd_ng || 0);
+    horas += Number(r?.horas_trabalhadas || 0);
+  }
+  return { insp, ng, horas, ok: computeOk(insp, ng) };
+};

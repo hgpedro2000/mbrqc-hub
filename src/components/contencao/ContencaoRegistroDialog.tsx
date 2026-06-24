@@ -443,6 +443,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             )}
           </div>
 
+          <div className="space-y-1">
+            <Label className="text-xs">Qtd. peças NG detectadas em contenção</Label>
+            <Input
+              type="number"
+              min={0}
+              value={qtdNg}
+              onChange={(e) => setQtdNg(Math.max(0, Number(e.target.value) || 0))}
+              placeholder="0"
+            />
+            <p className="text-[10px] text-muted-foreground">Quantidade de peças não-conformes identificadas durante a inspeção deste turno.</p>
+          </div>
 
           <div className="space-y-1">
             <Label className="text-xs">Observações do turno</Label>

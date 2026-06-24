@@ -1,0 +1,1 @@
+insert into public.app_changelog (version, change_type, title, description) values ('1.2.8.13', 'minor', 'Compartilhar senha via WhatsApp', 'Adicionado botão Enviar via WhatsApp no reset de senha (Help Desk e Usuários) com mensagem padrão contendo nome, matrícula e senha provisória.');

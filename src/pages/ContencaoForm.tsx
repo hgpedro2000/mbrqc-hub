@@ -283,7 +283,7 @@ const ContencaoForm = () => {
         </div>
 
         <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={saving} className="gap-2"><Save className="w-4 h-4" /> {saving ? t("common.saving") : isEdit ? t("common.update") : t("common.save")}</Button>
+          <Button onClick={handleSave} disabled={saving} className="gap-2"><Save className="w-4 h-4" /> {saving ? t("common.saving") : isEdit ? t("common.update") : "Solicitar Contenção"}</Button>
           <Button variant="outline" onClick={() => navigate("/contencao")}>{t("common.cancel")}</Button>
         </div>
       </main>

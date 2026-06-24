@@ -1,0 +1,2 @@
+ALTER TABLE public.contencao DROP CONSTRAINT IF EXISTS contencao_tipo_check;
+ALTER TABLE public.contencao ADD CONSTRAINT contencao_tipo_check CHECK (tipo = ANY (ARRAY['interno_mbr','externo_hmb','fornecedor_lp','fornecedor_ckd','processo_mbr','processo_hmb']));

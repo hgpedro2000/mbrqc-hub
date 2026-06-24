@@ -40,7 +40,7 @@ const ContencaoForm = () => {
 
   useEffect(() => {
     if (existing) {
-      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_contida: existing.quantidade_contida || 0, quantidade_aprovada: existing.quantidade_aprovada || 0, quantidade_rejeitada: existing.quantidade_rejeitada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "" });
+      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_pecas: existing.quantidade_contida || 0, estoque_mobis: existing.quantidade_aprovada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "", mark_check: (existing as any).mark_check || false });
     }
   }, [existing]);
 

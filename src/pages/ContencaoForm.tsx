@@ -101,10 +101,16 @@ const ContencaoForm = () => {
 
         <div className="form-section">
           <h2 className="form-section-title">{t("contencao.quantities")}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="space-y-2"><Label>{t("contencao.qtyContida")}</Label><Input type="number" value={form.quantidade_contida} onChange={(e) => set("quantidade_contida", Number(e.target.value))} /></div>
-            <div className="space-y-2"><Label>{t("contencao.qtyAprovada")}</Label><Input type="number" value={form.quantidade_aprovada} onChange={(e) => set("quantidade_aprovada", Number(e.target.value))} /></div>
-            <div className="space-y-2"><Label>{t("contencao.qtyRejeitada")}</Label><Input type="number" value={form.quantidade_rejeitada} onChange={(e) => set("quantidade_rejeitada", Number(e.target.value))} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
+            <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+          </div>
+          <div className="mt-4 flex items-center justify-between rounded-md border p-3">
+            <div>
+              <Label className="text-sm font-medium">Mark Check obrigatório</Label>
+              <p className="text-xs text-muted-foreground">Quando ativo, cada registro de turno exige foto do Mark Check.</p>
+            </div>
+            <Switch checked={form.mark_check} onCheckedChange={(v) => set("mark_check", v)} />
           </div>
         </div>
 

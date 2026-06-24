@@ -68,10 +68,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { error: profileError } = await admin
-      .from("profiles")
-      .update({ must_change_password: true })
-      .eq("id", user_id);
+    const { error: profileError } = await admin.rpc("admin_set_must_change_password", {
+      _user_id: user_id,
+      _value: true,
+    });
     if (profileError) {
       return new Response(JSON.stringify({ error: profileError.message }), {
         status: 400,

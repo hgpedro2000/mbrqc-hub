@@ -185,15 +185,11 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     if (!turno || !data || !horaInicio || !horaFim) return "Preencha turno, data e horários.";
     if (horaFim <= horaInicio) return "Hora fim deve ser maior que a hora início.";
     if (qtdInspecionada < 0) return "Quantidade não pode ser negativa.";
-    if (markCheckObrig && existingFotos.length === 0 && newFiles.length === 0)
-      return "Mark Check é obrigatório nesta contenção — anexe a foto.";
     if (showDiferenca) {
       if (qtdDiferenca <= 0) return "Informe a quantidade adicional (diferença).";
       if (!justificativaDiferenca.trim()) return "Informe a justificativa da diferença.";
       if (existingFotosFalha.length === 0 && newFilesFalha.length === 0)
         return "A foto da falha é obrigatória ao adicionar diferença.";
-      if (existingFotos.length === 0 && newFiles.length === 0)
-        return "A foto do Mark Check é obrigatória ao adicionar diferença.";
     }
     return null;
   };
@@ -267,9 +263,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           <DialogHeader>
             <DialogTitle>{initial ? "Editar Registro de Turno" : "Novo Registro de Turno"}</DialogTitle>
             <DialogDescription>
-              {markCheckObrig
-                ? "Esta contenção exige Mark Check — anexe foto em todos os registros."
-                : "Registre os dados do turno na contenção."}
+              Registre os dados do turno. O Mark Check segue a definição da contenção.
             </DialogDescription>
           </DialogHeader>
 
@@ -434,49 +428,6 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             )}
           </div>
 
-          {/* Mark Check (apenas se contenção exige) */}
-          {markCheckObrig && (
-            <div className="rounded-md border p-3 space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Foto do Mark Check <span className="text-red-500">*</span></Label>
-              </div>
-              <p className="text-xs text-muted-foreground">Esta contenção exige Mark Check em cada registro.</p>
-              <div className="flex flex-wrap gap-2">
-                {existingFotos.map((path) => (
-                  <FotoThumb key={path} path={path} onRemove={() => setExistingFotos((p) => p.filter((x) => x !== path))} />
-                ))}
-                {newFiles.map((file, idx) => (
-                  <LocalThumb key={idx} file={file} onRemove={() => setNewFiles((p) => p.filter((_, i) => i !== idx))} />
-                ))}
-              </div>
-              <input ref={markFileInputRef} type="file" accept="image/*" multiple hidden
-                onChange={(e) => { if (e.target.files) setNewFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-              <Button variant="outline" size="sm" type="button" onClick={() => markFileInputRef.current?.click()} className="gap-2">
-                <Upload className="w-4 h-4" /> Adicionar foto Mark Check
-              </Button>
-            </div>
-          )}
-
-          {/* Quando precisar de Mark Check para diferença mas contenção não exige por padrão */}
-          {!markCheckObrig && showDiferenca && (
-            <div className="rounded-md border p-3 space-y-3">
-              <Label className="text-sm font-medium">Foto do Mark Check <span className="text-red-500">*</span></Label>
-              <p className="text-xs text-muted-foreground">Obrigatória ao registrar uma diferença.</p>
-              <div className="flex flex-wrap gap-2">
-                {existingFotos.map((path) => (
-                  <FotoThumb key={path} path={path} onRemove={() => setExistingFotos((p) => p.filter((x) => x !== path))} />
-                ))}
-                {newFiles.map((file, idx) => (
-                  <LocalThumb key={idx} file={file} onRemove={() => setNewFiles((p) => p.filter((_, i) => i !== idx))} />
-                ))}
-              </div>
-              <input ref={markFileInputRef} type="file" accept="image/*" multiple hidden
-                onChange={(e) => { if (e.target.files) setNewFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-              <Button variant="outline" size="sm" type="button" onClick={() => markFileInputRef.current?.click()} className="gap-2">
-                <Upload className="w-4 h-4" /> Adicionar foto Mark Check
-              </Button>
-            </div>
-          )}
 
           <div className="space-y-1">
             <Label className="text-xs">Observações do turno</Label>

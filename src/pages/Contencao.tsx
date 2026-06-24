@@ -28,7 +28,7 @@ const Contencao = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
-  const [tab, setTab] = useState("interno_mbr");
+  const [tab, setTab] = useState<string>("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
@@ -88,7 +88,7 @@ const Contencao = () => {
 
   const filtered = useMemo(
     () => items
-      .filter((i) => i.tipo === tab)
+      .filter((i) => tab === "todos" ? true : i.tipo === tab)
       .filter((i) => matchesSearch(i, ["numero", "titulo", "responsavel", "part_number", "part_name", "fornecedor", "local"]) && matchesFilters(i)),
     [items, tab, search, filterValues, matchesSearch, matchesFilters],
   );
@@ -122,9 +122,12 @@ const Contencao = () => {
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList>
-            <TabsTrigger value="interno_mbr">{t("contencao.internoMBR")}</TabsTrigger>
-            <TabsTrigger value="externo_hmb">{t("contencao.externoHMB")}</TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto">
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="fornecedor_lp">Fornecedor LP</TabsTrigger>
+            <TabsTrigger value="fornecedor_ckd">Fornecedor CKD</TabsTrigger>
+            <TabsTrigger value="processo_mbr">Processo MBR</TabsTrigger>
+            <TabsTrigger value="processo_hmb">Processo HMB</TabsTrigger>
           </TabsList>
 
           <TabsContent value={tab} className="mt-4">

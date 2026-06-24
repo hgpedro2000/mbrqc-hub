@@ -911,11 +911,17 @@ export type Database = {
           data: string
           data_conclusao: string | null
           dias_andamento: number | null
+          estoque_indefinido: boolean
           fornecedor: string | null
+          fotos_problema: string[]
           id: string
           linha: string | null
           local: string | null
           mark_check: boolean
+          mark_check_com_que: string | null
+          mark_check_como: string | null
+          mark_check_fotos: string[]
+          mark_check_local: string | null
           motivo: string | null
           numero: string | null
           observacoes: string | null
@@ -924,6 +930,7 @@ export type Database = {
           quantidade_aprovada: number | null
           quantidade_contida: number | null
           quantidade_rejeitada: number | null
+          responsabilidade: string | null
           responsavel: string
           setor: string | null
           status: string
@@ -938,11 +945,17 @@ export type Database = {
           data: string
           data_conclusao?: string | null
           dias_andamento?: number | null
+          estoque_indefinido?: boolean
           fornecedor?: string | null
+          fotos_problema?: string[]
           id?: string
           linha?: string | null
           local?: string | null
           mark_check?: boolean
+          mark_check_com_que?: string | null
+          mark_check_como?: string | null
+          mark_check_fotos?: string[]
+          mark_check_local?: string | null
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -951,6 +964,7 @@ export type Database = {
           quantidade_aprovada?: number | null
           quantidade_contida?: number | null
           quantidade_rejeitada?: number | null
+          responsabilidade?: string | null
           responsavel: string
           setor?: string | null
           status?: string
@@ -965,11 +979,17 @@ export type Database = {
           data?: string
           data_conclusao?: string | null
           dias_andamento?: number | null
+          estoque_indefinido?: boolean
           fornecedor?: string | null
+          fotos_problema?: string[]
           id?: string
           linha?: string | null
           local?: string | null
           mark_check?: boolean
+          mark_check_com_que?: string | null
+          mark_check_como?: string | null
+          mark_check_fotos?: string[]
+          mark_check_local?: string | null
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -978,6 +998,7 @@ export type Database = {
           quantidade_aprovada?: number | null
           quantidade_contida?: number | null
           quantidade_rejeitada?: number | null
+          responsabilidade?: string | null
           responsavel?: string
           setor?: string | null
           status?: string

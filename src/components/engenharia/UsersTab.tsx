@@ -498,8 +498,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                 {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
                 <div className="space-y-2">
                   <Label>{empresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
-                  <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL001"} />
+                  <div className="flex gap-2">
+                    <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
+                    {empresa === "empresa_terceira" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const next = await generateEmployeeNumber(empresa, empresaTerceira);
+                          if (next) {
+                            setEmployeeNumber(next);
+                            toast.success(`Gerado: ${next}`);
+                          }
+                        }}
+                        disabled={!empresaTerceira}
+                      >
+                        Gerar
+                      </Button>
+                    )}
+                  </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label>Nome Completo *</Label>
                   <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome completo" />

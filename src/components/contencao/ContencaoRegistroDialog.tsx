@@ -271,6 +271,17 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             </DialogDescription>
           </DialogHeader>
 
+          {(contencaoInfo?.fotos_problema?.length || contencaoInfo?.mark_check_fotos?.length) ? (
+            <div className="rounded-md border bg-muted/30 p-3">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Referências da contenção</p>
+              <ContencaoFotosStrip
+                fotosProblema={contencaoInfo?.fotos_problema}
+                fotosMarkCheck={contencaoInfo?.mark_check_fotos}
+                size="md"
+              />
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
               <Label className="text-xs">Turno</Label>

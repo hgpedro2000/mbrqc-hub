@@ -212,7 +212,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         qtd_inspetores: qtdInspetores,
         qtd_inspecionada: qtdInspecionada,
         qtd_ok: 0,
-        qtd_ng: 0,
+        qtd_ng: qtdNg,
         qtd_diferenca: showDiferenca ? qtdDiferenca : 0,
         justificativa_diferenca: showDiferenca ? justificativaDiferenca : null,
         mark_check: markCheckObrig,

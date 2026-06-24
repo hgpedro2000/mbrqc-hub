@@ -108,9 +108,10 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
                 </Button>
               )}
               {!concluida && (
-                <Button size="sm" className="gap-1 w-full sm:w-auto" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4" /> <span className="truncate">Novo Registro</span>
+                <Button size="sm" className="gap-1 flex-1 sm:flex-none" onClick={() => { setEditing(null); setDialogOpen(true); }}>
+                  <Plus className="w-4 h-4" /> <span className="truncate">Novo</span>
                 </Button>
+
               )}
               {!concluida && registros.length > 0 && (
                 <Button

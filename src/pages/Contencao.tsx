@@ -137,44 +137,51 @@ const Contencao = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         <ResumoMensalCard />
 
-        <div className="flex flex-wrap gap-3 items-center">
-          <Button onClick={() => navigate("/contencao/nova")} className="gap-2"><Plus className="w-4 h-4" /> {t("contencao.newContencao")}</Button>
-          <Button variant="outline" onClick={() => navigate("/contencao/dashboard")} className="gap-2"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
-          <div className="ml-auto inline-flex rounded-md border border-border overflow-hidden">
-            <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> Compacto</button>
-            <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> Expandido</button>
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 sm:items-center">
+          <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+            <Button onClick={() => navigate("/contencao/nova")} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> <span className="truncate">{t("contencao.newContencao")}</span></Button>
+            <Button variant="outline" onClick={() => navigate("/contencao/dashboard")} className="gap-2 w-full sm:w-auto"><BarChart3 className="w-4 h-4" /> {t("common.dashboard")}</Button>
           </div>
-          {viewMode === "compact" && isAdmin && (
-            <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Fotos</span>
-              <input
-                type="range" min={0} max={2} step={1}
-                value={photoSize === "sm" ? 0 : photoSize === "md" ? 1 : 2}
-                onChange={(e) => setPhotoSize((["sm", "md", "lg"] as const)[Number(e.target.value)])}
-                className="w-24 accent-accent"
-                aria-label="Tamanho das fotos"
-              />
-              <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
+          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+            <div className="inline-flex rounded-md border border-border overflow-hidden">
+              <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">Compacto</span></button>
+              <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">Expandido</span></button>
             </div>
-          )}
-          {viewMode === "compact" && isAdmin && (
-            <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none rounded-md border border-border px-2 py-1">
-              <input type="checkbox" checked={debugAlign} onChange={(e) => setDebugAlign(e.target.checked)} className="accent-fuchsia-500" />
-              Debug alinhamento
-            </label>
-          )}
+            {viewMode === "compact" && isAdmin && (
+              <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1">
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Fotos</span>
+                <input
+                  type="range" min={0} max={2} step={1}
+                  value={photoSize === "sm" ? 0 : photoSize === "md" ? 1 : 2}
+                  onChange={(e) => setPhotoSize((["sm", "md", "lg"] as const)[Number(e.target.value)])}
+                  className="w-20 sm:w-24 accent-accent"
+                  aria-label="Tamanho das fotos"
+                />
+                <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
+              </div>
+            )}
+            {viewMode === "compact" && isAdmin && (
+              <label className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none rounded-md border border-border px-2 py-1">
+                <input type="checkbox" checked={debugAlign} onChange={(e) => setDebugAlign(e.target.checked)} className="accent-fuchsia-500" />
+                Debug
+              </label>
+            )}
+          </div>
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="flex flex-wrap h-auto">
-            <TabsTrigger value="todos">Todos</TabsTrigger>
-            <TabsTrigger value="fornecedor_lp">Fornecedor LP</TabsTrigger>
-            <TabsTrigger value="fornecedor_ckd">Fornecedor CKD</TabsTrigger>
-            <TabsTrigger value="processo_mbr">Processo MBR</TabsTrigger>
-            <TabsTrigger value="processo_hmb">Processo HMB</TabsTrigger>
-          </TabsList>
+          <div className="-mx-3 sm:mx-0 overflow-x-auto scrollbar-thin">
+            <TabsList className="inline-flex w-max min-w-full sm:w-auto px-3 sm:px-0">
+              <TabsTrigger value="todos" className="whitespace-nowrap">Todos</TabsTrigger>
+              <TabsTrigger value="fornecedor_lp" className="whitespace-nowrap">Fornecedor LP</TabsTrigger>
+              <TabsTrigger value="fornecedor_ckd" className="whitespace-nowrap">Fornecedor CKD</TabsTrigger>
+              <TabsTrigger value="processo_mbr" className="whitespace-nowrap">Processo MBR</TabsTrigger>
+              <TabsTrigger value="processo_hmb" className="whitespace-nowrap">Processo HMB</TabsTrigger>
+            </TabsList>
+          </div>
+
 
           <TabsContent value={tab} className="mt-4">
             {isLoading ? (<div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-4 border-accent border-t-transparent rounded-full" /></div>
@@ -239,12 +246,12 @@ const Contencao = () => {
                           const effSize = isAdmin ? photoSize : "lg";
                           const effDebug = isAdmin && debugAlign;
                           return (
-                            <div className={`w-full ${effSize === "sm" ? "md:w-[360px]" : effSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
+                            <div className={`w-full ${effSize === "sm" ? "md:w-[300px] lg:w-[340px]" : effSize === "md" ? "md:w-[360px] lg:w-[420px]" : "md:w-[400px] lg:w-[500px]"} md:shrink-0`}>
                               <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={effSize} debug={effDebug} />
                             </div>
                           );
                         })()}
-                        <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">
+                        <div className="flex flex-col items-stretch md:items-end gap-2 w-full md:w-[200px] lg:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
                             <div className="flex gap-1">

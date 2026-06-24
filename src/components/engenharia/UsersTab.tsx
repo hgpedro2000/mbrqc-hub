@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
 import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
+import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 
 const TURNOS = ["1T", "2T", "3T"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
@@ -236,15 +237,32 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     }
   };
 
-  const handleResetPassword = async (userId: string) => {
-    setResettingId(userId);
+  const handleResetPassword = async (user: { id: string; full_name?: string; employee_number?: string }) => {
+    setResettingId(user.id);
     try {
       const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { user_id: userId },
+        body: { user_id: user.id },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast.success(`Senha temporária gerada: ${data?.temporary_password || "verifique no Help Desk"}. O usuário será obrigado a redefinir no próximo login.`);
+      const tempPassword: string | undefined = data?.temporary_password;
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
+      if (tempPassword) {
+        toast.success(`Senha temporária: ${tempPassword}`, {
+          duration: 15000,
+          description: "O usuário deverá trocar a senha no próximo login.",
+          action: {
+            label: "WhatsApp",
+            onClick: () => openWhatsApp(buildResetPasswordMessage({
+              userName: user.full_name,
+              employeeNumber: user.employee_number,
+              password: tempPassword,
+              appUrl: window.location.origin,
+            })),
+          },
+        });
+      } else {
+        toast.success("Senha redefinida. Verifique no Help Desk.");
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -616,7 +634,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
+                  <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} className="h-8 w-8 p-0">
                     {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                   </Button>
                   <AlertDialog>
@@ -700,7 +718,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p.id)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleResetPassword(p)} disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
                           {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                         </Button>
                         <AlertDialog>

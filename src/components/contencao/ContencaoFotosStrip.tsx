@@ -25,10 +25,10 @@ const useSignedUrls = (paths: string[]) => {
   return urls;
 };
 
-const DIMS: Record<NonNullable<Props["size"]>, string> = {
-  sm: "w-12 h-12",
-  md: "w-16 h-16",
-  lg: "w-20 h-20",
+const HEIGHTS: Record<NonNullable<Props["size"]>, string> = {
+  sm: "h-14",
+  md: "h-20",
+  lg: "h-24",
 };
 
 const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showLabels = true }: Props) => {
@@ -39,7 +39,7 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
   const [lightbox, setLightbox] = useState<{ paths: string[]; index: number; title: string } | null>(null);
 
   if (problema.length === 0 && mark.length === 0) return null;
-  const dim = DIMS[size];
+  const h = HEIGHTS[size];
 
   const Section = ({
     paths, urls, label, Icon, color, border,
@@ -56,19 +56,19 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
             key={i}
             type="button"
             onClick={(e) => { e.stopPropagation(); setLightbox({ paths, index: i, title: label }); }}
-            className={`${dim} rounded-md border ${border} overflow-hidden bg-muted hover:ring-2 hover:ring-accent transition`}
+            className={`${h} w-full rounded-md border ${border} overflow-hidden bg-muted hover:ring-2 hover:ring-accent transition`}
           >
             <img src={u} alt={label} className="w-full h-full object-cover" />
           </button>
         ))}
         {paths.length === 0 && (
-          <div className={`${dim} rounded-md border border-dashed border-muted-foreground/20 bg-muted/30`} />
+          <div className={`${h} w-full rounded-md border border-dashed border-muted-foreground/20 bg-muted/30`} />
         )}
         {paths.length > 3 && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setLightbox({ paths, index: 3, title: label }); }}
-            className={`${dim} rounded-md border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground hover:bg-muted/70`}
+            className={`${h} w-full rounded-md border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground hover:bg-muted/70`}
           >
             +{paths.length - 3}
           </button>

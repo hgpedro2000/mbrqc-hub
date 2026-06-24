@@ -45,7 +45,7 @@ const findPair = (labelText: RegExp) => {
   // inline-flex span -> parent label div
   const label = span.closest("div") as HTMLDivElement;
   const section = label.parentElement as HTMLDivElement;
-  const grid = section.querySelector(":scope > div.grid") as HTMLDivElement;
+  const grid = section.querySelector(":scope > div.flex") as HTMLDivElement;
   return { label, grid, section };
 };
 
@@ -83,9 +83,9 @@ describe("ContencaoFotosStrip — header alignment", () => {
           expect(label.className).toMatch(/\bw-full\b/);
           expect(label.className).toMatch(/\btext-center\b/);
 
-          // Grid is a block-level CSS grid (full width by default).
-          expect(grid.className).toMatch(/\bgrid\b/);
-          expect(grid.className).toMatch(/\bgrid-cols-3\b/);
+          // Grid is a flex row centered horizontally so 1-3 photos remain centered.
+          expect(grid.className).toMatch(/\bflex\b/);
+          expect(grid.className).toMatch(/\bjustify-center\b/);
         }
       });
     }

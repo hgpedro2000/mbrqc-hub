@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Look up the profile by employee number
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, employee_number, full_name, status, must_change_password")
+      .select("id, employee_number, full_name, status, must_change_password, password_changed_at")
       .eq("employee_number", employee_number)
       .maybeSingle();
 
@@ -44,6 +44,26 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Usuário inativo. Contate o administrador." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Temporary-password expiry check: only applies while must_change_password=true
+    if (profile.must_change_password && profile.password_changed_at) {
+      const { data: cfg } = await supabaseAdmin
+        .from("app_config")
+        .select("value")
+        .eq("key", "temp_password_expiry_days")
+        .maybeSingle();
+      const days = Math.max(1, parseInt((cfg as any)?.value || "7", 10) || 7);
+      const ageMs = Date.now() - new Date(profile.password_changed_at).getTime();
+      const ageDays = ageMs / (1000 * 60 * 60 * 24);
+      if (ageDays > days) {
+        return new Response(
+          JSON.stringify({
+            error: `Sua senha temporária expirou (validade de ${days} dia${days > 1 ? "s" : ""}). Solicite uma nova ao administrador pelo Help Desk.`,
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // The internal email is {employee_number}@internal.qhub

@@ -209,7 +209,7 @@ const Contencao = () => {
                           )}
                         </div>
                         {viewMode === "compact" && (
-                          <div className="md:w-[360px] md:shrink-0">
+                          <div className="md:w-[460px] md:shrink-0">
                             <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="md" />
                           </div>
                         )}

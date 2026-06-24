@@ -787,6 +787,86 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
           </div>
         </>
       )}
+
+      {/* Custom (provisional) password dialog */}
+      <Dialog
+        open={resetMode === "custom" && !!resetTarget && !resetResult}
+        onOpenChange={(v) => { if (!v) { setResetTarget(null); setResetPassword(""); } }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Senha provisória</DialogTitle>
+            <DialogDescription>
+              Defina uma senha provisória para <strong>{resetTarget?.full_name}</strong>. O usuário deverá trocá-la no próximo login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nova senha</Label>
+            <Input
+              type="text"
+              value={resetPassword}
+              onChange={(e) => setResetPassword(e.target.value)}
+              placeholder={`Mín. ${MIN_PASSWORD_LENGTH} chars, maiúscula, número e símbolo`}
+            />
+            {resetPassword && !resetPasswordValid && (
+              <p className="text-xs text-destructive">
+                A senha precisa ter {MIN_PASSWORD_LENGTH}+ caracteres, maiúscula, número e símbolo.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setResetTarget(null); setResetPassword(""); }}>Cancelar</Button>
+            <Button
+              disabled={!resetPasswordValid || resettingId === resetTarget?.id}
+              onClick={() => resetTarget && runResetPassword(resetTarget, resetPassword.trim())}
+            >
+              {resettingId === resetTarget?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <KeyRound className="w-4 h-4 mr-2" />}
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Result dialog (after either mode) */}
+      <Dialog
+        open={!!resetResult}
+        onOpenChange={(v) => { if (!v) { setResetResult(null); setResetTarget(null); setResetPassword(""); } }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Senha redefinida</DialogTitle>
+            <DialogDescription>
+              Compartilhe com <strong>{resetTarget?.full_name}</strong>. Ele(a) precisará trocar a senha no próximo login.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border bg-muted/40 p-3 font-mono text-sm break-all flex items-center justify-between gap-2">
+            <span>{resetResult?.password}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => { navigator.clipboard.writeText(resetResult?.password || ""); toast.success("Senha copiada"); }}
+            >
+              <Copy className="w-4 h-4" />
+            </Button>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => resetTarget && resetResult && openWhatsApp(buildResetPasswordMessage({
+                userName: resetTarget.full_name,
+                employeeNumber: resetTarget.employee_number,
+                password: resetResult.password,
+                appUrl: window.location.origin,
+              }))}
+            >
+              <MessageCircle className="w-4 h-4 mr-2" /> Enviar via WhatsApp
+            </Button>
+            <Button variant="outline" onClick={() => { setResetResult(null); setResetTarget(null); setResetPassword(""); }}>
+              Concluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

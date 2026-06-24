@@ -166,7 +166,7 @@ export default function MonitorAdmin() {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base sm:text-lg break-words">Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid gap-1"><Label htmlFor="t">Título (opcional)</Label><Input id="t" value={titulo} onChange={(e) => setTitulo(e.target.value)} /></div>
           <div className="grid gap-1"><Label htmlFor="d">Descrição (opcional)</Label><Textarea id="d" rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} /></div>

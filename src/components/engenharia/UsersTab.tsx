@@ -17,7 +17,6 @@ import { toast } from "sonner";
 import ModulePermissionsTab from "./ModulePermissionsTab";
 import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
-import { Dialog as DialogRoot } from "@/components/ui/dialog";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 
 const TURNOS = ["1T", "2T", "3T"];

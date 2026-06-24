@@ -62,8 +62,9 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
           <div className="flex items-center gap-3">
             <img src={logo} alt="Hyundai Mobis" style={{ height: 40 }} />
             <div>
-              <h1 className="text-[20px] font-bold leading-tight tracking-tight">RELATÓRIO DE CLAIM</h1>
-              <p className="text-[11px] uppercase tracking-wider text-slate-500">Contenção de Qualidade — Cobrança ao Fornecedor</p>
+              <h1 className="text-[20px] font-bold leading-tight tracking-tight">RELATÓRIO DE CONTENÇÃO</h1>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">Ação de Contenção de Qualidade</p>
+
             </div>
           </div>
           <div className="text-right text-[10px] text-slate-600">

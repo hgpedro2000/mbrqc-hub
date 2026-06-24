@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Save, ShieldAlert, Loader2 } from "lucide-react";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,8 +28,9 @@ const ContencaoForm = () => {
     tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
     data: getLocalDateString(), setor: "", linha: "", local: "",
     part_number: "", part_name: "", fornecedor: "",
-    quantidade_contida: 0, quantidade_aprovada: 0, quantidade_rejeitada: 0,
+    quantidade_pecas: 0, estoque_mobis: 0,
     motivo: "", acao_contencao: "", status: "emitida", observacoes: "",
+    mark_check: false,
   });
 
   const { data: existing, isLoading: loadingExisting } = useQuery({
@@ -39,7 +41,7 @@ const ContencaoForm = () => {
 
   useEffect(() => {
     if (existing) {
-      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_contida: existing.quantidade_contida || 0, quantidade_aprovada: existing.quantidade_aprovada || 0, quantidade_rejeitada: existing.quantidade_rejeitada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "" });
+      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_pecas: existing.quantidade_contida || 0, estoque_mobis: existing.quantidade_aprovada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "", mark_check: (existing as any).mark_check || false });
     }
   }, [existing]);
 
@@ -51,7 +53,17 @@ const ContencaoForm = () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
     setSaving(true);
     try {
-      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, local: form.local || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
+      const payload: any = {
+        tipo: form.tipo, titulo: form.titulo, responsavel: form.responsavel, data: form.data,
+        setor: form.setor || null, linha: form.linha || null, local: form.local || null,
+        part_number: form.part_number || null, part_name: form.part_name || null, fornecedor: form.fornecedor || null,
+        quantidade_contida: form.quantidade_pecas,
+        quantidade_aprovada: form.estoque_mobis,
+        quantidade_rejeitada: 0,
+        motivo: form.motivo || null, acao_contencao: form.acao_contencao || null,
+        status: form.status, observacoes: form.observacoes || null,
+        mark_check: form.mark_check,
+      };
       if (isEdit) { const { error } = await supabase.from("contencao").update(payload).eq("id", id!); if (error) throw error; toast.success(t("contencao.updateSuccess")); }
       else { const { error } = await supabase.from("contencao").insert(payload); if (error) throw error; toast.success(t("contencao.saveSuccess")); }
       navigate("/contencao");
@@ -90,10 +102,16 @@ const ContencaoForm = () => {
 
         <div className="form-section">
           <h2 className="form-section-title">{t("contencao.quantities")}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            <div className="space-y-2"><Label>{t("contencao.qtyContida")}</Label><Input type="number" value={form.quantidade_contida} onChange={(e) => set("quantidade_contida", Number(e.target.value))} /></div>
-            <div className="space-y-2"><Label>{t("contencao.qtyAprovada")}</Label><Input type="number" value={form.quantidade_aprovada} onChange={(e) => set("quantidade_aprovada", Number(e.target.value))} /></div>
-            <div className="space-y-2"><Label>{t("contencao.qtyRejeitada")}</Label><Input type="number" value={form.quantidade_rejeitada} onChange={(e) => set("quantidade_rejeitada", Number(e.target.value))} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
+            <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+          </div>
+          <div className="mt-4 flex items-center justify-between rounded-md border p-3">
+            <div>
+              <Label className="text-sm font-medium">Mark Check obrigatório</Label>
+              <p className="text-xs text-muted-foreground">Quando ativo, cada registro de turno exige foto do Mark Check.</p>
+            </div>
+            <Switch checked={form.mark_check} onCheckedChange={(v) => set("mark_check", v)} />
           </div>
         </div>
 

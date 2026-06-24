@@ -17,6 +17,7 @@ import { getLocalDateString } from "@/lib/localDate";
 import { compressImage } from "@/lib/compressImage";
 import { TURNOS, Inspetor, ContencaoRegistro } from "@/lib/contencao";
 import { useAuth } from "@/contexts/AuthContext";
+import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
 
 interface Props {
   open: boolean;

@@ -302,10 +302,11 @@ export default function SpecSwitchPanelCheck() {
     );
   }, [panelPn, switchPn, result.status, displayedAlc]);
 
-  const reset = useCallback(() => {
+  const reset = useCallback((opts?: { keepFrozen?: boolean }) => {
     setPanelRaw("");
     setSwitchRaw("");
     setValidated(false);
+    if (!opts?.keepFrozen) setFrozen(null);
     lastLoggedRef.current = "";
     setTimeout(() => panelRef.current?.focus(), 50);
   }, []);
@@ -330,7 +331,23 @@ export default function SpecSwitchPanelCheck() {
     } else {
       toast.error("Combinação não encontrada no banco", { duration: 2500 });
     }
-  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result.status, result.alc, displayedAlc]);
+    // Freeze current visual result, then auto-clear for next scan cycle
+    setFrozen({
+      panelPn,
+      switchPn,
+      status: result.status,
+      alc: displayedAlc || result.alc,
+      message: result.message,
+      expectedRows: result.expectedRows,
+    });
+    setTimeout(() => {
+      setPanelRaw("");
+      setSwitchRaw("");
+      setValidated(false);
+      lastLoggedRef.current = "";
+      panelRef.current?.focus();
+    }, 400);
+  }, [panelRaw, switchRaw, panelExtract.error, switchExtract.error, result, panelPn, switchPn, displayedAlc]);
 
   // Debounced scanner actions: Hyundai QR payloads contain control separators
   // that some USB readers emit as Enter mid-stream. Never move fields just

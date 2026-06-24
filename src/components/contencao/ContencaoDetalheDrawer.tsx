@@ -160,9 +160,52 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
           />
         )}
       </SheetContent>
+
+      <AlertDialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Finalizar Contenção?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja finalizar esta contenção? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={finalizing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              disabled={finalizing}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!contencao) return;
+                setFinalizing(true);
+                try {
+                  const { error } = await supabase
+                    .from("contencao")
+                    .update({ status: "concluida", data_conclusao: new Date().toISOString() })
+                    .eq("id", contencao.id);
+                  if (error) throw error;
+                  toast.success("Contenção finalizada");
+                  qc.invalidateQueries({ queryKey: ["contencao"] });
+                  qc.invalidateQueries({ queryKey: ["contencao-registros", contencao.id] });
+                  qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
+                  setConfirmFinalize(false);
+                  onClose();
+                } catch (err: any) {
+                  toast.error(err.message || "Erro ao finalizar");
+                } finally {
+                  setFinalizing(false);
+                }
+              }}
+            >
+              Sim, finalizar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Sheet>
   );
 };
+
 
 const Stat = ({ icon: Icon, label, value, colored }: any) => (
   <div className="rounded-md border bg-card p-2">

@@ -248,7 +248,7 @@ const ConsultaPecas = () => {
                 className="pl-10 h-12 text-base w-full"
               />
             </div>
-            <div className="grid grid-cols-4 gap-2 w-full sm:w-auto sm:flex">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex">
               <Button
                 type="button"
                 variant="outline"
@@ -399,7 +399,7 @@ const ConsultaPecas = () => {
 
       {/* Suffix Picker Dialog */}
       <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-[96vw] max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
@@ -560,7 +560,7 @@ const ConsultaPecas = () => {
 
       {/* HKMC Barcode Scanner Dialog */}
       <Dialog open={hkmcOpen} onOpenChange={setHkmcOpen}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[96vw] max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
           <DialogHeader className="px-4 pt-4">
             <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> Barcode Scanner H/KMC</DialogTitle>
             <DialogDescription>Leitor de códigos Hyundai/KIA</DialogDescription>
@@ -573,7 +573,7 @@ const ConsultaPecas = () => {
 
       {/* Desktop SPEC/ALC Barcode Reader Dialog (HW scanner / manual) */}
       <Dialog open={specReaderOpen} onOpenChange={setSpecReaderOpen}>
-        <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+        <DialogContent className="w-[96vw] max-w-md p-0 overflow-hidden border-0">
           <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-5 py-4 text-white">
             <div className="flex items-center gap-2 mb-1 opacity-90">
               <ScanSearch className="w-4 h-4" />

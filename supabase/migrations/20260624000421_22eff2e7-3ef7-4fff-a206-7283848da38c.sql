@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.7', 'patch', 'Consulta de Peças: revisão mobile', 'Botões de scan em grid 2x2 no mobile evitando truncamento de Painel×Switch; diálogos HKMC, SPEC reader e seletor de variante limitados a 96vw para não vazarem da tela.');

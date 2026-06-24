@@ -45,6 +45,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   const [qtdInspetores, setQtdInspetores] = useState(0);
   const [qtdInspecionada, setQtdInspecionada] = useState(0);
   const [qtdDiferenca, setQtdDiferenca] = useState(0);
+  const [qtdNg, setQtdNg] = useState(0);
   const [justificativaDiferenca, setJustificativaDiferenca] = useState("");
   const [showDiferenca, setShowDiferenca] = useState(false);
   const [observacoes, setObservacoes] = useState("");

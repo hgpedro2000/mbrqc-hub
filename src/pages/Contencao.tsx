@@ -33,7 +33,9 @@ const Contencao = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
+  const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
   useEffect(() => { localStorage.setItem("contencao:viewMode", viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem("contencao:photoSize", photoSize); }, [photoSize]);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({

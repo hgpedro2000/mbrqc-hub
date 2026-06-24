@@ -251,6 +251,10 @@ const Engenharia = () => {
             <EmailAutomationTabs />
           </TabsContent>
 
+          <TabsContent value="seguranca" className="form-section">
+            <SecurityConfigTab />
+          </TabsContent>
+
           <TabsContent value="privacidade" className="form-section">
             <PrivacyPolicyTab />
           </TabsContent>

@@ -246,7 +246,7 @@ const Contencao = () => {
                           const effSize = isAdmin ? photoSize : "lg";
                           const effDebug = isAdmin && debugAlign;
                           return (
-                            <div className={`w-full ${effSize === "sm" ? "md:w-[360px]" : effSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
+                            <div className={`w-full ${effSize === "sm" ? "md:w-[300px] lg:w-[340px]" : effSize === "md" ? "md:w-[360px] lg:w-[420px]" : "md:w-[400px] lg:w-[500px]"} md:shrink-0`}>
                               <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={effSize} debug={effDebug} />
                             </div>
                           );

@@ -239,38 +239,48 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
     }
   };
 
-  const handleResetPassword = async (user: { id: string; full_name?: string; employee_number?: string }) => {
+  // ---- Password reset flow ----
+  const [resetTarget, setResetTarget] = useState<{ id: string; full_name?: string; employee_number?: string } | null>(null);
+  const [resetMode, setResetMode] = useState<"custom" | "default">("default");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetResult, setResetResult] = useState<{ password: string } | null>(null);
+  const resetPolicy = useMemo(() => evaluatePassword(resetPassword), [resetPassword]);
+  const resetPasswordValid = isPasswordValid(resetPolicy);
+
+  const openResetFlow = (user: { id: string; full_name?: string; employee_number?: string }, mode: "custom" | "default") => {
+    setResetTarget(user);
+    setResetMode(mode);
+    setResetPassword("");
+    setResetResult(null);
+    if (mode === "default") {
+      runResetPassword(user, "");
+    }
+  };
+
+  const runResetPassword = async (
+    user: { id: string; full_name?: string; employee_number?: string },
+    customPassword: string,
+  ) => {
     setResettingId(user.id);
     try {
       const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { user_id: user.id },
+        body: {
+          user_id: user.id,
+          new_password: customPassword || undefined,
+        },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
-      const tempPassword: string | undefined = data?.temporary_password;
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      const tempPassword: string = (data as any)?.temporary_password || customPassword;
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
-      if (tempPassword) {
-        toast.success(`Senha temporária: ${tempPassword}`, {
-          duration: 15000,
-          description: "O usuário deverá trocar a senha no próximo login.",
-          action: {
-            label: "WhatsApp",
-            onClick: () => openWhatsApp(buildResetPasswordMessage({
-              userName: user.full_name,
-              employeeNumber: user.employee_number,
-              password: tempPassword,
-              appUrl: window.location.origin,
-            })),
-          },
-        });
-      } else {
-        toast.success("Senha redefinida. Verifique no Help Desk.");
-      }
+      setResetTarget(user);
+      setResetResult({ password: tempPassword });
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setResettingId(null);
     }
   };
+
 
   const handleDeleteUser = async (userId: string) => {
     setDeletingId(userId);

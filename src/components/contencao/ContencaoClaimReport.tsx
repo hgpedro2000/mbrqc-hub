@@ -216,7 +216,7 @@ const Field = ({ label, value, highlight = false }: { label: string; value: stri
   </div>
 );
 const Mini = ({ label, value, accent = "text-slate-900" }: any) => (
-  <div className="bg-white border border-amber-200 rounded px-1.5 py-1">
+  <div className="bg-white border border-slate-300 rounded px-1.5 py-1">
     <p className="text-[8px] uppercase text-slate-500">{label}</p>
     <p className={`text-[14px] font-bold ${accent}`}>{value}</p>
   </div>

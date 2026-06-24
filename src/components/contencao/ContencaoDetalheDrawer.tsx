@@ -94,36 +94,37 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
             <Stat label="OK / NG" value={`${totais.ok} / ${totais.ng}`} colored />
           </div>
 
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h3 className="font-heading font-semibold text-sm">Registros de Contenção</h3>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:flex-row sm:flex-wrap items-stretch gap-2 w-full sm:w-auto">
               {canClaim && registros.length > 0 && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 w-full sm:w-auto"
                   onClick={() => setClaimOpen(true)}
                 >
-                  <FileText className="w-4 h-4" /> Gerar Relatório
+                  <FileText className="w-4 h-4" /> <span className="truncate">Relatório</span>
                 </Button>
               )}
               {!concluida && (
-                <Button size="sm" className="gap-1" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4" /> Novo Registro
+                <Button size="sm" className="gap-1 w-full sm:w-auto" onClick={() => { setEditing(null); setDialogOpen(true); }}>
+                  <Plus className="w-4 h-4" /> <span className="truncate">Novo Registro</span>
                 </Button>
               )}
               {!concluida && registros.length > 0 && (
                 <Button
                   size="sm"
-                  className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="gap-1 bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto col-span-full xs:col-span-2 sm:col-auto"
                   onClick={() => setConfirmFinalize(true)}
                   disabled={finalizing}
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Finalizar Contenção
+                  <CheckCircle2 className="w-4 h-4" /> <span className="truncate">Finalizar</span>
                 </Button>
               )}
             </div>
           </div>
+
 
 
           {isLoading ? (

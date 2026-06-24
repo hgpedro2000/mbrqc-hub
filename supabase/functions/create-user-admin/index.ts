@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       full_name,
       status: "active",
       must_change_password: true,
+      password_changed_at: new Date().toISOString(),
       turno: turno || null,
       email: email || null,
       empresa: empresa || "mobis_brasil",

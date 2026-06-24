@@ -24,9 +24,12 @@ interface Props {
 const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   const qc = useQueryClient();
   const { isAdmin } = useUserRole();
+  const { profile } = useAuth();
+  const canClaim = canGenerateClaimReport({ isAdmin, cargo: profile?.cargo });
   const open = !!contencao;
   const [editing, setEditing] = useState<ContencaoRegistro | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [claimOpen, setClaimOpen] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
 

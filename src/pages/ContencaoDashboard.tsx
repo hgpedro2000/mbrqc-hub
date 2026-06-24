@@ -29,10 +29,11 @@ const ContencaoDashboard = () => {
   ].filter((d) => d.value > 0);
 
   const statusDist = [
-    { name: t("contencao.status.aberta"), value: items.filter((i) => i.status === "aberta").length },
-    { name: t("contencao.status.em_andamento"), value: items.filter((i) => i.status === "em_andamento").length },
-    { name: t("contencao.status.concluida"), value: items.filter((i) => i.status === "concluida").length },
-    { name: t("contencao.status.cancelada"), value: items.filter((i) => i.status === "cancelada").length },
+    { name: "Emitida", value: items.filter((i) => i.status === "emitida" || i.status === "aberta").length },
+    { name: "Iniciada", value: items.filter((i) => i.status === "iniciada").length },
+    { name: "Em Andamento", value: items.filter((i) => i.status === "em_andamento").length },
+    { name: "Concluída", value: items.filter((i) => i.status === "concluida").length },
+    { name: "Cancelada", value: items.filter((i) => i.status === "cancelada").length },
   ].filter((d) => d.value > 0);
 
   const qtyData = [

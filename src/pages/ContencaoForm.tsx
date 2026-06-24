@@ -25,10 +25,10 @@ const ContencaoForm = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     tipo: "interno_mbr", titulo: "", responsavel: profile?.full_name || "",
-    data: getLocalDateString(), setor: "", linha: "",
+    data: getLocalDateString(), setor: "", linha: "", local: "",
     part_number: "", part_name: "", fornecedor: "",
     quantidade_contida: 0, quantidade_aprovada: 0, quantidade_rejeitada: 0,
-    motivo: "", acao_contencao: "", status: "aberta", observacoes: "",
+    motivo: "", acao_contencao: "", status: "emitida", observacoes: "",
   });
 
   const { data: existing, isLoading: loadingExisting } = useQuery({
@@ -39,7 +39,7 @@ const ContencaoForm = () => {
 
   useEffect(() => {
     if (existing) {
-      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_contida: existing.quantidade_contida || 0, quantidade_aprovada: existing.quantidade_aprovada || 0, quantidade_rejeitada: existing.quantidade_rejeitada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "" });
+      setForm({ tipo: existing.tipo, titulo: existing.titulo, responsavel: existing.responsavel, data: existing.data, setor: existing.setor || "", linha: existing.linha || "", local: (existing as any).local || "", part_number: existing.part_number || "", part_name: existing.part_name || "", fornecedor: existing.fornecedor || "", quantidade_contida: existing.quantidade_contida || 0, quantidade_aprovada: existing.quantidade_aprovada || 0, quantidade_rejeitada: existing.quantidade_rejeitada || 0, motivo: existing.motivo || "", acao_contencao: existing.acao_contencao || "", status: existing.status, observacoes: existing.observacoes || "" });
     }
   }, [existing]);
 
@@ -51,7 +51,7 @@ const ContencaoForm = () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
     setSaving(true);
     try {
-      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
+      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, local: form.local || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
       if (isEdit) { const { error } = await supabase.from("contencao").update(payload).eq("id", id!); if (error) throw error; toast.success(t("contencao.updateSuccess")); }
       else { const { error } = await supabase.from("contencao").insert(payload); if (error) throw error; toast.success(t("contencao.saveSuccess")); }
       navigate("/contencao");
@@ -77,12 +77,13 @@ const ContencaoForm = () => {
           <h2 className="form-section-title">{t("contencao.generalInfo")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2"><Label>{t("common.type")}</Label><Select value={form.tipo} onValueChange={(v) => set("tipo", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="interno_mbr">{t("contencao.internoMBR")}</SelectItem><SelectItem value="externo_hmb">{t("contencao.externoHMB")}</SelectItem></SelectContent></Select></div>
-            {isEdit && (<div className="space-y-2"><Label>{t("common.status")}</Label><Select value={form.status} onValueChange={(v) => set("status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="aberta">{t("contencao.status.aberta")}</SelectItem><SelectItem value="em_andamento">{t("contencao.status.em_andamento")}</SelectItem><SelectItem value="concluida">{t("contencao.status.concluida")}</SelectItem><SelectItem value="cancelada">{t("contencao.status.cancelada")}</SelectItem></SelectContent></Select></div>)}
+            {isEdit && (<div className="space-y-2"><Label>{t("common.status")}</Label><Select value={form.status} onValueChange={(v) => set("status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emitida">Emitida</SelectItem><SelectItem value="iniciada">Iniciada</SelectItem><SelectItem value="em_andamento">Em Andamento</SelectItem><SelectItem value="concluida">Concluída</SelectItem><SelectItem value="cancelada">Cancelada</SelectItem></SelectContent></Select></div>)}
             <div className="space-y-2"><Label>{t("common.title")}</Label><Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder={t("contencao.descPlaceholder")} /></div>
             <div className="space-y-2"><Label>{t("common.responsible")}</Label><Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} /></div>
             <div className="space-y-2"><Label>{t("common.date")}</Label><Input type="date" value={form.data} onChange={(e) => set("data", e.target.value)} /></div>
             <div className="space-y-2"><Label>{t("common.sector")}</Label><Select value={form.setor} onValueChange={(v) => set("setor", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{setores.map((s) => <SelectItem key={s.id} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>{t("common.line")}</Label><Select value={form.linha} onValueChange={(v) => set("linha", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{linhas.map((l) => <SelectItem key={l.id} value={l.value}>{l.label}</SelectItem>)}</SelectContent></Select></div>
+            <div className="space-y-2 md:col-span-2"><Label>Local da Contenção</Label><Input value={form.local} onChange={(e) => set("local", e.target.value)} placeholder='Ex: "Linha 3 — Posto 7", "Área de Incoming", "Sala do Áudio"' /></div>
             <SupplierPartSelector fornecedor={form.fornecedor} partNumber={form.part_number} partName={form.part_name} onFornecedorChange={(v) => set("fornecedor", v)} onPartNumberChange={(v) => set("part_number", v)} onPartDataChange={(d) => set("part_name", d.part_name)} />
           </div>
         </div>

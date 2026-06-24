@@ -101,7 +101,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 w-full sm:w-auto"
+                  className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex-1 sm:flex-none"
                   onClick={() => setClaimOpen(true)}
                 >
                   <FileText className="w-4 h-4" /> <span className="truncate">Relatório</span>

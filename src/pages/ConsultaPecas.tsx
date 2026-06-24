@@ -399,7 +399,7 @@ const ConsultaPecas = () => {
 
       {/* Suffix Picker Dialog */}
       <Dialog open={suffixPickerOpen} onOpenChange={setSuffixPickerOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-[96vw] max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />

@@ -194,7 +194,9 @@ const CatalogTab = ({ tableName, title, codeLabel, codePlaceholder }: CatalogTab
                     <TableCell className="pl-3" onClick={(e) => e.stopPropagation()}><Checkbox checked={selectedIds.has(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></TableCell>
                     <TableCell className="font-mono text-xs">{item.code}</TableCell>
                     <TableCell className="text-xs">{item.description}</TableCell>
+                    {hasPt && <TableCell className="text-xs">{item.description_pt || <span className="text-muted-foreground italic">—</span>}</TableCell>}
                     <TableCell><Switch checked={item.active} onCheckedChange={() => toggleActive(item.id, item.active)} /></TableCell>
+
                     <TableCell>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(item)}><Pencil className="w-4 h-4" /></Button>

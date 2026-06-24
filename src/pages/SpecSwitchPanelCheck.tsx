@@ -618,7 +618,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">PAINEL EXTRAÍDO</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
-              {panelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
+              {dPanelPn || (panelExtract.error ? <span className="text-orange-700 text-sm">⚠ {panelExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
@@ -626,7 +626,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">SWITCH EXTRAÍDO</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-lg">
-              {switchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
+              {dSwitchPn || (switchExtract.error ? <span className="text-orange-700 text-sm">⚠ {switchExtract.error}</span> : <span className="text-slate-400">—</span>)}
             </div>
           </div>
 
@@ -634,7 +634,7 @@ export default function SpecSwitchPanelCheck() {
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 min-h-[56px] font-bold sm:border-r-2 border-slate-400 flex items-center">ALC CODE</div>
             <div className="p-3 min-h-[56px] flex items-center font-mono text-xl font-bold">
-              {displayedAlc || <span className="text-slate-400 font-normal text-base">—</span>}
+              {dAlc || <span className="text-slate-400 font-normal text-base">—</span>}
             </div>
           </div>
 
@@ -650,11 +650,11 @@ export default function SpecSwitchPanelCheck() {
           {/* MENSAGEM */}
           <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
             <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center">MENSAGEM</div>
-            <div className="p-3 text-base">{result.message}</div>
+            <div className="p-3 text-base">{dMessage}</div>
           </div>
 
           {/* Detalhes esperados quando divergência */}
-          {(result.status === "alc_diff" || result.status === "not_found") && result.expectedRows.length > 0 && (
+          {(dStatus === "alc_diff" || dStatus === "not_found") && dExpectedRows.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-[160px_1fr] border-b-2 border-slate-400">
               <div className="bg-slate-300 p-3 font-bold sm:border-r-2 border-slate-400 flex items-center text-xs">ESPERADO</div>
               <div className="p-3 overflow-x-auto">
@@ -663,10 +663,10 @@ export default function SpecSwitchPanelCheck() {
                     <tr><th className="text-left pr-3 pb-1">SWITCH</th><th className="text-left pr-3 pb-1">PANEL</th><th className="text-left pb-1">ALC</th></tr>
                   </thead>
                   <tbody>
-                    {result.expectedRows.slice(0, 6).map((r, i) => (
+                    {dExpectedRows.slice(0, 6).map((r, i) => (
                       <tr key={i} className="border-t border-slate-300">
-                        <td className={`pr-3 py-1 ${r.switch === switchPn ? "font-bold" : ""}`}>{r.switch}</td>
-                        <td className={`pr-3 py-1 ${r.panel === panelPn ? "font-bold" : ""}`}>{r.panel}</td>
+                        <td className={`pr-3 py-1 ${r.switch === dSwitchPn ? "font-bold" : ""}`}>{r.switch}</td>
+                        <td className={`pr-3 py-1 ${r.panel === dPanelPn ? "font-bold" : ""}`}>{r.panel}</td>
                         <td className="py-1 font-bold">{r.alc}</td>
                       </tr>
                     ))}
@@ -675,6 +675,7 @@ export default function SpecSwitchPanelCheck() {
               </div>
             </div>
           )}
+
 
           {/* Botões LIMPAR / NOVA LEITURA / VALIDAR */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-slate-200">

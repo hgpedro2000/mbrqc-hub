@@ -32,9 +32,12 @@ const Contencao = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const qc = useQueryClient();
+  const { profile } = useAuth();
+  const canClaim = canGenerateClaimReport({ isAdmin, cargo: profile?.cargo });
   const [tab, setTab] = useState<string>("todos");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
+  const [claimItem, setClaimItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
   const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
   const [debugAlign, setDebugAlign] = useState<boolean>(() => localStorage.getItem("contencao:debugAlign") === "1");

@@ -102,7 +102,7 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
 
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div><span className="text-muted-foreground">Inspecionada:</span> <span className="font-semibold">{registro.qtd_inspecionada}</span></div>
-        <div><span className="text-muted-foreground">OK:</span> <span className="font-semibold text-emerald-600">{registro.qtd_ok}</span></div>
+        <div><span className="text-muted-foreground">OK:</span> <span className="font-semibold text-emerald-600">{Math.max(0, (registro.qtd_inspecionada || 0) - (registro.qtd_ng || 0))}</span></div>
         <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{registro.qtd_ng}</span></div>
       </div>
 

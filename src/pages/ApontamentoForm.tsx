@@ -28,6 +28,7 @@ import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
 import InAppCamera from "@/components/InAppCamera";
 import { useFormAutosave, readFormAutosave, clearFormAutosave } from "@/hooks/useFormAutosave";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "react-i18next";
 
 type ApontamentoTipo = "incoming" | "peca" | "processo" | "oem";
 

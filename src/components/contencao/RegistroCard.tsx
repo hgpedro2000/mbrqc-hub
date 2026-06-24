@@ -18,14 +18,16 @@ interface Props {
 
 const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
   const qc = useQueryClient();
-  const [thumbUrl, setThumbUrl] = useState<string>("");
+  const [thumbUrls, setThumbUrls] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!registro.fotos?.length) return;
+    if (!registro.fotos?.length) { setThumbUrls([]); return; }
     let active = true;
-    supabase.storage.from("containment-photos").createSignedUrl(registro.fotos[0], 60 * 60).then(({ data }) => {
-      if (active && data?.signedUrl) setThumbUrl(data.signedUrl);
-    });
+    Promise.all(
+      registro.fotos.map((path) =>
+        supabase.storage.from("containment-photos").createSignedUrl(path, 60 * 60).then(({ data }) => data?.signedUrl || "")
+      )
+    ).then((urls) => { if (active) setThumbUrls(urls.filter(Boolean)); });
     return () => { active = false; };
   }, [registro.fotos]);
 

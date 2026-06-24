@@ -19,6 +19,7 @@ import { compressImage } from "@/lib/compressImage";
 import { TURNOS, Inspetor, ContencaoRegistro } from "@/lib/contencao";
 import { useAuth } from "@/contexts/AuthContext";
 
+
 interface Props {
   open: boolean;
   onClose: () => void;

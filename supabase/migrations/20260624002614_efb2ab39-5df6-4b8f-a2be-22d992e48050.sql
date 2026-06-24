@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.2.8.9', 'patch', 'MonitorDialog: header e rodapé alinhados', 'Contagem de slides não sobrepõe mais o X de fechar e os botões Salvar, Padrão de Fábrica, Cancelar e Abrir Monitor ficam agrupados à direita.');

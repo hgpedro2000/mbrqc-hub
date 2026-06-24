@@ -60,6 +60,9 @@ interface DefeitoDetalhe {
 }
 
 const ApontamentoForm = () => {
+  const { i18n } = useTranslation();
+  const isPt = (i18n.language || "pt").toLowerCase().startsWith("pt");
+  const defectLabel = (d: any) => (isPt && d?.description_pt ? d.description_pt : d?.description) || "";
   const navigate = useNavigate();
   const { id, tipo: paramTipo } = useParams();
   const [searchParams] = useSearchParams();

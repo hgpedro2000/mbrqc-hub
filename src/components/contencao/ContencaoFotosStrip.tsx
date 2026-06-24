@@ -73,28 +73,38 @@ const Section = ({
           {debug && <span className={`ml-1 normal-case font-mono ${misaligned ? "text-red-500" : "text-emerald-600"}`}>Δ{offset}px</span>}
         </span>
       </div>
-      <div ref={gridRef} className={`grid grid-cols-3 gap-1.5 relative ${debugGridCls}`}>
-        {urls.slice(0, 3).map((u, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpen(i); }}
-            className={`${h} w-full rounded-md border ${border} overflow-hidden bg-muted hover:ring-2 hover:ring-accent transition`}
-          >
-            <img src={u} alt={label} className="w-full h-full object-cover" />
-          </button>
-        ))}
-        {paths.length === 0 && (
-          <div className={`${h} w-full rounded-md border border-dashed border-muted-foreground/20 bg-muted/30`} />
-        )}
-        {paths.length > 3 && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpen(3); }}
-            className={`${h} w-full rounded-md border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground hover:bg-muted/70`}
-          >
-            +{paths.length - 3}
-          </button>
+      {/* Cell width matches a fixed 3-column track (gap-1.5 = 0.375rem * 2 total),
+          so 1, 2 or 3 photos always stay visually centered under the label. */}
+      <div ref={gridRef} className={`flex justify-center gap-1.5 relative ${debugGridCls}`}>
+        {paths.length === 0 ? (
+          <div
+            className={`${h} rounded-md border border-dashed border-muted-foreground/20 bg-muted/30`}
+            style={{ width: "calc((100% - 0.75rem) / 3)" }}
+          />
+        ) : (
+          <>
+            {urls.slice(0, 3).map((u, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onOpen(i); }}
+                className={`${h} rounded-md border ${border} overflow-hidden bg-muted hover:ring-2 hover:ring-accent transition`}
+                style={{ width: "calc((100% - 0.75rem) / 3)" }}
+              >
+                <img src={u} alt={label} className="w-full h-full object-cover" />
+              </button>
+            ))}
+            {paths.length > 3 && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onOpen(3); }}
+                className={`${h} rounded-md border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground hover:bg-muted/70`}
+                style={{ width: "calc((100% - 0.75rem) / 3)" }}
+              >
+                +{paths.length - 3}
+              </button>
+            )}
+          </>
         )}
         {debug && (
           <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-fuchsia-500/70" />

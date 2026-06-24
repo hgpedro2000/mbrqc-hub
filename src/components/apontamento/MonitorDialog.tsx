@@ -252,11 +252,11 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
           "sm:w-[96vw] sm:h-[92vh] sm:max-w-[1400px] sm:rounded-lg sm:border",
         )}
       >
-        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 border-b shrink-0 pr-12 sm:pr-14">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0">
             <Settings2 className="w-5 h-5 text-primary shrink-0" />
             <span className="truncate">Configurar Monitor</span>
-            <span className="ml-auto text-xs font-normal text-muted-foreground whitespace-nowrap">
+            <span className="ml-2 mr-2 text-xs font-normal text-muted-foreground whitespace-nowrap shrink-0">
               {activeCount} slide{activeCount === 1 ? "" : "s"}
             </span>
           </DialogTitle>

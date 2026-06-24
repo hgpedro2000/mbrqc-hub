@@ -909,9 +909,11 @@ export type Database = {
           acao_contencao: string | null
           created_at: string
           data: string
+          data_conclusao: string | null
           fornecedor: string | null
           id: string
           linha: string | null
+          local: string | null
           motivo: string | null
           numero: string | null
           observacoes: string | null
@@ -925,15 +927,18 @@ export type Database = {
           status: string
           tipo: string
           titulo: string
+          total_horas: number
           updated_at: string
         }
         Insert: {
           acao_contencao?: string | null
           created_at?: string
           data: string
+          data_conclusao?: string | null
           fornecedor?: string | null
           id?: string
           linha?: string | null
+          local?: string | null
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -947,15 +952,18 @@ export type Database = {
           status?: string
           tipo: string
           titulo: string
+          total_horas?: number
           updated_at?: string
         }
         Update: {
           acao_contencao?: string | null
           created_at?: string
           data?: string
+          data_conclusao?: string | null
           fornecedor?: string | null
           id?: string
           linha?: string | null
+          local?: string | null
           motivo?: string | null
           numero?: string | null
           observacoes?: string | null
@@ -969,9 +977,87 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          total_horas?: number
           updated_at?: string
         }
         Relationships: []
+      }
+      contencao_registros: {
+        Row: {
+          contencao_id: string
+          created_at: string
+          created_by: string | null
+          data: string
+          finaliza_contencao: boolean
+          fotos: Json
+          hora_fim: string
+          hora_inicio: string
+          horas_trabalhadas: number | null
+          id: string
+          inspetores: Json
+          local: string | null
+          mark_check: boolean
+          observacoes: string | null
+          qtd_inspecionada: number
+          qtd_inspetores: number
+          qtd_ng: number
+          qtd_ok: number
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          contencao_id: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          finaliza_contencao?: boolean
+          fotos?: Json
+          hora_fim: string
+          hora_inicio: string
+          horas_trabalhadas?: number | null
+          id?: string
+          inspetores?: Json
+          local?: string | null
+          mark_check?: boolean
+          observacoes?: string | null
+          qtd_inspecionada?: number
+          qtd_inspetores?: number
+          qtd_ng?: number
+          qtd_ok?: number
+          turno: string
+          updated_at?: string
+        }
+        Update: {
+          contencao_id?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          finaliza_contencao?: boolean
+          fotos?: Json
+          hora_fim?: string
+          hora_inicio?: string
+          horas_trabalhadas?: number | null
+          id?: string
+          inspetores?: Json
+          local?: string | null
+          mark_check?: boolean
+          observacoes?: string | null
+          qtd_inspecionada?: number
+          qtd_inspetores?: number
+          qtd_ng?: number
+          qtd_ok?: number
+          turno?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contencao_registros_contencao_id_fkey"
+            columns: ["contencao_id"]
+            isOneToOne: false
+            referencedRelation: "contencao"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       defect_categories: {
         Row: {

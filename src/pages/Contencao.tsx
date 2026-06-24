@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, BarChart3, Pencil, Trash2, Clock, Calendar, LayoutList, LayoutGrid } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";

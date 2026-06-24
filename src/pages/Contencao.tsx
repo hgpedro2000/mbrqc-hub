@@ -208,7 +208,12 @@ const Contencao = () => {
                             </>
                           )}
                         </div>
-                        <div className="flex flex-col items-stretch md:items-end gap-2 md:flex-1 md:min-w-0">
+                        {viewMode === "compact" && (
+                          <div className="md:w-[260px] md:shrink-0">
+                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
+                          </div>
+                        )}
+                        <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
                             {isAdmin && (
@@ -219,7 +224,7 @@ const Contencao = () => {
                             )}
                           </div>
                           {viewMode === "compact" && (
-                            <div className="flex flex-col gap-1 text-xs border border-border/60 rounded-md p-2 bg-muted/10 w-full md:w-[220px]">
+                            <div className="flex flex-col gap-1 text-xs border border-border/60 rounded-md p-2 bg-muted/10 w-full">
                               <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">Peças</span><span className="font-semibold tabular-nums">{estoque > 0 ? estoque : contidas || "—"}</span></div>
                               <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">Inspec.</span><span className="font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{inspecionado}</span></div>
                               <div className="flex items-center justify-between gap-2"><span className="text-muted-foreground">NG</span><span className="font-semibold text-red-600 tabular-nums">{ng}</span></div>
@@ -229,11 +234,6 @@ const Contencao = () => {
                                   <div className="h-full bg-red-500" style={{ width: `${(ngPct * inspPct) / 100}%`, marginLeft: `-${(ngPct * inspPct) / 100}%` }} />
                                 </div>
                               )}
-                            </div>
-                          )}
-                          {viewMode === "compact" && (
-                            <div className="w-full">
-                              <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="sm" />
                             </div>
                           )}
                         </div>

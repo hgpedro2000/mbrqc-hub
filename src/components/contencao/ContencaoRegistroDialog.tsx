@@ -62,7 +62,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contencao")
-        .select("mark_check, quantidade_aprovada")
+        .select("mark_check, quantidade_aprovada, fotos_problema, mark_check_fotos")
         .eq("id", contencaoId)
         .single();
       if (error) throw error;

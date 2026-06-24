@@ -202,6 +202,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     const err = validate();
     if (err) { toast.error(err); return; }
     setSaving(true);
+    const toastId = toast.loading(initial ? "Salvando registro..." : "Lançando registro...");
     try {
       const payload: any = {
         contencao_id: contencaoId,
@@ -237,6 +238,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         registroId = (inserted as any).id;
       }
       if (registroId && (newFiles.length || newFilesFalha.length)) {
+        toast.loading("Enviando fotos...", { id: toastId });
         const uploadedMark = newFiles.length ? await uploadFilesList(newFiles, registroId, "mark") : [];
         const uploadedFalha = newFilesFalha.length ? await uploadFilesList(newFilesFalha, registroId, "falha") : [];
         const finalFotos = [...existingFotos, ...uploadedMark];
@@ -247,21 +249,24 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           .eq("id", registroId);
         if (e2) throw e2;
       }
-      toast.success(finalizar ? "Contenção finalizada" : "Registro salvo");
-      qc.invalidateQueries({ queryKey: ["contencao"] });
-      qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] });
-      qc.invalidateQueries({ queryKey: ["contencao-ultimos-registros"] });
-      qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
-      qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] });
-      qc.invalidateQueries({ queryKey: ["contencao-info", contencaoId] });
+      toast.loading("Recalculando totais...", { id: toastId });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["contencao"] }),
+        qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] }),
+        qc.invalidateQueries({ queryKey: ["contencao-ultimos-registros"] }),
+        qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] }),
+        qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] }),
+        qc.invalidateQueries({ queryKey: ["contencao-info", contencaoId] }),
+      ]);
+      toast.success(finalizar ? "Contenção finalizada e totais atualizados" : "Registro salvo e totais atualizados", { id: toastId });
       onClose();
-
     } catch (e: any) {
-      toast.error(e.message || "Erro ao salvar registro");
+      toast.error(e.message || "Erro ao salvar registro", { id: toastId });
     } finally {
       setSaving(false);
     }
   };
+
 
   return (
     <>

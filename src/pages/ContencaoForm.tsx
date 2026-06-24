@@ -52,7 +52,17 @@ const ContencaoForm = () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
     setSaving(true);
     try {
-      const payload = { ...form, setor: form.setor || null, linha: form.linha || null, local: form.local || null, fornecedor: form.fornecedor || null, observacoes: form.observacoes || null, motivo: form.motivo || null, acao_contencao: form.acao_contencao || null };
+      const payload: any = {
+        tipo: form.tipo, titulo: form.titulo, responsavel: form.responsavel, data: form.data,
+        setor: form.setor || null, linha: form.linha || null, local: form.local || null,
+        part_number: form.part_number || null, part_name: form.part_name || null, fornecedor: form.fornecedor || null,
+        quantidade_contida: form.quantidade_pecas,
+        quantidade_aprovada: form.estoque_mobis,
+        quantidade_rejeitada: 0,
+        motivo: form.motivo || null, acao_contencao: form.acao_contencao || null,
+        status: form.status, observacoes: form.observacoes || null,
+        mark_check: form.mark_check,
+      };
       if (isEdit) { const { error } = await supabase.from("contencao").update(payload).eq("id", id!); if (error) throw error; toast.success(t("contencao.updateSuccess")); }
       else { const { error } = await supabase.from("contencao").insert(payload); if (error) throw error; toast.success(t("contencao.saveSuccess")); }
       navigate("/contencao");

@@ -3,7 +3,7 @@
  * (ErrorReportsTab). Simulates a logged-in admin opening a "Reset de Senha"
  * ticket and exercises BOTH buttons:
  *   1. "Senha provisória" → custom password flow
- *   2. "Reset padrão (admin123*)" → factory default flow
+ *   2. "Gerar senha segura" → secure temporary password flow
  *
  * For each path we assert:
  *   - supabase.functions.invoke('reset-user-password', ...) is called
@@ -139,9 +139,9 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
     ).toBeInTheDocument();
   });
 
-  it("default reset: invokes reset-user-password with admin123* and marks ticket resolvido", async () => {
+  it("default reset: invokes reset-user-password without a fixed password and marks ticket resolvido", async () => {
     invokeMock.mockResolvedValue({
-      data: { success: true, temporary_password: "admin123*" },
+      data: { success: true, temporary_password: "Mobis@SecureA1" },
       error: null,
     });
 
@@ -152,26 +152,25 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
       await screen.findByRole("heading", { name: /Reset padrão/i })
     ).toBeInTheDocument();
 
-    // Field is pre-filled and read-only.
-    const input = screen.getByLabelText(/Nova senha/i) as HTMLInputElement;
-    expect(input.value).toBe("admin123*");
-    expect(input.readOnly).toBe(true);
-
-    const apply = screen.getByRole("button", { name: /Aplicar reset padrão/i });
+    const apply = screen.getByRole("button", { name: /Gerar e aplicar/i });
     fireEvent.click(apply);
 
     await waitFor(() => expect(invokeMock).toHaveBeenCalledTimes(1));
     expect(invokeMock).toHaveBeenCalledWith("reset-user-password", {
-      body: { user_id: "user-to-reset", new_password: "admin123*" },
+      body: expect.objectContaining({
+        user_id: "user-to-reset",
+        new_password: undefined,
+        ticket_id: "ticket-1",
+      }),
     });
 
     await waitFor(() => expect(updateMock).toHaveBeenCalled());
     const updatePayload = updateMock.mock.calls[0][0] as any;
     expect(updatePayload.status).toBe("resolvido");
-    expect(updatePayload.admin_notes).toMatch(/padrão \(admin123\*\)/i);
+    expect(updatePayload.admin_notes).toMatch(/temporária segura/i);
 
-    // Success screen with default password visible + copy button.
-    const successDialog = await screen.findByText("admin123*");
+    // Success screen with generated password visible + copy button.
+    const successDialog = await screen.findByText("Mobis@SecureA1");
     expect(successDialog).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Concluir/i })).toBeEnabled();
   });
@@ -199,7 +198,7 @@ describe("ErrorReportsTab — Resetar senha popup (admin E2E)", () => {
     renderTab();
     await openTicketAndResetDialog("default");
 
-    const apply = screen.getByRole("button", { name: /Aplicar reset padrão/i });
+    const apply = screen.getByRole("button", { name: /Gerar e aplicar/i });
     fireEvent.click(apply);
 
     await waitFor(() => expect(invokeMock).toHaveBeenCalled());

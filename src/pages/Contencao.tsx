@@ -33,7 +33,9 @@ const Contencao = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detalheItem, setDetalheItem] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"compact" | "expanded">(() => (localStorage.getItem("contencao:viewMode") as any) || "compact");
+  const [photoSize, setPhotoSize] = useState<"sm" | "md" | "lg">(() => (localStorage.getItem("contencao:photoSize") as any) || "lg");
   useEffect(() => { localStorage.setItem("contencao:viewMode", viewMode); }, [viewMode]);
+  useEffect(() => { localStorage.setItem("contencao:photoSize", photoSize); }, [photoSize]);
   const { search, setSearch, filterValues, handleFilterChange, clearFilters, matchesSearch, matchesFilters } = useListFilters();
 
   const { data: items = [], isLoading } = useQuery({
@@ -136,6 +138,19 @@ const Contencao = () => {
             <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> Compacto</button>
             <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> Expandido</button>
           </div>
+          {viewMode === "compact" && (
+            <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Fotos</span>
+              <input
+                type="range" min={0} max={2} step={1}
+                value={photoSize === "sm" ? 0 : photoSize === "md" ? 1 : 2}
+                onChange={(e) => setPhotoSize((["sm", "md", "lg"] as const)[Number(e.target.value)])}
+                className="w-24 accent-accent"
+                aria-label="Tamanho das fotos"
+              />
+              <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground w-4">{photoSize}</span>
+            </div>
+          )}
         </div>
 
         <MasterListFilter searchValue={search} onSearchChange={setSearch} filters={filters} filterValues={filterValues} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
@@ -209,8 +224,8 @@ const Contencao = () => {
                           )}
                         </div>
                         {viewMode === "compact" && (
-                          <div className="md:w-[560px] md:shrink-0">
-                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size="lg" />
+                          <div className={`w-full ${photoSize === "sm" ? "md:w-[360px]" : photoSize === "md" ? "md:w-[460px]" : "md:w-[560px]"} md:shrink-0`}>
+                            <ContencaoFotosStrip fotosProblema={(item as any).fotos_problema} fotosMarkCheck={(item as any).mark_check_fotos} size={photoSize} />
                           </div>
                         )}
                         <div className="flex flex-col items-stretch md:items-end gap-2 md:w-[220px] md:shrink-0">

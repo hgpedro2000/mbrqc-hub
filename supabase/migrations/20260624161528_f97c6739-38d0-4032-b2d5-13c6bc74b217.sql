@@ -1,0 +1,1 @@
+ALTER TABLE public.defects ADD COLUMN IF NOT EXISTS description_pt text;

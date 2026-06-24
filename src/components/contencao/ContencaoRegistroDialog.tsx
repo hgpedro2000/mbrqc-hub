@@ -117,6 +117,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       setQtdInspetores(initial.qtd_inspetores || 0);
       setQtdInspecionada(initial.qtd_inspecionada || 0);
       setQtdDiferenca(Number((initial as any).qtd_diferenca || 0));
+      setQtdNg(Number((initial as any).qtd_ng || 0));
       setJustificativaDiferenca((initial as any).justificativa_diferenca || "");
       setShowDiferenca(Number((initial as any).qtd_diferenca || 0) > 0);
       setObservacoes(initial.observacoes || "");

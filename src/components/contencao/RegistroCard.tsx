@@ -117,6 +117,4 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
   );
 };
 
-// Re-export for accidental imports
-export { formatLocalDateString };
 export default RegistroCard;

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import ContencaoStatusStepper from "./ContencaoStatusStepper";
 import ContencaoRegistroDialog from "./ContencaoRegistroDialog";
 import RegistroCard from "./RegistroCard";
-import { computeDiasAndamento, formatHoras, normalizeStatus, ContencaoRegistro } from "@/lib/contencao";
+import { computeDiasAndamento, formatHoras, normalizeStatus, ContencaoRegistro, aggregateRegistrosDrawer } from "@/lib/contencao";
 import { useUserRole } from "@/hooks/useUserRole";
 
 

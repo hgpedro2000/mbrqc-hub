@@ -50,13 +50,12 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
     const t = registros.reduce(
       (acc, r) => ({
         insp: acc.insp + (r.qtd_inspecionada || 0),
-        ok: acc.ok + (r.qtd_ok || 0),
         ng: acc.ng + (r.qtd_ng || 0),
         horas: acc.horas + Number(r.horas_trabalhadas || 0),
       }),
-      { insp: 0, ok: 0, ng: 0, horas: 0 },
+      { insp: 0, ng: 0, horas: 0 },
     );
-    return t;
+    return { ...t, ok: Math.max(0, t.insp - t.ng) };
   }, [registros]);
 
   const grouped = useMemo(() => {

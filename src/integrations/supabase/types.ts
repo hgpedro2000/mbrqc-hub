@@ -2210,6 +2210,10 @@ export type Database = {
         }
         Returns: number
       }
+      next_employee_number: {
+        Args: { _pad: number; _prefix: string }
+        Returns: string
+      }
       normalize_part_number: { Args: { _pn: string }; Returns: string }
       profile_update_is_safe: {
         Args: { _new: Database["public"]["Tables"]["profiles"]["Row"] }

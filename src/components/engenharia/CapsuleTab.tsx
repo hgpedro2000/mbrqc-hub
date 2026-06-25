@@ -98,7 +98,10 @@ const CapsuleTab = () => {
 
   return (
     <div className="space-y-4">
+      <CapsuleNotepad />
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+
         <h2 className="text-lg font-heading font-semibold">Cápsula de Arquivos</h2>
         <div className="flex items-center gap-2">
           <input ref={fileRef} type="file" multiple className="hidden" onChange={handleUpload} />

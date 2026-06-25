@@ -693,7 +693,19 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
                   </Button>
                 )}
               </div>
+              {editEmpresa === "empresa_terceira" && editPP && (
+                nextPreviewEdit ? (
+                  <p className="text-xs text-muted-foreground">
+                    Próxima matrícula disponível: <span className="font-mono font-semibold text-foreground">{nextPreviewEdit}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs font-medium text-destructive">
+                    ⚠ Sequência esgotada para o prefixo <span className="font-mono">{editPP.prefix}</span> (faixa de {editPP.pad} dígitos).
+                  </p>
+                )
+              )}
             </div>
+
 
             <div className="space-y-2">
               <Label>Nome Completo *</Label>

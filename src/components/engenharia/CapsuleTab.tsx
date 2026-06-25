@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Upload, Download, Trash2, FileIcon, Search } from "lucide-react";
 import { toast } from "sonner";
+import CapsuleNotepad from "./CapsuleNotepad";
+
 
 const CapsuleTab = () => {
   const qc = useQueryClient();

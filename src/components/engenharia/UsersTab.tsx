@@ -475,7 +475,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
           )}
           <Dialog open={modulesOpen} onOpenChange={setModulesOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline"><LayoutGrid className="w-4 h-4 mr-1" /> Módulos</Button>
+              <Button size="sm" variant="outline" className="col-span-2 sm:col-span-1"><LayoutGrid className="w-4 h-4 mr-1" /> Módulos</Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto w-[95vw]">
               <DialogHeader><DialogTitle>Permissões de Módulos</DialogTitle></DialogHeader>

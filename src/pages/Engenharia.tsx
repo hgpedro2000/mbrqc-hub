@@ -82,7 +82,7 @@ const Engenharia = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-header">
+      <header className="gradient-header sticky top-0 z-40">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">

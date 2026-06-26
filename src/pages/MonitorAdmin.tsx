@@ -135,11 +135,20 @@ export default function MonitorAdmin() {
     setEditId(m.id);
     setEditTitulo(m.titulo || "");
     setEditDescricao(m.descricao || "");
+    setEditSlot(m.slot || 1);
+    setEditVigInicio(m.vigencia_inicio ? toLocalInput(m.vigencia_inicio) : "");
+    setEditVigFim(m.vigencia_fim ? toLocalInput(m.vigencia_fim) : "");
   };
 
   const saveEdit = async (id: string) => {
     const { error } = await supabase.from("monitor_slides_media")
-      .update({ titulo: editTitulo || null, descricao: editDescricao || null })
+      .update({
+        titulo: editTitulo || null,
+        descricao: editDescricao || null,
+        slot: editSlot,
+        vigencia_inicio: editVigInicio ? new Date(editVigInicio).toISOString() : null,
+        vigencia_fim: editVigFim ? new Date(editVigFim).toISOString() : null,
+      })
       .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Atualizado");

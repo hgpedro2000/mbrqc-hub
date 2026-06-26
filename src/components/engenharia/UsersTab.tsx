@@ -678,13 +678,42 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         </DialogContent>
       </Dialog>
 
-      {/* Search */}
-      <div className="py-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome, número, empresa..." className="pl-9" />
-        </div>
-      </div>
+      {/* Search — inline no topo, vira pílula flutuante ao rolar */}
+      {(() => {
+        const collapsed = searchCollapsed && !searchFocused && !searchTerm;
+        return (
+          <div
+            className={
+              collapsed
+                ? "fixed top-3 right-3 z-40 transition-all"
+                : "sticky top-[112px] sm:top-[148px] z-20 -mx-3 px-3 sm:mx-0 sm:px-0 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
+            }
+          >
+            <div className={collapsed ? "relative w-10" : "relative w-full"}>
+              <Search
+                className={
+                  collapsed
+                    ? "absolute inset-0 m-auto w-4 h-4 text-muted-foreground pointer-events-none"
+                    : "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                }
+              />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder={collapsed ? "" : "Buscar por nome, número, empresa..."}
+                aria-label="Buscar"
+                className={
+                  collapsed
+                    ? "h-10 w-10 rounded-full p-0 shadow-md border bg-background cursor-pointer"
+                    : "pl-9"
+                }
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Back to top */}
       {showBackToTop && (

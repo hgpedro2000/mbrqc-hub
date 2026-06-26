@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users, GripVertical, ScrollText,
+  LogOut, Beaker, ShieldCheck, ShieldAlert, FileBarChart, AlertTriangle, ArrowRight, Settings2, Package, Search, QrCode, Users, GripVertical, ScrollText, LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
@@ -299,6 +299,31 @@ const Hub = () => {
     "matriz-versatilidade": matrizBadge,
   };
 
+  // Help Desk pending tickets count (for admins) — used to show red badge on the "Chamados HelpDesk" button
+  const { data: helpDeskPending = 0 } = useQuery({
+    queryKey: ["hub-helpdesk-pending"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("error_reports")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["pendente", "em_andamento"]);
+      return count || 0;
+    },
+    enabled: !!realIsAdmin,
+    refetchInterval: 30000,
+  });
+
+  useEffect(() => {
+    if (!realIsAdmin) return;
+    const channel = supabase
+      .channel("hub-helpdesk-pending")
+      .on("postgres_changes", { event: "*", schema: "public", table: "error_reports" }, () => {
+        qc.invalidateQueries({ queryKey: ["hub-helpdesk-pending"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [realIsAdmin, qc]);
+
   // Realtime: refresh badge counts when underlying tables change
   useEffect(() => {
     if (!user?.id) return;
@@ -420,6 +445,17 @@ const Hub = () => {
                 <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <QrCode className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Meu QR Code</span>
+                </Button>
+              )}
+              {showEngineering && (
+                <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia?tab=erros")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3 relative">
+                  <LifeBuoy className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">Chamados HelpDesk</span>
+                  {helpDeskPending > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
+                      {helpDeskPending > 99 ? "99+" : helpDeskPending}
+                    </span>
+                  )}
                 </Button>
               )}
               {showEngineering && (

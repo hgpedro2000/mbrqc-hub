@@ -73,12 +73,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [pendingListOpen, setPendingListOpen] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [searchCollapsed, setSearchCollapsed] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [floatingTop, setFloatingTop] = useState(120);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowBackToTop(y > 400);
+      // Recolhe ao rolar para baixo, desde que não esteja focado nem com texto
+      if (y > 80 && !searchFocused && !searchTerm.trim()) {
+        setSearchCollapsed(true);
+      }
+      // Reexpande ao voltar ao topo
+      if (y <= 20) {
+        setSearchCollapsed(false);
+      }
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [searchFocused, searchTerm]);
 
 
 

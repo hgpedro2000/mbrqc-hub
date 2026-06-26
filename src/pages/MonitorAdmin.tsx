@@ -34,6 +34,21 @@ const TIPOS: { id: Tipo; label: string; icon: any; desc: string }[] = [
 
 const isPdfName = (s?: string | null) => !!s && /\.pdf($|\?)/i.test(s);
 
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const vigenciaStatus = (m: { vigencia_inicio?: string | null; vigencia_fim?: string | null }, now = new Date()) => {
+  const ini = m.vigencia_inicio ? new Date(m.vigencia_inicio) : null;
+  const fim = m.vigencia_fim ? new Date(m.vigencia_fim) : null;
+  if (ini && now < ini) return { label: "Agendado", cls: "bg-amber-500/15 text-amber-500" };
+  if (fim && now > fim) return { label: "Expirado", cls: "bg-rose-500/15 text-rose-500" };
+  if (ini || fim) return { label: "Em vigência", cls: "bg-sky-500/15 text-sky-500" };
+  return null;
+};
+
 export default function MonitorAdmin() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tipo>("comunicado");

@@ -98,7 +98,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
 
 
 
-  // Edit state
+  // Calculate floating search button offset based on actual header + tabs height
+  useEffect(() => {
+    const updateTop = () => {
+      const header = document.querySelector("header.gradient-header") as HTMLElement | null;
+      const tabsList = tabsListRef.current;
+      const headerH = header?.offsetHeight || 112;
+      const tabsH = tabsList?.offsetHeight || 48;
+      // small gap below tabs
+      setFloatingTop(headerH + tabsH + 8);
+    };
+    updateTop();
+    const observer = new ResizeObserver(updateTop);
+    const header = document.querySelector("header.gradient-header");
+    if (header) observer.observe(header);
+    if (tabsListRef.current) observer.observe(tabsListRef.current);
+    window.addEventListener("resize", updateTop, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateTop);
+    };
+  }, []);
+
   const [editId, setEditId] = useState("");
   const [editEmployeeNumber, setEditEmployeeNumber] = useState("");
   const [editFullName, setEditFullName] = useState("");

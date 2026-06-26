@@ -23,10 +23,11 @@ const fetchDeployedVersion = async (): Promise<string | null> => {
     });
     if (!res.ok) return null;
     const html = await res.text();
-    const match = html.match(
-      /<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i
-    );
-    return match?.[1] ?? null;
+    const matches = [...html.matchAll(/<meta\s+name=["']app-version["'][^>]*content=["']([^"']+)["'][^>]*>/gi)];
+    const valid = matches
+      .map((match) => match[1]?.trim())
+      .find((version) => /^\d+\.\d+\.\d+(?:\.\d+)?$/.test(version));
+    return valid ?? null;
   } catch {
     return null;
   }

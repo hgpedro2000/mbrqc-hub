@@ -91,6 +91,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         setSearchCollapsed(false);
       }
     };
+    onScroll(); // initial check
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [searchFocused, searchTerm]);

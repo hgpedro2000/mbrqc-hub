@@ -83,7 +83,38 @@ const VersionBadge = () => {
             ))}
           </div>
 
-          <ScrollArea className="max-h-[60vh] pr-3">
+          {isAdmin && (
+            <div className="rounded-md border border-dashed border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20 p-2 text-[11px] font-mono space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-amber-700 dark:text-amber-400">🛠 Debug (admin)</span>
+                <button
+                  type="button"
+                  onClick={async () => { setRechecking(true); await recheck(); setRechecking(false); }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-background hover:bg-muted"
+                >
+                  <RefreshCw className={`w-3 h-3 ${rechecking ? "animate-spin" : ""}`} /> rechecar
+                </button>
+              </div>
+              <div>client: <span className="font-semibold">v{clientVersion}</span></div>
+              <div>
+                deployed (index.html): <span className="font-semibold">{deployedVersion ? `v${deployedVersion}` : "—"}</span>
+              </div>
+              <div>min_required (DB): <span className="font-semibold">{minRequiredVersion ? `v${minRequiredVersion}` : "—"}</span></div>
+              <div>
+                cmp(client, deployed):{" "}
+                <span className="font-semibold">
+                  {deployedVersion ? compareVersions(clientVersion, deployedVersion) : "n/a"}
+                </span>{" "}
+                → updateAvailable: <span className="font-semibold">{String(updateAvailable)}</span>
+              </div>
+              <div>último check: {lastCheckedAt ? lastCheckedAt.toLocaleTimeString("pt-BR") : "—"}</div>
+              {!deployedVersion && (
+                <div className="text-red-600 dark:text-red-400">
+                  ⚠ meta tag não encontrada no HTML implantado — botão de atualizar não aparece.
+                </div>
+              )}
+            </div>
+          )}
             {isLoading ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
             ) : entries.length === 0 ? (

@@ -672,11 +672,27 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         </DialogContent>
       </Dialog>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome, número, empresa..." className="pl-9" />
+      {/* Search (sticky abaixo das abas) */}
+      <div className="sticky top-[164px] sm:top-[204px] z-20 -mx-3 px-3 sm:mx-0 sm:px-0 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por nome, número, empresa..." className="pl-9" />
+        </div>
       </div>
+
+      {/* Back to top */}
+      {showBackToTop && (
+        <Button
+          type="button"
+          size="icon"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg h-12 w-12"
+          aria-label="Voltar ao início da lista"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </Button>
+      )}
+
 
       {/* Edit Profile Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

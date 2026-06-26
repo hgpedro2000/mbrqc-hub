@@ -100,10 +100,12 @@ export default function MonitorAdmin() {
         tipo: tab, titulo: titulo || null, descricao: descricao || null,
         file_path: path, file_name: file.name, ordem: items.filter(i => i.tipo === tab).length,
         ativo: true, created_by: u.user?.id ?? null,
+        slot, vigencia_inicio: vigInicio ? new Date(vigInicio).toISOString() : null,
+        vigencia_fim: vigFim ? new Date(vigFim).toISOString() : null,
       });
       if (insErr) throw insErr;
       toast.success("Arquivo publicado");
-      setTitulo(""); setDescricao(""); setFile(null);
+      setTitulo(""); setDescricao(""); setFile(null); setSlot(1); setVigInicio(""); setVigFim("");
       const input = document.getElementById("media-file") as HTMLInputElement | null;
       if (input) input.value = "";
       await load();

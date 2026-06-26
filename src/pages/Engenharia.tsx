@@ -131,9 +131,9 @@ const Engenharia = () => {
         </DialogContent>
       </Dialog>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-hidden">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-clip">
         <Tabs defaultValue="usuarios" className="space-y-4 sm:space-y-6 w-full min-w-0">
-          <div className="w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="sticky top-[112px] sm:top-[148px] z-30 w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 py-2 border-b border-border">
             <TabsList className="inline-flex w-auto min-w-full xl:grid xl:grid-cols-12 h-auto gap-1 p-1">
               <TabsTrigger value="usuarios" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.suppliers")}</TabsTrigger>

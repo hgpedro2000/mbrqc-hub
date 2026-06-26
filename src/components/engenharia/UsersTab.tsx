@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -73,16 +73,54 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [pendingListOpen, setPendingListOpen] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [searchCollapsed, setSearchCollapsed] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [floatingTop, setFloatingTop] = useState(120);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setShowBackToTop(y > 400);
+      // Recolhe ao rolar para baixo, desde que não esteja focado nem com texto
+      if (y > 80 && !searchFocused && !searchTerm.trim()) {
+        setSearchCollapsed(true);
+      }
+      // Reexpande ao voltar ao topo
+      if (y <= 20) {
+        setSearchCollapsed(false);
+      }
+    };
+    onScroll(); // initial check
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, [searchFocused, searchTerm]);
+
+
+
+  // Calculate floating search button offset based on actual header + tabs height
+  useEffect(() => {
+    const updateTop = () => {
+      const header = document.querySelector("header.gradient-header") as HTMLElement | null;
+      const tabsList = document.querySelector('[role="tablist"]') as HTMLElement | null;
+      const headerH = header?.offsetHeight || 112;
+      const tabsH = tabsList?.offsetHeight || 48;
+      // small gap below tabs
+      setFloatingTop(headerH + tabsH + 8);
+    };
+    updateTop();
+    const observer = new ResizeObserver(updateTop);
+    const header = document.querySelector("header.gradient-header");
+    const tabsList = document.querySelector('[role="tablist"]');
+    if (header) observer.observe(header);
+    if (tabsList) observer.observe(tabsList);
+    window.addEventListener("resize", updateTop, { passive: true });
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateTop);
+    };
   }, []);
 
-
-
-  // Edit state
   const [editId, setEditId] = useState("");
   const [editEmployeeNumber, setEditEmployeeNumber] = useState("");
   const [editFullName, setEditFullName] = useState("");
@@ -672,17 +710,47 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         </DialogContent>
       </Dialog>
 
-      {/* Search — inline no topo da aba (sem fixed/sticky para não conflitar com header/abas) */}
-      <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nome, número, empresa..."
-          aria-label="Buscar"
-          className="pl-9"
-        />
+      {/* Search — collapsible inline + floating magnifier */}
+      <div className="overflow-hidden transition-all duration-300 ease-out"
+        style={{
+          maxHeight: searchCollapsed ? 0 : 60,
+          opacity: searchCollapsed ? 0 : 1,
+          transform: searchCollapsed ? "translateY(-8px)" : "translateY(0)",
+        }}
+      >
+        <div className="relative w-full pb-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            ref={searchRef}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="Buscar por nome, número, empresa..."
+            aria-label="Buscar"
+            className="pl-9 transition-all duration-300"
+          />
+        </div>
       </div>
+
+      {/* Floating transparent magnifier */}
+      {searchCollapsed && (
+        <button
+          type="button"
+          aria-label="Abrir busca"
+          onClick={() => {
+            setSearchCollapsed(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => {
+              searchRef.current?.focus();
+            }, 350);
+          }}
+          className="fixed right-4 z-30 rounded-full border border-border/50 bg-background/60 backdrop-blur-sm shadow-sm text-muted-foreground hover:text-foreground hover:bg-background/80 transition-all duration-300 ease-out flex items-center justify-center h-10 w-10"
+          style={{ top: floatingTop }}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Back to top */}
       {showBackToTop && (

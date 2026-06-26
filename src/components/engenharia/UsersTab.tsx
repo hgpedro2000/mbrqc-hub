@@ -685,8 +685,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           <div
             className={
               collapsed
-                ? "fixed top-3 right-3 z-40 transition-all"
-                : "sticky top-[112px] sm:top-[148px] z-20 -mx-3 px-3 sm:mx-0 sm:px-0 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
+                ? "fixed top-[120px] sm:top-[156px] right-4 z-40 transition-all"
+                : "sticky top-[160px] sm:top-[200px] z-20 -mx-3 px-3 sm:mx-0 sm:px-0 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
             }
           >
             <div className={collapsed ? "relative w-10" : "relative w-full"}>
@@ -712,6 +712,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
               />
             </div>
           </div>
+
         );
       })()}
 

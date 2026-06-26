@@ -209,6 +209,28 @@ export default function MonitorAdmin() {
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
             <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
+          {tab === "comunicado" && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-1">
+                <Label>Posição no slide</Label>
+                <select
+                  value={slot}
+                  onChange={(e) => setSlot(Number(e.target.value))}
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="vi">Início da vigência (opcional)</Label>
+                <Input id="vi" type="datetime-local" value={vigInicio} onChange={(e) => setVigInicio(e.target.value)} />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="vf">Fim da vigência (opcional)</Label>
+                <Input id="vf" type="datetime-local" value={vigFim} onChange={(e) => setVigFim(e.target.value)} />
+              </div>
+            </div>
+          )}
           <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-full sm:w-fit">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Enviar
           </Button>

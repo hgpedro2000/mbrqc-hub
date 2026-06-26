@@ -101,25 +101,8 @@ const Engenharia = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <p className="text-primary-foreground/70 text-xs sm:text-sm">{t("engenharia.subtitle")}</p>
-            {isSpecialAdmin && (
-              <>
-                {impersonating ? (
-                  <div className="flex items-center gap-1.5">
-                    <Badge className="bg-amber-500/20 text-amber-200 border-amber-400/30 text-[10px]">
-                      <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="text-primary-foreground/70 hover:text-primary-foreground h-6 text-[10px] px-2">
-                      Sair
-                    </Button>
-                  </div>
-                ) : (
-                  <Button variant="ghost" size="sm" onClick={() => setImpersonateOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground h-7 text-xs gap-1">
-                    <UserCheck className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Modo Usuário Padrão</span><span className="sm:hidden">Simular</span>
-                  </Button>
-                )}
-              </>
-            )}
           </div>
+
         </div>
       </header>
 
@@ -174,8 +157,32 @@ const Engenharia = () => {
             <UsersTab
               pendingRequests={userRequests}
               onRequestResolved={() => queryClient.invalidateQueries({ queryKey: ["user-requests"] })}
+              toolbarExtras={
+                isSpecialAdmin ? (
+                  impersonating ? (
+                    <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
+                      <Badge className="bg-amber-500/20 text-amber-700 border-amber-400/40 text-[10px]">
+                        <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
+                      </Badge>
+                      <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="h-7 text-[10px] px-2">
+                        Sair
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setImpersonateOpen(true)}
+                      className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
+                    >
+                      <UserCheck className="w-4 h-4 mr-1" /> Modo Usuário Padrão
+                    </Button>
+                  )
+                ) : null
+              }
             />
           </TabsContent>
+
 
           <TabsContent value="fornecedores" className="form-section">
             <SuppliersTab />

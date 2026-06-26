@@ -30,9 +30,11 @@ const CARGOS = [
 interface UsersTabProps {
   pendingRequests?: any[];
   onRequestResolved?: () => void;
+  toolbarExtras?: React.ReactNode;
 }
 
-const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) => {
+const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: UsersTabProps) => {
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(() => {
     const prefill = sessionStorage.getItem("prefill_new_user");
@@ -468,6 +470,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) =>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">Usuários</h2>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
+          {toolbarExtras}
+
           {selectedIds.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1">
               <Trash2 className="w-4 h-4 mr-1" /> Excluir {selectedIds.size}

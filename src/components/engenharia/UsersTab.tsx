@@ -678,41 +678,44 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         </DialogContent>
       </Dialog>
 
-      {/* Search — inline no topo, vira pílula flutuante ao rolar */}
+      {/* Search — sempre fixo abaixo das abas; vira pílula ao rolar */}
       {(() => {
         const collapsed = searchCollapsed && !searchFocused && !searchTerm;
         return (
-          <div
-            className={
-              collapsed
-                ? "fixed top-[120px] sm:top-[156px] right-4 z-40 transition-all"
-                : "sticky top-[160px] sm:top-[200px] z-20 -mx-3 px-3 sm:mx-0 sm:px-0 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
-            }
-          >
-            <div className={collapsed ? "relative w-10" : "relative w-full"}>
-              <Search
-                className={
-                  collapsed
-                    ? "absolute inset-0 m-auto w-4 h-4 text-muted-foreground pointer-events-none"
-                    : "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
-                }
-              />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder={collapsed ? "" : "Buscar por nome, número, empresa..."}
-                aria-label="Buscar"
-                className={
-                  collapsed
-                    ? "h-10 w-10 rounded-full p-0 shadow-md border bg-background cursor-pointer"
-                    : "pl-9"
-                }
-              />
+          <>
+            {/* spacer para evitar que o conteúdo fique sob a barra fixa */}
+            <div aria-hidden className="h-14" />
+            <div
+              className={
+                collapsed
+                  ? "fixed top-[120px] sm:top-[156px] right-4 z-30 w-10 transition-all"
+                  : "fixed top-[120px] sm:top-[156px] left-0 right-0 z-30 px-3 sm:px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
+              }
+            >
+              <div className={collapsed ? "relative w-10" : "relative w-full max-w-3xl mx-auto"}>
+                <Search
+                  className={
+                    collapsed
+                      ? "absolute inset-0 m-auto w-4 h-4 text-muted-foreground pointer-events-none"
+                      : "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                  }
+                />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  placeholder={collapsed ? "" : "Buscar por nome, número, empresa..."}
+                  aria-label="Buscar"
+                  className={
+                    collapsed
+                      ? "h-10 w-10 rounded-full p-0 shadow-md border bg-background cursor-pointer"
+                      : "pl-9"
+                  }
+                />
+              </div>
             </div>
-          </div>
-
+          </>
         );
       })()}
 

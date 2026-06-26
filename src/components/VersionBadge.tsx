@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppVersion } from "@/hooks/useAppVersion";
-import { CHANGE_TYPE_META, type ChangeType } from "@/lib/version";
+import { useUserRole } from "@/hooks/useUserRole";
+import { CHANGE_TYPE_META, compareVersions, type ChangeType } from "@/lib/version";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History } from "lucide-react";
+import { History, RefreshCw } from "lucide-react";
 
 interface ChangelogEntry {
   id: string;
@@ -19,8 +20,10 @@ interface ChangelogEntry {
 }
 
 const VersionBadge = () => {
-  const { clientVersion, updateAvailable } = useAppVersion();
+  const { clientVersion, updateAvailable, deployedVersion, minRequiredVersion, lastCheckedAt, recheck } = useAppVersion();
+  const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
+  const [rechecking, setRechecking] = useState(false);
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["app_changelog"],
@@ -79,6 +82,39 @@ const VersionBadge = () => {
               </span>
             ))}
           </div>
+
+          {isAdmin && (
+            <div className="rounded-md border border-dashed border-amber-400/60 bg-amber-50/40 dark:bg-amber-950/20 p-2 text-[11px] font-mono space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-amber-700 dark:text-amber-400">🛠 Debug (admin)</span>
+                <button
+                  type="button"
+                  onClick={async () => { setRechecking(true); await recheck(); setRechecking(false); }}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded border bg-background hover:bg-muted"
+                >
+                  <RefreshCw className={`w-3 h-3 ${rechecking ? "animate-spin" : ""}`} /> rechecar
+                </button>
+              </div>
+              <div>client: <span className="font-semibold">v{clientVersion}</span></div>
+              <div>
+                deployed (index.html): <span className="font-semibold">{deployedVersion ? `v${deployedVersion}` : "—"}</span>
+              </div>
+              <div>min_required (DB): <span className="font-semibold">{minRequiredVersion ? `v${minRequiredVersion}` : "—"}</span></div>
+              <div>
+                cmp(client, deployed):{" "}
+                <span className="font-semibold">
+                  {deployedVersion ? compareVersions(clientVersion, deployedVersion) : "n/a"}
+                </span>{" "}
+                → updateAvailable: <span className="font-semibold">{String(updateAvailable)}</span>
+              </div>
+              <div>último check: {lastCheckedAt ? lastCheckedAt.toLocaleTimeString("pt-BR") : "—"}</div>
+              {!deployedVersion && (
+                <div className="text-red-600 dark:text-red-400">
+                  ⚠ meta tag não encontrada no HTML implantado — botão de atualizar não aparece.
+                </div>
+              )}
+            </div>
+          )}
 
           <ScrollArea className="max-h-[60vh] pr-3">
             {isLoading ? (

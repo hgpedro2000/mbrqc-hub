@@ -704,18 +704,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             {/* spacer para evitar que o conteúdo fique sob a barra fixa */}
             <div aria-hidden className="h-14" />
             <div
+              style={{ top: collapsed ? topOffset : topOffset, right: collapsed ? 16 : undefined, left: collapsed ? undefined : 0 }}
               className={
-                collapsed
-                  ? "fixed top-[120px] sm:top-[156px] right-4 z-30 w-10 transition-all"
-                  : "fixed top-[120px] sm:top-[156px] left-0 right-0 z-30 px-3 sm:px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border transition-all"
+                "fixed z-30 transition-[width,padding,background-color,box-shadow,right] duration-300 ease-out will-change-[width,transform] " +
+                (collapsed
+                  ? "w-10"
+                  : "right-0 px-3 sm:px-6 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border")
               }
             >
-              <div className={collapsed ? "relative w-10" : "relative w-full max-w-3xl mx-auto"}>
+              <div className={"relative mx-auto transition-[max-width] duration-300 ease-out " + (collapsed ? "w-10 max-w-[40px]" : "w-full max-w-3xl")}>
                 <Search
                   className={
-                    collapsed
-                      ? "absolute inset-0 m-auto w-4 h-4 text-muted-foreground pointer-events-none"
-                      : "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
+                    "absolute w-4 h-4 text-muted-foreground pointer-events-none transition-all duration-300 " +
+                    (collapsed
+                      ? "inset-0 m-auto"
+                      : "left-3 top-1/2 -translate-y-1/2")
                   }
                 />
                 <Input
@@ -726,9 +729,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   placeholder={collapsed ? "" : "Buscar por nome, número, empresa..."}
                   aria-label="Buscar"
                   className={
-                    collapsed
+                    "transition-all duration-300 ease-out " +
+                    (collapsed
                       ? "h-10 w-10 rounded-full p-0 shadow-md border bg-background cursor-pointer"
-                      : "pl-9"
+                      : "pl-9")
                   }
                 />
               </div>

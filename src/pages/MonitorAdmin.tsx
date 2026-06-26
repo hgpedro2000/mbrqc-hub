@@ -266,6 +266,28 @@ export default function MonitorAdmin() {
                         <>
                           <Input value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} placeholder="Título" />
                           <Textarea rows={2} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} placeholder="Descrição" />
+                          {m.tipo === "comunicado" && (
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Posição</Label>
+                                <select
+                                  value={editSlot}
+                                  onChange={(e) => setEditSlot(Number(e.target.value))}
+                                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                >
+                                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
+                                </select>
+                              </div>
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Início</Label>
+                                <Input type="datetime-local" value={editVigInicio} onChange={(e) => setEditVigInicio(e.target.value)} />
+                              </div>
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Fim</Label>
+                                <Input type="datetime-local" value={editVigFim} onChange={(e) => setEditVigFim(e.target.value)} />
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <>
@@ -275,7 +297,13 @@ export default function MonitorAdmin() {
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
                         <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
+                        {m.tipo === "comunicado" && (
+                          <span className="px-2 py-0.5 rounded-full whitespace-nowrap bg-primary/15 text-primary">Pos. {m.slot || 1}</span>
+                        )}
+                        {(() => { const s = vigenciaStatus(m); return s ? <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", s.cls)}>{s.label}</span> : null; })()}
                         <span className="whitespace-nowrap">Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
+                        {m.vigencia_inicio && <span className="whitespace-nowrap">· De {new Date(m.vigencia_inicio).toLocaleString("pt-BR")}</span>}
+                        {m.vigencia_fim && <span className="whitespace-nowrap">· Até {new Date(m.vigencia_fim).toLocaleString("pt-BR")}</span>}
                         {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
                       <div className="flex flex-wrap justify-between items-center gap-2 pt-2">

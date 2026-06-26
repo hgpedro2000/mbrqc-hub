@@ -3,15 +3,20 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// Injects <meta name="app-version" content="..."> into index.html at build time
-// so the running client can compare against the version that is actually
-// deployed (not just what's stored in the database).
 const injectVersionMeta = (version: string): Plugin => ({
   name: "inject-app-version-meta",
   transformIndexHtml(html) {
+    const meta = `<meta name="app-version" content="${version}" />`;
+    if (html.match(/<meta\s+name=["']app-version["'][^>]*>/i)) {
+      return html.replace(
+        /<meta\s+name=["']app-version["'][^>]*>/i,
+        meta
+      );
+    }
+
     return html.replace(
       "</head>",
-      `  <meta name="app-version" content="${version}" />\n  </head>`
+      `  ${meta}\n  </head>`
     );
   },
 });

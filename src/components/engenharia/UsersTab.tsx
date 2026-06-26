@@ -30,9 +30,11 @@ const CARGOS = [
 interface UsersTabProps {
   pendingRequests?: any[];
   onRequestResolved?: () => void;
+  toolbarExtras?: React.ReactNode;
 }
 
-const UsersTab = ({ pendingRequests = [], onRequestResolved }: UsersTabProps) => {
+const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: UsersTabProps) => {
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(() => {
     const prefill = sessionStorage.getItem("prefill_new_user");

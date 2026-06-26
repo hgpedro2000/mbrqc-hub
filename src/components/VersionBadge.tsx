@@ -115,6 +115,8 @@ const VersionBadge = () => {
               )}
             </div>
           )}
+
+          <ScrollArea className="max-h-[60vh] pr-3">
             {isLoading ? (
               <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>
             ) : entries.length === 0 ? (

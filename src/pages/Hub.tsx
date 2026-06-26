@@ -299,6 +299,31 @@ const Hub = () => {
     "matriz-versatilidade": matrizBadge,
   };
 
+  // Help Desk pending tickets count (for admins) — used to show red badge on the "Chamados HelpDesk" button
+  const { data: helpDeskPending = 0 } = useQuery({
+    queryKey: ["hub-helpdesk-pending"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("error_reports")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["pendente", "em_andamento"]);
+      return count || 0;
+    },
+    enabled: !!realIsAdmin,
+    refetchInterval: 30000,
+  });
+
+  useEffect(() => {
+    if (!realIsAdmin) return;
+    const channel = supabase
+      .channel("hub-helpdesk-pending")
+      .on("postgres_changes", { event: "*", schema: "public", table: "error_reports" }, () => {
+        qc.invalidateQueries({ queryKey: ["hub-helpdesk-pending"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [realIsAdmin, qc]);
+
   // Realtime: refresh badge counts when underlying tables change
   useEffect(() => {
     if (!user?.id) return;

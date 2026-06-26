@@ -35,30 +35,31 @@ const fetchDeployedVersion = async (): Promise<string | null> => {
 export const useAppVersion = () => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [criticalUpdate, setCriticalUpdate] = useState(false);
+  const [deployedVersion, setDeployedVersion] = useState<string | null>(null);
+  const [minRequiredVersion, setMinRequiredVersion] = useState<string | null>(null);
+  const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
 
   const checkVersion = useCallback(async () => {
     try {
-      // 1. Min required version still comes from the DB (admin enforcement).
       const { data } = await supabase
         .from("app_config" as any)
         .select("key, value")
         .eq("key", "min_required_version")
         .maybeSingle();
       const minVersion = (data as any)?.value || "1.0.0";
+      setMinRequiredVersion(minVersion);
       if (compareVersions(CLIENT_VERSION, minVersion) < 0) {
         setCriticalUpdate(true);
       }
 
-      // 2. "Update available" is based on the actually deployed build.
-      const deployedVersion = await fetchDeployedVersion();
-      if (
-        deployedVersion &&
-        compareVersions(CLIENT_VERSION, deployedVersion) < 0
-      ) {
+      const dv = await fetchDeployedVersion();
+      setDeployedVersion(dv);
+      if (dv && compareVersions(CLIENT_VERSION, dv) < 0) {
         setUpdateAvailable(true);
       } else {
         setUpdateAvailable(false);
       }
+      setLastCheckedAt(new Date());
     } catch {
       /* ignore */
     }
@@ -70,5 +71,13 @@ export const useAppVersion = () => {
     return () => clearInterval(interval);
   }, [checkVersion]);
 
-  return { updateAvailable, criticalUpdate, clientVersion: CLIENT_VERSION };
+  return {
+    updateAvailable,
+    criticalUpdate,
+    clientVersion: CLIENT_VERSION,
+    deployedVersion,
+    minRequiredVersion,
+    lastCheckedAt,
+    recheck: checkVersion,
+  };
 };

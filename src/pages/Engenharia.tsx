@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import ReportErrorButton from "@/components/ReportErrorButton";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -98,9 +98,8 @@ const Engenharia = () => {
               </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
-            <div className="flex items-center gap-2">
-              <ReportErrorButton moduleName="Engenharia" />
-            </div>
+            <div className="flex items-center gap-2" />
+
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
             <Settings2 className="w-5 h-5 sm:w-8 sm:h-8" />

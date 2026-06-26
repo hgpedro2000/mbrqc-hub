@@ -1,47 +1,44 @@
-Ajustar a barra de busca da aba Usuários (modo Engenharia) para recolher ao rolar a página e exibir uma lupinha flutuante transparente que a reabre no topo.
+## 1. HelpDesk button — mover de Engenharia para Incoming
 
-## O que será feito
+- **Remover** o `<ReportErrorButton moduleName="Engenharia" />` do header da página `Engenharia.tsx` (já existe a aba Help Desk lá dentro, redundante).
+- **Manter** o botão "Chamados HelpDesk" do Hub (esse leva direto para a aba).
+- **Adicionar** `<ReportErrorButton moduleName="Apontamento Incoming" />` no header de `ApontamentoForm.tsx`, exibido **apenas quando `tipo === "incoming"`** (rota `/apontamentos/novo/incoming`).
 
-1. **Estado de recolhimento**
-   - Adicionar `searchCollapsed` e `searchFocused` no `UsersTab`.
-   - Recolher a barra quando o scroll passar de um limiar (ex: 80px) e o campo não estiver focado nem preenchido.
-   - Reexpandir automaticamente quando o usuário voltar ao topo da página ou digitar algo.
+## 2. Monitor — slide "Avisos / Comunicados"
 
-2. **Barra de busca recolhível**
-   - Na posição expandida: input de busca inline com ícone de lupa, ocupando a largura total.
-   - Na posição recolhida: a barra some suavemente (transição de altura/opacidade/translateY) e deixa um espaço limpo, sem spacer fixo.
+Hoje o slide mostra **1 aviso por vez**, em rotação de 8s, sem janela de validade. Vou expandir:
 
-3. **Lupinha flutuante transparente**
-   - Botão circular flutuante fixed, posicionado abaixo do header/abas em ambos os breakpoints (mobile e desktop), usando offset dinâmico calculado via `ResizeObserver` sobre o header e a lista de abas.
-   - Fundo translúcido (`bg-background/60` com `backdrop-blur`), borda sutil, ícone de lupa.
-   - Só aparece quando `searchCollapsed === true`.
+### 2.1 Banco (`monitor_slides_media`)
+Migration adicionando três colunas (não-quebrantes):
+- `vigencia_inicio  timestamptz null` — quando o aviso começa a aparecer
+- `vigencia_fim     timestamptz null` — quando para de aparecer
+- `slot             smallint default 1 check (slot between 1 and 4)` — em qual posição (1–4) ele aparece quando o slide está em modo multi-aviso
 
-4. **Interação de clique**
-   - Ao clicar na lupinha:
-     - Define `searchCollapsed = false`.
-     - Rola suavemente a página para o topo da aba Usuários (`window.scrollTo({ top: 0, behavior: 'smooth' })`).
-     - Foca o input de busca após a transição.
+Itens sem vigência continuam sempre vigentes (compatibilidade).
 
-5. **Transições suaves**
-   - Aplicar `transition-all duration-300 ease-out` na barra e na lupinha.
-   - Evitar "piscar" usando `overflow-hidden` combinado com altura/opacity controladas, não apenas `display: none`.
+### 2.2 Admin (`MonitorAdmin.tsx`)
+Na seção "Comunicados", adicionar ao formulário de upload **e** ao card de edição:
+- Seletor "Posição no slide" (1, 2, 3 ou 4) — define em qual quadrante o aviso aparece.
+- "Início da vigência" e "Fim da vigência" (datetime-local, ambos opcionais).
+- Mostrar badge "Agendado" / "Expirado" / "Ativo" no card baseado nas datas.
 
-6. **Responsivo e sem sobreposição**
-   - Recalcular o offset superior quando o header ou as abas mudarem de altura (mobile vs desktop).
-   - Garantir z-index da lupinha abaixo do header principal e das abas, mas acima do conteúdo da lista.
-   - Não usar `sticky` diretamente na barra (já vimos que ancestrais com `overflow-clip` quebram), mantendo a barra inline e a lupinha `fixed`.
+### 2.3 Slide do Monitor (`Monitor.tsx`, case `comunicados`/`alteracoes_4m`)
+- Filtrar `items` por vigência (`now ∈ [inicio, fim]` quando preenchidos).
+- Agrupar por `slot`. Layout dinâmico conforme quantidade de slots **com itens ativos no momento**:
+  - 1 slot → tela cheia (como hoje)
+  - 2 slots → grid 2 colunas
+  - 3 slots → grid 3 colunas
+  - 4 slots → grid 2×2
+- Dentro de cada slot, se houver vários avisos no mesmo slot, rotaciona-os a cada 8s (mantém o comportamento atual, mas por slot).
+- Contador "x / total" passa a ser por slot.
 
-7. **Verificação visual**
-   - Testar via preview em mobile e desktop para confirmar que:
-     - a barra recolhe ao rolar;
-     - a lupinha aparece no lugar certo;
-     - ao clicar, a barra reabre e o scroll volta ao topo;
-     - o conteúdo da lista não fica cortado nem sobreposto.
+## Detalhes técnicos
 
-## Arquivo principal
-- `src/components/engenharia/UsersTab.tsx`
+- Migration emite `GRANT`s já presentes na tabela; só adiciono colunas.
+- `MonitorAdmin` envia `vigencia_inicio`, `vigencia_fim` (ISO) e `slot` no `insert`/`update`.
+- `Monitor.tsx` recalcula slots a cada tick (já há `now` rodando), sem refazer fetch.
+- Sem mudança nas políticas RLS (colunas novas herdam as policies existentes).
+- Nenhuma alteração nos slides de "Alterações 4M" (mesmo case mas a UI multi-slot é opt-in: o `slot` default = 1, então sem configuração ele continua igual).
 
-## Não alterar
-- Lógica de criação/edição/exclusão de usuários.
-- Layout das abas, header, toolbar ou botão "Modo Usuário Padrão".
-- Comportamento do botão "Voltar ao início" já existente.
+## Changelog
+Bump patch + entrada em `app_changelog` descrevendo as três mudanças.

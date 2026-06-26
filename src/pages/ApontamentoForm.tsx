@@ -18,6 +18,7 @@ import SupplierPartSelector from "@/components/SupplierPartSelector";
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { uploadPhotos } from "@/lib/uploadPhotos";
+import ReportErrorButton from "@/components/ReportErrorButton";
 import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/compressImage";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -1197,9 +1198,14 @@ const ApontamentoForm = () => {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={requestExit} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
-            <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={requestExit} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
+              <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            </div>
+            {formTipo === "incoming" && (
+              <ReportErrorButton moduleName="Apontamento Incoming" />
+            )}
           </div>
           <div className="flex items-center gap-2 mt-2 sm:mt-4">
             <FileBarChart className="w-5 h-5 sm:w-8 sm:h-8" />

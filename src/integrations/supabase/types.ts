@@ -1710,9 +1710,12 @@ export type Database = {
           file_path: string
           id: string
           ordem: number
+          slot: number
           tipo: string
           titulo: string | null
           updated_at: string
+          vigencia_fim: string | null
+          vigencia_inicio: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1723,9 +1726,12 @@ export type Database = {
           file_path: string
           id?: string
           ordem?: number
+          slot?: number
           tipo: string
           titulo?: string | null
           updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1736,9 +1742,12 @@ export type Database = {
           file_path?: string
           id?: string
           ordem?: number
+          slot?: number
           tipo?: string
           titulo?: string | null
           updated_at?: string
+          vigencia_fim?: string | null
+          vigencia_inicio?: string | null
         }
         Relationships: []
       }

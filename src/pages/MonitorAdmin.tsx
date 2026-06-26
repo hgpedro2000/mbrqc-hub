@@ -21,6 +21,9 @@ interface Media {
   file_name?: string | null;
   ordem: number;
   ativo: boolean;
+  slot?: number | null;
+  vigencia_inicio?: string | null;
+  vigencia_fim?: string | null;
   created_at: string;
 }
 
@@ -30,6 +33,21 @@ const TIPOS: { id: Tipo; label: string; icon: any; desc: string }[] = [
 ];
 
 const isPdfName = (s?: string | null) => !!s && /\.pdf($|\?)/i.test(s);
+
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const vigenciaStatus = (m: { vigencia_inicio?: string | null; vigencia_fim?: string | null }, now = new Date()) => {
+  const ini = m.vigencia_inicio ? new Date(m.vigencia_inicio) : null;
+  const fim = m.vigencia_fim ? new Date(m.vigencia_fim) : null;
+  if (ini && now < ini) return { label: "Agendado", cls: "bg-amber-500/15 text-amber-500" };
+  if (fim && now > fim) return { label: "Expirado", cls: "bg-rose-500/15 text-rose-500" };
+  if (ini || fim) return { label: "Em vigência", cls: "bg-sky-500/15 text-sky-500" };
+  return null;
+};
 
 export default function MonitorAdmin() {
   const navigate = useNavigate();
@@ -41,9 +59,15 @@ export default function MonitorAdmin() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [slot, setSlot] = useState<number>(1);
+  const [vigInicio, setVigInicio] = useState<string>("");
+  const [vigFim, setVigFim] = useState<string>("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitulo, setEditTitulo] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
+  const [editSlot, setEditSlot] = useState<number>(1);
+  const [editVigInicio, setEditVigInicio] = useState<string>("");
+  const [editVigFim, setEditVigFim] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
@@ -91,10 +115,12 @@ export default function MonitorAdmin() {
         tipo: tab, titulo: titulo || null, descricao: descricao || null,
         file_path: path, file_name: file.name, ordem: items.filter(i => i.tipo === tab).length,
         ativo: true, created_by: u.user?.id ?? null,
+        slot, vigencia_inicio: vigInicio ? new Date(vigInicio).toISOString() : null,
+        vigencia_fim: vigFim ? new Date(vigFim).toISOString() : null,
       });
       if (insErr) throw insErr;
       toast.success("Arquivo publicado");
-      setTitulo(""); setDescricao(""); setFile(null);
+      setTitulo(""); setDescricao(""); setFile(null); setSlot(1); setVigInicio(""); setVigFim("");
       const input = document.getElementById("media-file") as HTMLInputElement | null;
       if (input) input.value = "";
       await load();
@@ -124,11 +150,20 @@ export default function MonitorAdmin() {
     setEditId(m.id);
     setEditTitulo(m.titulo || "");
     setEditDescricao(m.descricao || "");
+    setEditSlot(m.slot || 1);
+    setEditVigInicio(m.vigencia_inicio ? toLocalInput(m.vigencia_inicio) : "");
+    setEditVigFim(m.vigencia_fim ? toLocalInput(m.vigencia_fim) : "");
   };
 
   const saveEdit = async (id: string) => {
     const { error } = await supabase.from("monitor_slides_media")
-      .update({ titulo: editTitulo || null, descricao: editDescricao || null })
+      .update({
+        titulo: editTitulo || null,
+        descricao: editDescricao || null,
+        slot: editSlot,
+        vigencia_inicio: editVigInicio ? new Date(editVigInicio).toISOString() : null,
+        vigencia_fim: editVigFim ? new Date(editVigFim).toISOString() : null,
+      })
       .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Atualizado");
@@ -174,6 +209,28 @@ export default function MonitorAdmin() {
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
             <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
+          {tab === "comunicado" && (
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-1">
+                <Label>Posição no slide</Label>
+                <select
+                  value={slot}
+                  onChange={(e) => setSlot(Number(e.target.value))}
+                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
+                </select>
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="vi">Início da vigência (opcional)</Label>
+                <Input id="vi" type="datetime-local" value={vigInicio} onChange={(e) => setVigInicio(e.target.value)} />
+              </div>
+              <div className="grid gap-1">
+                <Label htmlFor="vf">Fim da vigência (opcional)</Label>
+                <Input id="vf" type="datetime-local" value={vigFim} onChange={(e) => setVigFim(e.target.value)} />
+              </div>
+            </div>
+          )}
           <Button disabled={uploading || !file} onClick={handleUpload} className="gap-2 w-full sm:w-fit">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Enviar
           </Button>
@@ -209,6 +266,28 @@ export default function MonitorAdmin() {
                         <>
                           <Input value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} placeholder="Título" />
                           <Textarea rows={2} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} placeholder="Descrição" />
+                          {m.tipo === "comunicado" && (
+                            <div className="grid gap-2 sm:grid-cols-3">
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Posição</Label>
+                                <select
+                                  value={editSlot}
+                                  onChange={(e) => setEditSlot(Number(e.target.value))}
+                                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                >
+                                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
+                                </select>
+                              </div>
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Início</Label>
+                                <Input type="datetime-local" value={editVigInicio} onChange={(e) => setEditVigInicio(e.target.value)} />
+                              </div>
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Fim</Label>
+                                <Input type="datetime-local" value={editVigFim} onChange={(e) => setEditVigFim(e.target.value)} />
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <>
@@ -218,7 +297,13 @@ export default function MonitorAdmin() {
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
                         <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
+                        {m.tipo === "comunicado" && (
+                          <span className="px-2 py-0.5 rounded-full whitespace-nowrap bg-primary/15 text-primary">Pos. {m.slot || 1}</span>
+                        )}
+                        {(() => { const s = vigenciaStatus(m); return s ? <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", s.cls)}>{s.label}</span> : null; })()}
                         <span className="whitespace-nowrap">Publicado em {new Date(m.created_at).toLocaleString("pt-BR")}</span>
+                        {m.vigencia_inicio && <span className="whitespace-nowrap">· De {new Date(m.vigencia_inicio).toLocaleString("pt-BR")}</span>}
+                        {m.vigencia_fim && <span className="whitespace-nowrap">· Até {new Date(m.vigencia_fim).toLocaleString("pt-BR")}</span>}
                         {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
                       <div className="flex flex-wrap justify-between items-center gap-2 pt-2">

@@ -1223,30 +1223,63 @@ const Monitor = () => {
       case "comunicados":
       case "alteracoes_4m": {
         const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
-        const items = slidesMedia.filter((m) => m.tipo === tipo);
-        const mi = Math.floor(now.getTime() / 8000) % Math.max(items.length, 1);
-        const current = items[mi];
-        if (!items.length) {
+        const nowMs = now.getTime();
+        const allItems = slidesMedia.filter((m) => {
+          if (m.tipo !== tipo) return false;
+          const ini = m.vigencia_inicio ? new Date(m.vigencia_inicio).getTime() : null;
+          const fim = m.vigencia_fim ? new Date(m.vigencia_fim).getTime() : null;
+          if (ini && nowMs < ini) return false;
+          if (fim && nowMs > fim) return false;
+          return true;
+        });
+        if (!allItems.length) {
           return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
         }
-        const url = current ? mediaUrls[current.file_path] : undefined;
-        const isPdf = /\.pdf($|\?)/i.test(current?.file_name || current?.file_path || "");
+        // Group by slot (only for comunicados; alteracoes_4m always single)
+        const slotsWithItems: { slot: number; items: any[] }[] = [];
+        if (tipo === "comunicado") {
+          for (const s of [1, 2, 3, 4]) {
+            const its = allItems.filter((m) => (m.slot || 1) === s);
+            if (its.length) slotsWithItems.push({ slot: s, items: its });
+          }
+          if (!slotsWithItems.length) slotsWithItems.push({ slot: 1, items: allItems });
+        } else {
+          slotsWithItems.push({ slot: 1, items: allItems });
+        }
+        const gridClass =
+          slotsWithItems.length === 1 ? "grid-cols-1 grid-rows-1" :
+          slotsWithItems.length === 2 ? "grid-cols-2 grid-rows-1" :
+          slotsWithItems.length === 3 ? "grid-cols-3 grid-rows-1" :
+          "grid-cols-2 grid-rows-2";
         return (
-          <div key={current?.id} className="w-full h-full grid grid-rows-[1fr_auto] gap-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-6 animate-fade-in">
-            <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center">
-              {!url
-                ? <Loader2 className="w-12 h-12 animate-spin text-muted-foreground" />
-                : isPdf
-                  ? <iframe title={current?.titulo || "PDF"} src={`${url}#toolbar=0&navpanes=0&view=FitH`} className="w-full h-full bg-white rounded-xl" />
-                  : <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" />}
-            </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                {current?.titulo && <h3 className="text-3xl font-bold truncate">{current.titulo}</h3>}
-                {current?.descricao && <p className="text-xl text-muted-foreground truncate">{current.descricao}</p>}
-              </div>
-              <span className="text-sm uppercase tracking-widest text-muted-foreground tabular-nums">{mi + 1} / {items.length}</span>
-            </div>
+          <div className={cn("w-full h-full grid gap-4", gridClass)}>
+            {slotsWithItems.map(({ slot, items }) => {
+              const mi = Math.floor(nowMs / 8000) % items.length;
+              const current = items[mi];
+              const url = current ? mediaUrls[current.file_path] : undefined;
+              const isPdf = /\.pdf($|\?)/i.test(current?.file_name || current?.file_path || "");
+              const multi = slotsWithItems.length > 1;
+              return (
+                <div key={`${slot}-${current?.id}`} className="grid grid-rows-[1fr_auto] gap-3 rounded-3xl bg-card/60 backdrop-blur-md border border-border/60 p-4 animate-fade-in min-h-0 min-w-0 overflow-hidden">
+                  <div className="relative overflow-hidden rounded-2xl bg-black/40 flex items-center justify-center min-h-0">
+                    {!url
+                      ? <Loader2 className="w-10 h-10 animate-spin text-muted-foreground" />
+                      : isPdf
+                        ? <iframe title={current?.titulo || "PDF"} src={`${url}#toolbar=0&navpanes=0&view=FitH`} className="w-full h-full bg-white rounded-xl" />
+                        : <img src={url} alt={current?.titulo || ""} className="max-w-full max-h-full object-contain animate-scale-in" />}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 min-w-0">
+                    <div className="min-w-0">
+                      {current?.titulo && <h3 className={cn("font-bold truncate", multi ? "text-xl" : "text-3xl")}>{current.titulo}</h3>}
+                      {current?.descricao && <p className={cn("text-muted-foreground truncate", multi ? "text-sm" : "text-xl")}>{current.descricao}</p>}
+                    </div>
+                    <span className="text-xs uppercase tracking-widest text-muted-foreground tabular-nums shrink-0">
+                      {multi && <>Pos. {slot} · </>}{mi + 1}/{items.length}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         );
       }

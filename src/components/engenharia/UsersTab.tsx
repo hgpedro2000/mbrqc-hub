@@ -77,7 +77,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [searchFocused, setSearchFocused] = useState(false);
   const [floatingTop, setFloatingTop] = useState(120);
   const searchRef = useRef<HTMLInputElement>(null);
-  const tabsListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => {

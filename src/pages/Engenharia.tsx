@@ -26,11 +26,18 @@ import { toast } from "sonner";
 
 const Engenharia = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useTranslation();
   const { profile } = useAuth();
   const isSpecialAdmin = profile?.employee_number === "3501165";
   const [impersonateOpen, setImpersonateOpen] = useState(false);
   const { impersonating, setImpersonating, stopImpersonating } = useImpersonation();
+  const initialTab = searchParams.get("tab") || "usuarios";
+  const [activeTab, setActiveTab] = useState(initialTab);
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && t !== activeTab) setActiveTab(t);
+  }, [searchParams]);
 
   const { data: pendingErrors = 0 } = useQuery({
     queryKey: ["pending-error-reports-count"],

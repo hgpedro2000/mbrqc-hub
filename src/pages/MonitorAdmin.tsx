@@ -44,9 +44,15 @@ export default function MonitorAdmin() {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [slot, setSlot] = useState<number>(1);
+  const [vigInicio, setVigInicio] = useState<string>("");
+  const [vigFim, setVigFim] = useState<string>("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitulo, setEditTitulo] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
+  const [editSlot, setEditSlot] = useState<number>(1);
+  const [editVigInicio, setEditVigInicio] = useState<string>("");
+  const [editVigFim, setEditVigFim] = useState<string>("");
 
   const load = async () => {
     setLoading(true);

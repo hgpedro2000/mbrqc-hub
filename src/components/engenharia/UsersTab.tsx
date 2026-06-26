@@ -102,7 +102,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   useEffect(() => {
     const updateTop = () => {
       const header = document.querySelector("header.gradient-header") as HTMLElement | null;
-      const tabsList = tabsListRef.current;
+      const tabsList = document.querySelector('[role="tablist"]') as HTMLElement | null;
       const headerH = header?.offsetHeight || 112;
       const tabsH = tabsList?.offsetHeight || 48;
       // small gap below tabs
@@ -111,8 +111,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     updateTop();
     const observer = new ResizeObserver(updateTop);
     const header = document.querySelector("header.gradient-header");
+    const tabsList = document.querySelector('[role="tablist"]');
     if (header) observer.observe(header);
-    if (tabsListRef.current) observer.observe(tabsListRef.current);
+    if (tabsList) observer.observe(tabsList);
     window.addEventListener("resize", updateTop, { passive: true });
     return () => {
       observer.disconnect();

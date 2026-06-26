@@ -72,6 +72,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [pendingListOpen, setPendingListOpen] = useState(false);
   const [activeRequestId, setActiveRequestId] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop(window.scrollY > 400);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+
 
   // Edit state
   const [editId, setEditId] = useState("");

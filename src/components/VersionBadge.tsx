@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppVersion } from "@/hooks/useAppVersion";
-import { CHANGE_TYPE_META, type ChangeType } from "@/lib/version";
+import { useUserRole } from "@/hooks/useUserRole";
+import { CHANGE_TYPE_META, compareVersions, type ChangeType } from "@/lib/version";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { History } from "lucide-react";
+import { History, RefreshCw } from "lucide-react";
 
 interface ChangelogEntry {
   id: string;
@@ -19,8 +20,10 @@ interface ChangelogEntry {
 }
 
 const VersionBadge = () => {
-  const { clientVersion, updateAvailable } = useAppVersion();
+  const { clientVersion, updateAvailable, deployedVersion, minRequiredVersion, lastCheckedAt, recheck } = useAppVersion();
+  const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
+  const [rechecking, setRechecking] = useState(false);
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["app_changelog"],

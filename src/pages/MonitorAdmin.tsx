@@ -21,6 +21,9 @@ interface Media {
   file_name?: string | null;
   ordem: number;
   ativo: boolean;
+  slot?: number | null;
+  vigencia_inicio?: string | null;
+  vigencia_fim?: string | null;
   created_at: string;
 }
 

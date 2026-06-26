@@ -709,17 +709,47 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         </DialogContent>
       </Dialog>
 
-      {/* Search — inline no topo da aba (sem fixed/sticky para não conflitar com header/abas) */}
-      <div className="relative w-full">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar por nome, número, empresa..."
-          aria-label="Buscar"
-          className="pl-9"
-        />
+      {/* Search — collapsible inline + floating magnifier */}
+      <div className="overflow-hidden transition-all duration-300 ease-out"
+        style={{
+          maxHeight: searchCollapsed ? 0 : 60,
+          opacity: searchCollapsed ? 0 : 1,
+          transform: searchCollapsed ? "translateY(-8px)" : "translateY(0)",
+        }}
+      >
+        <div className="relative w-full pb-2">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Input
+            ref={searchRef}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="Buscar por nome, número, empresa..."
+            aria-label="Buscar"
+            className="pl-9 transition-all duration-300"
+          />
+        </div>
       </div>
+
+      {/* Floating transparent magnifier */}
+      {searchCollapsed && (
+        <button
+          type="button"
+          aria-label="Abrir busca"
+          onClick={() => {
+            setSearchCollapsed(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            setTimeout(() => {
+              searchRef.current?.focus();
+            }, 350);
+          }}
+          className="fixed right-4 z-30 rounded-full border border-border/50 bg-background/60 backdrop-blur-sm shadow-sm text-muted-foreground hover:text-foreground hover:bg-background/80 transition-all duration-300 ease-out flex items-center justify-center h-10 w-10"
+          style={{ top: floatingTop }}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Back to top */}
       {showBackToTop && (

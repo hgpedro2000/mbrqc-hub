@@ -75,6 +75,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [searchCollapsed, setSearchCollapsed] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const [topOffset, setTopOffset] = useState<number>(120);
 
   useEffect(() => {
     const onScroll = () => {
@@ -82,8 +83,25 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
       setShowBackToTop(y > 400);
       setSearchCollapsed(y > 120);
     };
+    const measure = () => {
+      const header = document.querySelector("header") as HTMLElement | null;
+      const tabs = document.querySelector('[role="tablist"]') as HTMLElement | null;
+      const h = (header?.getBoundingClientRect().height ?? 0) + (tabs?.getBoundingClientRect().height ?? 0);
+      if (h > 0) setTopOffset(Math.round(h + 4));
+    };
+    measure();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("resize", measure);
+    const ro = new ResizeObserver(measure);
+    const header = document.querySelector("header");
+    const tabs = document.querySelector('[role="tablist"]');
+    if (header) ro.observe(header);
+    if (tabs) ro.observe(tabs);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", measure);
+      ro.disconnect();
+    };
   }, []);
 
 

@@ -1352,7 +1352,7 @@ const ApontamentoForm = () => {
                       size="sm"
                       disabled
                       className="shrink-0 whitespace-nowrap border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold disabled:opacity-100 dark:bg-emerald-950/30 dark:text-emerald-300"
-                      title=t("apontamentos.form.alcBtnTitleAlreadyValidated")
+                      title={t("apontamentos.form.alcBtnTitleAlreadyValidated")}
                     >
                       ✓ Validado
                     </Button>
@@ -1791,7 +1791,7 @@ const ApontamentoForm = () => {
                 <Input
                   value={tagNumber}
                   onChange={(e) => setTagNumber(e.target.value)}
-                  placeholder=t("apontamentos.form.tagPlaceholder")
+                  placeholder={t("apontamentos.form.tagPlaceholder")}
                   className="w-full sm:max-w-md"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -1903,7 +1903,7 @@ const ApontamentoForm = () => {
               <Input
                 value={coInspetorSearch}
                 onChange={(e) => setCoInspetorSearch(e.target.value)}
-                placeholder=t("apontamentos.form.coInspSearchPlaceholder")
+                placeholder={t("apontamentos.form.coInspSearchPlaceholder")}
                 className="pl-9"
                 autoComplete="off"
               />
@@ -2168,7 +2168,7 @@ const ApontamentoForm = () => {
                     <Input
                       value={alcManualInput}
                       onChange={(e) => setAlcManualInput(e.target.value.toUpperCase())}
-                      placeholder=t("apontamentos.form.alcManualInputPlaceholder")
+                      placeholder={t("apontamentos.form.alcManualInputPlaceholder")}
                       className={`font-mono text-base font-bold h-9 px-2 ${
                         match ? "text-emerald-700 border-emerald-500"
                         : mismatch ? "text-destructive border-destructive"

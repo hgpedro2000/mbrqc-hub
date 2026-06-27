@@ -227,10 +227,11 @@ export default function MonitorAdmin() {
                 <select
                   value={slot}
                   onChange={(e) => setSlot(Number(e.target.value))}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-11 sm:h-10 rounded-md border border-input bg-background px-3 text-base md:text-sm"
                 >
                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
                 </select>
+
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="vi">Início da vigência (opcional)</Label>

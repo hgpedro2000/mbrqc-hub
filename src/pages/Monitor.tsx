@@ -549,6 +549,21 @@ const Monitor = () => {
     }
     return base;
   });
+
+  // Fetch shared default preferences (saved by admin) once on mount and apply
+  // them — so every profile sees what the admin defined as the default layout.
+  useEffect(() => {
+    if (isPreviewMode) return;
+    let cancelled = false;
+    void loadGlobalPrefs().then((g) => {
+      if (cancelled || !g) return;
+      savePrefs(g);
+      setPrefs(g);
+      setSlideIdx(0);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(new Date());
   const [conn, setConn] = useState<ConnState>("connecting");

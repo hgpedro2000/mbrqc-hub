@@ -320,7 +320,7 @@ const ConsultaPecas = () => {
         ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{searchTerm ? "Nenhuma peça encontrada" : "Digite para buscar peças"}</p>
+            <p className="text-muted-foreground">{searchTerm ? t("consultaPecas.emptySearch") : t("consultaPecas.emptyType")}</p>
           </div>
         ) : viewMode === "compact" ? (
           <div className="form-section p-0 overflow-hidden">
@@ -328,14 +328,14 @@ const ConsultaPecas = () => {
               <table className="w-full text-xs border-collapse">
                 <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur shadow-sm">
                   <tr className="text-left">
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Part Number</th>
-                    <th className="px-2 py-2 font-semibold">Descrição</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Fornecedor</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Code Vendor</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">ALC Code</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Projeto</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Linha/Módulo</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Origem</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.partNumber")}</th>
+                    <th className="px-2 py-2 font-semibold">{t("consultaPecas.table.description")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.supplier")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.codeVendor")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.alcCode")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.project")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.lineModule")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.origin")}</th>
                   </tr>
                 </thead>
                 <tbody>

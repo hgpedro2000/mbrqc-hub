@@ -283,17 +283,17 @@ const Apontamentos = () => {
     const empresas = [...empresaSet].sort();
     
     const baseFilters: FilterConfig[] = [
-      { key: "status", label: "Status", options: statusFilterOptions, labelMap: { draft: "Rascunho", submitted: "Finalizado" } },
-      { key: "resultado", label: "Resultado", options: ["sem_defeito", "ng"], labelMap: { sem_defeito: "Sem defeito encontrado", ng: "NG (com defeito)" } },
-      { key: "projeto", label: "Projeto", options: projetos },
-      { key: "fornecedor", label: "Fornecedor", options: fornecedores },
-      { key: "responsavel", label: "Apontado por", options: responsaveis },
+      { key: "status", label: t("apontamentos.list.filterStatus"), options: statusFilterOptions, labelMap: { draft: t("apontamentos.list.draftBadge"), submitted: t("apontamentos.list.finalizedBadge") } },
+      { key: "resultado", label: t("apontamentos.list.filterResultado"), options: ["sem_defeito", "ng"], labelMap: { sem_defeito: t("apontamentos.list.resultadoSemDefeito"), ng: t("apontamentos.list.resultadoNg") } },
+      { key: "projeto", label: t("apontamentos.list.filterProjeto"), options: projetos },
+      { key: "fornecedor", label: t("apontamentos.list.filterFornecedor"), options: fornecedores },
+      { key: "responsavel", label: t("apontamentos.list.filterResponsavel"), options: responsaveis },
     ];
     if (activeTab === "incoming") {
-      baseFilters.push({ key: "empresa", label: "Empresa", options: empresas });
+      baseFilters.push({ key: "empresa", label: t("apontamentos.list.filterEmpresa"), options: empresas });
     }
     return baseFilters;
-  }, [scopedItems, activeTab, empresaByUserId]);
+  }, [scopedItems, activeTab, empresaByUserId, t]);
 
   const countByType = useMemo(() => {
     const counts: Record<string, number> = {};

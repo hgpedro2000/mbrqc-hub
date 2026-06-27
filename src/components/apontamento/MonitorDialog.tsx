@@ -456,6 +456,15 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                         </div>
                       </Link>
                     </Button>
+                    <Button asChild variant="outline" className="justify-start gap-2 h-auto py-3">
+                      <Link to="/monitor/admin?tab=retrabalho" onClick={() => onOpenChange(false)}>
+                        <RefreshCw className="w-4 h-4 text-primary" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium">Retrabalhos em Andamento</p>
+                          <p className="text-xs text-muted-foreground">Mídia de retrabalhos ativos</p>
+                        </div>
+                      </Link>
+                    </Button>
                   </div>
                 </Section>
               )}

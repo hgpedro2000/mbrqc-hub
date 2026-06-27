@@ -603,11 +603,11 @@ export default function AnaliseRisco() {
                       >
                         <td className="px-3 py-2 font-mono text-xs">{p.pn}</td>
                         <td className="px-3 py-2">{p.fornecedor}</td>
-                        <td className="px-3 py-2">{scoreBar(p.score, p.classification)}</td>
-                        <td className="text-center px-3 py-2">{p.ng}</td>
+                        <td className="px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{p.ng}</td>
                         <td className="text-center px-3 py-2">{p.diasSem}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
-                        <td className="px-3 py-2">{riskBadge(p.classification)} <span className="text-xs text-muted-foreground ml-2">{p.recomendacao}</span></td>
+                        <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (

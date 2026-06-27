@@ -71,10 +71,12 @@ const ForgotPassword = () => {
 
             <Link
               to="/solicitar-reset-admin"
-              className="flex items-center justify-center gap-2 w-full h-11 rounded-md border border-accent/40 bg-accent/5 px-3 text-sm font-semibold text-foreground hover:bg-accent/10 hover:border-accent transition-colors"
+              className="inline-flex items-center justify-center gap-2 w-full h-12 rounded-md border-2 border-accent bg-accent/10 px-4 text-center text-sm font-heading font-semibold text-foreground hover:bg-accent hover:text-accent-foreground transition-colors shadow-sm"
             >
-              {t("forgotPassword.requestAdmin")}
+              <Send className="w-4 h-4 shrink-0" />
+              <span className="leading-tight">{t("forgotPassword.requestAdmin")}</span>
             </Link>
+
 
 
             <Link to="/login" className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors">

@@ -79,6 +79,7 @@ export interface MonitorPreferences {
 }
 
 const STORAGE_KEY = "monitor_preferences";
+const GLOBAL_KEY = "monitor_default_preferences";
 
 export const defaultPrefs: MonitorPreferences = {
   blocks: ["summary", "recent", "alerts"],
@@ -112,6 +113,40 @@ export const loadPrefs = (): MonitorPreferences => {
 
 export const savePrefs = (p: MonitorPreferences) => {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch { /* noop */ }
+};
+
+/**
+ * Shared "global default" preferences saved by an admin in app_config.
+ * Uses the anon-safe monitorClient so it works on the public /monitor route.
+ */
+export const loadGlobalPrefs = async (): Promise<MonitorPreferences | null> => {
+  try {
+    const { data, error } = await monitorClient
+      .from("app_config" as any)
+      .select("value")
+      .eq("key", GLOBAL_KEY)
+      .maybeSingle();
+    if (error || !data) return null;
+    const raw = (data as any).value;
+    const p = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!p || !Array.isArray(p.blocks) || !p.period) return null;
+    return { ...defaultPrefs, ...p } as MonitorPreferences;
+  } catch {
+    return null;
+  }
+};
+
+/** Admin-only: persist preferences as shared default. RLS enforces admin. */
+export const saveGlobalPrefs = async (p: MonitorPreferences): Promise<boolean> => {
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await supabase
+      .from("app_config" as any)
+      .upsert({ key: GLOBAL_KEY, value: JSON.stringify(p) }, { onConflict: "key" });
+    return !error;
+  } catch {
+    return false;
+  }
 };
 
 /** Resolve effective duration/animation for a given block, using overrides + global defaults. */

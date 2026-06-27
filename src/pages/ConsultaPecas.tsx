@@ -581,11 +581,11 @@ const ConsultaPecas = () => {
           <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-5 py-4 text-white">
             <div className="flex items-center gap-2 mb-1 opacity-90">
               <ScanSearch className="w-4 h-4" />
-              <span className="text-xs font-medium tracking-wider uppercase">Leitor de Código de Barras</span>
+              <span className="text-xs font-medium tracking-wider uppercase">{t("consultaPecas.specReader.label")}</span>
             </div>
-            <DialogTitle className="text-xl font-bold text-white">Checar SPEC / ALC</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">{t("consultaPecas.specReader.title")}</DialogTitle>
             <DialogDescription className="text-white/85 text-sm">
-              Aponte o leitor para o QR Code Hyundai/Mobis — o Part Number será extraído automaticamente. Você também pode digitar e pressionar Enter.
+              {t("consultaPecas.specReader.description")}
             </DialogDescription>
           </div>
           <form

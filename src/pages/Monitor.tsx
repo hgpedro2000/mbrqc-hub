@@ -9,7 +9,7 @@ import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
-  Megaphone, Wrench, Microscope,
+  Megaphone, Wrench, Microscope, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";

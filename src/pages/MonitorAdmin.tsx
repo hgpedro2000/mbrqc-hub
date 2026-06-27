@@ -191,16 +191,25 @@ export default function MonitorAdmin() {
         <h1 className="text-xl sm:text-2xl font-bold w-full sm:w-auto order-3 sm:order-2 text-center sm:text-left">Mídia dos Slides do Monitor</h1>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {TIPOS.map((t) => {
-          const Icon = t.icon;
-          return (
-            <Button key={t.id} variant={tab === t.id ? "default" : "outline"} onClick={() => setTab(t.id)} className="gap-2">
-              <Icon className="w-4 h-4" /> {t.label}
-            </Button>
-          );
-        })}
+      {/* Mobile: tabs roláveis horizontalmente sem quebrar; Desktop: wrap normal */}
+      <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible">
+        <div className="flex gap-2 px-4 sm:px-0 sm:flex-wrap w-max sm:w-auto">
+          {TIPOS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <Button
+                key={t.id}
+                variant={tab === t.id ? "default" : "outline"}
+                onClick={() => setTab(t.id)}
+                className="gap-2 shrink-0 min-h-[44px]"
+              >
+                <Icon className="w-4 h-4" /> {t.label}
+              </Button>
+            );
+          })}
+        </div>
       </div>
+
 
       <Card>
         <CardHeader><CardTitle className="text-base sm:text-lg break-words">Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>
@@ -218,10 +227,11 @@ export default function MonitorAdmin() {
                 <select
                   value={slot}
                   onChange={(e) => setSlot(Number(e.target.value))}
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-11 sm:h-10 rounded-md border border-input bg-background px-3 text-base md:text-sm"
                 >
                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
                 </select>
+
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="vi">Início da vigência (opcional)</Label>
@@ -275,10 +285,11 @@ export default function MonitorAdmin() {
                                 <select
                                   value={editSlot}
                                   onChange={(e) => setEditSlot(Number(e.target.value))}
-                                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                  className="h-10 sm:h-9 rounded-md border border-input bg-background px-2 text-base md:text-sm"
                                 >
                                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
                                 </select>
+
                               </div>
                               <div className="grid gap-1">
                                 <Label className="text-xs">Início</Label>
@@ -308,22 +319,23 @@ export default function MonitorAdmin() {
                         {m.vigencia_fim && <span className="whitespace-nowrap">· Até {new Date(m.vigencia_fim).toLocaleString("pt-BR")}</span>}
                         {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
-                      <div className="flex flex-wrap justify-between items-center gap-2 pt-2">
+                      <div className="flex flex-col sm:flex-row flex-wrap justify-between items-stretch sm:items-center gap-2 pt-2">
                         {editing ? (
                           <>
-                            <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1"><Save className="w-4 h-4" /> Salvar</Button>
-                            <Button variant="outline" size="sm" onClick={() => setEditId(null)} className="gap-1"><X className="w-4 h-4" /> Cancelar</Button>
+                            <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1 min-h-[44px] flex-1 sm:flex-none"><Save className="w-4 h-4" /> Salvar</Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditId(null)} className="gap-1 min-h-[44px] flex-1 sm:flex-none"><X className="w-4 h-4" /> Cancelar</Button>
                           </>
                         ) : (
                           <>
                             <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleToggle(m)}>{m.ativo ? "Desativar" : "Ativar"}</Button>
-                              <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1"><Pencil className="w-4 h-4" /> Editar</Button>
+                              <Button variant="outline" size="sm" onClick={() => handleToggle(m)} className="min-h-[44px] flex-1 sm:flex-none">{m.ativo ? "Desativar" : "Ativar"}</Button>
+                              <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1 min-h-[44px] flex-1 sm:flex-none"><Pencil className="w-4 h-4" /> Editar</Button>
                             </div>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(m)} className="gap-1"><Trash2 className="w-4 h-4" /> Excluir</Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDelete(m)} className="gap-1 min-h-[44px] w-full sm:w-auto"><Trash2 className="w-4 h-4" /> Excluir</Button>
                           </>
                         )}
                       </div>
+
                     </div>
                   </li>
                 );

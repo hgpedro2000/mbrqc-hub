@@ -1553,7 +1553,7 @@ const ApontamentoForm = () => {
                 <Label className={errLabelClass("modoFalha")}>{t("apontamentos.form.labelModoFalha")} {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={(v) => { setModoFalha(v); setValidationErrors((p) => { const n = new Set(p); n.delete("modoFalha"); return n; }); }} disabled={ngIsZero}>
                   <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : t("apontamentos.form.placeholderSelecione")} /></SelectTrigger>
-                  <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
+                  <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${d.description}`}>{lbl}</SelectItem>; })}</SelectContent>
                 </Select>
               </div>
             )}

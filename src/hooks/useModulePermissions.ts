@@ -18,6 +18,8 @@ export const ALL_MODULES = [
   { id: "consumiveis_inventario", label: "  ↳ Inventário e Requisições", parent: "consumiveis" },
   { id: "consulta-pecas", label: "Consulta de Peças" },
   { id: "matriz-versatilidade", label: "Matriz de Versatilidade" },
+  { id: "analise-risco", label: "Análise de Risco" },
+  
   
 ] as const;
 

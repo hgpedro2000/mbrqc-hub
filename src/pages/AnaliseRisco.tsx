@@ -62,7 +62,7 @@ export default function AnaliseRisco() {
       for (let i = 0; ; i++) {
         const { data, error } = await supabase
           .from("apontamentos")
-          .select("id,data,tipo,fornecedor,part_number,modo_falha,quantidade_ok,quantidade_ng")
+          .select("id,data,tipo,fornecedor,part_number,part_name,modo_falha,quantidade_ok,quantidade_ng")
           .eq("tipo", "incoming")
           .gte("data", dateFrom)
           .range(i * PAGE, i * PAGE + PAGE - 1);

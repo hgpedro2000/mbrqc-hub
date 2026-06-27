@@ -157,7 +157,10 @@
     "error": "Erro ao enviar email de recuperação",
     "emailPlaceholder": "seu@email.com",
     "or": "ou",
-    "requestAdmin": "Não tenho e-mail cadastrado — solicitar ao administrador"
+    "requestAdmin": "Não tenho e-mail cadastrado",
+    "requestAdminLine1": "Não tenho e-mail cadastrado",
+    "requestAdminLine2": "Solicitar ao administrador"
+
   },
   "tryout": {
     "headerTitle": "Try-Out",

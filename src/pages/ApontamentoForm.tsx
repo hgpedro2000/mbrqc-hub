@@ -61,7 +61,7 @@ interface DefeitoDetalhe {
 }
 
 const ApontamentoForm = () => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isPt = (i18n.language || "pt").toLowerCase().startsWith("pt");
   const defectLabel = (d: any) => (isPt && d?.description_pt ? d.description_pt : d?.description) || "";
   const navigate = useNavigate();
@@ -235,7 +235,7 @@ const ApontamentoForm = () => {
         });
         if (files.length) setPhotoFiles(files);
       }
-      toast.info("Formulário restaurado após reinício");
+      toast.info(t("apontamentos.form.toastFormRestored"));
     } catch (err) {
       console.warn("[autosave] restore failed", err);
     }
@@ -281,7 +281,7 @@ const ApontamentoForm = () => {
 
     // Partial scan (only lot read from linear barcode) — guide user to complete PN.
     if (!pn) {
-      toast.info("Lote capturado. Aponte para o QR/DataMatrix 2D ou preencha o Part Number manualmente.", { duration: 5000 });
+      toast.info(t("apontamentos.form.toastLoteCaptured"), { duration: 5000 });
       return;
     }
 
@@ -430,7 +430,7 @@ const ApontamentoForm = () => {
           setSuffixOptions(options);
           setSelectedSuffixPn("");
           setSuffixPickerOpen(true);
-          toast.warning("Part Number lido não encontrado exatamente. Selecione a variante correta.", { duration: 5000 });
+          toast.warning(t("apontamentos.form.toastPnNotFound"), { duration: 5000 });
         } else if (scannedAlc) {
           setAlcCode(scannedAlc);
           setAlcStatus("manual");
@@ -488,7 +488,7 @@ const ApontamentoForm = () => {
   const handleAlcManualKeep = () => {
     setShowAlcMismatchDialog(false);
     setAlcStatus("manual");
-    toast.warning("ALC registrado manualmente. Anexe foto da etiqueta física para evidência.", { duration: 6000 });
+    toast.warning(t("apontamentos.form.toastAlcManual"), { duration: 6000 });
   };
 
   // ALC mismatch — option 2: confirm divergence and auto-open NG defect with modo_falha required
@@ -504,13 +504,13 @@ const ApontamentoForm = () => {
     setDescricao((prev) => (prev && prev !== "Sem defeito encontrado durante essa inspeção" ? `${ctx}\n${prev}` : ctx));
     // Highlight modo_falha as required
     setValidationErrors((p) => { const n = new Set(p); n.add("modoFalha"); return n; });
-    toast.error("Defeito de ALC registrado. Selecione o Modo de Falha e anexe foto da etiqueta.", { duration: 7000 });
+    toast.error(t("apontamentos.form.toastAlcError"), { duration: 7000 });
   };
 
   const cancelRescan = () => {
     setShowRescanConfirm(false);
     setPendingQRData(null);
-    toast.info("Leitura atual mantida.");
+    toast.info(t("apontamentos.form.toastLeituraAtual"));
   };
 
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -555,7 +555,7 @@ const ApontamentoForm = () => {
       const roles = (data || []).map((r: any) => r.role);
       const canEdit = roles.some((r: string) => ["admin", "lider", "engenharia", "dono"].includes(r));
       if (!canEdit) {
-        toast.error("Você só pode editar apontamentos que você mesmo criou.");
+        toast.error(t("apontamentos.form.toastEditForbidden"));
         navigate("/apontamentos", { replace: true });
       }
     })();
@@ -624,9 +624,9 @@ const ApontamentoForm = () => {
       const { error } = await supabase.from("checklist_photos").delete().eq("id", photo.id);
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["apontamento-photos", id] });
-      toast.success("Foto excluída");
+      toast.success(t("apontamentos.form.toastPhotoDeleted"));
     } catch (e: any) {
-      toast.error("Erro ao excluir foto: " + (e?.message || ""));
+      toast.error(t("apontamentos.form.toastPhotoDeleteError", { msg: e?.message || "" }));
     }
   };
 
@@ -756,7 +756,7 @@ const ApontamentoForm = () => {
     e.target.value = "";
     const totalPhotos = photoFiles.length + existingPhotos.length;
     const maxNew = 4 - totalPhotos;
-    if (files.length > maxNew) { toast.error(`Máximo 4 fotos. Você pode adicionar mais ${maxNew}.`); return; }
+    if (files.length > maxNew) { toast.error(t("apontamentos.form.toastMaxPhotos", { n: maxNew })); return; }
     if (files.length === 0) return;
     // Compress and queue for annotation one-by-one
     const compressed = await Promise.all(files.map((f) => compressImage(f)));
@@ -767,7 +767,7 @@ const ApontamentoForm = () => {
   const handleInAppCapture = async (file: File) => {
     setCameraOpen(false);
     const totalPhotos = photoFiles.length + existingPhotos.length;
-    if (totalPhotos >= 4) { toast.error("Máximo 4 fotos."); return; }
+    if (totalPhotos >= 4) { toast.error(t("apontamentos.form.toastMaxPhotos4")); return; }
     const compressed = await compressImage(file);
     setAnnotatingFile(compressed);
   };
@@ -806,7 +806,7 @@ const ApontamentoForm = () => {
   };
 
   const addSegundoDefeito = () => {
-    if (segundoDefeitos.length >= 8) { toast.error("Máximo 8 linhas"); return; }
+    if (segundoDefeitos.length >= 8) { toast.error(t("apontamentos.form.toastMaxLinhas")); return; }
     setSegundoDefeitos((prev) => [...prev, { part_number: "", part_name: "", qty: 0 }]);
   };
 
@@ -814,7 +814,7 @@ const ApontamentoForm = () => {
   const updateSegundoDefeito = (index: number, field: keyof SegundoDefeito, value: any) => setSegundoDefeitos((prev) => prev.map((d, i) => i === index ? { ...d, [field]: value } : d));
 
   const addCoInspetor = (name: string) => {
-    if (coInspetores.length >= 6) { toast.error("Máximo 6 co-inspetores"); return; }
+    if (coInspetores.length >= 6) { toast.error(t("apontamentos.form.toastMaxCoInspetores")); return; }
     if (coInspetores.includes(name)) return;
     setCoInspetores((prev) => [...prev, name]);
     setCoInspetorSearch("");
@@ -847,7 +847,7 @@ const ApontamentoForm = () => {
   };
 
   const addDefeitoDetalhe = () => {
-    if (defeitosDetalhes.length >= quantidadeNg) { toast.error(`Máximo ${quantidadeNg} detalhes de defeito`); return; }
+    if (defeitosDetalhes.length >= quantidadeNg) { toast.error(t("apontamentos.form.toastMaxDefeitosDetalhes", { n: quantidadeNg })); return; }
     setDefeitosDetalhes((prev) => [...prev, { modo_falha: "", descricao: "", qty_ng: 0, tag_number: "", photoFiles: [], photoPreviews: [] }]);
   };
 
@@ -955,13 +955,13 @@ const ApontamentoForm = () => {
         );
         if (!match) {
           errors.add("partNumber");
-          msgs.push(`Esse Part Number "${partNumber}" não existe. Selecione um PN válido na lista pela Lupa de pesquisa.`);
+          msgs.push(t("apontamentos.form.validationPnNotFound", { pn: partNumber }));
         } else if (fornecedor) {
           const supName = ((match as any).suppliers?.name || "").trim();
           if (supName && supName !== fornecedor.trim()) {
             errors.add("partNumber");
             errors.add("fornecedor");
-            msgs.push(`Part Number "${partNumber}" pertence ao fornecedor "${supName}", incompatível com o fornecedor selecionado "${fornecedor}".`);
+            msgs.push(t("apontamentos.form.validationPnSupplierMismatch", { pn: partNumber, sup: supName, selected: fornecedor }));
           }
         }
       } catch {
@@ -975,34 +975,34 @@ const ApontamentoForm = () => {
 
     if (isIncoming) {
       if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
-      if (quantidadeInspecionada > 1000) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada acima do limite (máx. 1000) — faça um novo apontamento para o excedente"); }
+      if (quantidadeInspecionada > 1000) { errors.add("quantidadeInspecionada"); msgs.push(t("apontamentos.form.validationQtyInspecionadaLimit")); }
       if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
       if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
       if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
       if (alcExpected && alcExpected !== "N/A" && alcStatus !== "match" && alcStatus !== "mismatch") {
-        errors.add("alcCode"); msgs.push("Validação do ALC (clique em \"Validar ALC manual\")");
+        errors.add("alcCode"); msgs.push(t("apontamentos.form.validationAlcRequired"));
       }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
       if (quantidadeNg > 0 && ngMultiploDecisao !== "diferente" && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
       if (quantidadeNg > 0 && descricao !== "Sem defeito encontrado durante essa inspeção" && !responsabilidadeDefeito) { errors.add("responsabilidadeDefeito"); msgs.push("Responsabilidade do Defeito"); }
       if (quantidadeNg > 0 && photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
       if (ngMultiploDecisao === "diferente" && totalDefeitosQty !== quantidadeNg) {
-        errors.add("defeitosQty"); msgs.push(`Soma dos NG nos detalhes (${totalDefeitosQty}) deve ser igual ao total NG (${quantidadeNg})`);
+        errors.add("defeitosQty"); msgs.push(t("apontamentos.form.validationNgSumError", { total: totalDefeitosQty, expected: quantidadeNg }));
       }
       if (ngMultiploDecisao === "diferente") {
         defeitosDetalhes.forEach((d, idx) => {
-          if (!d.modo_falha) { errors.add(`defeito-${idx}-modoFalha`); msgs.push(`Defeito ${idx + 1}: Modo de Falha`); }
-          if (!d.descricao) { errors.add(`defeito-${idx}-descricao`); msgs.push(`Defeito ${idx + 1}: Descrição`); }
-          if (!d.qty_ng || d.qty_ng <= 0) { errors.add(`defeito-${idx}-qtyNg`); msgs.push(`Defeito ${idx + 1}: Qty NG`); }
+          if (!d.modo_falha) { errors.add(`defeito-${idx}-modoFalha`); msgs.push(t("apontamentos.form.validationDefeitoModoFalha", { n: idx + 1 })); }
+          if (!d.descricao) { errors.add(`defeito-${idx}-descricao`); msgs.push(t("apontamentos.form.validationDefeitoDescricao", { n: idx + 1 })); }
+          if (!d.qty_ng || d.qty_ng <= 0) { errors.add(`defeito-${idx}-qtyNg`); msgs.push(t("apontamentos.form.validationDefeitoQtyNg", { n: idx + 1 })); }
         });
       }
       // Co-inspeção validation: only Mobis Brasil
       if (activeProfile?.empresa !== "empresa_terceira") {
         if (temCoInspecao === "sim" && coInspetores.length === 0) {
-          errors.add("coInspetores"); msgs.push("Selecione ao menos 1 co-inspetor ou marque 'Não'");
+          errors.add("coInspetores"); msgs.push(t("apontamentos.form.validationCoInspetorRequired"));
         }
         if (coInspetores.length > 6) {
-          errors.add("coInspetores"); msgs.push("Máximo 6 co-inspetores");
+          errors.add("coInspetores"); msgs.push(t("apontamentos.form.validationCoInspetorMax"));
         }
         // Ensure all selected co-inspectors still exist in the loaded list
         if (coInspetores.length > 0 && allProfiles.length > 0) {
@@ -1010,7 +1010,7 @@ const ApontamentoForm = () => {
           const invalid = coInspetores.filter((n) => !validNames.has(n));
           if (invalid.length > 0) {
             errors.add("coInspetores");
-            msgs.push(`Co-inspetor(es) inválido(s): ${invalid.join(", ")}`);
+            msgs.push(t("apontamentos.form.validationCoInspetorInvalid", { names: invalid.join(", ") }));
           }
         }
       }
@@ -1182,11 +1182,11 @@ const ApontamentoForm = () => {
         await uploadPhotos(photoFiles, recordId, "apontamento");
       }
 
-      toast.success(isEdit ? "Registro atualizado!" : asDraft ? "Rascunho salvo!" : "Registro finalizado!");
+      toast.success(isEdit ? t("apontamentos.form.toastUpdated") : asDraft ? t("apontamentos.form.toastDraftSaved") : t("apontamentos.form.toastSaved"));
       clearFormAutosave(autosaveKey);
       navigate("/apontamentos");
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar");
+      toast.error(err.message || t("apontamentos.form.toastSaveError"));
     } finally {
       setSaving(false);
     }
@@ -1200,7 +1200,7 @@ const ApontamentoForm = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={requestExit} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">Voltar</span></Button>
+              <Button variant="ghost" size="sm" onClick={requestExit} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">{t("common.back")}</span></Button>
               <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             {formTipo === "incoming" && (
@@ -1209,7 +1209,7 @@ const ApontamentoForm = () => {
           </div>
           <div className="flex items-center gap-2 mt-2 sm:mt-4">
             <FileBarChart className="w-5 h-5 sm:w-8 sm:h-8" />
-            <h1 className="text-lg sm:text-2xl font-heading font-bold">{isEdit ? "Editar" : "Novo"} Apontamento — {typeLabels[formTipo]}</h1>
+            <h1 className="text-lg sm:text-2xl font-heading font-bold">{isEdit ? t("apontamentos.form.pageTitleEdit") : t("apontamentos.form.pageTitleNew")} — {typeLabels[formTipo]}</h1>
           </div>
         </div>
       </header>
@@ -1217,18 +1217,18 @@ const ApontamentoForm = () => {
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-5xl overflow-x-hidden overflow-y-auto">
         {/* IDENTIFICAÇÃO */}
         <div className="form-section">
-          <h2 className="form-section-title">Identificação</h2>
+          <h2 className="form-section-title">{t("apontamentos.identification")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div className="space-y-1.5">
-              <Label className={errLabelClass("data")}>Data *</Label>
+              <Label className={errLabelClass("data")}>{t("apontamentos.form.labelData")}</Label>
               <Input type="date" value={data} max={today} onChange={(e) => { setData(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("data"); return n; }); }} className={errClass("data")} />
             </div>
             <div className="space-y-1.5">
-              <Label>Apontado por</Label>
+              <Label>{t("apontamentos.form.labelApontadoPor")}</Label>
               <Input value={activeProfile?.full_name || ""} readOnly className="bg-muted" />
             </div>
             <div className="space-y-1.5">
-              <Label className={errLabelClass("turno")}>Turno *</Label>
+              <Label className={errLabelClass("turno")}>{t("apontamentos.form.labelTurno")}</Label>
               {adminEdit ? (
                 <Select value={turno} onValueChange={(v) => { setTurno(v); setValidationErrors((p) => { const n = new Set(p); n.delete("turno"); return n; }); }}>
                   <SelectTrigger className={errClass("turno")}><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -1240,7 +1240,7 @@ const ApontamentoForm = () => {
             </div>
             {!isOem && !isIncoming && (
               <div className="space-y-1.5">
-                <Label className={errLabelClass("fase")}>Fase *</Label>
+                <Label className={errLabelClass("fase")}>{t("apontamentos.form.labelFase")}</Label>
                 <Select value={fase} onValueChange={(v) => { setFase(v); setValidationErrors((p) => { const n = new Set(p); n.delete("fase"); return n; }); }}>
                   <SelectTrigger className={errClass("fase")}><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>{FASES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
@@ -1249,7 +1249,7 @@ const ApontamentoForm = () => {
             )}
             {isIncoming && (
               <div className="space-y-1.5">
-                <Label>Local de Inspeção</Label>
+                <Label>{t("apontamentos.form.labelLocalInspecao")}</Label>
                 {adminEdit ? (
                   <Select value={fase} onValueChange={setFase}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -1265,7 +1265,7 @@ const ApontamentoForm = () => {
             )}
             {isOem && (
               <div className="space-y-1.5">
-                <Label className={errLabelClass("vinNumber")}>VIN *</Label>
+                <Label className={errLabelClass("vinNumber")}>{t("apontamentos.form.labelVin")}</Label>
                 <Input value={vinNumber} onChange={(e) => { setVinNumber(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("vinNumber"); return n; }); }} placeholder="XXX 123456" className={errClass("vinNumber")} />
               </div>
             )}
@@ -1317,8 +1317,8 @@ const ApontamentoForm = () => {
           {isIncoming ? (
             <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-end">
               <div className="space-y-1.5">
-                <Label>Módulo</Label>
-                <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+                <Label>{t("apontamentos.form.labelModulo")}</Label>
+                <Input value={modulo} readOnly className="bg-muted" placeholder={t("apontamentos.form.placeholderAutoFilled")} />
               </div>
               <div className="space-y-1.5">
                 <Label className={`flex items-center gap-2 ${validationErrors.has("alcCode") ? "text-destructive font-semibold" : ""}`}>
@@ -1387,8 +1387,8 @@ const ApontamentoForm = () => {
             </div>
           ) : (
             <div className="mt-3 sm:mt-4 space-y-1.5">
-              <Label>Módulo</Label>
-              <Input value={modulo} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+              <Label>{t("apontamentos.form.labelModulo")}</Label>
+              <Input value={modulo} readOnly className="bg-muted" placeholder={t("apontamentos.form.placeholderAutoFilled")} />
             </div>
           )}
         </div>
@@ -1396,7 +1396,7 @@ const ApontamentoForm = () => {
         {/* CO-INSPEÇÃO - Incoming only, Mobis Brasil only */}
         {isIncoming && activeProfile?.empresa !== "empresa_terceira" && (
           <div className="form-section">
-            <h2 className="form-section-title">Co-Inspeção</h2>
+            <h2 className="form-section-title">{t("apontamentos.form.sectionCoInspecao")}</h2>
           <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
                 <Select value={temCoInspecao} onValueChange={(v) => { setTemCoInspecao(v); if (v === "nao") { setCoInspetores([]); } }}>
@@ -1441,7 +1441,7 @@ const ApontamentoForm = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* TEMPO DE INSPEÇÃO */}
             <div className="form-section">
-              <h2 className="form-section-title">Tempo de Inspeção</h2>
+              <h2 className="form-section-title">{t("apontamentos.form.sectionTempoInspecao")}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="space-y-1.5">
                   <Label className={errLabelClass("horaInicio")}>Horário Inicial *</Label>
@@ -1468,7 +1468,7 @@ const ApontamentoForm = () => {
 
             {/* DADOS DE INSPEÇÃO */}
             <div className="form-section">
-              <h2 className="form-section-title">Dados de Inspeção</h2>
+              <h2 className="form-section-title">{t("apontamentos.form.sectionDadosInspecao")}</h2>
               <div className="space-y-3 sm:space-y-4">
                 <div className="space-y-1.5">
                   <Label className={errLabelClass("loteInspecionado")}>Lote Inspecionado *</Label>
@@ -1524,7 +1524,7 @@ const ApontamentoForm = () => {
         {/* QUANTIDADES - Peça/Processo */}
         {(isPeca || isProcesso) && (
           <div className="form-section">
-            <h2 className="form-section-title">Quantidade</h2>
+            <h2 className="form-section-title">{t("common.quantity")}</h2>
             <div className="space-y-1.5">
               <Label className={errLabelClass("quantidadeNg")}>Quantidade de peça NG *</Label>
               <Input type="number" min={isProcesso ? 1 : 0} value={quantidadeNg || ""} onChange={(e) => setQuantidadeNg(e.target.value === "" ? 0 : Number(e.target.value))} className={errClass("quantidadeNg")} />
@@ -1535,7 +1535,7 @@ const ApontamentoForm = () => {
         {/* QUANTIDADES - OEM */}
         {isOem && (
           <div className="form-section">
-            <h2 className="form-section-title">Quantidade</h2>
+            <h2 className="form-section-title">{t("common.quantity")}</h2>
             <div className="space-y-1.5">
               <Label>Quantidade Detectado *</Label>
               <Input type="number" min={0} value={quantidadeDetectado || ""} onChange={(e) => setQuantidadeDetectado(e.target.value === "" ? 0 : Number(e.target.value))} />
@@ -1545,7 +1545,7 @@ const ApontamentoForm = () => {
 
         {/* DETALHES DO DEFEITO */}
         <div className="form-section">
-          <h2 className="form-section-title">{isIncoming ? "Registro de Ocorrência" : "Detalhes do Defeito"}</h2>
+          <h2 className="form-section-title">{isIncoming ? t("apontamentos.form.sectionOcorrencia") : t("apontamentos.form.sectionDefeito")}</h2>
           <div className="space-y-3 sm:space-y-4">
             {/* Modo de Falha - single mode or when NG <= 1 or same mode */}
             {(isIncoming || isPeca || isProcesso) && (ngMultiploDecisao !== "diferente") && (
@@ -1708,7 +1708,7 @@ const ApontamentoForm = () => {
         {/* 2° DEFEITO - Peça, Processo */}
         {(isPeca || isProcesso) && (
           <div className="form-section">
-            <h2 className="form-section-title">2° Defeito</h2>
+            <h2 className="form-section-title">{t("apontamentos.form.section2Defeito")}</h2>
             <div className="space-y-3 sm:space-y-4">
               <Select value={temSegundoDefeito} onValueChange={(v) => { setTemSegundoDefeito(v); if (v === "nao") setSegundoDefeitos([]); }}>
                 <SelectTrigger className="w-32 sm:w-40"><SelectValue /></SelectTrigger>
@@ -1739,7 +1739,7 @@ const ApontamentoForm = () => {
         {/* FOTOS */}
         <div className="form-section">
           <h2 className="form-section-title">
-            Foto do Defeito {!ngIsZero && "*"}
+            {t("apontamentos.form.sectionFotos")}{!ngIsZero && " *"}
             {validationErrors.has("fotos") && <span className="text-destructive text-sm ml-2">(obrigatório)</span>}
           </h2>
           <p className="text-xs text-muted-foreground mb-2 sm:mb-3 text-center sm:text-left">Mínimo 1, máximo 4 fotos</p>
@@ -2041,7 +2041,7 @@ const ApontamentoForm = () => {
             // Fechar no X sempre descarta a leitura e volta para a tela de registros
             setShowAlcMismatchDialog(false);
             try { clearFormAutosave(autosaveKey); } catch {}
-            toast.info("Leitura descartada. Reinicie o apontamento.");
+            toast.info(t("apontamentos.form.toastLeituraDescartada"));
             navigate("/apontamentos");
             return;
           }
@@ -2201,7 +2201,7 @@ const ApontamentoForm = () => {
                         setAlcValidatedVia(manualAlcMethod());
                         setValidationErrors((p) => { const n = new Set(p); n.delete("alcCode"); return n; });
                         setShowAlcValidateDialog(false);
-                        toast.success("ALC validado com sucesso e registrado no checklist.");
+                        toast.success(t("apontamentos.form.toastAlcValidated"));
                       }}
                     >
                       Registrar no checklist

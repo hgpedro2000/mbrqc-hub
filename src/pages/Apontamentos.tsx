@@ -259,7 +259,7 @@ const Apontamentos = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Registro excluído com sucesso");
+      toast.success(t("apontamentos.list.toastDeleted"));
       queryClient.invalidateQueries({ queryKey: ["apontamentos"] });
       setDeleteTarget(null);
     },
@@ -368,7 +368,7 @@ const Apontamentos = () => {
         const { error } = await supabase.from("apontamentos").delete().eq("id", id);
         if (error) throw error;
       }
-      toast.success(`${selectedIds.size} registros excluídos`);
+      toast.success(t("apontamentos.list.toastBulkDeleted", { count: selectedIds.size }));
       queryClient.invalidateQueries({ queryKey: ["apontamentos"] });
       setSelectedIds(new Set());
     } catch (error: any) {
@@ -485,8 +485,8 @@ const Apontamentos = () => {
                       {/* Location badge */}
                       {activeTab === "incoming" && (() => {
                         const loc = getInspectionLocation(item);
-                        if (loc === "Sala do Audio") return <Badge className="bg-indigo-500/10 text-indigo-700 border-indigo-200 text-[9px] px-1.5">🔊 Sala do Áudio</Badge>;
-                        if (loc === "Área de Incoming") return <Badge className="bg-teal-500/10 text-teal-700 border-teal-200 text-[9px] px-1.5">📦 Incoming</Badge>;
+                        if (loc === "Sala do Audio") return <Badge className="bg-indigo-500/10 text-indigo-700 border-indigo-200 text-[9px] px-1.5">{t("apontamentos.list.badgeSalaAudio")}</Badge>;
+                        if (loc === "Área de Incoming") return <Badge className="bg-teal-500/10 text-teal-700 border-teal-200 text-[9px] px-1.5">{t("apontamentos.list.badgeAreaIncoming")}</Badge>;
                         return null;
                       })()}
                     </div>
@@ -574,7 +574,7 @@ const Apontamentos = () => {
                         else setPhotoLightbox(firstPhotoByItem[item.id]);
                       }}
                     >
-                      <img src={firstPhotoByItem[item.id]} alt="Foto NG" className="w-full h-full object-cover" />
+                      <img src={firstPhotoByItem[item.id]} alt={t("apontamentos.list.photoNgAlt")} className="w-full h-full object-cover" />
                       {extra > 0 && (
                         <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-md leading-none pointer-events-none">
                           +{extra}
@@ -627,7 +627,7 @@ const Apontamentos = () => {
                       else setPhotoLightbox(photoUrl);
                     }}
                   >
-                    <img src={photoUrl} alt="Foto" className="w-full h-full object-cover" />
+                    <img src={photoUrl} alt={t("apontamentos.list.photoAlt")} className="w-full h-full object-cover" />
                     {extraCount > 0 && (
                       <span className="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-[9px] font-semibold px-1 py-0.5 rounded leading-none pointer-events-none">
                         +{extraCount}
@@ -657,8 +657,8 @@ const Apontamentos = () => {
                   {item.part_name && <p className="text-xs text-muted-foreground truncate">{item.part_name}</p>}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     {item.fornecedor && <span>{item.fornecedor}</span>}
-                    {hasNg && <span className="text-destructive font-semibold">NG: {item.quantidade_ng}</span>}
-                    {!hasNg && <span className="text-emerald-600">OK</span>}
+                    {hasNg && <span className="text-destructive font-semibold">{t("apontamentos.list.ng")}: {item.quantidade_ng}</span>}
+                    {!hasNg && <span className="text-emerald-600">{t("apontamentos.list.ok")}</span>}
                     <span>{formatLocalDateString(item.data)}</span>
                     {item.turno && <span>{item.turno}</span>}
                   </div>
@@ -958,16 +958,16 @@ const Apontamentos = () => {
       {/* Single delete */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Confirmar exclusão</AlertDialogTitle><AlertDialogDescription>Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>Excluir</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{t("apontamentos.list.confirmDeleteTitle")}</AlertDialogTitle><AlertDialogDescription>{t("apontamentos.list.confirmDeleteDesc")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t("apontamentos.list.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget)}>{t("apontamentos.list.deleteAction")}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Bulk delete */}
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Excluir {selectedIds.size} registros</AlertDialogTitle><AlertDialogDescription>Tem certeza? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel disabled={bulkDeleting}>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>{bulkDeleting ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>{t("apontamentos.list.bulkDeleteTitle", { count: selectedIds.size })}</AlertDialogTitle><AlertDialogDescription>{t("apontamentos.list.bulkDeleteDesc")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel disabled={bulkDeleting}>{t("apontamentos.list.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleting}>{bulkDeleting ? t("apontamentos.list.deleting") : t("apontamentos.list.deleteAction")}</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -984,9 +984,9 @@ const Apontamentos = () => {
       <Dialog open={showNgLocationDialog} onOpenChange={setShowNgLocationDialog}>
         <DialogContent className="max-w-[95vw] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-destructive" />Relatório de Peças NG</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-destructive" />{t("apontamentos.list.ngDialogTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Selecione o local para o relatório:</p>
+          <p className="text-sm text-muted-foreground">{t("apontamentos.list.ngDialogPrompt")}</p>
           <div className="grid grid-cols-1 gap-3 mt-2">
             <Button
               variant="outline"
@@ -997,7 +997,7 @@ const Apontamentos = () => {
                 setNgReportOpen(true);
               }}
             >
-              <span className="font-semibold text-base">🔊 Sala do Áudio</span>
+              <span className="font-semibold text-base">🔊 {t("apontamentos.list.salaAudio")}</span>
             </Button>
             <Button
               variant="outline"
@@ -1008,7 +1008,7 @@ const Apontamentos = () => {
                 setNgReportOpen(true);
               }}
             >
-              <span className="font-semibold text-base">📦 Área de Incoming</span>
+              <span className="font-semibold text-base">📦 {t("apontamentos.list.areaIncoming")}</span>
             </Button>
             <Button
               variant="outline"
@@ -1019,7 +1019,7 @@ const Apontamentos = () => {
                 setNgReportOpen(true);
               }}
             >
-              <span className="font-semibold text-sm">Todos os Locais</span>
+              <span className="font-semibold text-sm">{t("apontamentos.list.allLocations")}</span>
             </Button>
           </div>
         </DialogContent>
@@ -1030,7 +1030,7 @@ const Apontamentos = () => {
         <Dialog open={!!galleryPhotos} onOpenChange={() => setGalleryPhotos(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Fotos ({galleryPhotos.length})</DialogTitle>
+              <DialogTitle>{t("apontamentos.list.photosDialogTitle", { count: galleryPhotos.length })}</DialogTitle>
             </DialogHeader>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
               {galleryPhotos.map((url, i) => (
@@ -1039,7 +1039,7 @@ const Apontamentos = () => {
                   className="rounded-lg overflow-hidden border border-border aspect-square cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                   onClick={() => setPhotoLightbox(url)}
                 >
-                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={url} alt={`${t("apontamentos.list.photoAlt")} ${i + 1}`} className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
@@ -1055,7 +1055,7 @@ const Apontamentos = () => {
               <X className="h-5 w-5 text-white" />
             </button>
             <div className="flex items-center justify-center w-full h-[90vh] p-4">
-              <img src={photoLightbox} alt="Foto ampliada" className="max-w-full max-h-full object-contain rounded" />
+              <img src={photoLightbox} alt={t("apontamentos.list.photoZoomedAlt")} className="max-w-full max-h-full object-contain rounded" />
             </div>
           </DialogContent>
         </Dialog>
@@ -1064,9 +1064,9 @@ const Apontamentos = () => {
       <Dialog open={showInspectionLocationDialog} onOpenChange={setShowInspectionLocationDialog}>
         <DialogContent className="max-w-sm max-w-[95vw] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-blue-500" />Local de Inspeção</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-blue-500" />{t("apontamentos.list.inspectionLocTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Selecione o local onde a inspeção será realizada:</p>
+          <p className="text-sm text-muted-foreground">{t("apontamentos.list.inspectionLocPrompt")}</p>
           <div className="grid grid-cols-1 gap-3 mt-2">
             <Button
               variant="outline"
@@ -1082,8 +1082,8 @@ const Apontamentos = () => {
                 }
               }}
             >
-              <span className="font-semibold text-base">🔊 Sala do Audio</span>
-              <span className="text-xs text-muted-foreground">Inspeção na sala de áudio</span>
+              <span className="font-semibold text-base">🔊 {t("apontamentos.list.salaAudio")}</span>
+              <span className="text-xs text-muted-foreground">{t("apontamentos.list.inspectionLocSalaSub")}</span>
             </Button>
             <Button
               variant="outline"
@@ -1099,8 +1099,8 @@ const Apontamentos = () => {
                 }
               }}
             >
-              <span className="font-semibold text-base">📦 Área de Incoming</span>
-              <span className="text-xs text-muted-foreground">Inspeção na área de recebimento</span>
+              <span className="font-semibold text-base">📦 {t("apontamentos.list.areaIncoming")}</span>
+              <span className="text-xs text-muted-foreground">{t("apontamentos.list.inspectionLocAreaSub")}</span>
             </Button>
           </div>
         </DialogContent>
@@ -1110,9 +1110,9 @@ const Apontamentos = () => {
       <Dialog open={showBC4bDialog} onOpenChange={setShowBC4bDialog}>
         <DialogContent className="max-w-sm max-w-[95vw] sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-orange-500" />Tipo de Apontamento</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><MapPin className="w-5 h-5 text-orange-500" />{t("apontamentos.list.bc4bTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Selecione o tipo de apontamento que será realizado:</p>
+          <p className="text-sm text-muted-foreground">{t("apontamentos.list.bc4bPrompt")}</p>
           <div className="grid grid-cols-1 gap-3 mt-2">
             <Button
               variant="outline"
@@ -1122,8 +1122,8 @@ const Apontamentos = () => {
                 navigate(`/apontamentos/novo/incoming?local=${encodeURIComponent(pendingIncomingLocal)}&bc4b=1`);
               }}
             >
-              <span className="font-semibold text-base">🟠 Apontamento de Peças do BC4b</span>
-              <span className="text-xs text-muted-foreground">Responsabilidade: Part</span>
+              <span className="font-semibold text-base">🟠 {t("apontamentos.list.bc4bLabel")}</span>
+              <span className="text-xs text-muted-foreground">{t("apontamentos.list.bc4bRespPart")}</span>
             </Button>
             <Button
               variant="outline"
@@ -1133,8 +1133,8 @@ const Apontamentos = () => {
                 navigate(`/apontamentos/novo/incoming?local=${encodeURIComponent(pendingIncomingLocal)}&bc4b=0`);
               }}
             >
-              <span className="font-semibold text-base">⚙️ Apontamento de Outras Peças</span>
-              <span className="text-xs text-muted-foreground">Responsabilidade: Sorting</span>
+              <span className="font-semibold text-base">⚙️ {t("apontamentos.list.otherLabel")}</span>
+              <span className="text-xs text-muted-foreground">{t("apontamentos.list.otherRespSorting")}</span>
             </Button>
           </div>
         </DialogContent>
@@ -1144,14 +1144,15 @@ const Apontamentos = () => {
       <Dialog open={showProcessSelectionDialog} onOpenChange={setShowProcessSelectionDialog}>
         <DialogContent className="max-w-md max-w-[95vw] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Layers className="w-5 h-5 text-emerald-500" />Novo Apontamento — Processos</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Layers className="w-5 h-5 text-emerald-500" />{t("apontamentos.list.processSelectionTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">Selecione a área do processo:</p>
+          <p className="text-sm text-muted-foreground">{t("apontamentos.list.processSelectionPrompt")}</p>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {PROC_SUBS.map((sub) => {
               const cfg = procSubConfig[sub];
               const Icon = cfg.icon;
               const isReal = !!cfg.realType;
+              const label = t(`apontamentos.list.subProc.${sub}`);
               return (
                 <Button
                   key={sub}
@@ -1162,13 +1163,13 @@ const Apontamentos = () => {
                     if (isReal) {
                       navigate(`/apontamentos/novo/${cfg.realType}`);
                     } else {
-                      toast.info(`${cfg.label}: em breve`);
+                      toast.info(t("apontamentos.list.toastSubComingSoon", { name: label }));
                     }
                   }}
                 >
                   <Icon className="w-5 h-5" />
-                  <span className="font-semibold text-sm">{cfg.label}</span>
-                  {!isReal && <span className="text-[10px] text-muted-foreground">em breve</span>}
+                  <span className="font-semibold text-sm">{label}</span>
+                  {!isReal && <span className="text-[10px] text-muted-foreground">{t("apontamentos.list.comingSoonShort")}</span>}
                 </Button>
               );
             })}
@@ -1185,13 +1186,13 @@ const Apontamentos = () => {
       <Dialog open={monitorAlreadyOpen} onOpenChange={setMonitorAlreadyOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>🖥️ Monitor já está aberto</DialogTitle>
+            <DialogTitle>{t("apontamentos.list.monitorOpenTitle")}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">O painel do monitor já está em execução. O que deseja fazer?</p>
+          <p className="text-sm text-muted-foreground">{t("apontamentos.list.monitorOpenPrompt")}</p>
           <div className="flex flex-col gap-2 mt-4">
-            <Button onClick={focusMonitor}>Focar no Monitor</Button>
-            <Button variant="secondary" onClick={openAnotherMonitor}>Abrir outro Monitor</Button>
-            <Button variant="ghost" onClick={() => setMonitorAlreadyOpen(false)}>Cancelar</Button>
+            <Button onClick={focusMonitor}>{t("apontamentos.list.focusMonitor")}</Button>
+            <Button variant="secondary" onClick={openAnotherMonitor}>{t("apontamentos.list.openAnotherMonitor")}</Button>
+            <Button variant="ghost" onClick={() => setMonitorAlreadyOpen(false)}>{t("apontamentos.list.cancel")}</Button>
           </div>
         </DialogContent>
       </Dialog>

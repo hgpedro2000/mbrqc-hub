@@ -622,13 +622,13 @@ export default function AnaliseRisco() {
           {/* ============ RECOMENDAÇÕES ============ */}
           <TabsContent value="reco" className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="alto + médio risco" />
-              <KPICard label="Liberação direta disponível" value={counts.b} sub="baixo risco" />
+              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
+              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
             </div>
 
             <Card className="border-destructive/30 bg-destructive/5">
               <div className="px-4 py-3 border-b border-destructive/20">
-                <h3 className="font-semibold text-destructive">Inspeção 100% — não liberar sem verificação</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "alto").map((p) => (
@@ -636,13 +636,19 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-destructive/10 transition-colors"
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
                       <div className="text-xs text-muted-foreground">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
                     </div>
-                    <Badge className="bg-destructive text-destructive-foreground">Score {p.score}</Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className="bg-destructive/15 text-destructive border-destructive/30">Score {p.score}</Badge>
+                      <span className="text-[10px] text-muted-foreground">Focar em cotas críticas</span>
+                    </div>
                   </button>
                 ))}
                 {!counts.a && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em inspeção 100%.</div>}
@@ -651,7 +657,7 @@ export default function AnaliseRisco() {
 
             <Card className="border-amber-500/30 bg-amber-500/5">
               <div className="px-4 py-3 border-b border-amber-500/20">
-                <h3 className="font-semibold text-amber-700">Inspeção amostral</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-amber-600">Inspeção amostral — verificar lote reduzido</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "medio").map((p) => {
@@ -661,13 +667,16 @@ export default function AnaliseRisco() {
                       type="button"
                       key={p.pn + p.fornecedor}
                       onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-amber-500/10 transition-colors"
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 transition-colors"
                     >
-                      <div className="min-w-0">
-                        <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
                         <div className="text-xs text-muted-foreground">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
                       </div>
-                      <Badge className="bg-amber-500 text-white">Score {p.score}</Badge>
+                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0">Score {p.score}</Badge>
                     </button>
                   );
                 })}
@@ -677,7 +686,7 @@ export default function AnaliseRisco() {
 
             <Card className="border-emerald-500/30 bg-emerald-500/5">
               <div className="px-4 py-3 border-b border-emerald-500/20">
-                <h3 className="font-semibold text-emerald-700">Liberação direta — histórico limpo</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-emerald-600">Liberação direta — histórico limpo</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "baixo").map((p) => (
@@ -685,21 +694,21 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-emerald-500/10 transition-colors"
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição</div>
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <Badge className="bg-emerald-500 text-white">Score {p.score}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
+                    </div>
                   </button>
                 ))}
                 {!counts.b && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em liberação direta.</div>}
               </div>
-              <div className="px-4 py-3 bg-emerald-500/10 border-t border-emerald-500/20 text-xs text-emerald-800">
-                Estas peças possuem histórico verificável no sistema. Liberação direta com rastreabilidade registrada.
-              </div>
             </Card>
+
           </TabsContent>
         </Tabs>
       </main>

@@ -178,7 +178,18 @@ export default function MonitorAdmin() {
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" onClick={() => navigate("/monitor")} className="gap-2 order-1">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            // If this admin tab was opened from the Monitor (kiosk), just close it
+            // so the original Monitor tab stays running. Otherwise navigate normally.
+            const openedFromMonitor = typeof window !== "undefined" && (window.opener || window.history.length <= 1);
+            if (openedFromMonitor) { try { window.close(); } catch { /* noop */ } }
+            // Fallback if window.close was blocked (no opener):
+            setTimeout(() => { if (!window.closed) navigate("/monitor"); }, 80);
+          }}
+          className="gap-2 order-1"
+        >
           <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">Voltar ao Monitor</span><span className="sm:hidden">Voltar</span>
         </Button>
         <Button

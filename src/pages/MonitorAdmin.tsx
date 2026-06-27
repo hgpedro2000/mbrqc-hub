@@ -31,6 +31,7 @@ interface Media {
 const TIPOS: { id: Tipo; label: string; icon: any; desc: string }[] = [
   { id: "comunicado",   label: "Comunicados",                   icon: Megaphone, desc: "Avisos enviados pela Mobis aos colaboradores" },
   { id: "alteracao_4m", label: "Alterações 4M/EO e Validações", icon: Wrench,    desc: "Engenharia, melhorias, novos produtos, pontos de corte" },
+  { id: "retrabalho",   label: "Retrabalhos em Andamento",      icon: RefreshCw, desc: "Comunicação de retrabalhos atualmente em andamento" },
 ];
 
 const isPdfName = (s?: string | null) => !!s && /\.pdf($|\?)/i.test(s);

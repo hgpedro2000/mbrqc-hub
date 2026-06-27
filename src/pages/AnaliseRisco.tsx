@@ -464,7 +464,11 @@ export default function AnaliseRisco() {
                   </thead>
                   <tbody>
                     {partsFiltered.map((p) => (
-                      <tr key={`${p.pn}-${p.fornecedor}`} className="border-t">
+                      <tr
+                        key={`${p.pn}-${p.fornecedor}`}
+                        className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
+                        onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                      >
                         <td className="px-3 py-2 font-mono text-xs">{p.pn}</td>
                         <td className="px-3 py-2">{p.fornecedor}</td>
                         <td className="px-3 py-2">{scoreBar(p.score, p.classification)}</td>

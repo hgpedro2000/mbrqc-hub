@@ -105,6 +105,10 @@
     "barcodeScanner": {
       "title": "Barcode Scanner H/KMC",
       "description": "H/KMC Part 2D Barcode Standard QR reader."
+    },
+    "analiseRisco": {
+      "title": "Risk Analysis",
+      "description": "Failure panel, per-part risk map and inspection recommendations."
     }
   },
   "login": {

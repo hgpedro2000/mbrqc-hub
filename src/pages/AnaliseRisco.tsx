@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
-  AlertTriangle, Eye, CheckCircle,
+  AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,

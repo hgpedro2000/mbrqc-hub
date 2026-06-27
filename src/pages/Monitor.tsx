@@ -9,10 +9,10 @@ import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
-  Megaphone, Wrench, Microscope, RefreshCw,
+  Megaphone, Wrench, Microscope, RefreshCw, CalendarRange,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList, AreaChart, Area, PieChart, Pie, Legend } from "recharts";
 import { cn } from "@/lib/utils";
 import { useKioskMode } from "@/hooks/useKioskMode";
 

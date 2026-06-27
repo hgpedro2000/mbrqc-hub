@@ -27,6 +27,7 @@ import { DefectTagBadge } from "@/components/apontamento/DefectTagBadge";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Input } from "@/components/ui/input";
+import LanguageToggle from "@/components/LanguageToggle";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 
@@ -95,7 +96,7 @@ const Apontamentos = () => {
     monitorChannelRef.current = ch;
     ch.onmessage = (e) => {
       if (e.data?.type === "MONITOR_CLOSED") {
-        toast.message("Monitor foi fechado", { duration: 3000 });
+        toast.message(t("apontamentos.list.monitorClosed"), { duration: 3000 });
       }
     };
     return () => { ch.close(); monitorChannelRef.current = null; };
@@ -379,8 +380,8 @@ const Apontamentos = () => {
   };
 
   const StatusBadge = ({ status }: { status?: string }) => {
-    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">Rascunho</Badge>;
-    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">Finalizado</Badge>;
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("apontamentos.list.draftBadge")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("apontamentos.list.finalizedBadge")}</Badge>;
   };
 
   const EditActions = ({ id, createdBy, status }: { id: string; createdBy?: string | null; status?: string }) => {
@@ -395,10 +396,10 @@ const Apontamentos = () => {
             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />Visualizar</DropdownMenuItem>
-            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />Exportar</DropdownMenuItem>}
-            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />Editar</DropdownMenuItem>}
-            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />Excluir</DropdownMenuItem>}
+            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.view")}</DropdownMenuItem>
+            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.export")}</DropdownMenuItem>}
+            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.edit")}</DropdownMenuItem>}
+            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.delete")}</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -420,7 +421,7 @@ const Apontamentos = () => {
       return (
         <div className="form-section text-center py-8">
           <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground text-sm">Nenhum registro encontrado</p>
+          <p className="text-muted-foreground text-sm">{t("apontamentos.list.noRecords")}</p>
         </div>
       );
     }
@@ -499,10 +500,10 @@ const Apontamentos = () => {
                     {(item.quantidade_inspecionada > 0 || hasNg) && (
                       <div className="flex gap-3 text-xs">
                         {item.quantidade_inspecionada > 0 && (
-                          <span className="text-muted-foreground">Insp: <span className="font-semibold text-foreground">{item.quantidade_inspecionada}</span></span>
+                          <span className="text-muted-foreground">{t("apontamentos.list.insp")}: <span className="font-semibold text-foreground">{item.quantidade_inspecionada}</span></span>
                         )}
-                        <span className="text-emerald-600">OK: <span className="font-semibold">{item.quantidade_ok || 0}</span></span>
-                        <span className={hasNg ? "text-destructive font-semibold" : "text-muted-foreground"}>NG: <span className="font-semibold">{item.quantidade_ng || 0}</span></span>
+                        <span className="text-emerald-600">{t("apontamentos.list.ok")}: <span className="font-semibold">{item.quantidade_ok || 0}</span></span>
+                        <span className={hasNg ? "text-destructive font-semibold" : "text-muted-foreground"}>{t("apontamentos.list.ng")}: <span className="font-semibold">{item.quantidade_ng || 0}</span></span>
                       </div>
                     )}
 
@@ -532,7 +533,7 @@ const Apontamentos = () => {
                       </div>
                     ) : !hasNg ? (
                       <p className="text-xs text-blue-600 bg-blue-50 rounded px-2 py-1 line-clamp-1 border-l-2 border-blue-400 font-medium">
-                        Sem defeito encontrado durante essa inspeção
+                        {t("apontamentos.list.noDefectFound")}
                       </p>
                     ) : null}
 
@@ -597,7 +598,7 @@ const Apontamentos = () => {
       return (
         <div className="form-section text-center py-8">
           <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground text-sm">Nenhum registro encontrado</p>
+          <p className="text-muted-foreground text-sm">{t("apontamentos.list.noRecords")}</p>
         </div>
       );
     }
@@ -683,37 +684,38 @@ const Apontamentos = () => {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
                 <FileBarChart className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
               </div>
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Apontamentos</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">{t("apontamentos.list.headerEyebrow")}</span>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Hub">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.hub")}>
                 <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.hub")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
-                <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnDashboard")}>
+                <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnDashboard")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
-                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Monitor</span>
+              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnMonitor")}>
+                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnMonitor")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
-                <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
+              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnReport")}>
+                <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnReport")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
-                <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">NG</span>
+              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnNG")}>
+                <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnNG")}</span>
               </Button>
               {isAdmin && profile?.employee_number === "3501165" && (
-                <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Corrigir Part Name (INC)">
-                  <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Corrigir PN</span>
+                <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnFixPN")}>
+                  <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnFixPN")}</span>
                 </Button>
               )}
               <ReportErrorButton moduleName="Apontamentos" />
-              <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Sair">
+              <LanguageToggle />
+              <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.logout")}>
                 <LogOut className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.logout")}</span>
               </Button>
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Apontamentos</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Selecione o tipo de apontamento para registrar.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("apontamentos.list.pageTitle")}</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">{t("apontamentos.list.pageSubtitle")}</p>
         </div>
       </header>
 
@@ -735,10 +737,10 @@ const Apontamentos = () => {
                 <div className={`absolute inset-0 bg-gradient-to-br ${cfg.color} pointer-events-none`} />
                 <div className="relative">
                   <div className="module-card-icon"><Icon className="w-6 h-6 md:w-7 md:h-7" /></div>
-                  <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{cfg.label}</h2>
-                  <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{cfg.description}</p>
+                  <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{t(`apontamentos.list.top.${tab}Label`)}</h2>
+                  <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{t(`apontamentos.list.top.${tab}Desc`)}</p>
                   <div className="flex items-center justify-between">
-                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{count} registros</span>
+                    <span className="status-badge bg-secondary text-secondary-foreground text-xs">{t("apontamentos.list.recordsCount", { count })}</span>
                     <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
                   </div>
                 </div>
@@ -755,10 +757,10 @@ const Apontamentos = () => {
             <div className="absolute inset-0 bg-gradient-to-br from-orange-500/15 to-amber-500/5 pointer-events-none" />
             <div className="relative">
               <div className="module-card-icon"><ShieldAlert className="w-6 h-6 md:w-7 md:h-7" /></div>
-              <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">Contenção</h2>
-              <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">Registro e acompanhamento de ações de contenção de qualidade.</p>
+              <h2 className="text-base md:text-xl font-heading font-semibold text-card-foreground mb-1 md:mb-2">{t("apontamentos.list.top.contencaoLabel")}</h2>
+              <p className="text-muted-foreground text-xs md:text-sm leading-relaxed mb-3 md:mb-4 line-clamp-2">{t("apontamentos.list.top.contencaoDesc")}</p>
               <div className="flex items-center justify-between">
-                <span className="status-badge bg-secondary text-secondary-foreground text-xs">Abrir</span>
+                <span className="status-badge bg-secondary text-secondary-foreground text-xs">{t("apontamentos.list.openContencao")}</span>
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
               </div>
             </div>
@@ -770,24 +772,24 @@ const Apontamentos = () => {
           {/* Row 1: title + date range + actions (Hoje/Filtros/Limpar) + view toggle */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3 px-1">
             <div className="flex items-center gap-2 shrink-0">
-              <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">Registros</h2>
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">{t("apontamentos.list.records")}</h2>
               <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0 hidden md:block" />
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="h-8 text-xs w-[140px] px-2 hidden md:block"
-                aria-label="Data de"
+                aria-label={t("apontamentos.list.dateFromLabel")}
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className="h-8 text-xs w-[140px] px-2 hidden md:block"
-                aria-label="Data até"
+                aria-label={t("apontamentos.list.dateToLabel")}
               />
               {(dateFrom || dateTo) && (
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground shrink-0 hidden md:inline-flex" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground shrink-0 hidden md:inline-flex" onClick={() => { setDateFrom(""); setDateTo(""); }} title={t("apontamentos.list.clearDates")}>
                   <X className="w-4 h-4" />
                 </Button>
               )}
@@ -796,7 +798,7 @@ const Apontamentos = () => {
               {isAdmin && selectedIds.size > 0 && (
                 <Button variant="destructive" size="sm" className="gap-1.5 h-8 px-2" onClick={() => setBulkDeleteOpen(true)}>
                   <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Excluir {selectedIds.size}</span>
+                  <span className="hidden sm:inline">{t("apontamentos.list.deleteN", { count: selectedIds.size })}</span>
                   <span className="sm:hidden">{selectedIds.size}</span>
                 </Button>
               )}
@@ -804,10 +806,10 @@ const Apontamentos = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 px-2 sm:px-3 text-xs gap-1"
-                onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
+                onClick={() => { const today = getLocalDateString(); setDateFrom(today); setDateTo(today); }}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Hoje</span>
+                <span className="hidden sm:inline">{t("apontamentos.list.today")}</span>
               </Button>
               <Button
                 variant={filtersExpanded ? "default" : "outline"}
@@ -816,19 +818,19 @@ const Apontamentos = () => {
                 onClick={() => { const v = !filtersExpanded; setFiltersExpanded(v); writeSS("filtersExpanded", v); }}
               >
                 <Filter className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Filtros</span>
+                <span className="hidden sm:inline">{t("apontamentos.list.filters")}</span>
               </Button>
               {(search || Object.values(filterValues).some((v) => v && v !== "all") || dateFrom || dateTo) && (
                 <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground h-8 px-2" onClick={() => { clearFilters(); setDateFrom(""); setDateTo(""); }}>
                   <X className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Limpar filtros</span>
+                  <span className="hidden sm:inline">{t("apontamentos.list.clearFilters")}</span>
                 </Button>
               )}
               <div className="flex items-center border rounded-lg overflow-hidden">
-                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("detailed")}>
+                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("detailed")} title={t("apontamentos.list.detailedView")}>
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
-                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("compact")}>
+                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("compact")} title={t("apontamentos.list.compactView")}>
                   <LayoutList className="w-4 h-4" />
                 </Button>
               </div>
@@ -838,10 +840,10 @@ const Apontamentos = () => {
           {/* Mobile-only date row */}
           <div className="flex items-center gap-2 mb-2 px-1 md:hidden">
             <div className={`grid ${(dateFrom || dateTo) ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2"} gap-1.5 items-center flex-1 min-w-0`}>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data de" />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data até" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label={t("apontamentos.list.dateFromLabel")} />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label={t("apontamentos.list.dateToLabel")} />
               {(dateFrom || dateTo) && (
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title={t("apontamentos.list.clearDates")}>
                   <X className="w-4 h-4" />
                 </Button>
               )}
@@ -862,7 +864,7 @@ const Apontamentos = () => {
                 return (
                   <TabsTrigger key={tab} value={tab} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
                     <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                    <span className="hidden sm:inline truncate">{cfg.label}</span>
+                    <span className="hidden sm:inline truncate">{t(`apontamentos.list.top.${tab}Label`)}</span>
                     <span className="text-xs">({count})</span>
                   </TabsTrigger>
                 );
@@ -872,10 +874,10 @@ const Apontamentos = () => {
                 type="button"
                 onClick={() => navigate("/contencao")}
                 className="inline-flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
-                title="Abrir Contenção"
+                title={t("apontamentos.list.openContencao")}
               >
                 <ShieldAlert className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                <span className="hidden sm:inline truncate">Contenção</span>
+                <span className="hidden sm:inline truncate">{t("apontamentos.list.contencaoTab")}</span>
                 <ArrowRight className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-60" />
               </button>
             </TabsList>
@@ -890,7 +892,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter(null)}
                 >
-                  Todos
+                  {t("apontamentos.list.all")}
                 </Button>
                 <Button
                   variant={incomingLocationFilter === "Sala do Audio" ? "default" : "outline"}
@@ -898,7 +900,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter("Sala do Audio")}
                 >
-                  🔊 Sala do Áudio
+                  🔊 {t("apontamentos.list.salaAudio")}
                 </Button>
                 <Button
                   variant={incomingLocationFilter === "Área de Incoming" ? "default" : "outline"}
@@ -906,7 +908,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter("Área de Incoming")}
                 >
-                  📦 Área de Incoming
+                  📦 {t("apontamentos.list.areaIncoming")}
                 </Button>
               </div>
             )}
@@ -928,7 +930,7 @@ const Apontamentos = () => {
                       onClick={() => { setProcSub(sub); clearFilters(); setSelectedIds(new Set()); }}
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      <span>{cfg.label}</span>
+                      <span>{t(`apontamentos.list.subProc.${sub}`)}</span>
                       {cfg.realType && <span className="text-[10px] opacity-80">({subCount})</span>}
                     </Button>
                   );
@@ -943,8 +945,8 @@ const Apontamentos = () => {
                 ) : tab === "processos" && isPlaceholderSub ? (
                   <div className="border border-dashed rounded-lg py-16 text-center text-muted-foreground">
                     <Layers className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm font-medium">Em breve: {procSubConfig[procSub].label}</p>
-                    <p className="text-xs mt-1">Esta área será habilitada em uma próxima atualização.</p>
+                    <p className="text-sm font-medium">{t("apontamentos.list.comingSoon", { name: t(`apontamentos.list.subProc.${procSub}`) })}</p>
+                    <p className="text-xs mt-1">{t("apontamentos.list.comingSoonDesc")}</p>
                   </div>
                 ) : viewMode === "detailed" ? renderDetailedList() : renderCompactList()}
               </TabsContent>

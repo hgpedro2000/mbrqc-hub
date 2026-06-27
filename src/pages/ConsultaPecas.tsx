@@ -127,10 +127,10 @@ const ConsultaPecas = () => {
         setSpecReaderOpen(false);
         setSpecPart(part);
         setSpecDialogOpen(true);
-        toast({ title: "✓ Peça identificada!", description: `PN: ${part.part_number}` });
+        toast({ title: t("consultaPecas.toasts.partIdentified"), description: t("consultaPecas.toasts.pnLabel", { pn: part.part_number }) });
       } else {
         setSearchTerm(part.part_number);
-        toast({ title: "✓ Peça encontrada!", description: `PN: ${part.part_number}` });
+        toast({ title: t("consultaPecas.toasts.partFound"), description: t("consultaPecas.toasts.pnLabel", { pn: part.part_number }) });
       }
     };
 

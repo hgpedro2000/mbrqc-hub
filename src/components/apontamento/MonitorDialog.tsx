@@ -64,6 +64,8 @@ export interface MonitorBlockSetting {
   inspLetterGap?: number;
   /** Used by "inspecionado": extra delay (ms) after the split-flap settles, before starting the rotation timer. */
   inspPostFlapDelayMs?: number;
+  /** Used by "resumo_acumulado": which shift to display. "auto" rotates between all every 7s. */
+  resumoShift?: "auto" | "all" | "1T" | "2T" | "3T";
 }
 
 export interface MonitorPreferences {

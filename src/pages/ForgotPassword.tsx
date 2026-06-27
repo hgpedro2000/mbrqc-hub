@@ -48,7 +48,7 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmit} className="form-section space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t("forgotPassword.email")}</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("forgotPassword.emailPlaceholder")} />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12">
               {loading ? t("common.sending") : (

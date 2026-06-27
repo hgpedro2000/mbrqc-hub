@@ -299,14 +299,14 @@ const ConsultaPecas = () => {
 
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">Modo de exibição:</p>
+          <p className="text-xs text-muted-foreground">{t("consultaPecas.viewMode.label")}</p>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={cycleViewMode}
             className="h-9 gap-2 border-accent/40 hover:bg-accent/10"
-            title="Alternar modo de exibição"
+            title={t("consultaPecas.viewMode.title")}
           >
             <ViewIcon className="w-4 h-4" />
             <span className="font-semibold">{viewModeMeta[viewMode].label}</span>

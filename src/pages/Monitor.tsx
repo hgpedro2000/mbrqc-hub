@@ -9,7 +9,7 @@ import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
-  Megaphone, Wrench, Microscope,
+  Megaphone, Wrench, Microscope, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
@@ -58,6 +58,7 @@ const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: strin
   inspecionado:   { title: "Monitoramento de Inspeção",           icon: Package,       accent: "text-cyan-400",     gradient: "from-cyan-500/20 via-transparent to-emerald-500/20" },
   comunicados:    { title: "Comunicados",                         icon: Megaphone,     accent: "text-sky-400",      gradient: "from-sky-500/20 via-transparent to-indigo-500/20" },
   alteracoes_4m:  { title: "Alterações 4M/EO e Validações",       icon: Wrench,        accent: "text-violet-400",   gradient: "from-violet-500/20 via-transparent to-fuchsia-500/20" },
+  retrabalhos:    { title: "Retrabalhos em Andamento",             icon: RefreshCw,     accent: "text-amber-400",    gradient: "from-amber-500/20 via-transparent to-orange-500/20" },
   ultimos_defeitos:{ title: "Últimos Defeitos Detectados",        icon: Microscope,    accent: "text-rose-400",     gradient: "from-rose-500/20 via-transparent to-red-500/20" },
 };
 
@@ -1236,8 +1237,10 @@ const Monitor = () => {
         );
       }
       case "comunicados":
-      case "alteracoes_4m": {
-        const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
+      case "alteracoes_4m":
+      case "retrabalhos": {
+        const tipo = id === "comunicados" ? "comunicado" : id === "retrabalhos" ? "retrabalho" : "alteracao_4m";
+        const emptyLabel = id === "comunicados" ? "comunicado" : id === "retrabalhos" ? "retrabalho" : "aviso";
         const nowMs = now.getTime();
         const allItems = slidesMedia.filter((m) => {
           if (m.tipo !== tipo) return false;
@@ -1248,11 +1251,11 @@ const Monitor = () => {
           return true;
         });
         if (!allItems.length) {
-          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {emptyLabel} publicado.</div>;
         }
-        // Group by slot (only for comunicados; alteracoes_4m always single)
+        // Group by slot (comunicados and retrabalhos use multi-slot; alteracoes_4m always single)
         const slotsWithItems: { slot: number; items: any[] }[] = [];
-        if (tipo === "comunicado") {
+        if (tipo === "comunicado" || tipo === "retrabalho") {
           for (const s of [1, 2, 3, 4]) {
             const its = allItems.filter((m) => (m.slot || 1) === s);
             if (its.length) slotsWithItems.push({ slot: s, items: its });

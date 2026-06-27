@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Moon, Sun, Settings2, Megaphone, Wrench, Check, RotateCcw, AlertTriangle, Loader2 } from "lucide-react";
+import { Moon, Sun, Settings2, Megaphone, Wrench, Check, RotateCcw, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
@@ -24,6 +24,7 @@ export type MonitorBlock =
   | "inspecionado"
   | "comunicados"
   | "alteracoes_4m"
+  | "retrabalhos"
   | "ultimos_defeitos";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
@@ -174,6 +175,7 @@ const BLOCK_OPTIONS: { id: MonitorBlock; emoji: string; title: string; desc: str
   { id: "inspecionado", emoji: "🔍", title: "Inspeção", desc: "Split-flap por fornecedor" },
   { id: "comunicados", emoji: "📣", title: "Comunicados", desc: "Imagens / PDFs publicados" },
   { id: "alteracoes_4m", emoji: "🛠️", title: "Alterações 4M/EO", desc: "Avisos de engenharia / pontos de corte" },
+  { id: "retrabalhos", emoji: "🔄", title: "Retrabalhos em Andamento", desc: "Comunicação de retrabalhos atuais" },
   { id: "ultimos_defeitos", emoji: "🔬", title: "Últimos Defeitos", desc: "Últimos NG com fotos" },
 ];
 
@@ -451,6 +453,15 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                         <div className="text-left">
                           <p className="text-sm font-medium">Alterações 4M/EO</p>
                           <p className="text-xs text-muted-foreground">Engenharia / pontos de corte</p>
+                        </div>
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="justify-start gap-2 h-auto py-3">
+                      <Link to="/monitor/admin?tab=retrabalho" onClick={() => onOpenChange(false)}>
+                        <RefreshCw className="w-4 h-4 text-primary" />
+                        <div className="text-left">
+                          <p className="text-sm font-medium">Retrabalhos em Andamento</p>
+                          <p className="text-xs text-muted-foreground">Mídia de retrabalhos ativos</p>
                         </div>
                       </Link>
                     </Button>
@@ -1270,7 +1281,8 @@ const blockHasRealData = (id: MonitorBlock, d: PreviewData): boolean => {
     case "alerts": return d.alertas.length > 0;
     case "contencao": return d.contencoes.length > 0;
     case "consumiveis": return d.consumiveis.filter((c: any) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0)).length > 0;
-    case "comunicados": return d.slidesMedia.length > 0;
+    case "comunicados": return d.slidesMedia.some((m: any) => m.tipo === "comunicado");
+    case "retrabalhos": return d.slidesMedia.some((m: any) => m.tipo === "retrabalho");
     default: return false;
   }
 };
@@ -1473,6 +1485,21 @@ const BlockMock = ({ id, data }: { id: MonitorBlock; data: PreviewData }) => {
           ))}
         </div>
       );
+    case "retrabalhos": {
+      const items = hasReal
+        ? data.slidesMedia.filter((m: any) => m.tipo === "retrabalho").slice(0, 3).map((m: any, i: number) => ({ t: m.titulo || `Retrabalho ${i+1}` }))
+        : [1,2,3].map((i) => ({ t: `Retrabalho ${i}` }));
+      return (
+        <div className={cn(wrap, "grid grid-cols-3 gap-1.5 h-full")}>
+          {items.map((m, i) => (
+            <div key={i} className="rounded border bg-card p-2 flex flex-col items-center justify-center gap-1">
+              <div className="w-full h-8 bg-gradient-to-br from-amber-500/30 to-amber-500/10 rounded" />
+              <span className="text-[9px] truncate w-full text-center">{m.t}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
     case "ultimos_defeitos": {
       const ngs = data.apontamentos.filter((a: any) => (a.ng_qty ?? 0) > 0).slice(0, 4);
       const cards = hasReal && ngs.length

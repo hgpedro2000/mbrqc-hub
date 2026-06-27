@@ -7,10 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X, Monitor as MonitorIcon } from "lucide-react";
+import { Loader2, Trash2, Upload, ArrowLeft, Megaphone, Wrench, FileText, Pencil, Save, X, Monitor as MonitorIcon, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Tipo = "comunicado" | "alteracao_4m";
+type Tipo = "comunicado" | "alteracao_4m" | "retrabalho";
+const TIPOS_COM_SLOT: Tipo[] = ["comunicado", "retrabalho"];
 
 interface Media {
   id: string;
@@ -30,6 +31,7 @@ interface Media {
 const TIPOS: { id: Tipo; label: string; icon: any; desc: string }[] = [
   { id: "comunicado",   label: "Comunicados",                   icon: Megaphone, desc: "Avisos enviados pela Mobis aos colaboradores" },
   { id: "alteracao_4m", label: "Alterações 4M/EO e Validações", icon: Wrench,    desc: "Engenharia, melhorias, novos produtos, pontos de corte" },
+  { id: "retrabalho",   label: "Retrabalhos em Andamento",      icon: RefreshCw, desc: "Comunicação de retrabalhos atualmente em andamento" },
 ];
 
 const isPdfName = (s?: string | null) => !!s && /\.pdf($|\?)/i.test(s);
@@ -209,7 +211,7 @@ export default function MonitorAdmin() {
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
             <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
-          {tab === "comunicado" && (
+          {TIPOS_COM_SLOT.includes(tab) && (
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="grid gap-1">
                 <Label>Posição no slide</Label>
@@ -266,7 +268,7 @@ export default function MonitorAdmin() {
                         <>
                           <Input value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} placeholder="Título" />
                           <Textarea rows={2} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} placeholder="Descrição" />
-                          {m.tipo === "comunicado" && (
+                          {TIPOS_COM_SLOT.includes(m.tipo) && (
                             <div className="grid gap-2 sm:grid-cols-3">
                               <div className="grid gap-1">
                                 <Label className="text-xs">Posição</Label>
@@ -297,7 +299,7 @@ export default function MonitorAdmin() {
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
                         <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
-                        {m.tipo === "comunicado" && (
+                        {TIPOS_COM_SLOT.includes(m.tipo) && (
                           <span className="px-2 py-0.5 rounded-full whitespace-nowrap bg-primary/15 text-primary">Pos. {m.slot || 1}</span>
                         )}
                         {(() => { const s = vigenciaStatus(m); return s ? <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", s.cls)}>{s.label}</span> : null; })()}

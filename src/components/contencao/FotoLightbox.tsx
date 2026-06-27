@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const FotoLightbox = ({ open, onClose, paths, initialIndex = 0, title }: Props) => {
+  const { t } = useTranslation();
   const [idx, setIdx] = useState(initialIndex);
   const [url, setUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -40,13 +42,13 @@ const FotoLightbox = ({ open, onClose, paths, initialIndex = 0, title }: Props) 
       <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black/95 border-0">
         <DialogHeader className="px-4 py-2 border-b border-white/10">
           <DialogTitle className="text-white text-sm font-normal">
-            {title || "Foto"} <span className="text-white/50">— {idx + 1} / {total}</span>
+            {title || t("contencao.lightbox.title")} <span className="text-white/50">— {idx + 1} / {total}</span>
           </DialogTitle>
         </DialogHeader>
         <div className="relative flex items-center justify-center min-h-[60vh] max-h-[80vh] bg-black">
           {loading && <Loader2 className="w-8 h-8 animate-spin text-white/70 absolute" />}
           {url && (
-            <img src={url} alt={title || "foto"} className="max-h-[80vh] max-w-full object-contain" />
+            <img src={url} alt={title || t("contencao.lightbox.title")} className="max-h-[80vh] max-w-full object-contain" />
           )}
           {total > 1 && (
             <>

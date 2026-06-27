@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +32,7 @@ interface Props {
 const BUCKET = "containment-photos";
 
 const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, initial, contencaoConcluida }: Props) => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { profile, user } = useAuth();
   const markFileInputRef = useRef<HTMLInputElement>(null);
@@ -186,14 +188,14 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
   };
 
   const validate = (): string | null => {
-    if (!turno || !data || !horaInicio || !horaFim) return "Preencha turno, data e horários.";
-    if (horaFim <= horaInicio) return "Hora fim deve ser maior que a hora início.";
-    if (qtdInspecionada < 0) return "Quantidade não pode ser negativa.";
+    if (!turno || !data || !horaInicio || !horaFim) return t("contencao.registro.validate.required");
+    if (horaFim <= horaInicio) return t("contencao.registro.validate.horaFim");
+    if (qtdInspecionada < 0) return t("contencao.registro.validate.negativeQty");
     if (showDiferenca) {
-      if (qtdDiferenca <= 0) return "Informe a quantidade adicional (diferença).";
-      if (!justificativaDiferenca.trim()) return "Informe a justificativa da diferença.";
+      if (qtdDiferenca <= 0) return t("contencao.registro.validate.difQty");
+      if (!justificativaDiferenca.trim()) return t("contencao.registro.validate.difJustificativa");
       if (existingFotosFalha.length === 0 && newFilesFalha.length === 0)
-        return "A foto da falha é obrigatória ao adicionar diferença.";
+        return t("contencao.registro.validate.difFoto");
     }
     return null;
   };
@@ -202,16 +204,14 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
     const err = validate();
     if (err) { toast.error(err); return; }
     setSaving(true);
-    const toastId = toast.loading(initial ? "Salvando registro..." : "Lançando registro...");
+    const toastId = toast.loading(initial ? t("contencao.registro.saving") : t("contencao.registro.launching"));
     try {
-      // Pre-generate id so we can upload photos BEFORE insert.
-      // (RLS only allows admin/lider/engenharia to UPDATE contencao_registros.)
       const registroId = initial?.id || crypto.randomUUID();
 
       let finalFotos = [...existingFotos];
       let finalFotosFalha = [...existingFotosFalha];
       if (newFiles.length || newFilesFalha.length) {
-        toast.loading("Enviando fotos...", { id: toastId });
+        toast.loading(t("contencao.registro.sendingPhotos"), { id: toastId });
         if (newFiles.length) {
           const up = await uploadFilesList(newFiles, registroId, "mark");
           finalFotos = [...finalFotos, ...up];
@@ -255,7 +255,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         if (error) throw error;
       }
 
-      toast.loading("Recalculando totais...", { id: toastId });
+      toast.loading(t("contencao.registro.recalculating"), { id: toastId });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["contencao"] }),
         qc.invalidateQueries({ queryKey: ["contencao-registros", contencaoId] }),
@@ -264,10 +264,10 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
         qc.invalidateQueries({ queryKey: ["contencao-soma-inspecionada", contencaoId] }),
         qc.invalidateQueries({ queryKey: ["contencao-info", contencaoId] }),
       ]);
-      toast.success(finalizar ? "Contenção finalizada e totais atualizados" : "Registro salvo e totais atualizados", { id: toastId });
+      toast.success(finalizar ? t("contencao.registro.finalized") : t("contencao.registro.saved"), { id: toastId });
       onClose();
     } catch (e: any) {
-      toast.error(e.message || "Erro ao salvar registro", { id: toastId });
+      toast.error(e.message || t("contencao.registro.error"), { id: toastId });
     } finally {
       setSaving(false);
     }
@@ -280,15 +280,15 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
       <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
         <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{initial ? "Editar Registro de Turno" : "Novo Registro de Turno"}</DialogTitle>
+            <DialogTitle>{initial ? t("contencao.registro.editTitle") : t("contencao.registro.newTitle")}</DialogTitle>
             <DialogDescription>
-              Registre os dados do turno. O Mark Check segue a definição da contenção.
+              {t("contencao.registro.desc")}
             </DialogDescription>
           </DialogHeader>
 
           {(contencaoInfo?.fotos_problema?.length || contencaoInfo?.mark_check_fotos?.length) ? (
             <div className="rounded-md border bg-muted/30 p-3">
-              <p className="text-xs font-medium text-muted-foreground mb-1">Referências da contenção</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">{t("contencao.detail.contencaoRefs")}</p>
               <ContencaoFotosStrip
                 fotosProblema={contencaoInfo?.fotos_problema}
                 fotosMarkCheck={contencaoInfo?.mark_check_fotos}
@@ -300,7 +300,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="space-y-1">
-              <Label className="text-xs">Turno</Label>
+              <Label className="text-xs">{t("contencao.registro.turno")}</Label>
               <Select value={turno} onValueChange={setTurno}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -309,33 +309,33 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Data</Label>
+              <Label className="text-xs">{t("contencao.registro.data")}</Label>
               <Input type="date" value={data} onChange={(e) => setData(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Início</Label>
+              <Label className="text-xs">{t("contencao.registro.start")}</Label>
               <Input type="time" value={horaInicio} onChange={(e) => setHoraInicio(e.target.value)} />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs">Fim</Label>
+              <Label className="text-xs">{t("contencao.registro.end")}</Label>
               <Input type="time" value={horaFim} onChange={(e) => setHoraFim(e.target.value)} />
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Local</Label>
-            <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex: Linha 3 — Posto 7" />
+            <Label className="text-xs">{t("contencao.registro.local")}</Label>
+            <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder={t("contencao.registro.localPlaceholder")} />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-xs">Co-inspetores</Label>
+            <Label className="text-xs">{t("contencao.registro.coinspetores")}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start gap-2">
                   <Users className="w-4 h-4" />
                   {selectedInspetores.length > 0
-                    ? `${selectedInspetores.length} selecionado(s)`
-                    : "Selecionar Inspetores"}
+                    ? t("contencao.registro.selectedCount", { count: selectedInspetores.length })
+                    : t("contencao.registro.selectInspetores")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[min(360px,90vw)] p-2" align="start">
@@ -344,14 +344,14 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
                   <Input
                     value={inspetorSearch}
                     onChange={(e) => setInspetorSearch(e.target.value)}
-                    placeholder="Buscar..."
+                    placeholder={t("contencao.registro.searchInspetores")}
                     className="pl-7 h-8 text-sm"
                   />
                 </div>
                 <div className="max-h-64 overflow-y-auto space-y-0.5">
-                  {loadingProfiles && <p className="text-xs text-muted-foreground p-2">Carregando...</p>}
+                  {loadingProfiles && <p className="text-xs text-muted-foreground p-2">{t("common.loading", "Carregando...")}</p>}
                   {!loadingProfiles && filteredProfiles.length === 0 && (
-                    <p className="text-xs text-muted-foreground p-2">Nenhum usuário encontrado.</p>
+                    <p className="text-xs text-muted-foreground p-2">{t("contencao.registro.noInspetores")}</p>
                   )}
                   {filteredProfiles.map((p) => {
                     const checked = selectedInspetores.some((i) => i.id === p.id);
@@ -378,7 +378,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               </div>
             )}
             <div className="space-y-1">
-              <Label className="text-xs">Qtd. de inspetores</Label>
+              <Label className="text-xs">{t("contencao.registro.qtdInspetores")}</Label>
               <Input type="number" min={0} value={qtdInspetores} onChange={(e) => setQtdInspetores(Number(e.target.value) || 0)} />
             </div>
           </div>
@@ -386,10 +386,10 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           {/* Quantidade a Inspecionar */}
           <div className="rounded-md border p-3 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <Label className="text-sm font-medium">Quantidade a Inspecionar</Label>
+              <Label className="text-sm font-medium">{t("contencao.registro.qtdInspecionar")}</Label>
               {estoqueMobis > 0 && (
                 <Badge variant={estoqueAcabou ? "destructive" : "secondary"}>
-                  Restante: {restante} / {estoqueMobis}
+                  {t("contencao.registro.remaining", { remaining: restante, total: estoqueMobis })}
                 </Badge>
               )}
             </div>
@@ -414,11 +414,11 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
                 <div className="flex items-start gap-2 text-amber-700 dark:text-amber-400">
                   <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <p className="text-xs">
-                    O estoque Mobis foi totalmente inspecionado. Caso precise adicionar mais peças, registre a diferença abaixo com justificativa e fotos.
+                    {t("contencao.registro.estoqueEsgotado")}
                   </p>
                 </div>
                 <Button type="button" size="sm" variant="outline" onClick={() => setShowDiferenca(true)} className="gap-2">
-                  <Plus className="w-4 h-4" /> Adicionar diferença
+                  <Plus className="w-4 h-4" /> {t("contencao.registro.addDiff")}
                 </Button>
               </div>
             )}
@@ -426,21 +426,21 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
             {showDiferenca && (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium text-amber-700 dark:text-amber-400">Diferença adicional</Label>
+                  <Label className="text-sm font-medium text-amber-700 dark:text-amber-400">{t("contencao.registro.diffSection")}</Label>
                   <Button type="button" size="sm" variant="ghost" onClick={() => { setShowDiferenca(false); setQtdDiferenca(0); setJustificativaDiferenca(""); }}>
                     <X className="w-3 h-3" />
                   </Button>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Quantidade adicional</Label>
+                  <Label className="text-xs">{t("contencao.registro.qtdDiff")}</Label>
                   <Input type="number" min={1} value={qtdDiferenca} onChange={(e) => setQtdDiferenca(Number(e.target.value) || 0)} />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Justificativa</Label>
-                  <Textarea rows={2} value={justificativaDiferenca} onChange={(e) => setJustificativaDiferenca(e.target.value)} placeholder="Por que foi necessário adicionar mais peças?" />
+                  <Label className="text-xs">{t("contencao.registro.justDiff")}</Label>
+                  <Textarea rows={2} value={justificativaDiferenca} onChange={(e) => setJustificativaDiferenca(e.target.value)} placeholder={t("contencao.registro.justDiffPlaceholder")} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs">Foto da falha <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs">{t("contencao.registro.fotoFalha")} <span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-2">
                     {existingFotosFalha.map((path) => (
                       <FotoThumb key={path} path={path} onRemove={() => setExistingFotosFalha((p) => p.filter((x) => x !== path))} />
@@ -452,7 +452,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
                   <input ref={falhaFileInputRef} type="file" accept="image/*" multiple hidden
                     onChange={(e) => { if (e.target.files) setNewFilesFalha((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
                   <Button variant="outline" size="sm" type="button" onClick={() => falhaFileInputRef.current?.click()} className="gap-2">
-                    <Upload className="w-4 h-4" /> Adicionar foto da falha
+                    <Upload className="w-4 h-4" /> {t("contencao.registro.addFotoFalha")}
                   </Button>
                 </div>
               </div>
@@ -460,7 +460,7 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Qtd. peças NG detectadas em contenção</Label>
+            <Label className="text-xs">{t("contencao.registro.qtdNg")}</Label>
             <Input
               type="number"
               min={0}
@@ -468,19 +468,19 @@ const ContencaoRegistroDialog = ({ open, onClose, contencaoId, defaultLocal, ini
               onChange={(e) => setQtdNg(Math.max(0, Number(e.target.value) || 0))}
               placeholder="0"
             />
-            <p className="text-[10px] text-muted-foreground">Quantidade de peças não-conformes identificadas durante a inspeção deste turno.</p>
+            <p className="text-[10px] text-muted-foreground">{t("contencao.registro.qtdNgDesc")}</p>
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs">Observações do turno</Label>
+            <Label className="text-xs">{t("contencao.registro.observacoes")}</Label>
             <Textarea value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={3} />
           </div>
 
           <DialogFooter className="gap-2 flex-col sm:flex-row">
-            <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>{t("common.cancel", "Cancelar")}</Button>
             <Button onClick={() => persist(false)} disabled={saving}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              Salvar Registro
+              {t("contencao.registro.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

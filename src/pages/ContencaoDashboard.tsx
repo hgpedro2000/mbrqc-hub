@@ -6,6 +6,7 @@ import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+import LanguageToggle from "@/components/LanguageToggle";
 
 const COLORS = ["#3b82f6", "#f59e0b", "#22c55e", "#ef4444"];
 
@@ -29,11 +30,11 @@ const ContencaoDashboard = () => {
   ].filter((d) => d.value > 0);
 
   const statusDist = [
-    { name: "Emitida", value: items.filter((i) => i.status === "emitida" || i.status === "aberta").length },
-    { name: "Iniciada", value: items.filter((i) => i.status === "iniciada").length },
-    { name: "Em Andamento", value: items.filter((i) => i.status === "em_andamento").length },
-    { name: "Concluída", value: items.filter((i) => i.status === "concluida").length },
-    { name: "Cancelada", value: items.filter((i) => i.status === "cancelada").length },
+    { name: t("contencao.status.emitida"), value: items.filter((i) => i.status === "emitida" || i.status === "aberta").length },
+    { name: t("contencao.status.iniciada"), value: items.filter((i) => i.status === "iniciada").length },
+    { name: t("contencao.status.em_andamento"), value: items.filter((i) => i.status === "em_andamento").length },
+    { name: t("contencao.status.concluida"), value: items.filter((i) => i.status === "concluida").length },
+    { name: t("contencao.status.cancelada"), value: items.filter((i) => i.status === "cancelada").length },
   ].filter((d) => d.value > 0);
 
   const qtyData = [
@@ -49,6 +50,7 @@ const ContencaoDashboard = () => {
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="sm" onClick={() => navigate("/contencao")} className="text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="w-4 h-4 mr-1" /> {t("common.back")}</Button>
             <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
+            <LanguageToggle />
           </div>
           <div className="flex items-center gap-3 mt-4"><ShieldAlert className="w-8 h-8" /><h1 className="text-2xl font-heading font-bold">{t("contencao.dashboard.title")}</h1></div>
         </div>

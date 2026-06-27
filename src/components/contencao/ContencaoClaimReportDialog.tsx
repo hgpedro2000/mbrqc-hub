@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
+  const { t } = useTranslation();
   const reportRef = useRef<HTMLDivElement | null>(null);
   const [exporting, setExporting] = useState(false);
 
@@ -38,7 +40,7 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
   const exportPDF = async () => {
     if (!reportRef.current) return;
     setExporting(true);
-    const t = toast.loading("Gerando PDF...");
+    const toastId = toast.loading(t("contencao.claim.generatingPdf"));
     try {
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
@@ -52,7 +54,6 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
       const pageH = pdf.internal.pageSize.getHeight();
       const imgW = pageW;
       const imgH = (canvas.height * imgW) / canvas.width;
-      // Multi-page if content overflows
       let heightLeft = imgH;
       let position = 0;
       pdf.addImage(imgData, "JPEG", 0, position, imgW, imgH);
@@ -66,9 +67,9 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
       const filename = `Contencao_${contencao?.numero || "contencao"}_${contencao?.fornecedor || "fornecedor"}.pdf`
         .replace(/\s+/g, "_");
       pdf.save(filename);
-      toast.success("PDF gerado", { id: t });
+      toast.success(t("contencao.claim.pdfSuccess"), { id: toastId });
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar PDF", { id: t });
+      toast.error(e?.message || t("contencao.claim.pdfError"), { id: toastId });
     } finally {
       setExporting(false);
     }
@@ -79,11 +80,9 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-4 h-4" /> Relatório de Contenção
+            <FileText className="w-4 h-4" /> {t("contencao.claim.dialogTitle")}
           </DialogTitle>
-          <DialogDescription>
-            Pré-visualização idêntica ao PDF exportado. Cobrança baseada nas horas trabalhadas em contenção.
-          </DialogDescription>
+          <DialogDescription>{t("contencao.claim.dialogDesc")}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-auto bg-slate-200 dark:bg-slate-900 p-4 rounded">
@@ -99,10 +98,10 @@ const ContencaoClaimReportDialog = ({ open, onClose, contencao }: Props) => {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button variant="outline" onClick={onClose}>{t("contencao.claim.close")}</Button>
           <Button onClick={exportPDF} disabled={exporting || isLoading} className="gap-2">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Exportar PDF
+            {t("contencao.claim.export")}
           </Button>
         </DialogFooter>
       </DialogContent>

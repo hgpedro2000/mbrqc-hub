@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { formatHoras, aggregateRegistrosDrawer, ContencaoRegistro } from "@/lib/contencao";
 import logo from "@/assets/hyundai-mobis-logo.png";
@@ -26,12 +27,6 @@ const useSignedUrls = (paths: string[]) => {
   return urls;
 };
 
-const fmtDate = (s?: string | null) =>
-  s ? new Date(`${s.slice(0, 10)}T12:00:00`).toLocaleDateString("pt-BR") : "—";
-
-const fmtDateTime = (s?: string | null) =>
-  s ? new Date(s).toLocaleString("pt-BR") : "—";
-
 /**
  * Visual A4-styled claim report. Rendered identically on-screen and in the
  * exported PDF (html2canvas captures this exact DOM tree).
@@ -40,6 +35,15 @@ const fmtDateTime = (s?: string | null) =>
  */
 const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
   ({ contencao, registros }, ref) => {
+    const { t, i18n } = useTranslation();
+    const locale = i18n.language === "en" ? "en-US" : "pt-BR";
+
+    const fmtDate = (s?: string | null) =>
+      s ? new Date(`${s.slice(0, 10)}T12:00:00`).toLocaleDateString(locale) : "—";
+
+    const fmtDateTime = (s?: string | null) =>
+      s ? new Date(s).toLocaleString(locale) : "—";
+
     const totais = aggregateRegistrosDrawer(registros as any[]);
     const horasTotal = Number(contencao?.total_horas ?? totais.horas) || 0;
 
@@ -48,7 +52,7 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
     const urlsProblema = useSignedUrls(fotosProblema.slice(0, 4));
     const urlsMark = useSignedUrls(fotosMark.slice(0, 4));
 
-    const emitido = new Date().toLocaleString("pt-BR");
+    const emitido = new Date().toLocaleString(locale);
 
     return (
       <div
@@ -62,40 +66,40 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
           <div className="flex items-center gap-3">
             <img src={logo} alt="Hyundai Mobis" style={{ height: 40 }} />
             <div>
-              <h1 className="text-[20px] font-bold leading-tight tracking-tight">RELATÓRIO DE CONTENÇÃO</h1>
-              <p className="text-[11px] uppercase tracking-wider text-slate-500">Ação de Contenção de Qualidade</p>
+              <h1 className="text-[20px] font-bold leading-tight tracking-tight">{t("contencao.claim.reportTitle")}</h1>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">{t("contencao.claim.reportSubtitle")}</p>
 
             </div>
           </div>
           <div className="text-right text-[10px] text-slate-600">
-            <p><span className="font-semibold text-slate-900">Nº:</span> {contencao?.numero || "—"}</p>
-            <p>Emitido em {emitido}</p>
+            <p><span className="font-semibold text-slate-900">{t("contencao.claim.number")}:</span> {contencao?.numero || "—"}</p>
+            <p>{t("contencao.claim.emittedAt")} {emitido}</p>
           </div>
         </header>
 
         {/* ---------- Identificação ---------- */}
         <section className="mt-4 grid grid-cols-2 gap-3 text-[11px]">
-          <Field label="Fornecedor" value={contencao?.fornecedor || "—"} highlight />
-          <Field label="Responsabilidade" value={contencao?.responsabilidade || "—"} />
-          <Field label="Part Number" value={contencao?.part_number || "—"} />
-          <Field label="Descrição da Peça" value={contencao?.part_name || "—"} />
-          <Field label="Setor / Linha" value={[contencao?.setor, contencao?.linha].filter(Boolean).join(" / ") || "—"} />
-          <Field label="Local" value={contencao?.local || "—"} />
-          <Field label="Data de Abertura" value={fmtDate(contencao?.data || contencao?.created_at)} />
-          <Field label="Data de Conclusão" value={fmtDate(contencao?.data_conclusao)} />
-          <Field label="Responsável (Mobis)" value={contencao?.responsavel || "—"} />
-          <Field label="Status" value={contencao?.status || "—"} />
+          <Field label={t("contencao.claim.labelSupplier")} value={contencao?.fornecedor || "—"} highlight />
+          <Field label={t("contencao.claim.labelResponsability")} value={contencao?.responsabilidade || "—"} />
+          <Field label={t("contencao.claim.labelPartNumber")} value={contencao?.part_number || "—"} />
+          <Field label={t("contencao.claim.labelPartName")} value={contencao?.part_name || "—"} />
+          <Field label={t("contencao.claim.labelSectorLine")} value={[contencao?.setor, contencao?.linha].filter(Boolean).join(" / ") || "—"} />
+          <Field label={t("contencao.claim.labelLocal")} value={contencao?.local || "—"} />
+          <Field label={t("contencao.claim.labelOpenDate")} value={fmtDate(contencao?.data || contencao?.created_at)} />
+          <Field label={t("contencao.claim.labelCloseDate")} value={fmtDate(contencao?.data_conclusao)} />
+          <Field label={t("contencao.claim.labelResponsavel")} value={contencao?.responsavel || "—"} />
+          <Field label={t("contencao.claim.labelStatus")} value={contencao?.status || "—"} />
         </section>
 
         {/* ---------- Defeito ---------- */}
         <section className="mt-4">
-          <SectionTitle>Motivo / Descrição do Defeito</SectionTitle>
+          <SectionTitle>{t("contencao.claim.sectionDefect")}</SectionTitle>
           <p className="text-[11px] leading-relaxed text-slate-800 whitespace-pre-wrap border border-slate-200 rounded p-3 bg-slate-50 min-h-[60px]">
             {contencao?.motivo || "—"}
           </p>
           {contencao?.acao_contencao && (
             <>
-              <SectionTitle className="mt-3">Ação de Contenção Executada</SectionTitle>
+              <SectionTitle className="mt-3">{t("contencao.claim.sectionAction")}</SectionTitle>
               <p className="text-[11px] leading-relaxed text-slate-800 whitespace-pre-wrap border border-slate-200 rounded p-3 bg-slate-50">
                 {contencao.acao_contencao}
               </p>
@@ -109,10 +113,10 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <div>
                 <p className="text-[10px] uppercase tracking-widest font-bold text-slate-800">
-                  Resumo da Contenção
+                  {t("contencao.claim.sectionSummary")}
                 </p>
                 <p className="text-[10px] text-slate-600">
-                  Total de horas de inspeção realizadas pela equipe de contenção.
+                  {t("contencao.claim.summaryDesc")}
                 </p>
               </div>
               <p className="text-[34px] font-extrabold text-slate-900 leading-none">
@@ -121,34 +125,34 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
             </div>
 
             <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[10px]">
-              <Mini label="Dias em contenção" value={String(contencao?.dias_andamento ?? "—")} />
-              <Mini label="Registros (turnos)" value={String(registros.length)} />
-              <Mini label="Peças inspecionadas" value={String(totais.insp)} />
-              <Mini label="Peças NG (rejeitadas)" value={String(totais.ng)} accent="text-red-600" />
+              <Mini label={t("contencao.claim.daysInContainment")} value={String(contencao?.dias_andamento ?? "—")} />
+              <Mini label={t("contencao.claim.records")} value={String(registros.length)} />
+              <Mini label={t("contencao.claim.piecesInspected")} value={String(totais.insp)} />
+              <Mini label={t("contencao.claim.piecesNg")} value={String(totais.ng)} accent="text-red-600" />
             </div>
           </div>
         </section>
 
         {/* ---------- Tabela de horas por turno ---------- */}
         <section className="mt-4">
-          <SectionTitle>Detalhamento de Horas por Turno</SectionTitle>
+          <SectionTitle>{t("contencao.claim.sectionHoursDetail")}</SectionTitle>
           <table className="w-full text-[10px] border-collapse">
             <thead>
               <tr className="bg-slate-900 text-white">
-                <Th>Data</Th>
-                <Th>Turno</Th>
-                <Th>Início</Th>
-                <Th>Fim</Th>
-                <Th className="text-right">Horas</Th>
-                <Th className="text-right">Inspetores</Th>
-                <Th className="text-right">Inspec.</Th>
-                <Th className="text-right">NG</Th>
-                <Th className="text-right">OK</Th>
+                <Th>{t("contencao.claim.colDate")}</Th>
+                <Th>{t("contencao.claim.colShift")}</Th>
+                <Th>{t("contencao.claim.colStart")}</Th>
+                <Th>{t("contencao.claim.colEnd")}</Th>
+                <Th className="text-right">{t("contencao.claim.colHours")}</Th>
+                <Th className="text-right">{t("contencao.claim.colInspectors")}</Th>
+                <Th className="text-right">{t("contencao.claim.colInspected")}</Th>
+                <Th className="text-right">{t("contencao.claim.colNg")}</Th>
+                <Th className="text-right">{t("contencao.claim.colOk")}</Th>
               </tr>
             </thead>
             <tbody>
               {registros.length === 0 ? (
-                <tr><td colSpan={9} className="text-center py-3 text-slate-400 border border-slate-200">Nenhum registro</td></tr>
+                <tr><td colSpan={9} className="text-center py-3 text-slate-400 border border-slate-200">{t("contencao.claim.noRecords")}</td></tr>
               ) : registros.map((r) => {
                 const ok = Math.max(0, (r.qtd_inspecionada || 0) - (r.qtd_ng || 0));
                 return (
@@ -168,7 +172,7 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
             </tbody>
             <tfoot>
               <tr className="bg-slate-100 font-bold">
-                <Td colSpan={4} className="text-right">TOTAL</Td>
+                <Td colSpan={4} className="text-right">{t("contencao.claim.totalRow")}</Td>
                 <Td className="text-right text-slate-800">{formatHoras(horasTotal)}</Td>
                 <Td className="text-right">—</Td>
                 <Td className="text-right">{totais.insp}</Td>
@@ -182,13 +186,13 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
         {/* ---------- Fotos ---------- */}
         {(urlsProblema.length > 0 || urlsMark.length > 0) && (
           <section className="mt-4">
-            <SectionTitle>Evidências Fotográficas</SectionTitle>
+            <SectionTitle>{t("contencao.claim.sectionPhotos")}</SectionTitle>
             <div className="grid grid-cols-2 gap-3">
               {urlsProblema.length > 0 && (
-                <PhotoBlock title="Defeito" color="border-red-500" urls={urlsProblema} />
+                <PhotoBlock title={t("contencao.fotos.defeito")} color="border-red-500" urls={urlsProblema} />
               )}
               {urlsMark.length > 0 && (
-                <PhotoBlock title="Mark Check" color="border-emerald-500" urls={urlsMark} />
+                <PhotoBlock title={t("contencao.fotos.markCheck")} color="border-emerald-500" urls={urlsMark} />
               )}
             </div>
           </section>
@@ -196,8 +200,8 @@ const ContencaoClaimReport = forwardRef<HTMLDivElement, Props>(
 
         {/* ---------- Rodapé ---------- */}
         <footer className="mt-6 pt-3 border-t border-slate-300 text-[9px] text-slate-500 flex items-center justify-between">
-          <span>Hyundai Mobis Brasil — Departamento de Qualidade</span>
-          <span>Documento gerado em {emitido} • Nº {contencao?.numero || "—"}</span>
+          <span>{t("contencao.claim.footerLeft")}</span>
+          <span>{t("contencao.claim.footerRight")} {emitido} • {t("contencao.claim.number")} {contencao?.numero || "—"}</span>
         </footer>
       </div>
     );

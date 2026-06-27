@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, CheckSquare } from "lucide-react";
 import FotoLightbox from "./FotoLightbox";
@@ -73,8 +74,6 @@ const Section = ({
           {debug && <span className={`ml-1 normal-case font-mono ${misaligned ? "text-red-500" : "text-emerald-600"}`}>Δ{offset}px</span>}
         </span>
       </div>
-      {/* Cell width matches a fixed 3-column track (gap-1.5 = 0.375rem * 2 total),
-          so 1, 2 or 3 photos always stay visually centered under the label. */}
       <div ref={gridRef} className={`flex justify-center gap-1.5 relative ${debugGridCls}`}>
         {paths.length === 0 ? (
           <div
@@ -118,6 +117,7 @@ const Section = ({
 };
 
 const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showLabels = true, debug = false }: Props) => {
+  const { t } = useTranslation();
   const problema = Array.isArray(fotosProblema) ? fotosProblema : [];
   const mark = Array.isArray(fotosMarkCheck) ? fotosMarkCheck : [];
   const urlsProblema = useSignedUrls(problema);
@@ -126,18 +126,20 @@ const ContencaoFotosStrip = ({ fotosProblema, fotosMarkCheck, size = "sm", showL
 
   if (problema.length === 0 && mark.length === 0) return null;
   const h = HEIGHTS[size];
-  // showLabels currently always true visually; kept for backward compat
   void showLabels;
+
+  const labelDefeito = t("contencao.fotos.defeito");
+  const labelMark = t("contencao.fotos.markCheck");
 
   return (
     <>
       <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2">
-        <Section paths={problema} urls={urlsProblema} label="Defeito" Icon={AlertTriangle}
+        <Section paths={problema} urls={urlsProblema} label={labelDefeito} Icon={AlertTriangle}
           color="text-red-600 dark:text-red-400" border="border-red-500/30" h={h} debug={debug}
-          onOpen={(i) => setLightbox({ paths: problema, index: i, title: "Defeito" })} />
-        <Section paths={mark} urls={urlsMark} label="Mark Check" Icon={CheckSquare}
+          onOpen={(i) => setLightbox({ paths: problema, index: i, title: labelDefeito })} />
+        <Section paths={mark} urls={urlsMark} label={labelMark} Icon={CheckSquare}
           color="text-emerald-600 dark:text-emerald-400" border="border-emerald-500/30" h={h} debug={debug}
-          onOpen={(i) => setLightbox({ paths: mark, index: i, title: "Mark Check" })} />
+          onOpen={(i) => setLightbox({ paths: mark, index: i, title: labelMark })} />
       </div>
       <FotoLightbox
         open={!!lightbox}

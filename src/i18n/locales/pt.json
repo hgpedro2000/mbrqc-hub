@@ -154,7 +154,10 @@
     "backToLogin": "Voltar ao login",
     "sentMessage": "Se o email estiver cadastrado, você receberá um link para redefinir sua senha.",
     "success": "Email de recuperação enviado!",
-    "error": "Erro ao enviar email de recuperação"
+    "error": "Erro ao enviar email de recuperação",
+    "emailPlaceholder": "seu@email.com",
+    "or": "ou",
+    "requestAdmin": "Não tenho e-mail cadastrado — solicitar ao administrador"
   },
   "tryout": {
     "headerTitle": "Try-Out",

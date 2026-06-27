@@ -48,7 +48,7 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmit} className="form-section space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">{t("forgotPassword.email")}</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" />
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("forgotPassword.emailPlaceholder")} />
             </div>
             <Button type="submit" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-heading font-semibold h-12">
               {loading ? t("common.sending") : (
@@ -64,7 +64,7 @@ const ForgotPassword = () => {
                 <span className="w-full border-t border-border/50" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-card px-2 text-[11px] uppercase tracking-wider text-muted-foreground">ou</span>
+                <span className="bg-card px-2 text-[11px] uppercase tracking-wider text-muted-foreground">{t("forgotPassword.or")}</span>
               </div>
             </div>
 
@@ -72,8 +72,9 @@ const ForgotPassword = () => {
               to="/solicitar-reset-admin"
               className="flex items-center justify-center gap-2 w-full h-11 rounded-md border border-accent/40 bg-accent/5 px-3 text-sm font-semibold text-foreground hover:bg-accent/10 hover:border-accent transition-colors"
             >
-              Não tenho e-mail cadastrado — solicitar ao administrador
+              {t("forgotPassword.requestAdmin")}
             </Link>
+
 
             <Link to="/login" className="flex items-center justify-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />

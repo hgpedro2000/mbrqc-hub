@@ -38,9 +38,10 @@ const CARGOS = [
   "Gerente de Qualidade", "Diretor de Qualidade",
 ];
 
-const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
+const ReportErrorButton = ({ moduleName, showNewUserRequest = false, showAdminHelpDeskTickets = false }: Props) => {
   const { user, profile, isAdmin } = useAuth();
   const { impersonating } = useImpersonation();
+  const navigate = useNavigate();
   const targetUserId = impersonating?.id || user?.id;
   const [activeModule, setActiveModule] = useState(moduleName);
   const [menuOpen, setMenuOpen] = useState(false);

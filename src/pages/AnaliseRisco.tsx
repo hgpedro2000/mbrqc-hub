@@ -35,7 +35,26 @@ type Apto = {
   quantidade_ng: number | null;
 };
 
-const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+export type PartRisk = {
+  pn: string;
+  partName: string;
+  fornecedor: string;
+  ng: number;
+  diasSem: number;
+  modoRecorrente: string;
+  score: number;
+  classification: "alto" | "medio" | "baixo";
+  recomendacao: string;
+  monthsWithModo: number;
+  ppmFornecedor: number;
+};
+
+// pt-BR number formatter — uses ponto como separador de milhar (ex.: 7.000)
+export const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+// pt-BR percent formatter (ex.: 87,5%)
+export const fmtPct = (n: number, digits = 1) =>
+  `${(n ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
+
 
 
 const META_REJEICOES = 200;

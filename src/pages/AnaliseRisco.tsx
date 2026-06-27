@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
-  AlertTriangle, Eye, CheckCircle,
+  AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -69,6 +69,7 @@ export default function AnaliseRisco() {
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
   const [showExcluded, setShowExcluded] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -563,6 +564,14 @@ export default function AnaliseRisco() {
               <SelectItem value="180">Últimos 180 dias</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            size="sm" variant="outline" className="h-8 text-xs gap-1"
+            onClick={() => setShowHelp(true)}
+            title="Entenda este módulo"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            Entenda este módulo
+          </Button>
         </div>
       </header>
 
@@ -861,6 +870,86 @@ export default function AnaliseRisco() {
       </main>
 
       {/* ============ EXCLUDED PARTS DIALOG ============ */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Como funciona a Análise de Risco</DialogTitle>
+            <DialogDescription>
+              Este módulo transforma o histórico de apontamentos em inteligência de inspeção, permitindo focar esforço onde o risco é real.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-2 text-sm">
+            <section className="space-y-2">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-base">Painel de Falhas</h3>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                Visão analítica do histórico de rejeições. Os 4 indicadores no topo mostram o panorama geral do período selecionado. O gráfico de Pareto revela quais modos de falha concentram a maior parte das rejeições — em geral, 3 ou 4 modos respondem por mais de 70% dos problemas. O gráfico de tendência mostra se a situação está melhorando ou piorando mês a mês. A tabela de fornecedores classifica quem mais impacta a qualidade e sinaliza se o problema está subindo, estável ou em queda.
+              </p>
+            </section>
+
+            <div className="border-t" />
+
+            <section className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-base">Mapa de Risco</h3>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                Cada peça recebe automaticamente um score de risco de 0 a 100, calculado com base em quatro critérios do histórico de apontamentos:
+              </p>
+              <ul className="list-disc pl-5 space-y-1.5 text-muted-foreground leading-relaxed">
+                <li><span className="font-medium text-foreground">Histórico de rejeições (peso alto):</span> quantidade de peças NG nos últimos 90 dias. Quanto mais rejeições, maior o score.</li>
+                <li><span className="font-medium text-foreground">Reincidência do modo de falha (peso alto):</span> se o mesmo tipo de problema se repetiu em 2 ou mais meses distintos, o risco sobe significativamente.</li>
+                <li><span className="font-medium text-foreground">Fornecedor de alto PPM (peso médio):</span> peças de fornecedores no topo do ranking de PPM herdam parte do risco do fornecedor.</li>
+                <li><span className="font-medium text-foreground">Dias sem rejeição (reduz o risco):</span> peças com 30 ou mais dias sem nenhuma ocorrência recebem bônus negativo, reduzindo o score. Acima de 60 dias limpos, a redução é maior.</li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed">
+                A classificação final define a ação recomendada: score acima de 60 exige inspeção 100%; entre 30 e 60, inspeção amostral; abaixo de 30, liberação direta autorizada.
+              </p>
+            </section>
+
+            <div className="border-t" />
+
+            <section className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-base">Recomendações do Dia</h3>
+              </div>
+              <p className="text-muted-foreground leading-relaxed">
+                Tradução operacional do Mapa de Risco para o trabalho diário. A lista é gerada automaticamente e organizada em três grupos:
+              </p>
+              <ul className="space-y-2">
+                <li className="flex gap-2 text-muted-foreground leading-relaxed">
+                  <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <span><span className="font-medium text-foreground">Inspeção 100%:</span> peças com score alto. Nenhum lote deve ser liberado sem verificação completa. O sistema indica o ponto de atenção principal de cada peça.</span>
+                </li>
+                <li className="flex gap-2 text-muted-foreground leading-relaxed">
+                  <Eye className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span><span className="font-medium text-foreground">Inspeção amostral:</span> peças com risco médio. Verificar uma amostra do lote (10% ou 20% conforme o score) é suficiente para garantir a qualidade.</span>
+                </li>
+                <li className="flex gap-2 text-muted-foreground leading-relaxed">
+                  <CheckCircle className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+                  <span><span className="font-medium text-foreground">Liberação direta:</span> peças com histórico limpo comprovado. Podem ser liberadas sem inspeção manual, com rastreabilidade registrada no sistema — argumento válido para comunicação com a logística.</span>
+                </li>
+              </ul>
+            </section>
+
+            <div className="border-t" />
+
+            <p className="text-xs text-muted-foreground">
+              O score é recalculado automaticamente a cada acesso, com base nos apontamentos registrados no período selecionado.
+            </p>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setShowHelp(false)}>Entendi</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showExcluded} onOpenChange={setShowExcluded}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

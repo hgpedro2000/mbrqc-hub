@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
 import { cn } from "@/lib/utils";
+import { useKioskMode } from "@/hooks/useKioskMode";
 
 // Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.
 const photoCache = new Map<string, HTMLImageElement>();

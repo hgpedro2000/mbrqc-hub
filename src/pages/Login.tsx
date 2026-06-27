@@ -195,7 +195,7 @@ const Login = () => {
                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-accent transition-colors"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
-                Ajuda
+                {t("login.help")}
               </button>
             </div>
             <Input

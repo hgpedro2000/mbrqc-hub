@@ -550,8 +550,9 @@ export default function AnaliseRisco() {
                     {supplierTable.map((s) => (
                       <tr key={s.name} className="border-t">
                         <td className="px-3 py-2">{s.name}</td>
-                        <td className="text-center px-3 py-2 font-semibold">{s.ng}</td>
-                        <td className="text-center px-3 py-2">{s.ppm.toLocaleString()}</td>
+                        <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
+                        <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
+
                         <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
                         <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
                         <td className="text-center px-3 py-2">

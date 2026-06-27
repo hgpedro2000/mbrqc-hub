@@ -566,8 +566,8 @@ const ConsultaPecas = () => {
       <Dialog open={hkmcOpen} onOpenChange={setHkmcOpen}>
         <DialogContent className="w-[96vw] max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
           <DialogHeader className="px-4 pt-4">
-            <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> Barcode Scanner H/KMC</DialogTitle>
-            <DialogDescription>Leitor de códigos Hyundai/KIA</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> {t("consultaPecas.hkmc.title")}</DialogTitle>
+            <DialogDescription>{t("consultaPecas.hkmc.description")}</DialogDescription>
           </DialogHeader>
           <div className="p-2">
             <HKMCScanner />

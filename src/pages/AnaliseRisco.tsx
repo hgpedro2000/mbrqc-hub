@@ -69,6 +69,7 @@ export default function AnaliseRisco() {
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
   const [showExcluded, setShowExcluded] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();

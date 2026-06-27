@@ -188,13 +188,13 @@ const ConsultaPecas = () => {
       setSuffixOptions(options);
       setSelectedSuffixPn("");
       setSuffixPickerOpen(true);
-      toast({ title: "Múltiplas variantes encontradas", description: "Selecione o Part Number correto." });
+      toast({ title: t("consultaPecas.toasts.multipleVariants"), description: t("consultaPecas.toasts.selectCorrectPn") });
     } else {
       // No match at all — just set search term
       setSearchTerm(pn);
-      toast({ title: "Part Number não cadastrado", description: `Buscando por: ${pn}`, variant: "destructive" });
+      toast({ title: t("consultaPecas.toasts.pnNotRegistered"), description: t("consultaPecas.toasts.searchingFor", { pn }), variant: "destructive" });
     }
-  }, [partNumbers, toast, scanMode]);
+  }, [partNumbers, toast, scanMode, t]);
 
   const handleQRScan = useCallback((data: HyundaiQRData) => {
     void applyScannedPartNumber(data.partNumber);

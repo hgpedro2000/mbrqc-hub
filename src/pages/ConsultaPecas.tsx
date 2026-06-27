@@ -609,25 +609,25 @@ const ConsultaPecas = () => {
                 ref={specReaderInputRef}
                 value={specReaderInput}
                 onChange={(e) => setSpecReaderInput(e.target.value)}
-                placeholder="Leia o QR Code ou digite o Part Number..."
+                placeholder={t("consultaPecas.specReader.placeholder")}
                 autoFocus
                 className="h-14 text-lg font-mono pl-11 border-2 border-violet-300 focus-visible:ring-violet-500 focus-visible:ring-2"
               />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setSpecReaderOpen(false)}>
-                Cancelar
+                {t("consultaPecas.specReader.cancel")}
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white"
                 disabled={!specReaderInput.trim()}
               >
-                <ScanSearch className="w-4 h-4 mr-2" /> Checar
+                <ScanSearch className="w-4 h-4 mr-2" /> {t("consultaPecas.specReader.check")}
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground text-center">
-              Dica: leitores de QR Hyundai/Mobis enviam o payload completo — o Part Number é detectado automaticamente.
+              {t("consultaPecas.specReader.hint")}
             </p>
           </form>
         </DialogContent>

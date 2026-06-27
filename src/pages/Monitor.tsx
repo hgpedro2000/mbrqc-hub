@@ -1141,7 +1141,7 @@ const Monitor = () => {
                       style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>
                     <span className={cn("text-3xl font-black text-center", i === 0 ? "text-red-500" : i === 1 ? "text-orange-400" : i === 2 ? "text-amber-400" : "text-muted-foreground")}>{i + 1}</span>
                     <div className="min-w-0">
-                      <p className="font-semibold text-2xl truncate">{s.fornecedor}{isWorst && <span className="ml-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 align-middle">Top Worst</span>}</p>
+                      <p className="font-semibold text-2xl truncate">{s.fornecedor}{isWorst && (() => { const rate = s.insp > 0 ? (s.ng / s.insp) * 100 : 0; return (<span title={`NG: ${fmtNum(s.ng)} de ${fmtNum(s.insp)} insp. (${rate.toFixed(2)}%)`} className="ml-2 text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 align-middle whitespace-nowrap">Top Worst · {fmtNum(s.ng)} NG · {rate.toFixed(1)}%</span>); })()}</p>
                       <div className="h-2 rounded-full bg-muted/40 overflow-hidden mt-1.5">
                         <div className="h-full bg-gradient-to-r from-red-600 to-amber-500 transition-all duration-700" style={{ width: `${(s.ppm / max) * 100}%` }} />
                       </div>

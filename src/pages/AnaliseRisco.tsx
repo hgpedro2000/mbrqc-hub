@@ -65,7 +65,10 @@ const daysBetween = (a: Date, b: Date) => Math.floor((b.getTime() - a.getTime())
 
 export default function AnaliseRisco() {
   const navigate = useNavigate();
-  const [periodo, setPeriodo] = useState<"30" | "90" | "180">("90");
+  const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
+  const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
+  const [excludeNoise, setExcludeNoise] = useState(true);
+  const [showExcluded, setShowExcluded] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -73,7 +76,7 @@ export default function AnaliseRisco() {
     return d.toISOString().slice(0, 10);
   }, [periodo]);
 
-  const { data: items = [], isLoading, isError, refetch } = useQuery({
+  const { data: rawItems = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["analise-risco", dateFrom],
     queryFn: async () => {
       const all: Apto[] = [];
@@ -93,6 +96,32 @@ export default function AnaliseRisco() {
       return all;
     },
   });
+
+  // Registered parts (PN + supplier) — used to detect "registered but never had any apontamento".
+  const { data: registeredParts = [] } = useQuery({
+    queryKey: ["analise-risco-registered-parts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("part_number,part_name,suppliers(name)")
+        .eq("active", true);
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        pn: r.part_number as string,
+        partName: r.part_name as string,
+        fornecedor: r.suppliers?.name || "—",
+      }));
+    },
+  });
+
+  // Apply model filter (BC4B vs todos) before any aggregation.
+  const items = useMemo(
+    () => modelFilter === "bc4b"
+      ? rawItems.filter((i) => (i.part_number || "").toUpperCase().includes("BC4B"))
+      : rawItems,
+    [rawItems, modelFilter],
+  );
+
 
   // --- Aggregations ---
   const today = new Date();

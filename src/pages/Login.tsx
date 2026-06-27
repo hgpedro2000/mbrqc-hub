@@ -297,11 +297,11 @@ const Login = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              Erro no Login
+              {t("login.errorTitle")}
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">{errorMessage}</p>
-          <Button onClick={() => setErrorDialogOpen(false)} className="w-full mt-2">Entendi</Button>
+          <Button onClick={() => setErrorDialogOpen(false)} className="w-full mt-2">{t("login.understood")}</Button>
         </DialogContent>
       </Dialog>
     </div>

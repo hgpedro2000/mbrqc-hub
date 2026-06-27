@@ -280,19 +280,46 @@ export default function AnaliseRisco() {
     }).sort((a, b) => b.score - a.score);
   }, [items, top2PPM, supplierStats, periodo]);
 
+  // Excluded set: parts considered "noise" — registered no fornecedor mas sem lançamento,
+  // ou apontamentos altamente recorrentes (mesmo modo em 3+ meses).
+  const excludedParts = useMemo(() => {
+    const seenKeys = new Set(parts.map((p) => `${p.pn}__${p.fornecedor}`));
+    const noLaunch = (registeredParts || [])
+      .filter((r) => {
+        if (modelFilter === "bc4b" && !r.pn.toUpperCase().includes("BC4B")) return false;
+        return !seenKeys.has(`${r.pn}__${r.fornecedor}`);
+      })
+      .map((r) => ({ ...r, reason: "sem lançamento" as const, ng: 0, monthsWithModo: 0, modoRecorrente: "—" }));
+    const recurrent = parts
+      .filter((p) => p.monthsWithModo >= 3)
+      .map((p) => ({ pn: p.pn, partName: p.partName, fornecedor: p.fornecedor, ng: p.ng, monthsWithModo: p.monthsWithModo, modoRecorrente: p.modoRecorrente, reason: "recorrente" as const }));
+    return [...noLaunch, ...recurrent];
+  }, [parts, registeredParts, modelFilter]);
+
+  const excludedKeys = useMemo(
+    () => new Set(excludedParts.filter((e) => e.reason === "recorrente").map((e) => `${e.pn}__${e.fornecedor}`)),
+    [excludedParts],
+  );
+
+  const partsForAnalysis = useMemo(
+    () => excludeNoise ? parts.filter((p) => !excludedKeys.has(`${p.pn}__${p.fornecedor}`)) : parts,
+    [parts, excludeNoise, excludedKeys],
+  );
+
   const counts = useMemo(() => {
-    const a = parts.filter((p) => p.classification === "alto").length;
-    const m = parts.filter((p) => p.classification === "medio").length;
-    const b = parts.filter((p) => p.classification === "baixo").length;
-    const total = parts.length || 1;
+    const a = partsForAnalysis.filter((p) => p.classification === "alto").length;
+    const m = partsForAnalysis.filter((p) => p.classification === "medio").length;
+    const b = partsForAnalysis.filter((p) => p.classification === "baixo").length;
+    const total = partsForAnalysis.length || 1;
     return { a, m, b, total, reducao: Math.round((b / total) * 100) };
-  }, [parts]);
+  }, [partsForAnalysis]);
 
   const [riskFilter, setRiskFilter] = useState<"todas" | "alto" | "medio" | "baixo">("todas");
   const partsFiltered = useMemo(
-    () => riskFilter === "todas" ? parts : parts.filter((p) => p.classification === riskFilter),
-    [parts, riskFilter],
+    () => riskFilter === "todas" ? partsForAnalysis : partsForAnalysis.filter((p) => p.classification === riskFilter),
+    [partsForAnalysis, riskFilter],
   );
+
 
   // ---------- Drill-down ----------
   const [drill, setDrill] = useState<{ pn: string; fornecedor: string } | null>(null);

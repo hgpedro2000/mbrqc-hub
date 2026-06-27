@@ -29,10 +29,14 @@ type Apto = {
   tipo: string;
   fornecedor: string | null;
   part_number: string | null;
+  part_name: string | null;
   modo_falha: string | null;
   quantidade_ok: number | null;
   quantidade_ng: number | null;
 };
+
+const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+
 
 const META_REJEICOES = 200;
 
@@ -58,7 +62,7 @@ export default function AnaliseRisco() {
       for (let i = 0; ; i++) {
         const { data, error } = await supabase
           .from("apontamentos")
-          .select("id,data,tipo,fornecedor,part_number,modo_falha,quantidade_ok,quantidade_ng")
+          .select("id,data,tipo,fornecedor,part_number,part_name,modo_falha,quantidade_ok,quantidade_ng")
           .eq("tipo", "incoming")
           .gte("data", dateFrom)
           .range(i * PAGE, i * PAGE + PAGE - 1);
@@ -171,19 +175,20 @@ export default function AnaliseRisco() {
 
   // --- Per-part risk score ---
   type PartRisk = {
-    pn: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
+    pn: string; partName: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
     score: number; classification: "alto" | "medio" | "baixo"; recomendacao: string;
     monthsWithModo: number; ppmFornecedor: number;
   };
 
   const parts: PartRisk[] = useMemo(() => {
-    type Acc = { pn: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
+    type Acc = { pn: string; partName: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
     const m = new Map<string, Acc>();
     for (const i of items) {
       if (!i.part_number) continue;
       const key = `${i.part_number}__${i.fornecedor || "—"}`;
-      if (!m.has(key)) m.set(key, { pn: i.part_number, fornecedor: i.fornecedor || "—", ng: 0, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
+      if (!m.has(key)) m.set(key, { pn: i.part_number, partName: i.part_name || "—", fornecedor: i.fornecedor || "—", ng: 0, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
       const e = m.get(key)!;
+      if (i.part_name && e.partName === "—") e.partName = i.part_name;
       const ng = i.quantidade_ng || 0;
       e.ng += ng;
       if (ng > 0) {
@@ -196,6 +201,7 @@ export default function AnaliseRisco() {
         }
       }
     }
+
     return [...m.values()].map((e) => {
       let score = 0;
       if (e.ng >= 30) score += 40;
@@ -223,7 +229,7 @@ export default function AnaliseRisco() {
       const ppmFornecedor = ppmF && ppmF.ok + ppmF.ng > 0 ? Math.round((ppmF.ng / (ppmF.ok + ppmF.ng)) * 1_000_000) : 0;
 
       return {
-        pn: e.pn, fornecedor: e.fornecedor, ng: e.ng, diasSem, modoRecorrente,
+        pn: e.pn, partName: e.partName, fornecedor: e.fornecedor, ng: e.ng, diasSem, modoRecorrente,
         score, classification, recomendacao, monthsWithModo: maxModoMonths, ppmFornecedor,
       };
     }).sort((a, b) => b.score - a.score);
@@ -337,7 +343,7 @@ export default function AnaliseRisco() {
     doc.setFontSize(10);
     doc.text(`Fornecedor: ${drill.fornecedor}`, margin, y); y += 14;
     doc.text(`Período: últimos ${periodo} dias`, margin, y); y += 14;
-    doc.text(`NG total: ${drillData.totalNg}  |  OK total: ${drillData.totalOk}  |  PPM: ${drillData.ppm.toLocaleString()}`, margin, y); y += 20;
+    doc.text(`NG total: ${fmt(drillData.totalNg)}  |  OK total: ${fmt(drillData.totalOk)}  |  PPM: ${fmt(drillData.ppm)}`, margin, y); y += 20;
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
@@ -477,10 +483,11 @@ export default function AnaliseRisco() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KPICard label="Peças NG (90d)" value={totalNG.toLocaleString()} sub="▲ 12% vs período anterior" subTone="red" />
-                <KPICard label="Modos de falha distintos" value={modosFalha.length} sub="— estável" subTone="amber" />
-                <KPICard label="PPM médio (fornecedores)" value={ppmMedio.toLocaleString()} sub="▲ 8% vs período anterior" subTone="red" />
-                <KPICard label="Fornecedores reincidentes" value={reincidentes} sub="▲ 1 novo este mês" subTone="red" />
+                <KPICard label="Peças NG (90d)" value={fmt(totalNG)} sub="▲ 12% vs período anterior" subTone="red" />
+                <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" />
+                <KPICard label="PPM médio (fornecedores)" value={fmt(ppmMedio)} sub="▲ 8% vs período anterior" subTone="red" />
+                <KPICard label="Fornecedores reincidentes" value={fmt(reincidentes)} sub="▲ 1 novo este mês" subTone="red" />
+
               </div>
             )}
 
@@ -494,9 +501,11 @@ export default function AnaliseRisco() {
                       <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} fontSize={10} height={70} />
                       <YAxis yAxisId="left" fontSize={10} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={10} />
-                      <Tooltip />
+                      <Tooltip formatter={(v: any, n: any) => [typeof v === "number" ? fmt(v) + (n === "% Acumulado" ? "%" : "") : v, n]} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências" />
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} />
+
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -510,10 +519,11 @@ export default function AnaliseRisco() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" fontSize={10} />
                       <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Legend />
-                      <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${META_REJEICOES}`, position: "right", fontSize: 10 }} />
-                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="NG" />
+                      <Tooltip formatter={(v: any) => (typeof v === "number" ? fmt(v) : v)} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)" />
+
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -540,8 +550,9 @@ export default function AnaliseRisco() {
                     {supplierTable.map((s) => (
                       <tr key={s.name} className="border-t">
                         <td className="px-3 py-2">{s.name}</td>
-                        <td className="text-center px-3 py-2 font-semibold">{s.ng}</td>
-                        <td className="text-center px-3 py-2">{s.ppm.toLocaleString()}</td>
+                        <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
+                        <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
+
                         <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
                         <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
                         <td className="text-center px-3 py-2">
@@ -561,10 +572,11 @@ export default function AnaliseRisco() {
           {/* ============ MAPA DE RISCO ============ */}
           <TabsContent value="mapa" className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <KPICard label="Alto risco" value={<span className="text-destructive">{counts.a}</span>} sub="100% inspeção" />
-              <KPICard label="Médio risco" value={<span className="text-amber-600">{counts.m}</span>} sub="Amostral" />
-              <KPICard label="Baixo risco" value={<span className="text-emerald-600">{counts.b}</span>} sub="Liberação direta" />
+              <KPICard label="Alto risco" value={<span className="text-destructive">{fmt(counts.a)}</span>} sub="100% inspeção" />
+              <KPICard label="Médio risco" value={<span className="text-amber-600">{fmt(counts.m)}</span>} sub="Amostral" />
+              <KPICard label="Baixo risco" value={<span className="text-emerald-600">{fmt(counts.b)}</span>} sub="Liberação direta" />
               <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="vs inspeção 100% atual" subTone="green" />
+
             </div>
 
             <div className="flex items-center gap-3">
@@ -586,8 +598,9 @@ export default function AnaliseRisco() {
                   <thead className="bg-muted/40 text-xs">
                     <tr>
                       <th className="text-left px-3 py-2">Part Number</th>
+                      <th className="text-left px-3 py-2">Part Name</th>
                       <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-left px-3 py-2">Score</th>
+                      <th className="text-center px-3 py-2">Score</th>
                       <th className="text-center px-3 py-2">NG</th>
                       <th className="text-center px-3 py-2">Dias sem rejeição</th>
                       <th className="text-left px-3 py-2">Modo recorrente</th>
@@ -601,18 +614,20 @@ export default function AnaliseRisco() {
                         className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
                         onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
                       >
-                        <td className="px-3 py-2 font-mono text-xs">{p.pn}</td>
+                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
+                        <td className="px-3 py-2 max-w-[220px] truncate" title={p.partName}>{p.partName}</td>
                         <td className="px-3 py-2">{p.fornecedor}</td>
-                        <td className="px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{p.ng}</td>
-                        <td className="text-center px-3 py-2">{p.diasSem}</td>
+                        <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                        <td className="text-center px-3 py-2">{fmt(p.diasSem)}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
                         <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (
-                      <tr><td colSpan={7} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
+                      <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
                     )}
+
                   </tbody>
                 </table>
               </div>
@@ -726,10 +741,11 @@ export default function AnaliseRisco() {
           {drillData && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">NG total</div><div className="text-xl font-bold text-destructive">{drillData.totalNg}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">OK total</div><div className="text-xl font-bold text-emerald-600">{drillData.totalOk}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">Inspecionadas</div><div className="text-xl font-bold">{drillData.totalInsp}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">PPM</div><div className="text-xl font-bold">{drillData.ppm.toLocaleString()}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">NG total</div><div className="text-xl font-bold text-destructive">{fmt(drillData.totalNg)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">OK total</div><div className="text-xl font-bold text-emerald-600">{fmt(drillData.totalOk)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">Inspecionadas</div><div className="text-xl font-bold">{fmt(drillData.totalInsp)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">PPM</div><div className="text-xl font-bold">{fmt(drillData.ppm)}</div></Card>
+
               </div>
 
               <Card className="p-3">

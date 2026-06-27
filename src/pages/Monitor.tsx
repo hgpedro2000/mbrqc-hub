@@ -1147,8 +1147,8 @@ const Monitor = () => {
                       </div>
                     </div>
                     <span className="text-2xl font-bold text-cyan-300 text-right">{fmtNum(s.insp)}</span>
-                    <span className="text-2xl font-bold text-red-400 text-right">{fmtNum(s.ng)}</span>
-                    <span className="text-3xl font-black text-red-500 text-right">{fmtNum(s.ppm)}</span>
+                    <span className={cn("text-2xl font-bold text-right", s.ng === 0 ? "text-emerald-400" : "text-red-400")}>{fmtNum(s.ng)}</span>
+                    <span className={cn("text-3xl font-black text-right", s.ng === 0 ? "text-emerald-400" : "text-red-500")}>{fmtNum(s.ppm)}</span>
                   </li>
                 );
               })}
@@ -1490,7 +1490,7 @@ const Monitor = () => {
         {/* Live ticker */}
         {!chromeOff && apontamentos.length > 0 && (
           <div className="relative z-10 overflow-hidden border-t border-border/40 bg-background/60 backdrop-blur-md py-3">
-            <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : "ticker 45s linear infinite", width: "max-content" }}>
+            <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : `ticker ${prefs.tickerSpeedSec ?? 45}s linear infinite`, width: "max-content" }}>
               {[...apontamentos.slice(0, 20), ...apontamentos.slice(0, 20)].map((a, i) => (
                 <span key={i} className="flex items-center gap-3 text-xl">
                   <span className="font-mono text-muted-foreground">{a.numero || "—"}</span>

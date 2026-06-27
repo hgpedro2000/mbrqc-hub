@@ -76,6 +76,8 @@ export interface MonitorPreferences {
   animationsEnabled?: boolean;
   /** Split-flap (airport) half-flip duration in ms. Lower = faster. */
   flapSpeedMs?: number;
+  /** Footer ticker (stock-style) loop duration in seconds. Higher = slower. */
+  tickerSpeedSec?: number;
   blockSettings?: Partial<Record<MonitorBlock, MonitorBlockSetting>>;
 }
 
@@ -90,6 +92,7 @@ export const defaultPrefs: MonitorPreferences = {
   slideDurationMs: 10000,
   animationsEnabled: true,
   flapSpeedMs: 70,
+  tickerSpeedSec: 45,
   blockSettings: {},
 };
 
@@ -435,8 +438,26 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                       </select>
                     </div>
                   </div>
+                  <div className="rounded-lg border bg-card p-3 sm:col-span-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">Velocidade da faixa (ticker)</p>
+                        <p className="text-xs text-muted-foreground">Faixa de informações no rodapé. Maior = mais lento.</p>
+                      </div>
+                      <select
+                        value={prefs.tickerSpeedSec ?? 45}
+                        onChange={(e) => setPrefs((p) => ({ ...p, tickerSpeedSec: Number(e.target.value) }))}
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                      >
+                        {[20, 30, 45, 60, 90, 120, 180].map((v) => (
+                          <option key={v} value={v}>{v}s</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </Section>
+
 
 
               {isAdmin && (

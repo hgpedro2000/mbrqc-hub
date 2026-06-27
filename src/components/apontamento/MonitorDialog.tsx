@@ -260,8 +260,17 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
   const customValid = prefs.period !== "custom" || (!!prefs.customFrom && !!prefs.customTo && prefs.customFrom <= prefs.customTo);
   const canConfirm = prefs.blocks.length > 0 && customValid;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     savePrefs(prefs);
+    if (isAdmin) {
+      const ok = await saveGlobalPrefs(prefs);
+      if (ok) {
+        toast.success("Padrão do monitor atualizado", {
+          description: "Outros usuários verão essas configurações.",
+          duration: 2000,
+        });
+      }
+    }
     onConfirm(prefs);
     onOpenChange(false);
   };

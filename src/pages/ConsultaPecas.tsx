@@ -444,7 +444,7 @@ const ConsultaPecas = () => {
             disabled={!selectedSuffixPn}
             className="w-full mt-2"
           >
-            Confirmar
+            {t("consultaPecas.suffix.confirm")}
           </Button>
         </DialogContent>
       </Dialog>

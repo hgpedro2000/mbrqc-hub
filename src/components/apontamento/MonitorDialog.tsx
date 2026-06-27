@@ -25,7 +25,8 @@ export type MonitorBlock =
   | "comunicados"
   | "alteracoes_4m"
   | "retrabalhos"
-  | "ultimos_defeitos";
+  | "ultimos_defeitos"
+  | "resumo_acumulado";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";
@@ -180,6 +181,7 @@ const BLOCK_OPTIONS: { id: MonitorBlock; emoji: string; title: string; desc: str
   { id: "alteracoes_4m", emoji: "🛠️", title: "Alterações 4M/EO", desc: "Avisos de engenharia / pontos de corte" },
   { id: "retrabalhos", emoji: "🔄", title: "Retrabalhos em Andamento", desc: "Comunicação de retrabalhos atuais" },
   { id: "ultimos_defeitos", emoji: "🔬", title: "Últimos Defeitos", desc: "Últimos NG com fotos" },
+  { id: "resumo_acumulado", emoji: "📅", title: "Resumo Acumulado", desc: "Trend mensal, melhores/piores fornecedores e defeitos por turno" },
 ];
 
 const PERIOD_OPTIONS: { id: MonitorPeriod; label: string }[] = [

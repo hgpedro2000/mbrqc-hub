@@ -9,10 +9,10 @@ import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
   BarChart3, ListChecks, Maximize2, Minimize2, X, LogOut,
-  Megaphone, Wrench, Microscope, RefreshCw,
+  Megaphone, Wrench, Microscope, RefreshCw, CalendarRange,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList, AreaChart, Area, PieChart, Pie, Legend } from "recharts";
 import { cn } from "@/lib/utils";
 import { useKioskMode } from "@/hooks/useKioskMode";
 
@@ -61,6 +61,7 @@ const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: strin
   alteracoes_4m:  { title: "Alterações 4M/EO e Validações",       icon: Wrench,        accent: "text-violet-400",   gradient: "from-violet-500/20 via-transparent to-fuchsia-500/20" },
   retrabalhos:    { title: "Retrabalhos em Andamento",             icon: RefreshCw,     accent: "text-amber-400",    gradient: "from-amber-500/20 via-transparent to-orange-500/20" },
   ultimos_defeitos:{ title: "Últimos Defeitos Detectados",        icon: Microscope,    accent: "text-rose-400",     gradient: "from-rose-500/20 via-transparent to-red-500/20" },
+  resumo_acumulado:{ title: "Resumo Acumulado do Mês",            icon: CalendarRange, accent: "text-emerald-400",  gradient: "from-emerald-500/20 via-transparent to-cyan-500/20" },
 };
 
 // --- Hooks ---
@@ -597,6 +598,7 @@ const Monitor = () => {
   const [consumiveis, setConsumiveis] = useState<any[]>([]);
   const [slidesMedia, setSlidesMedia] = useState<any[]>([]);
   const [ngPhotos, setNgPhotos] = useState<Record<string, string[]>>({});
+  const [apontamentosMonth, setApontamentosMonth] = useState<any[]>([]);
   const isV2 = true;
 
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
@@ -728,6 +730,25 @@ const Monitor = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeKey]);
 
+  // Monthly accumulated apontamentos for the "resumo_acumulado" slide.
+  // Refetched daily (or on realtime apontamento changes).
+  const fetchMonth = useCallback(async () => {
+    const d = new Date();
+    const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+    const { data } = await supabase
+      .from("apontamentos")
+      .select("created_at,fornecedor,turno,modo_falha,quantidade_ng,quantidade_inspecionada,quantidade")
+      .gte("created_at", start).lt("created_at", end);
+    if (data) setApontamentosMonth(data);
+  }, []);
+  useEffect(() => {
+    if (!prefs.blocks.includes("resumo_acumulado")) return;
+    fetchMonth();
+    const id = setInterval(fetchMonth, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [prefs.blocks, fetchMonth]);
+
   // Realtime: one channel; debounce per-table refetch to avoid bursts on chatty updates.
   useEffect(() => {
     setConn("connecting");
@@ -738,7 +759,7 @@ const Monitor = () => {
     };
     const channel = supabase
       .channel("monitor-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "apontamentos" }, () => debouncedRefetch("apontamentos"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "apontamentos" }, () => { debouncedRefetch("apontamentos"); fetchMonth(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "alertas_qualidade" }, (p: any) => {
         debouncedRefetch("alertas_qualidade");
         if (p?.eventType === "INSERT") setFlash({ type: "alert", title: p.new?.titulo || "Novo alerta de qualidade" });
@@ -1347,6 +1368,181 @@ const Monitor = () => {
                 </div>
               );
             })}
+          </div>
+        );
+      }
+
+      case "resumo_acumulado": {
+        const SHIFTS: Array<{ id: "all" | "1T" | "2T" | "3T"; label: string }> = [
+          { id: "all", label: "Todos os turnos" },
+          { id: "1T", label: "1º Turno" },
+          { id: "2T", label: "2º Turno" },
+          { id: "3T", label: "3º Turno" },
+        ];
+        // Rotate shift every 7s so all 3 shifts are always visible in cycle.
+        const shiftIdx = Math.floor(now.getTime() / 7000) % SHIFTS.length;
+        const activeShift = SHIFTS[shiftIdx];
+        const filtered = activeShift.id === "all"
+          ? apontamentosMonth
+          : apontamentosMonth.filter((a) => a.turno === activeShift.id);
+
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const monthLabel = today.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+        // Trend day 1..lastDay
+        const trend: { day: number; ng: number; insp: number; ppm: number }[] = [];
+        for (let d = 1; d <= lastDay; d++) trend.push({ day: d, ng: 0, insp: 0, ppm: 0 });
+        filtered.forEach((a) => {
+          const dt = new Date(a.created_at);
+          if (dt.getMonth() !== month || dt.getFullYear() !== year) return;
+          const idx = dt.getDate() - 1;
+          trend[idx].ng += a.quantidade_ng || 0;
+          trend[idx].insp += a.quantidade_inspecionada || a.quantidade || 0;
+        });
+        trend.forEach((t) => { t.ppm = t.insp > 0 ? Math.round((t.ng / t.insp) * 1_000_000) : 0; });
+
+        // Supplier aggregation
+        type SupAgg = { fornecedor: string; ng: number; insp: number; ppm: number; defects: Map<string, number> };
+        const supMap = new Map<string, SupAgg>();
+        filtered.forEach((a) => {
+          const f = a.fornecedor || "—";
+          const cur = supMap.get(f) || { fornecedor: f, ng: 0, insp: 0, ppm: 0, defects: new Map() };
+          cur.ng += a.quantidade_ng || 0;
+          cur.insp += a.quantidade_inspecionada || a.quantidade || 0;
+          if ((a.quantidade_ng || 0) > 0 && a.modo_falha) {
+            cur.defects.set(a.modo_falha, (cur.defects.get(a.modo_falha) || 0) + a.quantidade_ng);
+          }
+          supMap.set(f, cur);
+        });
+        const sups = Array.from(supMap.values())
+          .filter((s) => s.insp > 0)
+          .map((s) => ({ ...s, ppm: Math.round((s.ng / s.insp) * 1_000_000) }));
+        const best = [...sups].filter((s) => s.ng === 0 || s.ppm < 5000).sort((a, b) => a.ppm - b.ppm).slice(0, 3);
+        const worst = [...sups].filter((s) => s.ng > 0).sort((a, b) => b.ppm - a.ppm).slice(0, 3);
+
+        // Month totals
+        const totInsp = filtered.reduce((s, a) => s + (a.quantidade_inspecionada || a.quantidade || 0), 0);
+        const totNg = filtered.reduce((s, a) => s + (a.quantidade_ng || 0), 0);
+        const totPpm = totInsp > 0 ? Math.round((totNg / totInsp) * 1_000_000) : 0;
+
+        const PIE_COLORS = ["#f87171", "#fb923c", "#facc15", "#a3a3a3"];
+
+        const SupCard = ({ s, kind }: { s: SupAgg & { ppm: number }; kind: "best" | "worst" }) => {
+          const topDefects = Array.from(s.defects.entries())
+            .map(([name, value]) => ({ name: name.replace(/^\s*\d+\s*-\s*/, ""), value }))
+            .sort((a, b) => b.value - a.value).slice(0, 3);
+          const otherSum = Array.from(s.defects.entries()).reduce((sum, [, v]) => sum + v, 0) - topDefects.reduce((sum, d) => sum + d.value, 0);
+          const pieData = topDefects.length ? [...topDefects, ...(otherSum > 0 ? [{ name: "Outros", value: otherSum }] : [])] : [];
+          const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
+          const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
+          return (
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-5 flex flex-col gap-3 overflow-hidden", accent)}>
+              <div className="flex items-baseline justify-between gap-3">
+                <h4 className="text-2xl font-bold truncate">{s.fornecedor}</h4>
+                <span className={cn("text-3xl font-black tabular-nums", ppmColor)}>{fmtNum(s.ppm)}<span className="text-base text-muted-foreground ml-1">PPM</span></span>
+              </div>
+              <div className="text-sm text-muted-foreground tabular-nums">{fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.</div>
+              {pieData.length > 0 ? (
+                <div className="flex items-center gap-3 flex-1 min-h-0">
+                  <div className="w-32 h-32 flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={28} outerRadius={56} paddingAngle={2}>
+                          {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <ul className="flex-1 min-w-0 space-y-1.5 text-sm">
+                    {topDefects.map((d, i) => {
+                      const pct = otherSum + topDefects.reduce((a, b) => a + b.value, 0);
+                      const p = pct > 0 ? Math.round((d.value / pct) * 100) : 0;
+                      return (
+                        <li key={d.name} className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: PIE_COLORS[i] }} />
+                          <span className="truncate flex-1">{d.name}</span>
+                          <span className="tabular-nums text-muted-foreground">{p}%</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center text-emerald-400 text-lg font-semibold">✓ Sem defeitos no mês</div>
+              )}
+            </div>
+          );
+        };
+
+        return (
+          <div key={activeShift.id} className="w-full h-full flex flex-col gap-4" style={reducedMotion ? undefined : { animation: "fade-in 0.5s ease-out both" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-6 py-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Mês de referência</p>
+                <p className="text-3xl font-black capitalize">{monthLabel}</p>
+                <p className="text-xs text-muted-foreground mt-1">Dia 1 a {lastDay}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {SHIFTS.map((s, i) => (
+                  <span key={s.id} className={cn(
+                    "px-4 py-2 rounded-full text-base font-semibold border transition-all",
+                    i === shiftIdx
+                      ? "bg-emerald-500/20 border-emerald-400/70 text-emerald-300 scale-110 shadow-lg shadow-emerald-500/20"
+                      : "bg-card/40 border-border/40 text-muted-foreground"
+                  )}>{s.label}</span>
+                ))}
+              </div>
+              <div className="text-right">
+                <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Acumulado</p>
+                <div className="flex items-baseline gap-4">
+                  <span className="text-3xl font-black text-cyan-300 tabular-nums">{fmtNum(totInsp)}<span className="text-sm text-muted-foreground ml-1">insp.</span></span>
+                  <span className={cn("text-3xl font-black tabular-nums", totNg > 0 ? "text-red-400" : "text-emerald-400")}>{fmtNum(totNg)}<span className="text-sm text-muted-foreground ml-1">NG</span></span>
+                  <span className={cn("text-3xl font-black tabular-nums", totPpm > 0 ? "text-amber-400" : "text-emerald-400")}>{fmtNum(totPpm)}<span className="text-sm text-muted-foreground ml-1">PPM</span></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trend chart */}
+            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-5 py-4 flex-shrink-0" style={{ height: 280 }}>
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2">Tendência de NG por dia — {activeShift.label}</p>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trend} margin={{ top: 4, right: 12, left: 0, bottom: 18 }}>
+                  <defs>
+                    <linearGradient id="ngFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#f87171" stopOpacity={0.7} />
+                      <stop offset="100%" stopColor="#f87171" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Best vs Worst */}
+            <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+              <div className="flex flex-col gap-3 min-h-0">
+                <h3 className="text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-6 h-6" /> Melhores Fornecedores</h3>
+                <div className="grid grid-rows-3 gap-3 flex-1 min-h-0">
+                  {best.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground">Sem dados</div>
+                    : best.map((s) => <SupCard key={s.fornecedor} s={s} kind="best" />)}
+                </div>
+              </div>
+              <div className="flex flex-col gap-3 min-h-0">
+                <h3 className="text-xl font-bold text-red-400 flex items-center gap-2"><AlertTriangle className="w-6 h-6" /> Piores Fornecedores</h3>
+                <div className="grid grid-rows-3 gap-3 flex-1 min-h-0">
+                  {worst.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground">Sem defeitos no mês ✓</div>
+                    : worst.map((s) => <SupCard key={s.fornecedor} s={s} kind="worst" />)}
+                </div>
+              </div>
+            </div>
           </div>
         );
       }

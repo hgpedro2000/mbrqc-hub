@@ -11,15 +11,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus } from "lucide-react";
+import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { compressImage } from "@/lib/compressImage";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   moduleName: string;
   showNewUserRequest?: boolean;
+  showAdminHelpDeskTickets?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
@@ -36,9 +38,10 @@ const CARGOS = [
   "Gerente de Qualidade", "Diretor de Qualidade",
 ];
 
-const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) => {
+const ReportErrorButton = ({ moduleName, showNewUserRequest = false, showAdminHelpDeskTickets = false }: Props) => {
   const { user, profile, isAdmin } = useAuth();
   const { impersonating } = useImpersonation();
+  const navigate = useNavigate();
   const targetUserId = impersonating?.id || user?.id;
   const [activeModule, setActiveModule] = useState(moduleName);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -349,6 +352,15 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false }: Props) =>
                 <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
               )}
             </Button>
+            {showAdminHelpDeskTickets && isAdmin && (
+              <Button variant="outline" className="h-16 flex flex-col items-center gap-1 relative" onClick={() => { setMenuOpen(false); navigate("/engenharia?tab=erros"); }}>
+                <LifeBuoy className="w-5 h-5 text-red-600" />
+                <span className="text-sm font-medium">Chamados HelpDesk</span>
+                {pendingAdminCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1.5 animate-pulse">{pendingAdminCount > 99 ? "99+" : pendingAdminCount}</Badge>
+                )}
+              </Button>
+            )}
             {showNewUserRequest && (
               <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={openNewUserForm}>
                 <UserPlus className="w-5 h-5 text-blue-600" />

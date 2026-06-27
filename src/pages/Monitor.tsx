@@ -730,6 +730,25 @@ const Monitor = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangeKey]);
 
+  // Monthly accumulated apontamentos for the "resumo_acumulado" slide.
+  // Refetched daily (or on realtime apontamento changes).
+  const fetchMonth = useCallback(async () => {
+    const d = new Date();
+    const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
+    const { data } = await supabase
+      .from("apontamentos")
+      .select("created_at,fornecedor,turno,modo_falha,quantidade_ng,quantidade_inspecionada,quantidade")
+      .gte("created_at", start).lt("created_at", end);
+    if (data) setApontamentosMonth(data);
+  }, []);
+  useEffect(() => {
+    if (!prefs.blocks.includes("resumo_acumulado")) return;
+    fetchMonth();
+    const id = setInterval(fetchMonth, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [prefs.blocks, fetchMonth]);
+
   // Realtime: one channel; debounce per-table refetch to avoid bursts on chatty updates.
   useEffect(() => {
     setConn("connecting");

@@ -525,13 +525,18 @@ export default function AnaliseRisco() {
                 {parts.filter((p) => p.classification === "medio").map((p) => {
                   const sampling = p.score >= 45 ? "20%" : "10%";
                   return (
-                    <div key={p.pn + p.fornecedor} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      key={p.pn + p.fornecedor}
+                      onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                      className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-amber-500/10 transition-colors"
+                    >
                       <div className="min-w-0">
                         <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
                         <div className="text-xs text-muted-foreground">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
                       </div>
                       <Badge className="bg-amber-500 text-white">Score {p.score}</Badge>
-                    </div>
+                    </button>
                   );
                 })}
                 {!counts.m && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em amostragem.</div>}

@@ -519,10 +519,11 @@ export default function AnaliseRisco() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" fontSize={10} />
                       <YAxis fontSize={10} />
-                      <Tooltip />
-                      <Legend />
-                      <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${META_REJEICOES}`, position: "right", fontSize: 10 }} />
-                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="NG" />
+                      <Tooltip formatter={(v: any) => (typeof v === "number" ? fmt(v) : v)} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)" />
+
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

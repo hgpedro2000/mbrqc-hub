@@ -299,47 +299,7 @@ const Hub = () => {
     "matriz-versatilidade": matrizBadge,
   };
 
-  // Help Desk pending tickets count (for admins) — Realtime primary, polling fallback
-  const [helpDeskRealtimeOk, setHelpDeskRealtimeOk] = useState(false);
-  const { data: helpDeskPending = 0 } = useQuery({
-    queryKey: ["hub-helpdesk-pending"],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("error_reports")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["pendente", "em_andamento"]);
-      return count || 0;
-    },
-    enabled: !!realIsAdmin,
-    // Polling is only a fallback: disabled while Realtime is connected
-    refetchInterval: helpDeskRealtimeOk ? false : 30000,
-  });
-
-  useEffect(() => {
-    if (!realIsAdmin) return;
-    const channel = supabase
-      .channel("hub-helpdesk-pending")
-      .on("postgres_changes", { event: "*", schema: "public", table: "error_reports" }, () => {
-        qc.invalidateQueries({ queryKey: ["hub-helpdesk-pending"] });
-      })
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          setHelpDeskRealtimeOk(true);
-          // Ensure count is fresh right after subscribing
-          qc.invalidateQueries({ queryKey: ["hub-helpdesk-pending"] });
-        } else if (
-          status === "CHANNEL_ERROR" ||
-          status === "TIMED_OUT" ||
-          status === "CLOSED"
-        ) {
-          setHelpDeskRealtimeOk(false);
-        }
-      });
-    return () => {
-      setHelpDeskRealtimeOk(false);
-      supabase.removeChannel(channel);
-    };
-  }, [realIsAdmin, qc]);
+  // Help Desk pending counter is now surfaced inside the ReportErrorButton menu (Hub header).
 
   // Realtime: refresh badge counts when underlying tables change
   useEffect(() => {

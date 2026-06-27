@@ -621,6 +621,7 @@ export default function AnaliseRisco() {
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2}>
                         <LabelList dataKey="acc" position="top" fontSize={9} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
                       </Line>
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </Card>

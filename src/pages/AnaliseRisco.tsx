@@ -868,11 +868,12 @@ export default function AnaliseRisco() {
                     <tbody>
                       {drillPagedRows.map((r) => (
                         <tr key={r.id} className="border-t">
-                          <td className="px-3 py-2">{r.data}</td>
-                          <td className="text-center px-3 py-2 text-emerald-600">{r.quantidade_ok || 0}</td>
-                          <td className="text-center px-3 py-2 font-semibold text-destructive">{r.quantidade_ng || 0}</td>
+                          <td className="px-3 py-2 tabular-nums">{r.data}</td>
+                          <td className="text-center px-3 py-2 text-emerald-600 tabular-nums">{fmt(r.quantidade_ok || 0)}</td>
+                          <td className="text-center px-3 py-2 font-semibold text-destructive tabular-nums">{fmt(r.quantidade_ng || 0)}</td>
                           <td className="px-3 py-2 text-muted-foreground">{r.modo_falha ? stripCode(r.modo_falha) : "—"}</td>
                         </tr>
+
                       ))}
                       {!drillPagedRows.length && (
                         <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">

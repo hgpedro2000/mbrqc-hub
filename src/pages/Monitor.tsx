@@ -1591,7 +1591,7 @@ const Monitor = () => {
             <Maximize2 className="w-12 h-12 mx-auto text-primary" />
             <h2 className="text-2xl font-bold">Ativar modo Kiosk</h2>
             <p className="text-muted-foreground">O navegador exige um clique para entrar em tela cheia.</p>
-            <Button size="lg" className="w-full" onClick={() => { toggleFullscreen(); setNeedsFsGesture(false); }}>
+            <Button size="lg" className="w-full" onClick={async () => { await enterFullscreen(); if (!isKioskMode) await enterKiosk(); setNeedsFsGesture(false); }}>
               Entrar em tela cheia
             </Button>
           </div>

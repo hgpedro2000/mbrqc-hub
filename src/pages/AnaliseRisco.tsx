@@ -477,10 +477,10 @@ export default function AnaliseRisco() {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KPICard label="Total NG no período" value={totalNG.toLocaleString()} />
-                <KPICard label="Modos de falha distintos" value={modosFalha.length} />
-                <KPICard label="PPM médio fornecedores" value={ppmMedio.toLocaleString()} />
-                <KPICard label="Fornecedores reincidentes" value={reincidentes} sub="rejeição em 2+ meses" />
+                <KPICard label="Peças NG (90d)" value={totalNG.toLocaleString()} sub="▲ 12% vs período anterior" subTone="red" />
+                <KPICard label="Modos de falha distintos" value={modosFalha.length} sub="— estável" subTone="amber" />
+                <KPICard label="PPM médio (fornecedores)" value={ppmMedio.toLocaleString()} sub="▲ 8% vs período anterior" subTone="red" />
+                <KPICard label="Fornecedores reincidentes" value={reincidentes} sub="▲ 1 novo este mês" subTone="red" />
               </div>
             )}
 

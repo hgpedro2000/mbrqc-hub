@@ -498,7 +498,7 @@ const ConsultaPecas = () => {
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Fornecedor</span>
+                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.supplier")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-semibold text-foreground break-words">
                       {specPart.suppliers?.name || "—"}

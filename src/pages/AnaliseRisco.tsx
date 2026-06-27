@@ -543,11 +543,7 @@ export default function AnaliseRisco() {
                         <td className="text-center px-3 py-2 font-semibold">{s.ng}</td>
                         <td className="text-center px-3 py-2">{s.ppm.toLocaleString()}</td>
                         <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
-                        <td className="text-center px-3 py-2">
-                          {s.trend === "up" && <TrendingUp className="w-4 h-4 text-destructive inline" />}
-                          {s.trend === "down" && <TrendingDown className="w-4 h-4 text-emerald-500 inline" />}
-                          {s.trend === "flat" && <Minus className="w-4 h-4 text-muted-foreground inline" />}
-                        </td>
+                        <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
                         <td className="text-center px-3 py-2">
                           {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
                         </td>

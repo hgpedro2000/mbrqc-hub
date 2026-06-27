@@ -632,18 +632,21 @@ export default function AnaliseRisco() {
             </div>
 
             <Card className="p-0 overflow-hidden">
+              <div className="px-3 py-2 border-b text-[10px] text-muted-foreground">
+                Score 0–100 · Alto ≥ 60 (inspeção 100%) · Médio 30–59 (amostral) · Baixo &lt; 30 (liberação direta)
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[820px]">
                   <thead className="bg-muted/40 text-xs">
                     <tr>
-                      <th className="text-left px-3 py-2">Part Number</th>
+                      <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
                       <th className="text-left px-3 py-2">Part Name</th>
-                      <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-center px-3 py-2">Score</th>
-                      <th className="text-center px-3 py-2">NG</th>
-                      <th className="text-center px-3 py-2">Dias sem rejeição</th>
-                      <th className="text-left px-3 py-2">Modo recorrente</th>
-                      <th className="text-left px-3 py-2">Ação recomendada</th>
+                      <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
+                      <th className="text-center px-3 py-2 w-[80px]">Score</th>
+                      <th className="text-center px-3 py-2 w-[80px]">NG</th>
+                      <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
+                      <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
+                      <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -654,20 +657,20 @@ export default function AnaliseRisco() {
                         onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
                       >
                         <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
-                        <td className="px-3 py-2 max-w-[220px] truncate" title={p.partName}>{p.partName}</td>
-                        <td className="px-3 py-2">{p.fornecedor}</td>
+                        <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
+                        <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
                         <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
-                        <td className="text-center px-3 py-2">{fmt(p.diasSem)}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
+                        <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                        <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
+                        <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
                         <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (
                       <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
                     )}
-
                   </tbody>
+
                 </table>
               </div>
             </Card>

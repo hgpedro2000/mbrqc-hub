@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { HyundaiQRData, parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import LanguageToggle from "@/components/LanguageToggle";
 
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";

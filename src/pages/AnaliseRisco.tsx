@@ -270,6 +270,98 @@ export default function AnaliseRisco() {
     return { rows, totalNg, totalOk, totalInsp, ppm, trend, topModos };
   }, [drill, items]);
 
+  // Drill-down: search + pagination + a11y
+  const PAGE_SIZE = 15;
+  const [drillSearch, setDrillSearch] = useState("");
+  const [drillPage, setDrillPage] = useState(1);
+  const drillSearchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDrillSearch("");
+    setDrillPage(1);
+    if (drill) {
+      const t = setTimeout(() => drillSearchRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [drill]);
+
+  const drillFilteredRows = useMemo(() => {
+    if (!drillData) return [];
+    const q = drillSearch.trim().toLowerCase();
+    if (!q) return drillData.rows;
+    return drillData.rows.filter((r) =>
+      r.data.toLowerCase().includes(q) ||
+      (r.modo_falha ? stripCode(r.modo_falha).toLowerCase().includes(q) : false),
+    );
+  }, [drillData, drillSearch]);
+
+  const drillTotalPages = Math.max(1, Math.ceil(drillFilteredRows.length / PAGE_SIZE));
+  const drillPageSafe = Math.min(drillPage, drillTotalPages);
+  const drillPagedRows = useMemo(
+    () => drillFilteredRows.slice((drillPageSafe - 1) * PAGE_SIZE, drillPageSafe * PAGE_SIZE),
+    [drillFilteredRows, drillPageSafe],
+  );
+
+  useEffect(() => { setDrillPage(1); }, [drillSearch]);
+
+  const exportDrillCSV = () => {
+    if (!drill || !drillData) return;
+    const header = ["Data", "OK", "NG", "Modo de falha"];
+    const lines = [
+      `# Peça: ${drill.pn} | Fornecedor: ${drill.fornecedor} | Período: ${periodo} dias`,
+      header.join(","),
+      ...drillData.rows.map((r) => [
+        r.data,
+        r.quantidade_ok || 0,
+        r.quantidade_ng || 0,
+        `"${(r.modo_falha ? stripCode(r.modo_falha) : "").replace(/"/g, '""')}"`,
+      ].join(",")),
+    ];
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `historico_${drill.pn}_${periodo}d.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportDrillPDF = () => {
+    if (!drill || !drillData) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 40;
+    let y = margin;
+    doc.setFontSize(14);
+    doc.text(`Histórico - ${drill.pn}`, margin, y); y += 18;
+    doc.setFontSize(10);
+    doc.text(`Fornecedor: ${drill.fornecedor}`, margin, y); y += 14;
+    doc.text(`Período: últimos ${periodo} dias`, margin, y); y += 14;
+    doc.text(`NG total: ${drillData.totalNg}  |  OK total: ${drillData.totalOk}  |  PPM: ${drillData.ppm.toLocaleString()}`, margin, y); y += 20;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Data", margin, y);
+    doc.text("OK", margin + 110, y);
+    doc.text("NG", margin + 150, y);
+    doc.text("Modo de falha", margin + 200, y);
+    doc.setFont("helvetica", "normal");
+    y += 12;
+    doc.line(margin, y, 555, y); y += 10;
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    for (const r of drillData.rows) {
+      if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+      doc.text(String(r.data), margin, y);
+      doc.text(String(r.quantidade_ok || 0), margin + 110, y);
+      doc.text(String(r.quantidade_ng || 0), margin + 150, y);
+      const modo = r.modo_falha ? stripCode(r.modo_falha) : "—";
+      doc.text(doc.splitTextToSize(modo, 320), margin + 200, y);
+      y += 14;
+    }
+    doc.save(`historico_${drill.pn}_${periodo}d.pdf`);
+  };
+
+
   // ---------- UI helpers ----------
   const KPICard = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
     <Card className="p-4">

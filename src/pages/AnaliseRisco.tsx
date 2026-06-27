@@ -174,13 +174,10 @@ export default function AnaliseRisco() {
   }, [supplierStats]);
 
   // --- Per-part risk score ---
-  type PartRisk = {
-    pn: string; partName: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
-    score: number; classification: "alto" | "medio" | "baixo"; recomendacao: string;
-    monthsWithModo: number; ppmFornecedor: number;
-  };
-
+  // Exported so tests and other modules can reuse this contract.
+  
   const parts: PartRisk[] = useMemo(() => {
+
     type Acc = { pn: string; partName: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
     const m = new Map<string, Acc>();
     for (const i of items) {

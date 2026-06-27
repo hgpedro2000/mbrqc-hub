@@ -522,7 +522,7 @@ const ConsultaPecas = () => {
                   </div>
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Linha / Módulo</span>
+                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.lineModule")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-semibold text-cyan-700 dark:text-cyan-400 break-words">
                       {specPart.line_module || "—"}

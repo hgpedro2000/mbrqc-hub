@@ -1379,12 +1379,17 @@ const Monitor = () => {
           { id: "2T", label: "2º Turno" },
           { id: "3T", label: "3º Turno" },
         ];
-        // Rotate shift every 7s so all 3 shifts are always visible in cycle.
-        const shiftIdx = Math.floor(now.getTime() / 7000) % SHIFTS.length;
-        const activeShift = SHIFTS[shiftIdx];
+        const resumoSetting = prefs.blockSettings?.resumo_acumulado ?? {};
+        const shiftPref = resumoSetting.resumoShift ?? "auto";
+        // In "auto" rotate every 7s; otherwise pin to the user-selected shift.
+        const shiftIdx = shiftPref === "auto"
+          ? Math.floor(now.getTime() / 7000) % SHIFTS.length
+          : SHIFTS.findIndex((s) => s.id === shiftPref);
+        const activeShift = SHIFTS[shiftIdx >= 0 ? shiftIdx : 0];
         const filtered = activeShift.id === "all"
           ? apontamentosMonth
           : apontamentosMonth.filter((a) => a.turno === activeShift.id);
+
 
         const today = new Date();
         const year = today.getFullYear();

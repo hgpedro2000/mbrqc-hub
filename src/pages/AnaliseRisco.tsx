@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  LineChart, ResponsiveContainer, ReferenceLine,
+  LineChart, ResponsiveContainer, ReferenceLine, LabelList,
 } from "recharts";
 import jsPDF from "jspdf";
 

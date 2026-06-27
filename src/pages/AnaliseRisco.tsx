@@ -893,7 +893,9 @@ export default function AnaliseRisco() {
                         formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} NG`, "Rejeições"] : [v, ""])}
                       />
 
-                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 2 }}>
+                        <LabelList dataKey="ng" position="top" fontSize={9} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
+                      </Line>
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

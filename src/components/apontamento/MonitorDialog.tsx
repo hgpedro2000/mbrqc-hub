@@ -204,6 +204,15 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
     if (open) {
       setPrefs(initial ?? loadPrefs());
       setTab(initialTab ?? "geral");
+      // Pull the shared default saved by an admin so non-admins also see it.
+      if (!initial) {
+        void loadGlobalPrefs().then((g) => {
+          if (g) {
+            savePrefs(g);
+            setPrefs(g);
+          }
+        });
+      }
     }
   }, [open, initial, initialTab]);
 

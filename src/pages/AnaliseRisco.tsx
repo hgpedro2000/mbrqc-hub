@@ -564,7 +564,7 @@ export default function AnaliseRisco() {
               <KPICard label="Alto risco" value={<span className="text-destructive">{counts.a}</span>} sub="100% inspeção" />
               <KPICard label="Médio risco" value={<span className="text-amber-600">{counts.m}</span>} sub="Amostral" />
               <KPICard label="Baixo risco" value={<span className="text-emerald-600">{counts.b}</span>} sub="Liberação direta" />
-              <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="peças fora da 100%" />
+              <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="vs inspeção 100% atual" subTone="green" />
             </div>
 
             <div className="flex items-center gap-3">

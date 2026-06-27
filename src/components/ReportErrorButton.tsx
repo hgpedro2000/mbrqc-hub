@@ -352,6 +352,15 @@ const ReportErrorButton = ({ moduleName, showNewUserRequest = false, showAdminHe
                 <Badge className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] px-1.5">{newResolvedCount}</Badge>
               )}
             </Button>
+            {showAdminHelpDeskTickets && isAdmin && (
+              <Button variant="outline" className="h-16 flex flex-col items-center gap-1 relative" onClick={() => { setMenuOpen(false); navigate("/engenharia?tab=erros"); }}>
+                <LifeBuoy className="w-5 h-5 text-red-600" />
+                <span className="text-sm font-medium">Chamados HelpDesk</span>
+                {pendingAdminCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1.5 animate-pulse">{pendingAdminCount > 99 ? "99+" : pendingAdminCount}</Badge>
+                )}
+              </Button>
+            )}
             {showNewUserRequest && (
               <Button variant="outline" className="h-16 flex flex-col items-center gap-1" onClick={openNewUserForm}>
                 <UserPlus className="w-5 h-5 text-blue-600" />

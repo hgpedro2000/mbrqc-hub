@@ -509,37 +509,56 @@ export default function AnaliseRisco() {
 
             <div className="grid lg:grid-cols-2 gap-4">
               <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3">Pareto dos modos de falha</h3>
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
+                  <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
+                </p>
                 <div className="h-[300px]">
                   <ResponsiveContainer>
                     <ComposedChart data={paretoData} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} fontSize={10} height={70} />
-                      <YAxis yAxisId="left" fontSize={10} />
+                      <YAxis yAxisId="left" fontSize={10} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={10} />
-                      <Tooltip formatter={(v: any, n: any) => [typeof v === "number" ? fmt(v) + (n === "% Acumulado" ? "%" : "") : v, n]} />
+                      <Tooltip
+                        formatter={(v: any, n: any) => {
+                          if (typeof v !== "number") return [v, n];
+                          if (n === "% Acumulado") return [fmtPct(v, 0), n];
+                          return [`${fmt(v)} peças NG`, n];
+                        }}
+                      />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências" />
+                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" />
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} />
-
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
 
               <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3">Tendência mensal de rejeições</h3>
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
+                  <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Soma mensal de peças NG. Linha pontilhada = meta máxima aceitável no período.
+                </p>
                 <div className="h-[300px]">
                   <ResponsiveContainer>
                     <LineChart data={trendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" fontSize={10} />
-                      <YAxis fontSize={10} />
-                      <Tooltip formatter={(v: any) => (typeof v === "number" ? fmt(v) : v)} />
+                      <YAxis fontSize={10} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        labelFormatter={(l) => `Mês: ${l}`}
+                        formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} peças NG`, "Rejeições"] : [v, ""])}
+                      />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)" />
-
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -547,9 +566,13 @@ export default function AnaliseRisco() {
             </div>
 
             <Card className="p-0 overflow-hidden">
-              <div className="px-4 py-3 border-b">
+              <div className="px-4 py-3 border-b flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold">Fornecedores</h3>
+                <span className="text-[10px] text-muted-foreground">
+                  Risco: Alto ≥ 10.000 PPM ou ≥ 30 NG · Médio ≥ 3.000 PPM ou ≥ 10 NG
+                </span>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-xs">

@@ -25,7 +25,8 @@ export type MonitorBlock =
   | "comunicados"
   | "alteracoes_4m"
   | "retrabalhos"
-  | "ultimos_defeitos";
+  | "ultimos_defeitos"
+  | "resumo_acumulado";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";
 export type MonitorTheme = "dark" | "default";

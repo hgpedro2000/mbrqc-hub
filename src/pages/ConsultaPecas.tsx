@@ -376,19 +376,19 @@ const ConsultaPecas = () => {
                     </div>
                     <p className={`font-medium text-foreground ${viewMode === "grid" ? "text-sm" : "text-sm md:text-lg"}`}>{p.part_name}</p>
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                      <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
-                      <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
-                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.supplier")}: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.codeVendor")}: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.alcCode")}: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
                     </div>
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                      <span className="text-muted-foreground">Projeto: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
-                      <span className="text-muted-foreground">Linha/Módulo: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.project")}: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.lineModule")}: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground text-center sm:col-span-2">{filtered.length} peça(s) encontrada(s)</p>
+            <p className="text-xs text-muted-foreground text-center sm:col-span-2">{t("consultaPecas.found", { count: filtered.length })}</p>
           </div>
         )}
 

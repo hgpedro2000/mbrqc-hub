@@ -319,22 +319,23 @@ export default function MonitorAdmin() {
                         {m.vigencia_fim && <span className="whitespace-nowrap">· Até {new Date(m.vigencia_fim).toLocaleString("pt-BR")}</span>}
                         {m.file_name && <span className="truncate max-w-full min-w-0">· {m.file_name}</span>}
                       </div>
-                      <div className="flex flex-wrap justify-between items-center gap-2 pt-2">
+                      <div className="flex flex-col xs:flex-row flex-wrap justify-between items-stretch xs:items-center gap-2 pt-2">
                         {editing ? (
                           <>
-                            <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1"><Save className="w-4 h-4" /> Salvar</Button>
-                            <Button variant="outline" size="sm" onClick={() => setEditId(null)} className="gap-1"><X className="w-4 h-4" /> Cancelar</Button>
+                            <Button size="sm" onClick={() => saveEdit(m.id)} className="gap-1 min-h-[44px] flex-1 xs:flex-none"><Save className="w-4 h-4" /> Salvar</Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditId(null)} className="gap-1 min-h-[44px] flex-1 xs:flex-none"><X className="w-4 h-4" /> Cancelar</Button>
                           </>
                         ) : (
                           <>
                             <div className="flex flex-wrap gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleToggle(m)}>{m.ativo ? "Desativar" : "Ativar"}</Button>
-                              <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1"><Pencil className="w-4 h-4" /> Editar</Button>
+                              <Button variant="outline" size="sm" onClick={() => handleToggle(m)} className="min-h-[44px] flex-1 xs:flex-none">{m.ativo ? "Desativar" : "Ativar"}</Button>
+                              <Button variant="outline" size="sm" onClick={() => startEdit(m)} className="gap-1 min-h-[44px] flex-1 xs:flex-none"><Pencil className="w-4 h-4" /> Editar</Button>
                             </div>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(m)} className="gap-1"><Trash2 className="w-4 h-4" /> Excluir</Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDelete(m)} className="gap-1 min-h-[44px] w-full xs:w-auto"><Trash2 className="w-4 h-4" /> Excluir</Button>
                           </>
                         )}
                       </div>
+
                     </div>
                   </li>
                 );

@@ -1237,8 +1237,10 @@ const Monitor = () => {
         );
       }
       case "comunicados":
-      case "alteracoes_4m": {
-        const tipo = id === "comunicados" ? "comunicado" : "alteracao_4m";
+      case "alteracoes_4m":
+      case "retrabalhos": {
+        const tipo = id === "comunicados" ? "comunicado" : id === "retrabalhos" ? "retrabalho" : "alteracao_4m";
+        const emptyLabel = id === "comunicados" ? "comunicado" : id === "retrabalhos" ? "retrabalho" : "aviso";
         const nowMs = now.getTime();
         const allItems = slidesMedia.filter((m) => {
           if (m.tipo !== tipo) return false;
@@ -1249,11 +1251,11 @@ const Monitor = () => {
           return true;
         });
         if (!allItems.length) {
-          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {id === "comunicados" ? "comunicado" : "aviso"} publicado.</div>;
+          return <div className="w-full h-full flex items-center justify-center text-5xl text-muted-foreground rounded-3xl bg-card/60 backdrop-blur-md border border-border/60">Nenhum {emptyLabel} publicado.</div>;
         }
-        // Group by slot (only for comunicados; alteracoes_4m always single)
+        // Group by slot (comunicados and retrabalhos use multi-slot; alteracoes_4m always single)
         const slotsWithItems: { slot: number; items: any[] }[] = [];
-        if (tipo === "comunicado") {
+        if (tipo === "comunicado" || tipo === "retrabalho") {
           for (const s of [1, 2, 3, 4]) {
             const its = allItems.filter((m) => (m.slot || 1) === s);
             if (its.length) slotsWithItems.push({ slot: s, items: its });

@@ -380,8 +380,8 @@ const Apontamentos = () => {
   };
 
   const StatusBadge = ({ status }: { status?: string }) => {
-    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">Rascunho</Badge>;
-    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">Finalizado</Badge>;
+    if (status === "draft") return <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10">{t("apontamentos.list.draftBadge")}</Badge>;
+    return <Badge variant="outline" className="border-emerald-500 text-emerald-600 bg-emerald-500/10">{t("apontamentos.list.finalizedBadge")}</Badge>;
   };
 
   const EditActions = ({ id, createdBy, status }: { id: string; createdBy?: string | null; status?: string }) => {

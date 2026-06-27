@@ -237,6 +237,34 @@ export default function AnaliseRisco() {
     [parts, riskFilter],
   );
 
+  // ---------- Drill-down ----------
+  const [drill, setDrill] = useState<{ pn: string; fornecedor: string } | null>(null);
+
+  const drillData = useMemo(() => {
+    if (!drill) return null;
+    const rows = items
+      .filter((i) => i.part_number === drill.pn && (i.fornecedor || "—") === drill.fornecedor)
+      .sort((a, b) => (a.data < b.data ? 1 : -1));
+    const totalNg = rows.reduce((s, r) => s + (r.quantidade_ng || 0), 0);
+    const totalOk = rows.reduce((s, r) => s + (r.quantidade_ok || 0), 0);
+    const totalInsp = totalOk + totalNg;
+    const ppm = totalInsp ? Math.round((totalNg / totalInsp) * 1_000_000) : 0;
+
+    const byDay = new Map<string, number>();
+    const modos = new Map<string, number>();
+    for (const r of rows) {
+      const ng = r.quantidade_ng || 0;
+      byDay.set(r.data, (byDay.get(r.data) || 0) + ng);
+      if (ng > 0 && r.modo_falha) {
+        const k = stripCode(r.modo_falha);
+        modos.set(k, (modos.get(k) || 0) + ng);
+      }
+    }
+    const trend = [...byDay.entries()].sort().map(([data, ng]) => ({ data: data.slice(5), ng }));
+    const topModos = [...modos.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    return { rows, totalNg, totalOk, totalInsp, ppm, trend, topModos };
+  }, [drill, items]);
+
   // ---------- UI helpers ----------
   const KPICard = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
     <Card className="p-4">

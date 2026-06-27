@@ -283,7 +283,7 @@ const Login = () => {
             to="/privacy-policy"
             className="text-xs text-muted-foreground hover:text-accent transition-colors"
           >
-            Política de Privacidade
+            {t("login.privacyPolicy")}
           </Link>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted/50 border border-border/40">
             <span className="text-[10px] font-mono text-muted-foreground">v{import.meta.env.VITE_APP_VERSION || "1.0.0.0"}</span>

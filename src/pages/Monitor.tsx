@@ -1445,7 +1445,7 @@ const Monitor = () => {
           const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 lg:gap-4 min-w-0 overflow-hidden", accent)}>
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 lg:gap-4 min-w-0 shrink-0", accent)}>
               {/* Left: Pie chart (fixed responsive square) */}
               {pieData.length > 0 ? (
                 <div className="shrink-0 aspect-square w-16 sm:w-20 lg:w-24">
@@ -1565,18 +1565,18 @@ const Monitor = () => {
 
 
             {/* Best vs Worst — stacks on mobile, 2 cols on desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 flex-1 min-h-0">
-              <div className="flex flex-col gap-2 sm:gap-3 min-h-0 min-w-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 min-h-0">
+              <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
                 <h3 className="text-base sm:text-lg lg:text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Melhores Fornecedores</span></h3>
-                <div className="grid grid-rows-3 gap-2 sm:gap-3 flex-1 min-h-0">
-                  {best.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
+                <div className="flex flex-col gap-2 sm:gap-3">
+                  {best.length === 0 ? <div className="flex items-center justify-center text-muted-foreground text-sm py-6">Sem dados</div>
                     : best.map((s) => <SupCard key={s.fornecedor} s={s} kind="best" />)}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:gap-3 min-h-0 min-w-0">
+              <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
                 <h3 className="text-base sm:text-lg lg:text-xl font-bold text-red-400 flex items-center gap-2"><AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Piores Fornecedores</span></h3>
-                <div className="grid grid-rows-3 gap-2 sm:gap-3 flex-1 min-h-0">
-                  {worst.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground text-sm">Sem defeitos no mês ✓</div>
+                <div className="flex flex-col gap-2 sm:gap-3">
+                  {worst.length === 0 ? <div className="flex items-center justify-center text-muted-foreground text-sm py-6">Sem defeitos no mês ✓</div>
                     : worst.map((s) => <SupCard key={s.fornecedor} s={s} kind="worst" />)}
                 </div>
               </div>

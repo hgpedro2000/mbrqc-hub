@@ -480,7 +480,7 @@ const ConsultaPecas = () => {
                     <span className={`text-[11px] sm:text-sm font-bold uppercase tracking-wider ${
                       specPart.alc_code ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
                     }`}>
-                      ALC Code
+                      {t("consultaPecas.spec.alcCode")}
                     </span>
                   </div>
                   {specPart.alc_code ? (
@@ -489,7 +489,7 @@ const ConsultaPecas = () => {
                     </p>
                   ) : (
                     <p className="text-sm sm:text-base text-muted-foreground text-center py-1 sm:py-2 italic">
-                      Sem ALC cadastrado
+                      {t("consultaPecas.spec.noAlcRegistered")}
                     </p>
                   )}
                 </div>

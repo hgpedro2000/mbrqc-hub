@@ -442,33 +442,30 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
               {isAdmin && (
                 <Section title="Gerenciamento (Admin)">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Button asChild variant="outline" className="justify-start gap-2 h-auto py-3">
-                      <Link to="/monitor/admin?tab=comunicados" onClick={() => onOpenChange(false)}>
-                        <Megaphone className="w-4 h-4 text-primary" />
+                    {[
+                      { tab: "comunicados", icon: Megaphone, title: "Comunicados", desc: "Publicar imagens / PDFs" },
+                      { tab: "4meo",        icon: Wrench,    title: "Alterações 4M/EO", desc: "Engenharia / pontos de corte" },
+                      { tab: "retrabalho",  icon: RefreshCw, title: "Retrabalhos em Andamento", desc: "Mídia de retrabalhos ativos" },
+                    ].map(({ tab, icon: Icon, title, desc }) => (
+                      <Button
+                        key={tab}
+                        type="button"
+                        variant="outline"
+                        className="justify-start gap-2 h-auto py-3"
+                        onClick={() => {
+                          // Open admin in a new tab so the Monitor (kiosk) stays running
+                          // in the original tab. Avoids re-entering kiosk and the exit-confirm loop.
+                          window.open(`/monitor/admin?tab=${tab}`, "_blank", "noopener");
+                          onOpenChange(false);
+                        }}
+                      >
+                        <Icon className="w-4 h-4 text-primary" />
                         <div className="text-left">
-                          <p className="text-sm font-medium">Comunicados</p>
-                          <p className="text-xs text-muted-foreground">Publicar imagens / PDFs</p>
+                          <p className="text-sm font-medium">{title}</p>
+                          <p className="text-xs text-muted-foreground">{desc}</p>
                         </div>
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="justify-start gap-2 h-auto py-3">
-                      <Link to="/monitor/admin?tab=4meo" onClick={() => onOpenChange(false)}>
-                        <Wrench className="w-4 h-4 text-primary" />
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Alterações 4M/EO</p>
-                          <p className="text-xs text-muted-foreground">Engenharia / pontos de corte</p>
-                        </div>
-                      </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="justify-start gap-2 h-auto py-3">
-                      <Link to="/monitor/admin?tab=retrabalho" onClick={() => onOpenChange(false)}>
-                        <RefreshCw className="w-4 h-4 text-primary" />
-                        <div className="text-left">
-                          <p className="text-sm font-medium">Retrabalhos em Andamento</p>
-                          <p className="text-xs text-muted-foreground">Mídia de retrabalhos ativos</p>
-                        </div>
-                      </Link>
-                    </Button>
+                      </Button>
+                    ))}
                   </div>
                 </Section>
               )}

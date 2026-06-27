@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { HyundaiQRData, parseHyundaiQR } from "@/lib/parseHyundaiQR";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
+import LanguageToggle from "@/components/LanguageToggle";
 
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { QRScannerButton, type QRScannerButtonHandle } from "@/components/apontamento/QRScannerButton";
@@ -19,6 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ConsultaPecas = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,9 +36,9 @@ const ConsultaPecas = () => {
   const cycleViewMode = () =>
     setViewMode((m) => (m === "list" ? "grid" : m === "grid" ? "compact" : "list"));
   const viewModeMeta = {
-    list: { icon: LayoutList, label: "Grande" },
-    grid: { icon: LayoutGrid, label: "Normal" },
-    compact: { icon: Rows3, label: "Compacto" },
+    list: { icon: LayoutList, label: t("consultaPecas.viewMode.large") },
+    grid: { icon: LayoutGrid, label: t("consultaPecas.viewMode.normal") },
+    compact: { icon: Rows3, label: t("consultaPecas.viewMode.compact") },
   } as const;
   const ViewIcon = viewModeMeta[viewMode].icon;
 
@@ -124,10 +127,10 @@ const ConsultaPecas = () => {
         setSpecReaderOpen(false);
         setSpecPart(part);
         setSpecDialogOpen(true);
-        toast({ title: "✓ Peça identificada!", description: `PN: ${part.part_number}` });
+        toast({ title: t("consultaPecas.toasts.partIdentified"), description: t("consultaPecas.toasts.pnLabel", { pn: part.part_number }) });
       } else {
         setSearchTerm(part.part_number);
-        toast({ title: "✓ Peça encontrada!", description: `PN: ${part.part_number}` });
+        toast({ title: t("consultaPecas.toasts.partFound"), description: t("consultaPecas.toasts.pnLabel", { pn: part.part_number }) });
       }
     };
 
@@ -185,13 +188,13 @@ const ConsultaPecas = () => {
       setSuffixOptions(options);
       setSelectedSuffixPn("");
       setSuffixPickerOpen(true);
-      toast({ title: "Múltiplas variantes encontradas", description: "Selecione o Part Number correto." });
+      toast({ title: t("consultaPecas.toasts.multipleVariants"), description: t("consultaPecas.toasts.selectCorrectPn") });
     } else {
       // No match at all — just set search term
       setSearchTerm(pn);
-      toast({ title: "Part Number não cadastrado", description: `Buscando por: ${pn}`, variant: "destructive" });
+      toast({ title: t("consultaPecas.toasts.pnNotRegistered"), description: t("consultaPecas.toasts.searchingFor", { pn }), variant: "destructive" });
     }
-  }, [partNumbers, toast, scanMode]);
+  }, [partNumbers, toast, scanMode, t]);
 
   const handleQRScan = useCallback((data: HyundaiQRData) => {
     void applyScannedPartNumber(data.partNumber);
@@ -205,12 +208,12 @@ const ConsultaPecas = () => {
       if (full) {
         setSpecPart(full);
         setSpecDialogOpen(true);
-        toast({ title: "Peça identificada!", description: `PN: ${option.part_number}` });
+        toast({ title: t("consultaPecas.toasts.partIdentified"), description: t("consultaPecas.toasts.pnLabel", { pn: option.part_number }) });
         return;
       }
     }
     setSearchTerm(option.part_number);
-    toast({ title: "Peça selecionada!", description: `PN: ${option.part_number}` });
+    toast({ title: t("consultaPecas.toasts.partSelected"), description: t("consultaPecas.toasts.pnLabel", { pn: option.part_number }) });
   };
 
   return (
@@ -222,17 +225,18 @@ const ConsultaPecas = () => {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
                 <Search className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
               </div>
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Consulta de Peças</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">{t("consultaPecas.moduleName")}</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
+              <LanguageToggle />
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
+                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("consultaPecas.hub")}</span>
               </Button>
-              <ReportErrorButton moduleName="Consulta de Peças" />
+              <ReportErrorButton moduleName={t("consultaPecas.moduleName")} />
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">Busca em detalhe peças, fornecedores e códigos, com Leitor Hyundai, Checagem de ALC e Spec PNL LWR x Switch.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("consultaPecas.title")}</h1>
+          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">{t("consultaPecas.subtitle")}</p>
         </div>
       </header>
 
@@ -244,7 +248,7 @@ const ConsultaPecas = () => {
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por PN, nome, fornecedor..."
+                placeholder={t("consultaPecas.searchPlaceholder")}
                 className="pl-10 h-12 text-base w-full"
               />
             </div>
@@ -254,40 +258,40 @@ const ConsultaPecas = () => {
                 variant="outline"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-primary/30 bg-primary/5 hover:bg-primary/10 w-full sm:w-32 justify-center"
                 onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
-                title="Buscar por QR / Código de Barras"
+                title={t("consultaPecas.buttons.qrTitle")}
               >
                 <QrCode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">QR</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.qr")}</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 w-full sm:w-32 justify-center"
                 onClick={() => setHkmcOpen(true)}
-                title="Barcode Scanner H/KMC"
+                title={t("consultaPecas.buttons.hkmcTitle")}
               >
                 <Barcode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">H/KMC</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.hkmc")}</span>
               </Button>
               <Button
                 type="button"
                 variant="default"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={openSpecScanner}
-                title="Checar SPEC/ALC"
+                title={t("consultaPecas.buttons.specAlcTitle")}
               >
                 <ScanSearch className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">SPEC/ALC</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.specAlc")}</span>
               </Button>
               <Button
                 type="button"
                 variant="default"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={() => navigate("/spec-switch-panel")}
-                title="Validar Painel × Switch"
+                title={t("consultaPecas.buttons.panelSwitchTitle")}
               >
                 <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">Painel×Switch</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.panelSwitch")}</span>
               </Button>
             </div>
           </div>
@@ -295,14 +299,14 @@ const ConsultaPecas = () => {
 
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">Modo de exibição:</p>
+          <p className="text-xs text-muted-foreground">{t("consultaPecas.viewMode.label")}</p>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={cycleViewMode}
             className="h-9 gap-2 border-accent/40 hover:bg-accent/10"
-            title="Alternar modo de exibição"
+            title={t("consultaPecas.viewMode.title")}
           >
             <ViewIcon className="w-4 h-4" />
             <span className="font-semibold">{viewModeMeta[viewMode].label}</span>
@@ -316,7 +320,7 @@ const ConsultaPecas = () => {
         ) : filtered.length === 0 ? (
           <div className="form-section text-center py-12">
             <Package className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">{searchTerm ? "Nenhuma peça encontrada" : "Digite para buscar peças"}</p>
+            <p className="text-muted-foreground">{searchTerm ? t("consultaPecas.emptySearch") : t("consultaPecas.emptyType")}</p>
           </div>
         ) : viewMode === "compact" ? (
           <div className="form-section p-0 overflow-hidden">
@@ -324,14 +328,14 @@ const ConsultaPecas = () => {
               <table className="w-full text-xs border-collapse">
                 <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur shadow-sm">
                   <tr className="text-left">
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Part Number</th>
-                    <th className="px-2 py-2 font-semibold">Descrição</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Fornecedor</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Code Vendor</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">ALC Code</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Projeto</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Linha/Módulo</th>
-                    <th className="px-2 py-2 font-semibold whitespace-nowrap">Origem</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.partNumber")}</th>
+                    <th className="px-2 py-2 font-semibold">{t("consultaPecas.table.description")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.supplier")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.codeVendor")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.alcCode")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.project")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.lineModule")}</th>
+                    <th className="px-2 py-2 font-semibold whitespace-nowrap">{t("consultaPecas.table.origin")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -354,7 +358,7 @@ const ConsultaPecas = () => {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted-foreground text-center py-2 border-t border-border/60">{filtered.length} peça(s) encontrada(s)</p>
+            <p className="text-xs text-muted-foreground text-center py-2 border-t border-border/60">{t("consultaPecas.found", { count: filtered.length })}</p>
           </div>
         ) : (
           <div className={
@@ -372,19 +376,19 @@ const ConsultaPecas = () => {
                     </div>
                     <p className={`font-medium text-foreground ${viewMode === "grid" ? "text-sm" : "text-sm md:text-lg"}`}>{p.part_name}</p>
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                      <span className="text-muted-foreground">Fornecedor: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
-                      <span className="text-muted-foreground">Code Vendor: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
-                      <span className="text-muted-foreground">ALC Code: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.supplier")}: <span className="font-semibold text-blue-700">{p.suppliers?.name || "—"}</span></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.codeVendor")}: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 border-amber-400 text-amber-700 bg-amber-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.suppliers?.code || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.alcCode")}: <Badge variant="outline" className={`font-mono px-1.5 md:px-2 py-0 md:py-0.5 ${p.alc_code && p.alc_code !== "N/A" ? "border-rose-500 text-rose-800 bg-rose-100 font-bold" : "border-violet-400 text-violet-700 bg-violet-50"} ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.alc_code || "N/A"}</Badge></span>
                     </div>
                     <div className={`flex flex-wrap gap-x-4 md:gap-x-6 gap-y-1.5 ${viewMode === "grid" ? "text-xs" : "text-xs md:text-base"}`}>
-                      <span className="text-muted-foreground">Projeto: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
-                      <span className="text-muted-foreground">Linha/Módulo: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.project")}: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-emerald-400 text-emerald-700 bg-emerald-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.project || "—"}</Badge></span>
+                      <span className="text-muted-foreground">{t("consultaPecas.card.lineModule")}: <Badge variant="outline" className={`px-1.5 md:px-2 py-0 md:py-0.5 border-cyan-400 text-cyan-700 bg-cyan-50 ${viewMode === "grid" ? "text-[10px]" : "text-[10px] md:text-sm"}`}>{p.line_module || "—"}</Badge></span>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
-            <p className="text-xs text-muted-foreground text-center sm:col-span-2">{filtered.length} peça(s) encontrada(s)</p>
+            <p className="text-xs text-muted-foreground text-center sm:col-span-2">{t("consultaPecas.found", { count: filtered.length })}</p>
           </div>
         )}
 
@@ -403,10 +407,10 @@ const ConsultaPecas = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Selecionar Variante
+              {t("consultaPecas.suffix.title")}
             </DialogTitle>
             <DialogDescription className="text-sm">
-              O Part Number lido possui variantes de cor/sufixo. Selecione o correto:
+              {t("consultaPecas.suffix.description")}
             </DialogDescription>
           </DialogHeader>
           <RadioGroup value={selectedSuffixPn} onValueChange={setSelectedSuffixPn} className="space-y-2">
@@ -440,7 +444,7 @@ const ConsultaPecas = () => {
             disabled={!selectedSuffixPn}
             className="w-full mt-2"
           >
-            Confirmar
+            {t("consultaPecas.suffix.confirm")}
           </Button>
         </DialogContent>
       </Dialog>
@@ -454,7 +458,7 @@ const ConsultaPecas = () => {
               <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-3 sm:px-5 py-3 sm:py-4 text-white relative">
                 <div className="flex items-center gap-2 mb-1 opacity-90">
                   <ScanSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">Resultado da Leitura</span>
+                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">{t("consultaPecas.spec.headerLabel")}</span>
                 </div>
                 <h2 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold leading-tight font-mono break-all">
                   {specPart.part_number}
@@ -476,7 +480,7 @@ const ConsultaPecas = () => {
                     <span className={`text-[11px] sm:text-sm font-bold uppercase tracking-wider ${
                       specPart.alc_code ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
                     }`}>
-                      ALC Code
+                      {t("consultaPecas.spec.alcCode")}
                     </span>
                   </div>
                   {specPart.alc_code ? (
@@ -485,7 +489,7 @@ const ConsultaPecas = () => {
                     </p>
                   ) : (
                     <p className="text-sm sm:text-base text-muted-foreground text-center py-1 sm:py-2 italic">
-                      Sem ALC cadastrado
+                      {t("consultaPecas.spec.noAlcRegistered")}
                     </p>
                   )}
                 </div>
@@ -494,7 +498,7 @@ const ConsultaPecas = () => {
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Fornecedor</span>
+                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.supplier")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-semibold text-foreground break-words">
                       {specPart.suppliers?.name || "—"}
@@ -502,7 +506,7 @@ const ConsultaPecas = () => {
                   </div>
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Code Vendor</span>
+                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.codeVendor")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-mono font-semibold text-amber-700 dark:text-amber-400 break-all">
                       {specPart.suppliers?.code || "—"}
@@ -510,7 +514,7 @@ const ConsultaPecas = () => {
                   </div>
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Projeto</span>
+                      <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.project")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-semibold text-emerald-700 dark:text-emerald-400 break-words">
                       {specPart.project || "—"}
@@ -518,7 +522,7 @@ const ConsultaPecas = () => {
                   </div>
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Linha / Módulo</span>
+                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.lineModule")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-semibold text-cyan-700 dark:text-cyan-400 break-words">
                       {specPart.line_module || "—"}
@@ -539,7 +543,7 @@ const ConsultaPecas = () => {
                     setSpecDialogOpen(false);
                   }}
                 >
-                  <Search className="w-4 h-4 mr-2" /> Ver na lista
+                  <Search className="w-4 h-4 mr-2" /> {t("consultaPecas.spec.viewInList")}
                 </Button>
                 <Button
                   size="sm"
@@ -549,7 +553,7 @@ const ConsultaPecas = () => {
                     setTimeout(() => openSpecScanner(), 150);
                   }}
                 >
-                  <ScanSearch className="w-4 h-4 mr-2" /> Ler outra
+                  <ScanSearch className="w-4 h-4 mr-2" /> {t("consultaPecas.spec.readAnother")}
                 </Button>
               </div>
 
@@ -562,8 +566,8 @@ const ConsultaPecas = () => {
       <Dialog open={hkmcOpen} onOpenChange={setHkmcOpen}>
         <DialogContent className="w-[96vw] max-w-2xl p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
           <DialogHeader className="px-4 pt-4">
-            <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> Barcode Scanner H/KMC</DialogTitle>
-            <DialogDescription>Leitor de códigos Hyundai/KIA</DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Barcode className="w-5 h-5 text-sky-600" /> {t("consultaPecas.hkmc.title")}</DialogTitle>
+            <DialogDescription>{t("consultaPecas.hkmc.description")}</DialogDescription>
           </DialogHeader>
           <div className="p-2">
             <HKMCScanner />
@@ -577,11 +581,11 @@ const ConsultaPecas = () => {
           <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-5 py-4 text-white">
             <div className="flex items-center gap-2 mb-1 opacity-90">
               <ScanSearch className="w-4 h-4" />
-              <span className="text-xs font-medium tracking-wider uppercase">Leitor de Código de Barras</span>
+              <span className="text-xs font-medium tracking-wider uppercase">{t("consultaPecas.specReader.label")}</span>
             </div>
-            <DialogTitle className="text-xl font-bold text-white">Checar SPEC / ALC</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">{t("consultaPecas.specReader.title")}</DialogTitle>
             <DialogDescription className="text-white/85 text-sm">
-              Aponte o leitor para o QR Code Hyundai/Mobis — o Part Number será extraído automaticamente. Você também pode digitar e pressionar Enter.
+              {t("consultaPecas.specReader.description")}
             </DialogDescription>
           </div>
           <form
@@ -605,25 +609,25 @@ const ConsultaPecas = () => {
                 ref={specReaderInputRef}
                 value={specReaderInput}
                 onChange={(e) => setSpecReaderInput(e.target.value)}
-                placeholder="Leia o QR Code ou digite o Part Number..."
+                placeholder={t("consultaPecas.specReader.placeholder")}
                 autoFocus
                 className="h-14 text-lg font-mono pl-11 border-2 border-violet-300 focus-visible:ring-violet-500 focus-visible:ring-2"
               />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" className="flex-1" onClick={() => setSpecReaderOpen(false)}>
-                Cancelar
+                {t("consultaPecas.specReader.cancel")}
               </Button>
               <Button
                 type="submit"
                 className="flex-1 bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white"
                 disabled={!specReaderInput.trim()}
               >
-                <ScanSearch className="w-4 h-4 mr-2" /> Checar
+                <ScanSearch className="w-4 h-4 mr-2" /> {t("consultaPecas.specReader.check")}
               </Button>
             </div>
             <p className="text-[11px] text-muted-foreground text-center">
-              Dica: leitores de QR Hyundai/Mobis enviam o payload completo — o Part Number é detectado automaticamente.
+              {t("consultaPecas.specReader.hint")}
             </p>
           </form>
         </DialogContent>

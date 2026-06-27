@@ -828,5 +828,90 @@
     "searchPlaceholder": "Search by number, title, responsible...",
     "clearFilters": "Clear",
     "allPrefix": "All"
+  },
+  "consultaPecas": {
+    "moduleName": "Parts Lookup",
+    "title": "Parts Lookup",
+    "subtitle": "Detailed search of parts, suppliers and codes, with Hyundai Reader, ALC Check and PNL LWR x Switch Spec.",
+    "hub": "Hub",
+    "searchPlaceholder": "Search by PN, name, supplier...",
+    "buttons": {
+      "qr": "QR",
+      "qrTitle": "Search by QR / Barcode",
+      "hkmc": "H/KMC",
+      "hkmcTitle": "Barcode Scanner H/KMC",
+      "specAlc": "SPEC/ALC",
+      "specAlcTitle": "Check SPEC/ALC",
+      "panelSwitch": "Panel×Switch",
+      "panelSwitchTitle": "Validate Panel × Switch"
+    },
+    "viewMode": {
+      "label": "Display mode:",
+      "title": "Toggle display mode",
+      "large": "Large",
+      "normal": "Normal",
+      "compact": "Compact"
+    },
+    "loading": "Loading...",
+    "emptySearch": "No part found",
+    "emptyType": "Type to search for parts",
+    "table": {
+      "partNumber": "Part Number",
+      "description": "Description",
+      "supplier": "Supplier",
+      "codeVendor": "Vendor Code",
+      "alcCode": "ALC Code",
+      "project": "Project",
+      "lineModule": "Line/Module",
+      "origin": "Origin"
+    },
+    "card": {
+      "supplier": "Supplier",
+      "codeVendor": "Vendor Code",
+      "alcCode": "ALC Code",
+      "project": "Project",
+      "lineModule": "Line/Module"
+    },
+    "found": "{{count}} part(s) found",
+    "noAlc": "N/A",
+    "toasts": {
+      "partIdentified": "✓ Part identified!",
+      "partFound": "✓ Part found!",
+      "multipleVariants": "Multiple variants found",
+      "selectCorrectPn": "Select the correct Part Number.",
+      "pnNotRegistered": "Part Number not registered",
+      "searchingFor": "Searching for: {{pn}}",
+      "partSelected": "Part selected!",
+      "pnLabel": "PN: {{pn}}"
+    },
+    "suffix": {
+      "title": "Select Variant",
+      "description": "The scanned Part Number has color/suffix variants. Select the correct one:",
+      "confirm": "Confirm"
+    },
+    "spec": {
+      "headerLabel": "Scan Result",
+      "alcCode": "ALC Code",
+      "noAlcRegistered": "No ALC registered",
+      "supplier": "Supplier",
+      "codeVendor": "Vendor Code",
+      "project": "Project",
+      "lineModule": "Line / Module",
+      "viewInList": "View in list",
+      "readAnother": "Scan another"
+    },
+    "hkmc": {
+      "title": "Barcode Scanner H/KMC",
+      "description": "Hyundai/KIA barcode reader"
+    },
+    "specReader": {
+      "label": "Barcode Reader",
+      "title": "Check SPEC / ALC",
+      "description": "Point the reader at the Hyundai/Mobis QR Code — the Part Number will be extracted automatically. You can also type and press Enter.",
+      "placeholder": "Scan the QR Code or type the Part Number...",
+      "cancel": "Cancel",
+      "check": "Check",
+      "hint": "Tip: Hyundai/Mobis QR readers send the full payload — the Part Number is detected automatically."
+    }
   }
 }

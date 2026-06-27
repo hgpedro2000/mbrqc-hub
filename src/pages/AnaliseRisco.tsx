@@ -364,31 +364,69 @@ export default function AnaliseRisco() {
 
 
   // ---------- UI helpers ----------
-  const KPICard = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
-    <Card className="p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-2xl font-heading font-bold mt-1">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-1">{sub}</div>}
-    </Card>
-  );
+  const KPICard = ({ label, value, sub, subTone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted" }) => {
+    const subClass =
+      subTone === "red" ? "text-destructive" :
+      subTone === "amber" ? "text-amber-500" :
+      subTone === "green" ? "text-emerald-500" :
+      "text-muted-foreground";
+    return (
+      <Card className="p-4 bg-card border-border">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
+        <div className="text-2xl md:text-3xl font-heading font-bold mt-1 text-foreground">{value}</div>
+        {sub && <div className={`text-[11px] mt-1 font-medium ${subClass}`}>{sub}</div>}
+      </Card>
+    );
+  };
 
   const riskBadge = (c: "alto" | "medio" | "baixo") => {
-    if (c === "alto") return <Badge className="bg-destructive/15 text-destructive border-destructive/30">Alto</Badge>;
+    if (c === "alto") return (
+      <Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1">
+        <AlertTriangle className="w-3.5 h-3.5" /> Alto
+      </Badge>
+    );
     if (c === "medio") return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Médio</Badge>;
     return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Baixo</Badge>;
   };
 
-  const scoreBar = (score: number, c: "alto" | "medio" | "baixo") => {
-    const color = c === "alto" ? "bg-destructive" : c === "medio" ? "bg-amber-500" : "bg-emerald-500";
+  const trendBadge = (t: "up" | "down" | "flat") => {
+    if (t === "up") return (
+      <Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1">
+        <TrendingUp className="w-3.5 h-3.5" /> subindo
+      </Badge>
+    );
+    if (t === "down") return (
+      <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 gap-1">
+        <TrendingDown className="w-3.5 h-3.5" /> caindo
+      </Badge>
+    );
+    return <Badge className="bg-muted text-muted-foreground border-border">— estável</Badge>;
+  };
+
+  const scoreCircle = (score: number, c: "alto" | "medio" | "baixo") => {
+    const cls =
+      c === "alto" ? "bg-destructive/15 text-destructive ring-destructive/30" :
+      c === "medio" ? "bg-amber-500/15 text-amber-600 ring-amber-500/30" :
+      "bg-emerald-500/15 text-emerald-600 ring-emerald-500/30";
     return (
-      <div className="flex items-center gap-2 min-w-[120px]">
-        <div className="flex-1 h-2 rounded bg-muted overflow-hidden">
-          <div className={`h-full ${color}`} style={{ width: `${score}%` }} />
-        </div>
-        <span className="text-xs font-semibold w-8 text-right">{score}</span>
+      <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 font-bold text-sm ${cls}`}>
+        {score}
       </div>
     );
   };
+
+  const ngColor = (ng: number) => {
+    if (ng >= 10) return "text-destructive";
+    if (ng >= 1) return "text-amber-600";
+    return "text-emerald-600";
+  };
+
+  const actionBadge = (c: "alto" | "medio" | "baixo", text: string) => {
+    if (c === "alto") return <Badge className="bg-destructive/15 text-destructive border-destructive/30">{text}</Badge>;
+    if (c === "medio") return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">{text}</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">{text}</Badge>;
+  };
+
 
   if (isError) {
     return (

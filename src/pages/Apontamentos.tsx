@@ -500,10 +500,10 @@ const Apontamentos = () => {
                     {(item.quantidade_inspecionada > 0 || hasNg) && (
                       <div className="flex gap-3 text-xs">
                         {item.quantidade_inspecionada > 0 && (
-                          <span className="text-muted-foreground">Insp: <span className="font-semibold text-foreground">{item.quantidade_inspecionada}</span></span>
+                          <span className="text-muted-foreground">{t("apontamentos.list.insp")}: <span className="font-semibold text-foreground">{item.quantidade_inspecionada}</span></span>
                         )}
-                        <span className="text-emerald-600">OK: <span className="font-semibold">{item.quantidade_ok || 0}</span></span>
-                        <span className={hasNg ? "text-destructive font-semibold" : "text-muted-foreground"}>NG: <span className="font-semibold">{item.quantidade_ng || 0}</span></span>
+                        <span className="text-emerald-600">{t("apontamentos.list.ok")}: <span className="font-semibold">{item.quantidade_ok || 0}</span></span>
+                        <span className={hasNg ? "text-destructive font-semibold" : "text-muted-foreground"}>{t("apontamentos.list.ng")}: <span className="font-semibold">{item.quantidade_ng || 0}</span></span>
                       </div>
                     )}
 

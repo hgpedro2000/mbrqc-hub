@@ -759,7 +759,7 @@ const Monitor = () => {
     };
     const channel = supabase
       .channel("monitor-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "apontamentos" }, () => debouncedRefetch("apontamentos"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "apontamentos" }, () => { debouncedRefetch("apontamentos"); fetchMonth(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "alertas_qualidade" }, (p: any) => {
         debouncedRefetch("alertas_qualidade");
         if (p?.eventType === "INSERT") setFlash({ type: "alert", title: p.new?.titulo || "Novo alerta de qualidade" });

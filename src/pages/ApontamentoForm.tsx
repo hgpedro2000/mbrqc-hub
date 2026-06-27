@@ -2119,8 +2119,8 @@ const ApontamentoForm = () => {
                   <span className="font-semibold">{t("apontamentos.form.alcMismatchBtnRescan")}</span>
                   <span className="text-[11px] text-muted-foreground font-normal">
                     {alcMismatchAttempts === 1
-                      ? "{t("apontamentos.form.alcMismatchAttempt1Note")}"
-                      : "{t("apontamentos.form.alcMismatchAttempt2Note")}"}
+                      ? t("apontamentos.form.alcMismatchAttempt1Note")
+                      : t("apontamentos.form.alcMismatchAttempt2Note")}
                   </span>
                 </Button>
               )}

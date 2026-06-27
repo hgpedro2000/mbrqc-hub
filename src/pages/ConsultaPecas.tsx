@@ -358,7 +358,7 @@ const ConsultaPecas = () => {
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted-foreground text-center py-2 border-t border-border/60">{filtered.length} peça(s) encontrada(s)</p>
+            <p className="text-xs text-muted-foreground text-center py-2 border-t border-border/60">{t("consultaPecas.found", { count: filtered.length })}</p>
           </div>
         ) : (
           <div className={

@@ -741,10 +741,11 @@ export default function AnaliseRisco() {
           {drillData && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">NG total</div><div className="text-xl font-bold text-destructive">{drillData.totalNg}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">OK total</div><div className="text-xl font-bold text-emerald-600">{drillData.totalOk}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">Inspecionadas</div><div className="text-xl font-bold">{drillData.totalInsp}</div></Card>
-                <Card className="p-3"><div className="text-[11px] text-muted-foreground">PPM</div><div className="text-xl font-bold">{drillData.ppm.toLocaleString()}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">NG total</div><div className="text-xl font-bold text-destructive">{fmt(drillData.totalNg)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">OK total</div><div className="text-xl font-bold text-emerald-600">{fmt(drillData.totalOk)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">Inspecionadas</div><div className="text-xl font-bold">{fmt(drillData.totalInsp)}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">PPM</div><div className="text-xl font-bold">{fmt(drillData.ppm)}</div></Card>
+
               </div>
 
               <Card className="p-3">

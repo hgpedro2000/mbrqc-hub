@@ -230,7 +230,7 @@ const Login = () => {
                 className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-background/60 hover:bg-muted/60 hover:border-accent/40 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded border border-current text-[10px] font-bold">Aa</span>
-                Sou Terceiro — meu código tem letras
+                {t("login.iAmTerceiro")}
               </button>
             ) : (
               <button
@@ -240,7 +240,7 @@ const Login = () => {
                 className="mt-2 inline-flex items-center gap-2 w-full justify-center rounded-md border border-border bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
               >
                 <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current text-[10px] font-bold">0</span>
-                Voltar para teclado numérico (Mobis)
+                {t("login.backToNumeric")}
               </button>
             )}
           </div>

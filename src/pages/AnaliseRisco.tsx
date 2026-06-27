@@ -229,7 +229,7 @@ export default function AnaliseRisco() {
       const ppmFornecedor = ppmF && ppmF.ok + ppmF.ng > 0 ? Math.round((ppmF.ng / (ppmF.ok + ppmF.ng)) * 1_000_000) : 0;
 
       return {
-        pn: e.pn, fornecedor: e.fornecedor, ng: e.ng, diasSem, modoRecorrente,
+        pn: e.pn, partName: e.partName, fornecedor: e.fornecedor, ng: e.ng, diasSem, modoRecorrente,
         score, classification, recomendacao, monthsWithModo: maxModoMonths, ppmFornecedor,
       };
     }).sort((a, b) => b.score - a.score);

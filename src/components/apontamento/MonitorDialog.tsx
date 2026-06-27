@@ -681,6 +681,43 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                     />
                   )}
 
+                  {b.id === "resumo_acumulado" && (
+                    <div className="rounded-lg border bg-card p-4 space-y-2">
+                      <p className="text-sm font-medium">Turno exibido</p>
+                      <p className="text-xs text-muted-foreground">
+                        Escolha um turno fixo ou deixe em "Automático" para alternar entre todos a cada 7 segundos.
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                        {([
+                          { id: "auto", label: "Automático" },
+                          { id: "all", label: "Todos" },
+                          { id: "1T", label: "1º Turno" },
+                          { id: "2T", label: "2º Turno" },
+                          { id: "3T", label: "3º Turno" },
+                        ] as const).map((opt) => {
+                          const active = (s.resumoShift ?? "auto") === opt.id;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setBlockSetting(b.id, { resumoShift: opt.id })}
+                              className={cn(
+                                "h-10 rounded-md border text-sm font-medium transition-colors",
+                                active
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background hover:bg-accent",
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+
+
 
                   <SlidePreview
                     blockId={b.id}

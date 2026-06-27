@@ -772,24 +772,24 @@ const Apontamentos = () => {
           {/* Row 1: title + date range + actions (Hoje/Filtros/Limpar) + view toggle */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3 px-1">
             <div className="flex items-center gap-2 shrink-0">
-              <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">Registros</h2>
+              <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground shrink-0">{t("apontamentos.list.records")}</h2>
               <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0 hidden md:block" />
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 className="h-8 text-xs w-[140px] px-2 hidden md:block"
-                aria-label="Data de"
+                aria-label={t("apontamentos.list.dateFromLabel")}
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 className="h-8 text-xs w-[140px] px-2 hidden md:block"
-                aria-label="Data até"
+                aria-label={t("apontamentos.list.dateToLabel")}
               />
               {(dateFrom || dateTo) && (
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground shrink-0 hidden md:inline-flex" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground shrink-0 hidden md:inline-flex" onClick={() => { setDateFrom(""); setDateTo(""); }} title={t("apontamentos.list.clearDates")}>
                   <X className="w-4 h-4" />
                 </Button>
               )}
@@ -798,7 +798,7 @@ const Apontamentos = () => {
               {isAdmin && selectedIds.size > 0 && (
                 <Button variant="destructive" size="sm" className="gap-1.5 h-8 px-2" onClick={() => setBulkDeleteOpen(true)}>
                   <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Excluir {selectedIds.size}</span>
+                  <span className="hidden sm:inline">{t("apontamentos.list.deleteN", { count: selectedIds.size })}</span>
                   <span className="sm:hidden">{selectedIds.size}</span>
                 </Button>
               )}
@@ -806,10 +806,10 @@ const Apontamentos = () => {
                 variant="outline"
                 size="sm"
                 className="h-8 px-2 sm:px-3 text-xs gap-1"
-                onClick={() => { const t = getLocalDateString(); setDateFrom(t); setDateTo(t); }}
+                onClick={() => { const today = getLocalDateString(); setDateFrom(today); setDateTo(today); }}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Hoje</span>
+                <span className="hidden sm:inline">{t("apontamentos.list.today")}</span>
               </Button>
               <Button
                 variant={filtersExpanded ? "default" : "outline"}
@@ -818,19 +818,19 @@ const Apontamentos = () => {
                 onClick={() => { const v = !filtersExpanded; setFiltersExpanded(v); writeSS("filtersExpanded", v); }}
               >
                 <Filter className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Filtros</span>
+                <span className="hidden sm:inline">{t("apontamentos.list.filters")}</span>
               </Button>
               {(search || Object.values(filterValues).some((v) => v && v !== "all") || dateFrom || dateTo) && (
                 <Button variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground h-8 px-2" onClick={() => { clearFilters(); setDateFrom(""); setDateTo(""); }}>
                   <X className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Limpar filtros</span>
+                  <span className="hidden sm:inline">{t("apontamentos.list.clearFilters")}</span>
                 </Button>
               )}
               <div className="flex items-center border rounded-lg overflow-hidden">
-                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("detailed")}>
+                <Button variant={viewMode === "detailed" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("detailed")} title={t("apontamentos.list.detailedView")}>
                   <LayoutGrid className="w-4 h-4" />
                 </Button>
-                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("compact")}>
+                <Button variant={viewMode === "compact" ? "default" : "ghost"} size="sm" className="rounded-none h-8 px-2" onClick={() => setViewMode("compact")} title={t("apontamentos.list.compactView")}>
                   <LayoutList className="w-4 h-4" />
                 </Button>
               </div>
@@ -840,10 +840,10 @@ const Apontamentos = () => {
           {/* Mobile-only date row */}
           <div className="flex items-center gap-2 mb-2 px-1 md:hidden">
             <div className={`grid ${(dateFrom || dateTo) ? "grid-cols-[1fr_1fr_auto]" : "grid-cols-2"} gap-1.5 items-center flex-1 min-w-0`}>
-              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data de" />
-              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label="Data até" />
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label={t("apontamentos.list.dateFromLabel")} />
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 text-xs w-full min-w-0 px-2" aria-label={t("apontamentos.list.dateToLabel")} />
               {(dateFrom || dateTo) && (
-                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title="Limpar datas">
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-muted-foreground shrink-0" onClick={() => { setDateFrom(""); setDateTo(""); }} title={t("apontamentos.list.clearDates")}>
                   <X className="w-4 h-4" />
                 </Button>
               )}
@@ -864,7 +864,7 @@ const Apontamentos = () => {
                 return (
                   <TabsTrigger key={tab} value={tab} className="gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2">
                     <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                    <span className="hidden sm:inline truncate">{cfg.label}</span>
+                    <span className="hidden sm:inline truncate">{t(`apontamentos.list.top.${tab}Label`)}</span>
                     <span className="text-xs">({count})</span>
                   </TabsTrigger>
                 );
@@ -874,10 +874,10 @@ const Apontamentos = () => {
                 type="button"
                 onClick={() => navigate("/contencao")}
                 className="inline-flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm px-1 md:px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/60 transition-colors"
-                title="Abrir Contenção"
+                title={t("apontamentos.list.openContencao")}
               >
                 <ShieldAlert className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
-                <span className="hidden sm:inline truncate">Contenção</span>
+                <span className="hidden sm:inline truncate">{t("apontamentos.list.contencaoTab")}</span>
                 <ArrowRight className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-60" />
               </button>
             </TabsList>
@@ -892,7 +892,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter(null)}
                 >
-                  Todos
+                  {t("apontamentos.list.all")}
                 </Button>
                 <Button
                   variant={incomingLocationFilter === "Sala do Audio" ? "default" : "outline"}
@@ -900,7 +900,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter("Sala do Audio")}
                 >
-                  🔊 Sala do Áudio
+                  🔊 {t("apontamentos.list.salaAudio")}
                 </Button>
                 <Button
                   variant={incomingLocationFilter === "Área de Incoming" ? "default" : "outline"}
@@ -908,7 +908,7 @@ const Apontamentos = () => {
                   className="text-xs h-8"
                   onClick={() => setIncomingLocationFilter("Área de Incoming")}
                 >
-                  📦 Área de Incoming
+                  📦 {t("apontamentos.list.areaIncoming")}
                 </Button>
               </div>
             )}
@@ -930,7 +930,7 @@ const Apontamentos = () => {
                       onClick={() => { setProcSub(sub); clearFilters(); setSelectedIds(new Set()); }}
                     >
                       <Icon className="w-3.5 h-3.5" />
-                      <span>{cfg.label}</span>
+                      <span>{t(`apontamentos.list.subProc.${sub}`)}</span>
                       {cfg.realType && <span className="text-[10px] opacity-80">({subCount})</span>}
                     </Button>
                   );
@@ -945,8 +945,8 @@ const Apontamentos = () => {
                 ) : tab === "processos" && isPlaceholderSub ? (
                   <div className="border border-dashed rounded-lg py-16 text-center text-muted-foreground">
                     <Layers className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm font-medium">Em breve: {procSubConfig[procSub].label}</p>
-                    <p className="text-xs mt-1">Esta área será habilitada em uma próxima atualização.</p>
+                    <p className="text-sm font-medium">{t("apontamentos.list.comingSoon", { name: t(`apontamentos.list.subProc.${procSub}`) })}</p>
+                    <p className="text-xs mt-1">{t("apontamentos.list.comingSoonDesc")}</p>
                   </div>
                 ) : viewMode === "detailed" ? renderDetailedList() : renderCompactList()}
               </TabsContent>

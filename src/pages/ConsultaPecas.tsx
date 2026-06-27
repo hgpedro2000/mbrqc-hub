@@ -506,7 +506,7 @@ const ConsultaPecas = () => {
                   </div>
                   <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
                     <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Code Vendor</span>
+                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.codeVendor")}</span>
                     </div>
                     <p className="text-xs sm:text-base font-mono font-semibold text-amber-700 dark:text-amber-400 break-all">
                       {specPart.suppliers?.code || "—"}

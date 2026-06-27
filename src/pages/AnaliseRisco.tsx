@@ -500,13 +500,18 @@ export default function AnaliseRisco() {
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "alto").map((p) => (
-                  <div key={p.pn + p.fornecedor} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    key={p.pn + p.fornecedor}
+                    onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-destructive/10 transition-colors"
+                  >
                     <div className="min-w-0">
                       <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
                       <div className="text-xs text-muted-foreground">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
                     </div>
                     <Badge className="bg-destructive text-destructive-foreground">Score {p.score}</Badge>
-                  </div>
+                  </button>
                 ))}
                 {!counts.a && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em inspeção 100%.</div>}
               </div>

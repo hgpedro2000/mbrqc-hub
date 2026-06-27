@@ -225,17 +225,18 @@ const ConsultaPecas = () => {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
                 <Search className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
               </div>
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Consulta de Peças</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">{t("consultaPecas.moduleName")}</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
+              <LanguageToggle />
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
-                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
+                <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("consultaPecas.hub")}</span>
               </Button>
-              <ReportErrorButton moduleName="Consulta de Peças" />
+              <ReportErrorButton moduleName={t("consultaPecas.moduleName")} />
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consulta de Peças</h1>
-          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">Busca em detalhe peças, fornecedores e códigos, com Leitor Hyundai, Checagem de ALC e Spec PNL LWR x Switch.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("consultaPecas.title")}</h1>
+          <p className="hidden sm:block mt-1 md:mt-2 text-primary-foreground/70 max-w-2xl text-xs sm:text-sm md:text-lg">{t("consultaPecas.subtitle")}</p>
         </div>
       </header>
 

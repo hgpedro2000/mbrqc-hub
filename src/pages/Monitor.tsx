@@ -1445,38 +1445,59 @@ const Monitor = () => {
           const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-4 flex flex-col gap-2 min-h-0", accent)}>
-              <div className="flex items-baseline justify-between gap-3 min-w-0">
-                <h4 className="text-xl font-bold truncate min-w-0 flex-1">{s.fornecedor}</h4>
-                <span className={cn("text-2xl font-black tabular-nums shrink-0", ppmColor)}>{fmtNum(s.ppm)}<span className="text-xs text-muted-foreground ml-1">PPM</span></span>
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-3 sm:p-4 flex flex-col gap-2 min-h-0 min-w-0", accent)}>
+              {/* Header: name + PPM on consistent baseline */}
+              <div className="flex items-start justify-between gap-2 sm:gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-base sm:text-lg lg:text-xl font-bold leading-tight truncate" title={s.fornecedor}>
+                    {s.fornecedor}
+                  </h4>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums mt-0.5">
+                    {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
+                  </p>
+                </div>
+                <div className="shrink-0 text-right leading-none">
+                  <div className={cn("text-lg sm:text-xl lg:text-2xl font-black tabular-nums", ppmColor)}>
+                    {fmtNum(s.ppm)}
+                  </div>
+                  <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">PPM</div>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground tabular-nums">{fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.</div>
+
               {pieData.length > 0 ? (
-                <div className="grid grid-cols-[96px_1fr] items-center gap-3 flex-1 min-h-0">
-                  <div className="w-24 h-24">
+                <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[88px_1fr] lg:grid-cols-[104px_1fr] items-center gap-2 sm:gap-3 flex-1 min-h-0 min-w-0">
+                  <div className="w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] lg:w-[104px] lg:h-[104px] shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={22} outerRadius={44} paddingAngle={2} isAnimationActive={false}>
+                        <Pie
+                          data={pieData}
+                          dataKey="value"
+                          nameKey="name"
+                          innerRadius="48%"
+                          outerRadius="98%"
+                          paddingAngle={2}
+                          isAnimationActive={false}
+                        >
                           {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <ul className="min-w-0 space-y-1 text-xs">
+                  <ul className="min-w-0 space-y-1 text-[11px] sm:text-xs">
                     {pieData.map((d, i) => {
                       const p = totalDef > 0 ? Math.round((d.value / totalDef) * 100) : 0;
                       return (
-                        <li key={d.name} className="flex items-center gap-2 min-w-0">
-                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
-                          <span className="truncate flex-1 min-w-0">{d.name}</span>
-                          <span className="tabular-nums text-muted-foreground shrink-0">{p}%</span>
+                        <li key={d.name} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="truncate flex-1 min-w-0" title={d.name}>{d.name}</span>
+                          <span className="tabular-nums text-muted-foreground shrink-0 font-semibold">{p}%</span>
                         </li>
                       );
                     })}
                   </ul>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-emerald-400 text-base font-semibold">✓ Sem defeitos no mês</div>
+                <div className="flex-1 flex items-center justify-center text-emerald-400 text-sm sm:text-base font-semibold">✓ Sem defeitos no mês</div>
               )}
             </div>
           );
@@ -1484,37 +1505,37 @@ const Monitor = () => {
 
 
         return (
-          <div key={activeShift.id} className="w-full h-full flex flex-col gap-4" style={reducedMotion ? undefined : { animation: "fade-in 0.5s ease-out both" }}>
-            {/* Header */}
-            <div className="flex items-center justify-between rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-6 py-4">
-              <div>
-                <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Mês de referência</p>
-                <p className="text-3xl font-black capitalize">{monthLabel}</p>
-                <p className="text-xs text-muted-foreground mt-1">Dia 1 a {lastDay}</p>
+          <div key={activeShift.id} className="w-full h-full flex flex-col gap-3 sm:gap-4 min-w-0" style={reducedMotion ? undefined : { animation: "fade-in 0.5s ease-out both" }}>
+            {/* Header — stacks on mobile, 3-col on desktop */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-3 md:gap-4 rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-4 sm:px-6 py-3 sm:py-4">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground">Mês de referência</p>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black capitalize truncate">{monthLabel}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Dia 1 a {lastDay}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="px-5 py-2 rounded-full text-base font-semibold border bg-emerald-500/20 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/20">
+              <div className="flex items-center justify-center gap-2 md:justify-self-center">
+                <span className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-sm sm:text-base font-semibold border bg-emerald-500/20 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/20 whitespace-nowrap">
                   {activeShift.label}
                 </span>
                 {shiftPref === "auto" && (
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Auto</span>
+                  <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground">Auto</span>
                 )}
               </div>
-              <div className="text-right">
-                <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Acumulado</p>
-                <div className="flex items-baseline gap-4">
-                  <span className="text-3xl font-black text-cyan-300 tabular-nums">{fmtNum(totInsp)}<span className="text-sm text-muted-foreground ml-1">insp.</span></span>
-                  <span className={cn("text-3xl font-black tabular-nums", totNg > 0 ? "text-red-400" : "text-emerald-400")}>{fmtNum(totNg)}<span className="text-sm text-muted-foreground ml-1">NG</span></span>
-                  <span className={cn("text-3xl font-black tabular-nums", totPpm > 0 ? "text-amber-400" : "text-emerald-400")}>{fmtNum(totPpm)}<span className="text-sm text-muted-foreground ml-1">PPM</span></span>
+              <div className="md:text-right min-w-0">
+                <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-muted-foreground">Acumulado</p>
+                <div className="flex items-baseline gap-3 sm:gap-4 md:justify-end flex-wrap">
+                  <span className="text-lg sm:text-2xl lg:text-3xl font-black text-cyan-300 tabular-nums">{fmtNum(totInsp)}<span className="text-[10px] sm:text-sm text-muted-foreground ml-1">insp.</span></span>
+                  <span className={cn("text-lg sm:text-2xl lg:text-3xl font-black tabular-nums", totNg > 0 ? "text-red-400" : "text-emerald-400")}>{fmtNum(totNg)}<span className="text-[10px] sm:text-sm text-muted-foreground ml-1">NG</span></span>
+                  <span className={cn("text-lg sm:text-2xl lg:text-3xl font-black tabular-nums", totPpm > 0 ? "text-amber-400" : "text-emerald-400")}>{fmtNum(totPpm)}<span className="text-[10px] sm:text-sm text-muted-foreground ml-1">PPM</span></span>
                 </div>
               </div>
             </div>
 
             {/* Trend chart */}
-            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-5 py-4 flex-shrink-0" style={{ height: 280 }}>
-              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2">Tendência de NG por dia — {activeShift.label}</p>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trend} margin={{ top: 18, right: 12, left: 0, bottom: 18 }}>
+            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-3 sm:px-5 py-3 sm:py-4 flex-shrink-0 h-[200px] sm:h-[240px] lg:h-[280px]">
+              <p className="text-[11px] sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-1 sm:mb-2 truncate">Tendência de NG por dia — {activeShift.label}</p>
+              <ResponsiveContainer width="100%" height="88%">
+                <AreaChart data={trend} margin={{ top: 22, right: 14, left: 0, bottom: 8 }}>
                   <defs>
                     <linearGradient id="ngFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#f87171" stopOpacity={0.7} />
@@ -1522,15 +1543,15 @@ const Monitor = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                  <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" minTickGap={8} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} width={32} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800}>
+                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={2.5} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800}>
                     <LabelList
                       dataKey="ng"
                       position="top"
                       fill="hsl(var(--foreground))"
-                      fontSize={11}
+                      fontSize={10}
                       fontWeight={700}
                       formatter={(v: number) => (v > 0 ? fmtNum(v) : "")}
                     />
@@ -1540,24 +1561,25 @@ const Monitor = () => {
             </div>
 
 
-            {/* Best vs Worst */}
-            <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
-              <div className="flex flex-col gap-3 min-h-0">
-                <h3 className="text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-6 h-6" /> Melhores Fornecedores</h3>
-                <div className="grid grid-rows-3 gap-3 flex-1 min-h-0">
-                  {best.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground">Sem dados</div>
+            {/* Best vs Worst — stacks on mobile, 2 cols on desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 flex-1 min-h-0">
+              <div className="flex flex-col gap-2 sm:gap-3 min-h-0 min-w-0">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Melhores Fornecedores</span></h3>
+                <div className="grid grid-rows-3 gap-2 sm:gap-3 flex-1 min-h-0">
+                  {best.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground text-sm">Sem dados</div>
                     : best.map((s) => <SupCard key={s.fornecedor} s={s} kind="best" />)}
                 </div>
               </div>
-              <div className="flex flex-col gap-3 min-h-0">
-                <h3 className="text-xl font-bold text-red-400 flex items-center gap-2"><AlertTriangle className="w-6 h-6" /> Piores Fornecedores</h3>
-                <div className="grid grid-rows-3 gap-3 flex-1 min-h-0">
-                  {worst.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground">Sem defeitos no mês ✓</div>
+              <div className="flex flex-col gap-2 sm:gap-3 min-h-0 min-w-0">
+                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-red-400 flex items-center gap-2"><AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Piores Fornecedores</span></h3>
+                <div className="grid grid-rows-3 gap-2 sm:gap-3 flex-1 min-h-0">
+                  {worst.length === 0 ? <div className="row-span-3 flex items-center justify-center text-muted-foreground text-sm">Sem defeitos no mês ✓</div>
                     : worst.map((s) => <SupCard key={s.fornecedor} s={s} kind="worst" />)}
                 </div>
               </div>
             </div>
           </div>
+
         );
       }
 

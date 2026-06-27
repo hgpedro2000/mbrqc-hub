@@ -92,6 +92,7 @@ export const defaultPrefs: MonitorPreferences = {
   slideDurationMs: 10000,
   animationsEnabled: true,
   flapSpeedMs: 70,
+  tickerSpeedSec: 45,
   blockSettings: {},
 };
 

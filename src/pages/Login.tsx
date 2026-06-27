@@ -142,7 +142,7 @@ const Login = () => {
         {versionKicked && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-destructive shrink-0" />
-            <p className="text-sm text-destructive font-medium">Sua sessão foi encerrada. Faça login novamente para carregar a versão mais recente.</p>
+            <p className="text-sm text-destructive font-medium">{t("login.sessionEnded")}</p>
           </div>
         )}
         <div className="text-center mb-8">

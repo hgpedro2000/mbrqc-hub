@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 // persistence). It must NOT import the main `supabase` client nor any auth
 // listener/hook — the monitor session is independent of the main app login.
 import { monitorClient as supabase } from "@/integrations/supabase/monitor-client";
-import { MonitorDialog, loadPrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig, descStyleClasses, defaultPrefs } from "@/components/apontamento/MonitorDialog";
+import { MonitorDialog, loadPrefs, loadGlobalPrefs, savePrefs, MonitorPreferences, MonitorBlock, getBlockSlideConfig, descStyleClasses, defaultPrefs } from "@/components/apontamento/MonitorDialog";
 import {
   Settings, Wifi, WifiOff, Loader2, ChevronLeft, ChevronRight, Pause, Play,
   AlertTriangle, CheckCircle2, TrendingUp, Package, ShieldAlert, Trophy,
@@ -549,6 +549,21 @@ const Monitor = () => {
     }
     return base;
   });
+
+  // Fetch shared default preferences (saved by admin) once on mount and apply
+  // them — so every profile sees what the admin defined as the default layout.
+  useEffect(() => {
+    if (isPreviewMode) return;
+    let cancelled = false;
+    void loadGlobalPrefs().then((g) => {
+      if (cancelled || !g) return;
+      savePrefs(g);
+      setPrefs(g);
+      setSlideIdx(0);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [showSettings, setShowSettings] = useState(false);
   const [now, setNow] = useState(new Date());
   const [conn, setConn] = useState<ConnState>("connecting");

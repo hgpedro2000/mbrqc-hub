@@ -421,7 +421,7 @@ const Apontamentos = () => {
       return (
         <div className="form-section text-center py-8">
           <Icon className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-          <p className="text-muted-foreground text-sm">Nenhum registro encontrado</p>
+          <p className="text-muted-foreground text-sm">{t("apontamentos.list.noRecords")}</p>
         </div>
       );
     }

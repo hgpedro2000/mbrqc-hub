@@ -211,7 +211,7 @@ export default function MonitorAdmin() {
             <Label htmlFor="media-file">Arquivo (JPG, PNG ou PDF — até 25 MB)</Label>
             <Input id="media-file" type="file" accept="image/png,image/jpeg,application/pdf,.pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-xs sm:text-sm file:mr-2" />
           </div>
-          {tab === "comunicado" && (
+          {TIPOS_COM_SLOT.includes(tab) && (
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="grid gap-1">
                 <Label>Posição no slide</Label>

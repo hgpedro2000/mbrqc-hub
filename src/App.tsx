@@ -37,6 +37,7 @@ import AlertaQualidadeView from "./pages/AlertaQualidadeView";
 import AlertaQualidadeFeed from "./pages/AlertaQualidadeFeed";
 import ConsumiveisPage from "./pages/ConsumiveisPage";
 import ConsultaPecas from "./pages/ConsultaPecas";
+import AnaliseRisco from "./pages/AnaliseRisco";
 import SpecSwitchPanelCheck from "./pages/SpecSwitchPanelCheck";
 import QrProfilePage from "./pages/QrProfilePage";
 import MatrizVersatilidade from "./pages/MatrizVersatilidade";

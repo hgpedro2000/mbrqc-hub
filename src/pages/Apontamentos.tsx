@@ -684,37 +684,38 @@ const Apontamentos = () => {
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
                 <FileBarChart className="w-4 h-4 md:w-5 md:h-5 text-accent-foreground" />
               </div>
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Apontamentos</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">{t("apontamentos.list.headerEyebrow")}</span>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Hub">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.hub")}>
                 <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.hub")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Dashboard">
-                <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Dashboard</span>
+              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnDashboard")}>
+                <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnDashboard")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Monitor">
-                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Monitor</span>
+              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnMonitor")}>
+                <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnMonitor")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Relatório do Dia">
-                <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Relatório</span>
+              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnReport")}>
+                <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnReport")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Peças NG">
-                <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">NG</span>
+              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnNG")}>
+                <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnNG")}</span>
               </Button>
               {isAdmin && profile?.employee_number === "3501165" && (
-                <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Corrigir Part Name (INC)">
-                  <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">Corrigir PN</span>
+                <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("apontamentos.list.btnFixPN")}>
+                  <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnFixPN")}</span>
                 </Button>
               )}
               <ReportErrorButton moduleName="Apontamentos" />
-              <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title="Sair">
+              <LanguageToggle />
+              <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.logout")}>
                 <LogOut className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.logout")}</span>
               </Button>
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Apontamentos</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Selecione o tipo de apontamento para registrar.</p>
+          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("apontamentos.list.pageTitle")}</h1>
+          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">{t("apontamentos.list.pageSubtitle")}</p>
         </div>
       </header>
 

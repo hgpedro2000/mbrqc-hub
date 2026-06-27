@@ -285,10 +285,11 @@ export default function MonitorAdmin() {
                                 <select
                                   value={editSlot}
                                   onChange={(e) => setEditSlot(Number(e.target.value))}
-                                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                                  className="h-10 sm:h-9 rounded-md border border-input bg-background px-2 text-base md:text-sm"
                                 >
                                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
                                 </select>
+
                               </div>
                               <div className="grid gap-1">
                                 <Label className="text-xs">Início</Label>

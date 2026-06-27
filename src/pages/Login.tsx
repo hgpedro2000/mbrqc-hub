@@ -248,6 +248,7 @@ const Login = () => {
             <Label htmlFor="password">{t("login.password")}</Label>
             <Input
               id="password"
+              ref={passwordRef}
               type="password"
               required
               minLength={6}

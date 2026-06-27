@@ -501,9 +501,11 @@ export default function AnaliseRisco() {
                       <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} fontSize={10} height={70} />
                       <YAxis yAxisId="left" fontSize={10} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={10} />
-                      <Tooltip />
+                      <Tooltip formatter={(v: any, n: any) => [typeof v === "number" ? fmt(v) + (n === "% Acumulado" ? "%" : "") : v, n]} />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências" />
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} />
+
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>

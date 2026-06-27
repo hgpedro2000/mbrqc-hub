@@ -564,6 +564,14 @@ export default function AnaliseRisco() {
               <SelectItem value="180">Últimos 180 dias</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            size="sm" variant="outline" className="h-8 text-xs gap-1"
+            onClick={() => setShowHelp(true)}
+            title="Entenda este módulo"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            Entenda este módulo
+          </Button>
         </div>
       </header>
 

@@ -974,11 +974,11 @@ const ApontamentoForm = () => {
     if (isOem && !vinNumber) { errors.add("vinNumber"); msgs.push("VIN"); }
 
     if (isIncoming) {
-      if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push("Quantidade Inspecionada"); }
+      if (quantidadeInspecionada <= 0) { errors.add("quantidadeInspecionada"); msgs.push(t("apontamentos.form.validationMsgQtyInspecionada")); }
       if (quantidadeInspecionada > 1000) { errors.add("quantidadeInspecionada"); msgs.push(t("apontamentos.form.validationQtyInspecionadaLimit")); }
-      if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push("Lote Inspecionado"); }
-      if (!horaInicio) { errors.add("horaInicio"); msgs.push("Horário Inicial"); }
-      if (!horaFim) { errors.add("horaFim"); msgs.push("Horário Final"); }
+      if (!loteInspecionado) { errors.add("loteInspecionado"); msgs.push(t("apontamentos.form.labelLoteInspecionado")); }
+      if (!horaInicio) { errors.add("horaInicio"); msgs.push(t("apontamentos.form.labelHoraInicio")); }
+      if (!horaFim) { errors.add("horaFim"); msgs.push(t("apontamentos.form.labelHoraFim")); }
       if (alcExpected && alcExpected !== "N/A" && alcStatus !== "match" && alcStatus !== "mismatch") {
         errors.add("alcCode"); msgs.push(t("apontamentos.form.validationAlcRequired"));
       }
@@ -1018,25 +1018,25 @@ const ApontamentoForm = () => {
 
     if (isPeca) {
       if (quantidadeNg < 0) { errors.add("quantidadeNg"); msgs.push(t("apontamentos.form.validationMsgQtyNg")); }
-      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
-      if (quantidadeNg > 0 && !modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+      if (!descricao) { errors.add("descricao"); msgs.push(t("apontamentos.form.validationMsgDescricao")); }
+      if (quantidadeNg > 0 && !modoFalha) { errors.add("modoFalha"); msgs.push(t("apontamentos.form.validationMsgModoFalha")); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push(t("apontamentos.form.validationMsgFotos")); }
     }
 
     if (isProcesso) {
       if (quantidadeNg <= 0) { errors.add("quantidadeNg"); msgs.push(t("apontamentos.form.validationMsgQtyNgProcess")); }
-      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
-      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+      if (!descricao) { errors.add("descricao"); msgs.push(t("apontamentos.form.validationMsgDescricao")); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push(t("apontamentos.form.validationMsgModoFalha")); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push(t("apontamentos.form.validationMsgFotos")); }
     }
 
     if (isOem) {
-      if (!descricao) { errors.add("descricao"); msgs.push("Descrição do Problema"); }
-      if (!modoFalha) { errors.add("modoFalha"); msgs.push("Modo de Falha"); }
+      if (!descricao) { errors.add("descricao"); msgs.push(t("apontamentos.form.validationMsgDescricao")); }
+      if (!modoFalha) { errors.add("modoFalha"); msgs.push(t("apontamentos.form.validationMsgModoFalha")); }
       if (!localDeteccao) { errors.add("localDeteccao"); msgs.push(t("apontamentos.form.labelLocalDeteccao")); }
       if (!analiseInicial) { errors.add("analiseInicial"); msgs.push(t("apontamentos.form.validationMsgAnaliseInicial")); }
       if (!acaoImediata) { errors.add("acaoImediata"); msgs.push(t("apontamentos.form.validationMsgAcaoImediata")); }
-      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push("Foto do Defeito (mínimo 1)"); }
+      if (photoFiles.length === 0 && existingPhotos.length === 0) { errors.add("fotos"); msgs.push(t("apontamentos.form.validationMsgFotos")); }
     }
 
     setValidationErrors(errors);
@@ -1324,9 +1324,9 @@ const ApontamentoForm = () => {
                 <Label className={`flex items-center gap-2 ${validationErrors.has("alcCode") ? "text-destructive font-semibold" : ""}`}>
                   <span>ALC</span>
                   {alcExpected && alcExpected !== "N/A" && <span className="text-destructive">*</span>}
-                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">✓ OK</span>}
-                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">✗ Divergente</span>}
-                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">Manual</span>}
+                  {alcStatus === "match" && <span className="text-[10px] font-semibold text-emerald-600">{t("apontamentos.form.alcStatusOk")}</span>}
+                  {alcStatus === "mismatch" && <span className="text-[10px] font-semibold text-destructive">{t("apontamentos.form.alcStatusDivergente")}</span>}
+                  {alcStatus === "manual" && <span className="text-[10px] font-semibold text-amber-600">{t("apontamentos.form.alcStatusManual")}</span>}
                 </Label>
                 <div className="flex gap-2">
                   <Input
@@ -1379,7 +1379,7 @@ const ApontamentoForm = () => {
                           : t("apontamentos.form.alcBtnTitleValidate")
                       }
                     >
-                      Validar ALC manual
+                      {t("apontamentos.form.alcBtnValidate")}
                     </Button>
                   )}
                 </div>
@@ -1416,7 +1416,7 @@ const ApontamentoForm = () => {
                   }}
                   className="w-full sm:w-auto gap-2"
                 >
-                  <Search className="w-4 h-4" /> Selecionar Co-Inspetores
+                  <Search className="w-4 h-4" /> {t("apontamentos.form.btnSelectCoInspetores")}
                 </Button>
               </div>
               {temCoInspecao === "sim" && coInspetores.length > 0 && (
@@ -1430,7 +1430,7 @@ const ApontamentoForm = () => {
                 </div>
               )}
               {temCoInspecao === "sim" && (
-                <p className="text-xs text-muted-foreground">Até 6 co-inspetores ({coInspetores.length}/6)</p>
+                <p className="text-xs text-muted-foreground">{t("apontamentos.form.coInspetoresLimit", { count: coInspetores.length })}</p>
               )}
             </div>
           </div>
@@ -1476,7 +1476,7 @@ const ApontamentoForm = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-3 sm:gap-4 items-start">
                   <div className="space-y-1.5">
-                    <Label className={cn(errLabelClass("quantidadeInspecionada"), "truncate")} title="Quantidade inspecionada (máx. 1000)">Inspecionada *</Label>
+                    <Label className={cn(errLabelClass("quantidadeInspecionada"), "truncate")} title={t("apontamentos.form.labelInspecionada")}>{t("apontamentos.form.labelInspecionada")} *</Label>
                     <Input
                       type="number"
                       min={1}
@@ -1550,9 +1550,9 @@ const ApontamentoForm = () => {
             {/* Modo de Falha - single mode or when NG <= 1 or same mode */}
             {(isIncoming || isPeca || isProcesso) && (ngMultiploDecisao !== "diferente") && (
               <div className="space-y-1.5">
-                <Label className={errLabelClass("modoFalha")}>Modo de Falha {!ngIsZero && "*"}</Label>
+                <Label className={errLabelClass("modoFalha")}>{t("apontamentos.form.labelModoFalha")} {!ngIsZero && "*"}</Label>
                 <Select value={modoFalha} onValueChange={(v) => { setModoFalha(v); setValidationErrors((p) => { const n = new Set(p); n.delete("modoFalha"); return n; }); }} disabled={ngIsZero}>
-                  <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : "Selecione"} /></SelectTrigger>
+                  <SelectTrigger className={errClass("modoFalha")}><SelectValue placeholder={ngIsZero ? "N/A" : t("apontamentos.form.placeholderSelecione")} /></SelectTrigger>
                   <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
                 </Select>
               </div>
@@ -1572,49 +1572,49 @@ const ApontamentoForm = () => {
                   return (
                   <div key={idx} className="border rounded-lg p-3 space-y-3 bg-muted/10">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Defeito {idx === 0 ? t("apontamentos.form.defeitoPrincipal") : `#${idx + 1}`}</span>
+                      <span className="text-sm font-medium">{t("apontamentos.form.defeitoWord")} {idx === 0 ? t("apontamentos.form.defeitoPrincipal") : `#${idx + 1}`}</span>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>Modo de Falha *</Label>
+                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-modoFalha`) ? "text-destructive font-semibold" : ""}`}>{t("apontamentos.form.labelModoFalha")} *</Label>
                       <Select value={detalhe.modo_falha} onValueChange={(v) => { updateDefeitoDetalhe(idx, "modo_falha", v); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-modoFalha`); return n; }); }}>
-                        <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectTrigger className={validationErrors.has(`defeito-${idx}-modoFalha`) ? "border-destructive ring-1 ring-destructive" : ""}><SelectValue placeholder={t("apontamentos.form.placeholderSelecione")} /></SelectTrigger>
                         <SelectContent>{defects.map((d) => { const lbl = defectLabel(d); return <SelectItem key={d.id} value={`${d.code} - ${lbl}`}>{lbl}</SelectItem>; })}</SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-1.5">
-                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-descricao`) ? "text-destructive font-semibold" : ""}`}>Descrição *</Label>
-                      <Textarea value={detalhe.descricao} onChange={(e) => { updateDefeitoDetalhe(idx, "descricao", e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-descricao`); return n; }); }} placeholder=t("apontamentos.form.placeholderDescricaoDefeito") rows={2} className={validationErrors.has(`defeito-${idx}-descricao`) ? "border-destructive ring-1 ring-destructive" : ""} />
+                      <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-descricao`) ? "text-destructive font-semibold" : ""}`}>{t("apontamentos.form.labelDescricao")} *</Label>
+                      <Textarea value={detalhe.descricao} onChange={(e) => { updateDefeitoDetalhe(idx, "descricao", e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-descricao`); return n; }); }} placeholder={t("apontamentos.form.placeholderDescricaoDefeito")} rows={2} className={validationErrors.has(`defeito-${idx}-descricao`) ? "border-destructive ring-1 ring-destructive" : ""} />
                     </div>
                     {!isPrincipalSolo && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="space-y-1.5 w-full">
-                          <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-qtyNg`) ? "text-destructive font-semibold" : ""}`}>Qty NG *</Label>
+                          <Label className={`text-xs ${validationErrors.has(`defeito-${idx}-qtyNg`) ? "text-destructive font-semibold" : ""}`}>{t("apontamentos.form.labelNg")} *</Label>
                           <Input type="number" inputMode="numeric" min={1} value={detalhe.qty_ng || ""} onChange={(e) => { updateDefeitoDetalhe(idx, "qty_ng", e.target.value === "" ? 0 : Number(e.target.value)); setValidationErrors((p) => { const n = new Set(p); n.delete(`defeito-${idx}-qtyNg`); return n; }); }} className={`w-full ${validationErrors.has(`defeito-${idx}-qtyNg`) ? "border-destructive ring-1 ring-destructive" : ""}`} />
                         </div>
                         <div className="space-y-1.5 w-full">
-                          <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> Número da TAG</Label>
-                          <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder="Opcional" className="w-full" />
+                          <Label className="text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> {t("apontamentos.form.tagTitle")}</Label>
+                          <Input value={detalhe.tag_number} onChange={(e) => updateDefeitoDetalhe(idx, "tag_number", e.target.value)} placeholder={t("apontamentos.form.placeholderOpcional")} className="w-full" />
                         </div>
                       </div>
                     )}
                     {isPrincipalSolo && (
-                      <p className="text-xs text-muted-foreground">Qty NG = {quantidadeNg} (total). A TAG é preenchida na seção "Número da TAG" abaixo.</p>
+                      <p className="text-xs text-muted-foreground">{t("apontamentos.form.qtyNgTotalNote", { qty: quantidadeNg })}</p>
                     )}
                   </div>
                   );
                 })}
                 <div className="flex flex-wrap gap-2">
                   {defeitosDetalhes.length < quantidadeNg && (
-                    <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>
+                    <Button variant="outline" size="sm" onClick={addDefeitoDetalhe} className="gap-2 w-full sm:w-auto"><Plus className="w-4 h-4" /> {t("apontamentos.form.btnAdicionarDefeito")}</Button>
                   )}
                   {defeitosDetalhes.length > 1 && (
                     <Button variant="outline" size="sm" onClick={removeLastDefeitoDetalhe} className="gap-2 w-full sm:w-auto text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4" /> Excluir Defeito #{defeitosDetalhes.length}
+                      <Trash2 className="w-4 h-4" /> {t("apontamentos.form.btnExcluirDefeito", { n: defeitosDetalhes.length })}
                     </Button>
                   )}
                 </div>
                 {defeitosDetalhes.length > 1 && totalDefeitosQty !== quantidadeNg && (
-                  <p className="text-xs text-destructive font-medium">⚠ A soma dos NG ({totalDefeitosQty}) deve ser igual ao total NG ({quantidadeNg})</p>
+                  <p className="text-xs text-destructive font-medium">{t("apontamentos.form.ngSumWarning", { total: totalDefeitosQty, expected: quantidadeNg })}</p>
                 )}
               </div>
             )}
@@ -1637,16 +1637,16 @@ const ApontamentoForm = () => {
             )}
 
             {(isPeca || isProcesso) && (
-              <div className="space-y-1.5"><Label>Local de Detecção</Label><Input value={localDeteccao} onChange={(e) => setLocalDeteccao(e.target.value)} placeholder=t("apontamentos.form.placeholderEstacao") /></div>
+              <div className="space-y-1.5"><Label>{t("apontamentos.form.labelLocalDeteccao")}</Label><Input value={localDeteccao} onChange={(e) => setLocalDeteccao(e.target.value)} placeholder={t("apontamentos.form.placeholderEstacao")} /></div>
             )}
             {(isPeca || isProcesso) && (
-              <div className="space-y-1.5"><Label>VIN Number</Label><Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder="Opcional" /></div>
+              <div className="space-y-1.5"><Label>{t("apontamentos.form.labelVin")}</Label><Input value={vinNumber} onChange={(e) => setVinNumber(e.target.value)} placeholder={t("apontamentos.form.placeholderOpcional")} /></div>
             )}
             {(isPeca || isProcesso) && (
               <div className="space-y-1.5">
-                <Label>Responsabilidade do Defeito</Label>
+                <Label>{t("apontamentos.form.labelResponsabilidadeDefeito")}</Label>
                 <Select value={responsabilidadeDefeito} onValueChange={setResponsabilidadeDefeito}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("apontamentos.form.placeholderSelecione")} /></SelectTrigger>
                   <SelectContent>{responsibilities.map((r) => <SelectItem key={r.id} value={`${r.code} - ${r.description}`}>{r.description}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -1662,7 +1662,7 @@ const ApontamentoForm = () => {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Lançamento *</Label>
+                  <Label>{t("apontamentos.form.labelLancamento")} *</Label>
                   <Select value={lancamento} onValueChange={setLancamento}>
                     <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{OEM_LANCAMENTO.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
@@ -1674,7 +1674,7 @@ const ApontamentoForm = () => {
             {/* Descrição - only when not multiple mode */}
             {ngMultiploDecisao !== "diferente" && (
               <div className="space-y-1.5">
-                <Label className={errLabelClass("descricao")}>Descrição do Problema {!ngIsZero && "*"}</Label>
+                <Label className={errLabelClass("descricao")}>{t("apontamentos.form.labelDescricaoProblema")} {!ngIsZero && "*"}</Label>
                 <Textarea
                   value={descricao}
                   onChange={(e) => { setDescricao(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("descricao"); return n; }); }}
@@ -1689,16 +1689,16 @@ const ApontamentoForm = () => {
             {isOem && (
               <>
                 <div className="space-y-1.5">
-                  <Label className={errLabelClass("analiseInicial")}>Análise Inicial *</Label>
-                  <Textarea value={analiseInicial} onChange={(e) => { setAnaliseInicial(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("analiseInicial"); return n; }); }} placeholder=t("apontamentos.form.placeholderDescricaoObrigatoria") rows={3} className={errClass("analiseInicial")} />
+                  <Label className={errLabelClass("analiseInicial")}>{t("apontamentos.form.labelAnaliseInicial")} *</Label>
+                  <Textarea value={analiseInicial} onChange={(e) => { setAnaliseInicial(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("analiseInicial"); return n; }); }} placeholder={t("apontamentos.form.placeholderDescricaoObrigatoria")} rows={3} className={errClass("analiseInicial")} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className={errLabelClass("acaoImediata")}>Ação Imediata *</Label>
-                  <Textarea value={acaoImediata} onChange={(e) => { setAcaoImediata(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("acaoImediata"); return n; }); }} placeholder="Descrição obrigatória" rows={3} className={errClass("acaoImediata")} />
+                  <Label className={errLabelClass("acaoImediata")}>{t("apontamentos.form.labelAcaoImediata")} *</Label>
+                  <Textarea value={acaoImediata} onChange={(e) => { setAcaoImediata(e.target.value); setValidationErrors((p) => { const n = new Set(p); n.delete("acaoImediata"); return n; }); }} placeholder={t("apontamentos.form.placeholderDescricaoObrigatoria")} rows={3} className={errClass("acaoImediata")} />
                 </div>
                 <div className="space-y-1.5">
                   <Label>{t("apontamentos.form.labelComentario")}</Label>
-                  <Textarea value={comentarioAdicional} onChange={(e) => setComentarioAdicional(e.target.value)} placeholder="Opcional" rows={2} />
+                  <Textarea value={comentarioAdicional} onChange={(e) => setComentarioAdicional(e.target.value)} placeholder={t("apontamentos.form.placeholderOpcional")} rows={2} />
                 </div>
               </>
             )}
@@ -1712,24 +1712,24 @@ const ApontamentoForm = () => {
             <div className="space-y-3 sm:space-y-4">
               <Select value={temSegundoDefeito} onValueChange={(v) => { setTemSegundoDefeito(v); if (v === "nao") setSegundoDefeitos([]); }}>
                 <SelectTrigger className="w-32 sm:w-40"><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="nao">Não</SelectItem><SelectItem value="sim">Sim</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="nao">{t("apontamentos.form.ngDialogNao")}</SelectItem><SelectItem value="sim">{t("apontamentos.form.ngDialogSim")}</SelectItem></SelectContent>
               </Select>
               {temSegundoDefeito === "sim" && (
                 <>
                   {segundoDefeitos.map((sd, idx) => (
                     <div key={idx} className="border rounded-lg p-2 sm:p-3 space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Defeito #{idx + 1}</span>
+                        <span className="text-sm font-medium">{t("apontamentos.form.defeitoWord")} #{idx + 1}</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeSegundoDefeito(idx)}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div className="space-y-1"><Label className="text-xs">Part Number</Label><Input value={sd.part_number} onChange={(e) => updateSegundoDefeito(idx, "part_number", e.target.value)} placeholder="Digitar PN" /></div>
-                        <div className="space-y-1"><Label className="text-xs">Part Name</Label><Input value={sd.part_name} onChange={(e) => updateSegundoDefeito(idx, "part_name", e.target.value)} placeholder="Nome da peça" /></div>
+                        <div className="space-y-1"><Label className="text-xs">Part Number</Label><Input value={sd.part_number} onChange={(e) => updateSegundoDefeito(idx, "part_number", e.target.value)} placeholder={t("apontamentos.form.placeholderDigitarPn")} /></div>
+                        <div className="space-y-1"><Label className="text-xs">Part Name</Label><Input value={sd.part_name} onChange={(e) => updateSegundoDefeito(idx, "part_name", e.target.value)} placeholder={t("apontamentos.form.placeholderNomePeca")} /></div>
                         <div className="space-y-1"><Label className="text-xs">Qty</Label><Input type="number" min={0} value={sd.qty} onChange={(e) => updateSegundoDefeito(idx, "qty", Number(e.target.value))} /></div>
                       </div>
                     </div>
                   ))}
-                  {segundoDefeitos.length < 8 && <Button variant="outline" size="sm" onClick={addSegundoDefeito} className="gap-2"><Plus className="w-4 h-4" /> Adicionar Defeito</Button>}
+                  {segundoDefeitos.length < 8 && <Button variant="outline" size="sm" onClick={addSegundoDefeito} className="gap-2"><Plus className="w-4 h-4" /> {t("apontamentos.form.btnAdicionarDefeito")}</Button>}
                 </>
               )}
             </div>
@@ -1795,7 +1795,7 @@ const ApontamentoForm = () => {
                   className="w-full sm:max-w-md"
                 />
                 <p className="text-xs text-muted-foreground">
-                  {tagNumber ? "" : "{t("apontamentos.form.tagAwaitingNote")}"}
+                  {tagNumber ? "" : t("apontamentos.form.tagAwaitingNote")}
                 </p>
               </div>
             )}
@@ -1805,7 +1805,7 @@ const ApontamentoForm = () => {
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pb-6">
           <Button onClick={async () => { if (isEdit) { handleSave(false); } else { if (await validate()) setShowConfirmSaveDialog(true); } }} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]"><Save className="w-4 h-4" /> {saving ? t("apontamentos.form.btnSalvando") : isEdit ? t("apontamentos.form.btnAtualizar") : t("apontamentos.form.btnFinalizar")}</Button>
           <Button variant="outline" onClick={() => handleSave(true)} disabled={saving} className="gap-2 flex-1 sm:flex-none min-h-[44px]">{t("apontamentos.form.btnSalvarRascunho")}</Button>
-          <Button variant="ghost" onClick={requestExit} className="flex-1 sm:flex-none min-h-[44px]">Cancelar</Button>
+          <Button variant="ghost" onClick={requestExit} className="flex-1 sm:flex-none min-h-[44px]">{t("apontamentos.form.btnCancelar")}</Button>
         </div>
       </main>
 
@@ -1829,30 +1829,30 @@ const ApontamentoForm = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-500" />{t("apontamentos.form.confirmSaveTitle")}</DialogTitle>
             <DialogDescription>
-              {(() => { const fn = (activeProfile?.full_name || "Inspetor").trim().split(/\s+/)[0]; return `${fn}, confirme se as informações abaixo estão corretas antes de finalizar:`; })()}
+              {(() => { const fn = (activeProfile?.full_name || t("apontamentos.form.defaultInspectorName")).trim().split(/\s+/)[0]; return t("apontamentos.form.confirmSaveGreeting", { name: fn }); })()}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="rounded-md border border-border p-3 space-y-2">
-              <div className="text-xs uppercase text-muted-foreground font-semibold">Quantidades</div>
+              <div className="text-xs uppercase text-muted-foreground font-semibold">{t("apontamentos.form.confirmSaveQtd")}</div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded bg-muted/50 p-2">
-                  <div className="text-[10px] text-muted-foreground">Inspecionada</div>
+                  <div className="text-[10px] text-muted-foreground">{t("apontamentos.form.confirmSaveInspecionada")}</div>
                   <div className="text-lg font-bold text-primary">{quantidadeInspecionada}</div>
                 </div>
                 <div className="rounded bg-muted/50 p-2">
-                  <div className="text-[10px] text-muted-foreground">OK</div>
+                  <div className="text-[10px] text-muted-foreground">{t("apontamentos.form.confirmSaveOk")}</div>
                   <div className="text-lg font-bold text-green-500">{quantidadeOk}</div>
                 </div>
                 <div className="rounded bg-muted/50 p-2">
-                  <div className="text-[10px] text-muted-foreground">NG</div>
+                  <div className="text-[10px] text-muted-foreground">{t("apontamentos.form.confirmSaveNg")}</div>
                   <div className={`text-lg font-bold ${quantidadeNg > 0 ? "text-red-500" : "text-muted-foreground"}`}>{quantidadeNg}</div>
                 </div>
               </div>
             </div>
             {(isIncoming && quantidadeNg > 0 && descricao !== "Sem defeito encontrado durante essa inspeção") && (
               <div className="rounded-md border border-border p-3 space-y-2">
-                <div className="text-xs uppercase text-muted-foreground font-semibold">Responsabilidade</div>
+                <div className="text-xs uppercase text-muted-foreground font-semibold">{t("apontamentos.form.confirmSaveResp")}</div>
                 <div className="inline-flex items-center px-3 py-1.5 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-400 font-bold text-base tracking-wide">
                   {responsabilidadeDefeito || "—"}
                 </div>
@@ -1876,15 +1876,15 @@ const ApontamentoForm = () => {
             <DialogTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-500" />{t("apontamentos.form.ngDialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Foram apontadas {quantidadeNg} peças NG. Todas possuem o mesmo modo de falha?</p>
+            <p className="text-sm text-muted-foreground">{t("apontamentos.form.ngDialogMsg", { n: quantidadeNg })}</p>
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={() => handleNgDecision("mesmo")} variant="outline" className="h-auto py-3 flex flex-col gap-1">
-                <span className="font-semibold">Sim</span>
-                <span className="text-xs text-muted-foreground">Mesmo defeito</span>
+                <span className="font-semibold">{t("apontamentos.form.ngDialogSim")}</span>
+                <span className="text-xs text-muted-foreground">{t("apontamentos.form.ngDialogMesmo")}</span>
               </Button>
               <Button onClick={() => handleNgDecision("diferente")} variant="outline" className="h-auto py-3 flex flex-col gap-1">
-                <span className="font-semibold">Não</span>
-                <span className="text-xs text-muted-foreground">Defeitos diferentes</span>
+                <span className="font-semibold">{t("apontamentos.form.ngDialogNao")}</span>
+                <span className="text-xs text-muted-foreground">{t("apontamentos.form.ngDialogDiferente")}</span>
               </Button>
             </div>
           </div>
@@ -1937,7 +1937,7 @@ const ApontamentoForm = () => {
                   className="w-full text-left px-3 py-3 text-sm hover:bg-muted transition-colors border-b border-border/50 last:border-b-0 flex items-center justify-between"
                 >
                   <span>{p.full_name} {p.turno && <span className="text-muted-foreground">({p.turno})</span>}</span>
-                  {coInspetores.includes(p.full_name) && <Badge variant="outline" className="text-[10px]">Selecionado</Badge>}
+                  {coInspetores.includes(p.full_name) && <Badge variant="outline" className="text-[10px]">{t("apontamentos.form.coInspBadgeSelected")}</Badge>}
                 </button>
               )) : (
                 <div className="px-3 py-3 text-sm text-muted-foreground text-center">{t("apontamentos.form.coInspEmpty")}</div>
@@ -1954,7 +1954,7 @@ const ApontamentoForm = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Selecionar Variante
+              {t("apontamentos.form.suffixDialogTitle")}
             </DialogTitle>
             <DialogDescription className="text-sm">
               {t("apontamentos.form.suffixDialogDesc")}
@@ -1991,7 +1991,7 @@ const ApontamentoForm = () => {
             disabled={!selectedSuffixPn}
             className="w-full mt-2"
           >
-            Confirmar
+            {t("apontamentos.form.suffixConfirm")}
           </Button>
         </DialogContent>
       </Dialog>
@@ -2002,7 +2002,7 @@ const ApontamentoForm = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Nova Leitura Detectada
+              {t("apontamentos.form.rescanDialogTitle")}
             </DialogTitle>
             <DialogDescription className="text-sm">
               {t("apontamentos.form.rescanDialogDesc")}
@@ -2023,7 +2023,7 @@ const ApontamentoForm = () => {
             )}
             <div className="flex flex-col gap-2 pt-2">
               <Button onClick={confirmRescan} className="w-full">
-                Carregar nova leitura
+                {t("apontamentos.form.rescanBtnLoad")}
               </Button>
               <Button onClick={cancelRescan} variant="outline" className="w-full">
                 Manter leitura atual
@@ -2051,7 +2051,7 @@ const ApontamentoForm = () => {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" /> Divergência de ALC
+              <AlertTriangle className="w-5 h-5" /> {t("apontamentos.form.alcMismatchTitle")}
             </DialogTitle>
             <DialogDescription className="text-sm">
               {t("apontamentos.form.alcMismatchDesc")}
@@ -2079,25 +2079,25 @@ const ApontamentoForm = () => {
                           : "bg-background text-muted-foreground border-border"
                       }`}
                     >
-                      {n}ª
+                      {t("apontamentos.form.alcAttemptOrdinal", { n })}
                     </div>
                   );
                 })}
               </div>
               <p className="text-[11px] text-muted-foreground leading-snug">
                 {alcMismatchAttempts >= 3
-                  ? "{t("apontamentos.form.alcMismatchAttemptsNote3")}"
-                  : `{t("apontamentos.form.alcMismatchAttemptsNoteN")}`}
+                  ? t("apontamentos.form.alcMismatchAttemptsNote3")
+                  : t("apontamentos.form.alcMismatchAttemptsNoteN")}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border p-3 space-y-1">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC lido</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">{t("apontamentos.form.alcMismatchLidoLabel")}</p>
                 <p className="font-mono text-sm font-bold text-destructive">{alcMismatchScanned || "—"}</p>
               </div>
               <div className="rounded-lg border p-3 space-y-1">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase">ALC esperado</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase">{t("apontamentos.form.alcMismatchEsperadoLabel")}</p>
                 <p className="font-mono text-sm font-bold text-emerald-700">{alcExpected || "N/A"}</p>
               </div>
             </div>
@@ -2128,8 +2128,8 @@ const ApontamentoForm = () => {
                 <span className="font-semibold">{t("apontamentos.form.alcMismatchBtnConfirm")}</span>
                 <span className="text-[11px] font-normal opacity-90">
                   {alcMismatchAttempts >= 3
-                    ? "{t("apontamentos.form.alcMismatchConfirmed3")}"
-                    : "{t("apontamentos.form.alcMismatchConfirmNote")}"}
+                    ? t("apontamentos.form.alcMismatchConfirmed3")
+                    : t("apontamentos.form.alcMismatchConfirmNote")}
                 </span>
               </Button>
             </div>
@@ -2156,7 +2156,7 @@ const ApontamentoForm = () => {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-lg border p-3 space-y-1 bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-800">
-                    <p className="text-[10px] font-semibold uppercase text-blue-700 dark:text-blue-300">ALC Esperado</p>
+                    <p className="text-[10px] font-semibold uppercase text-blue-700 dark:text-blue-300">{t("apontamentos.form.alcManualEsperadoLabel")}</p>
                     <p className="font-mono text-base font-bold text-blue-700 dark:text-blue-300">{expected || "—"}</p>
                   </div>
                   <div className={`rounded-lg border p-3 space-y-1 ${
@@ -2164,7 +2164,7 @@ const ApontamentoForm = () => {
                     : mismatch ? "bg-red-50 border-destructive dark:bg-red-950/30"
                     : "bg-muted/30"
                   }`}>
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">ALC Checado</p>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground">{t("apontamentos.form.alcManualChecadoLabel")}</p>
                     <Input
                       value={alcManualInput}
                       onChange={(e) => setAlcManualInput(e.target.value.toUpperCase())}
@@ -2257,7 +2257,7 @@ const ApontamentoForm = () => {
           <AlertDialogFooter>
             <AlertDialogCancel>{t("apontamentos.form.exitDialogCancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmExit} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Sim, sair e descartar
+              {t("apontamentos.form.exitDialogConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

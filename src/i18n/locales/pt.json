@@ -704,7 +704,15 @@
       "validationMsgLocalDeteccao": "Local de Detecção",
       "validationMsgAnaliseInicial": "Análise Inicial",
       "validationMsgAcaoImediata": "Ação Imediata",
-      "placeholderSelecione": "Selecione"
+      "placeholderSelecione": "Selecione",
+      "alcStatusOk": "✓ OK",
+      "alcAttemptOrdinal": "{{n}}ª",
+      "confirmSaveGreeting": "{{name}}, confirme se as informações abaixo estão corretas antes de finalizar:",
+      "defeitoWord": "Defeito",
+      "validationMsgQtyInspecionada": "Quantidade Inspecionada",
+      "placeholderNomePeca": "Nome da peça",
+      "placeholderDigitarPn": "Digitar PN",
+      "defaultInspectorName": "Inspetor"
     }
   },
   "alertaQualidade": {

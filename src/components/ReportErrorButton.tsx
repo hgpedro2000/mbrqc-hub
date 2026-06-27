@@ -11,15 +11,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus } from "lucide-react";
+import { AlertTriangle, Loader2, X, Send, Ticket, CheckCircle, Clock, ImagePlus, UserPlus, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 import { uploadPhotos } from "@/lib/uploadPhotos";
 import { compressImage } from "@/lib/compressImage";
 import ImageAnnotationEditor from "@/components/ImageAnnotationEditor";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   moduleName: string;
   showNewUserRequest?: boolean;
+  showAdminHelpDeskTickets?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {

@@ -29,10 +29,14 @@ type Apto = {
   tipo: string;
   fornecedor: string | null;
   part_number: string | null;
+  part_name: string | null;
   modo_falha: string | null;
   quantidade_ok: number | null;
   quantidade_ng: number | null;
 };
+
+const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+
 
 const META_REJEICOES = 200;
 

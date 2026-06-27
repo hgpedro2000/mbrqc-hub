@@ -1490,7 +1490,7 @@ const Monitor = () => {
         {/* Live ticker */}
         {!chromeOff && apontamentos.length > 0 && (
           <div className="relative z-10 overflow-hidden border-t border-border/40 bg-background/60 backdrop-blur-md py-3">
-            <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : "ticker 45s linear infinite", width: "max-content" }}>
+            <div className="flex gap-14 whitespace-nowrap" style={{ animation: reducedMotion ? undefined : `ticker ${prefs.tickerSpeedSec ?? 45}s linear infinite`, width: "max-content" }}>
               {[...apontamentos.slice(0, 20), ...apontamentos.slice(0, 20)].map((a, i) => (
                 <span key={i} className="flex items-center gap-3 text-xl">
                   <span className="font-mono text-muted-foreground">{a.numero || "—"}</span>

@@ -458,7 +458,7 @@ const ConsultaPecas = () => {
               <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-3 sm:px-5 py-3 sm:py-4 text-white relative">
                 <div className="flex items-center gap-2 mb-1 opacity-90">
                   <ScanSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">Resultado da Leitura</span>
+                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">{t("consultaPecas.spec.headerLabel")}</span>
                 </div>
                 <h2 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold leading-tight font-mono break-all">
                   {specPart.part_number}

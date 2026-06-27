@@ -1565,7 +1565,7 @@ const Monitor = () => {
 
 
             {/* Best vs Worst — stacks on mobile, 2 cols on desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 min-h-0">
               <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
                 <h3 className="text-base sm:text-lg lg:text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Melhores Fornecedores</span></h3>
                 <div className="flex flex-col gap-2 sm:gap-3">

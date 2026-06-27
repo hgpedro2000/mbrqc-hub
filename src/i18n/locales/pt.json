@@ -484,7 +484,12 @@
         "difQty": "Informe a quantidade adicional (diferença).",
         "difJustificativa": "Informe a justificativa da diferença.",
         "difFoto": "A foto da falha é obrigatória ao adicionar diferença."
-      }
+      },
+      "recalculating": "Recalculando totais...",
+      "timeSep": "às",
+      "fotoAlt": "Foto {{n}}",
+      "labelInspecionada": "Inspecionada",
+      "deleteBtn": "Excluir"
     },
     "fotos": {
       "defeito": "Defeito",

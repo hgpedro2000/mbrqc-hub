@@ -484,7 +484,12 @@
         "difQty": "Enter the additional quantity (difference).",
         "difJustificativa": "Enter the justification for the difference.",
         "difFoto": "A failure photo is required when adding a difference."
-      }
+      },
+      "recalculating": "Recalculating totals...",
+      "timeSep": "to",
+      "fotoAlt": "Photo {{n}}",
+      "labelInspecionada": "Inspected",
+      "deleteBtn": "Delete"
     },
     "fotos": {
       "defeito": "Defect",

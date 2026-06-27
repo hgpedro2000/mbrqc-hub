@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -15,13 +16,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/contexts/AuthContext";
 import { canGenerateClaimReport } from "@/lib/contencaoClaimAccess";
 
-
 interface Props {
   contencao: any | null;
   onClose: () => void;
 }
 
 const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
+  const { t, i18n } = useTranslation();
   const qc = useQueryClient();
   const { isAdmin } = useUserRole();
   const { profile } = useAuth();
@@ -32,7 +33,6 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   const [claimOpen, setClaimOpen] = useState(false);
   const [confirmFinalize, setConfirmFinalize] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
-
 
   const { data: registros = [], isLoading } = useQuery({
     queryKey: ["contencao-registros", contencao?.id],
@@ -51,7 +51,6 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
 
   const status = normalizeStatus(contencao?.status);
   const dias = (contencao as any)?.dias_andamento ?? computeDiasAndamento(contencao?.created_at, contencao?.data_conclusao, status);
-
   const totais = useMemo(() => aggregateRegistrosDrawer(registros as any[]), [registros]);
 
   const grouped = useMemo(() => {
@@ -68,6 +67,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
   const concluida = status === "concluida";
   const canEditRegistros = isAdmin && !concluida;
   const canDeleteRegistros = isAdmin;
+  const locale = i18n.language === "en" ? "en-US" : "pt-BR";
 
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
@@ -79,7 +79,7 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
               <span className="truncate">{contencao?.titulo}</span>
             </SheetTitle>
             <SheetDescription className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-              {contencao?.responsavel && <span>Responsável: {contencao.responsavel}</span>}
+              {contencao?.responsavel && <span>{t("contencao.detail.responsible")}: {contencao.responsavel}</span>}
               {contencao?.local && <span>📍 {contencao.local}</span>}
               {contencao?.part_number && <span>PN: {contencao.part_number}</span>}
             </SheetDescription>
@@ -88,14 +88,14 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
           <ContencaoStatusStepper status={status} />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <Stat icon={Calendar} label="Dias" value={concluida ? `Concluída em ${dias}d` : `${dias} dias`} />
-            <Stat icon={Clock} label="Horas totais" value={formatHoras(contencao?.total_horas ?? totais.horas)} />
-            <Stat label="Inspecionado" value={String(totais.insp)} />
-            <Stat label="OK / NG" value={`${totais.ok} / ${totais.ng}`} colored />
+            <Stat icon={Calendar} label={t("contencao.detail.days")} value={concluida ? t("contencao.detail.completedIn", { days: dias }) : t("contencao.detail.daysRunning", { days: dias })} />
+            <Stat icon={Clock} label={t("contencao.detail.totalHours")} value={formatHoras(contencao?.total_horas ?? totais.horas)} />
+            <Stat label={t("contencao.detail.inspected")} value={String(totais.insp)} />
+            <Stat label={t("contencao.detail.okNg")} value={`${totais.ok} / ${totais.ng}`} colored />
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <h3 className="font-heading font-semibold text-sm">Registros de Contenção</h3>
+            <h3 className="font-heading font-semibold text-sm">{t("contencao.detail.registros")}</h3>
             <div className="flex flex-wrap items-stretch gap-2 w-full sm:w-auto">
               {canClaim && registros.length > 0 && (
                 <Button
@@ -104,14 +104,13 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
                   className="gap-1 border-amber-500 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30 flex-1 sm:flex-none"
                   onClick={() => setClaimOpen(true)}
                 >
-                  <FileText className="w-4 h-4" /> <span className="truncate">Relatório</span>
+                  <FileText className="w-4 h-4" /> <span className="truncate">{t("contencao.detail.report")}</span>
                 </Button>
               )}
               {!concluida && (
                 <Button size="sm" className="gap-1 flex-1 sm:flex-none" onClick={() => { setEditing(null); setDialogOpen(true); }}>
-                  <Plus className="w-4 h-4" /> <span className="truncate">Novo</span>
+                  <Plus className="w-4 h-4" /> <span className="truncate">{t("contencao.detail.new")}</span>
                 </Button>
-
               )}
               {!concluida && registros.length > 0 && (
                 <Button
@@ -120,26 +119,24 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
                   onClick={() => setConfirmFinalize(true)}
                   disabled={finalizing}
                 >
-                  <CheckCircle2 className="w-4 h-4" /> <span className="truncate">Finalizar</span>
+                  <CheckCircle2 className="w-4 h-4" /> <span className="truncate">{t("contencao.detail.finalize")}</span>
                 </Button>
               )}
             </div>
           </div>
 
-
-
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
           ) : registros.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm py-8 border border-dashed rounded-md">
-              Nenhum registro ainda.
+              {t("contencao.detail.noRegistros")}
             </div>
           ) : (
             <div className="space-y-4">
               {grouped.map(([data, arr]) => (
                 <div key={data} className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground">
-                    {new Date(`${data}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+                    {new Date(`${data}T12:00:00`).toLocaleDateString(locale, { weekday: "long", day: "2-digit", month: "long" })}
                   </p>
                   {arr.map((r) => (
                     <RegistroCard
@@ -172,13 +169,11 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
       <AlertDialog open={confirmFinalize} onOpenChange={setConfirmFinalize}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar Contenção?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja finalizar esta contenção? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("contencao.detail.finalizeTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("contencao.detail.finalizeDesc")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={finalizing}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={finalizing}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-emerald-600 text-white hover:bg-emerald-700"
               disabled={finalizing}
@@ -192,20 +187,20 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
                     .update({ status: "concluida", data_conclusao: new Date().toISOString() })
                     .eq("id", contencao.id);
                   if (error) throw error;
-                  toast.success("Contenção finalizada");
+                  toast.success(t("contencao.detail.finalizeSuccess"));
                   qc.invalidateQueries({ queryKey: ["contencao"] });
                   qc.invalidateQueries({ queryKey: ["contencao-registros", contencao.id] });
                   qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
                   setConfirmFinalize(false);
                   onClose();
                 } catch (err: any) {
-                  toast.error(err.message || "Erro ao finalizar");
+                  toast.error(err.message || t("contencao.detail.finalizeError"));
                 } finally {
                   setFinalizing(false);
                 }
               }}
             >
-              Sim, finalizar
+              {t("contencao.detail.finalizeConfirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -213,7 +208,6 @@ const ContencaoDetalheDrawer = ({ contencao, onClose }: Props) => {
     </Sheet>
   );
 };
-
 
 const Stat = ({ icon: Icon, label, value, colored }: any) => (
   <div className="rounded-md border bg-card p-2">

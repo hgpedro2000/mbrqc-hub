@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Camera, Pencil, Users, Clock, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [thumbUrls, setThumbUrls] = useState<string[]>([]);
 
@@ -34,7 +36,7 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
   const handleDelete = async () => {
     const { error } = await supabase.from("contencao_registros" as any).delete().eq("id", registro.id);
     if (error) { toast.error(error.message); return; }
-    toast.success("Registro excluído");
+    toast.success(t("contencao.registro.deleteSuccess"));
     qc.invalidateQueries({ queryKey: ["contencao"] });
     qc.invalidateQueries({ queryKey: ["contencao-registros", registro.contencao_id] });
     qc.invalidateQueries({ queryKey: ["contencao-resumo-mensal"] });
@@ -46,7 +48,7 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
         <div className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
           <Badge variant="outline" className="font-mono">{registro.turno}</Badge>
           <span>{fmtDate(registro.data)}</span>
-          <span className="text-muted-foreground">— {registro.hora_inicio?.slice(0, 5)} às {registro.hora_fim?.slice(0, 5)}</span>
+          <span className="text-muted-foreground">— {registro.hora_inicio?.slice(0, 5)} {t("contencao.registro.timeSep")} {registro.hora_fim?.slice(0, 5)}</span>
           <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="w-3 h-3" /> {formatHoras(registro.horas_trabalhadas)}
           </span>
@@ -74,12 +76,12 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir registro?</AlertDialogTitle>
-                  <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                  <AlertDialogTitle>{t("contencao.registro.deleteTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("contencao.registro.deleteDesc")}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>Excluir</AlertDialogAction>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>{t("common.delete")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -101,7 +103,7 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
       )}
 
       <div className="grid grid-cols-3 gap-2 text-xs">
-        <div><span className="text-muted-foreground">Inspecionada:</span> <span className="font-semibold">{registro.qtd_inspecionada}</span></div>
+        <div><span className="text-muted-foreground">{t("contencao.registro.labelInspecionada")}:</span> <span className="font-semibold">{registro.qtd_inspecionada}</span></div>
         <div><span className="text-muted-foreground">OK:</span> <span className="font-semibold text-emerald-600">{Math.max(0, (registro.qtd_inspecionada || 0) - (registro.qtd_ng || 0))}</span></div>
         <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{registro.qtd_ng}</span></div>
       </div>
@@ -119,7 +121,7 @@ const RegistroCard = ({ registro, canEdit, canDelete, onEdit }: Props) => {
           ) : (
             thumbUrls.map((url, i) => (
               <a key={i} href={url} target="_blank" rel="noreferrer" className="block">
-                <img src={url} alt={`Foto ${i + 1}`} className="w-20 h-20 object-cover rounded border hover:opacity-90 transition" loading="lazy" />
+                <img src={url} alt={t("contencao.registro.fotoAlt", { n: i + 1 })} className="w-20 h-20 object-cover rounded border hover:opacity-90 transition" loading="lazy" />
               </a>
             ))
           )}

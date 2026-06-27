@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { STATUS_ORDER, STATUS_META, ContencaoStatus } from "@/lib/contencao";
 import { cn } from "@/lib/utils";
 
@@ -8,8 +9,8 @@ interface Props {
 }
 
 const ContencaoStatusStepper = ({ status, className }: Props) => {
+  const { t } = useTranslation();
   const currentIndex = STATUS_ORDER.indexOf(status);
-  // cancelada → show all gray
   const isCancelled = status === "cancelada";
 
   return (
@@ -43,7 +44,7 @@ const ContencaoStatusStepper = ({ status, className }: Props) => {
                     reached ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {meta.label}
+                  {t(`contencao.status.${step}`)}
                 </span>
               </div>
               {idx < STATUS_ORDER.length - 1 && (
@@ -62,7 +63,7 @@ const ContencaoStatusStepper = ({ status, className }: Props) => {
       </div>
       {isCancelled && (
         <div className="mt-2 text-center text-xs font-medium text-red-600">
-          Cancelada
+          {t("contencao.status.cancelada")}
         </div>
       )}
     </div>

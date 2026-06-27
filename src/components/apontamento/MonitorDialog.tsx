@@ -175,6 +175,7 @@ const BLOCK_OPTIONS: { id: MonitorBlock; emoji: string; title: string; desc: str
   { id: "inspecionado", emoji: "🔍", title: "Inspeção", desc: "Split-flap por fornecedor" },
   { id: "comunicados", emoji: "📣", title: "Comunicados", desc: "Imagens / PDFs publicados" },
   { id: "alteracoes_4m", emoji: "🛠️", title: "Alterações 4M/EO", desc: "Avisos de engenharia / pontos de corte" },
+  { id: "retrabalhos", emoji: "🔄", title: "Retrabalhos em Andamento", desc: "Comunicação de retrabalhos atuais" },
   { id: "ultimos_defeitos", emoji: "🔬", title: "Últimos Defeitos", desc: "Últimos NG com fotos" },
 ];
 

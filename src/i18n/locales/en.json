@@ -154,7 +154,10 @@
     "backToLogin": "Back to login",
     "sentMessage": "If the email is registered, you will receive a link to reset your password.",
     "success": "Recovery email sent!",
-    "error": "Error sending recovery email"
+    "error": "Error sending recovery email",
+    "emailPlaceholder": "you@email.com",
+    "or": "or",
+    "requestAdmin": "I don't have a registered email — request from administrator"
   },
   "tryout": {
     "headerTitle": "Try-Out",

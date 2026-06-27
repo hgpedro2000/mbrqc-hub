@@ -61,6 +61,7 @@ const BLOCK_META: Record<MonitorBlock, { title: string; icon: any; accent: strin
   alteracoes_4m:  { title: "Alterações 4M/EO e Validações",       icon: Wrench,        accent: "text-violet-400",   gradient: "from-violet-500/20 via-transparent to-fuchsia-500/20" },
   retrabalhos:    { title: "Retrabalhos em Andamento",             icon: RefreshCw,     accent: "text-amber-400",    gradient: "from-amber-500/20 via-transparent to-orange-500/20" },
   ultimos_defeitos:{ title: "Últimos Defeitos Detectados",        icon: Microscope,    accent: "text-rose-400",     gradient: "from-rose-500/20 via-transparent to-red-500/20" },
+  resumo_acumulado:{ title: "Resumo Acumulado do Mês",            icon: CalendarRange, accent: "text-emerald-400",  gradient: "from-emerald-500/20 via-transparent to-cyan-500/20" },
 };
 
 // --- Hooks ---

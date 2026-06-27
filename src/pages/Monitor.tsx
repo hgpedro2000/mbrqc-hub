@@ -1445,60 +1445,63 @@ const Monitor = () => {
           const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-3 sm:p-4 flex flex-col gap-2 min-h-0 min-w-0", accent)}>
-              {/* Header: name + PPM on consistent baseline */}
-              <div className="flex items-start justify-between gap-2 sm:gap-3 min-w-0">
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-base sm:text-lg lg:text-xl font-bold leading-tight truncate" title={s.fornecedor}>
-                    {s.fornecedor}
-                  </h4>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums mt-0.5">
-                    {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
-                  </p>
-                </div>
-                <div className="shrink-0 text-right leading-none">
-                  <div className={cn("text-lg sm:text-xl lg:text-2xl font-black tabular-nums", ppmColor)}>
-                    {fmtNum(s.ppm)}
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">PPM</div>
-                </div>
-              </div>
-
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-3 sm:gap-4 min-h-0 min-w-0 overflow-hidden", accent)}>
+              {/* Left: Pie chart (fixed square, never clipped) */}
               {pieData.length > 0 ? (
-                <div className="grid grid-cols-[72px_1fr] sm:grid-cols-[88px_1fr] lg:grid-cols-[104px_1fr] items-center gap-2 sm:gap-3 flex-1 min-h-0 min-w-0">
-                  <div className="w-[72px] h-[72px] sm:w-[88px] sm:h-[88px] lg:w-[104px] lg:h-[104px] shrink-0">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <Pie
-                          data={pieData}
-                          dataKey="value"
-                          nameKey="name"
-                          innerRadius="48%"
-                          outerRadius="98%"
-                          paddingAngle={2}
-                          isAnimationActive={false}
-                        >
-                          {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <ul className="min-w-0 space-y-1 text-[11px] sm:text-xs">
+                <div className="shrink-0 aspect-square h-full max-h-[120px] min-h-[64px] w-auto" style={{ aspectRatio: "1 / 1" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius="50%"
+                        outerRadius="100%"
+                        paddingAngle={2}
+                        isAnimationActive={false}
+                      >
+                        {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="shrink-0 aspect-square h-full max-h-[120px] min-h-[64px] flex items-center justify-center text-emerald-400 text-2xl sm:text-3xl font-black" style={{ aspectRatio: "1 / 1" }}>✓</div>
+              )}
+
+              {/* Middle: name + defects legend */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                <h4 className="text-sm sm:text-base lg:text-lg font-bold leading-tight truncate" title={s.fornecedor}>
+                  {s.fornecedor}
+                </h4>
+                <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums">
+                  {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
+                </p>
+                {pieData.length > 0 ? (
+                  <ul className="min-w-0 space-y-0.5 text-[10px] sm:text-[11px] lg:text-xs mt-0.5">
                     {pieData.map((d, i) => {
                       const p = totalDef > 0 ? Math.round((d.value / totalDef) * 100) : 0;
                       return (
-                        <li key={d.name} className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                          <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <li key={d.name} className="flex items-center gap-1.5 min-w-0">
+                          <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                           <span className="truncate flex-1 min-w-0" title={d.name}>{d.name}</span>
                           <span className="tabular-nums text-muted-foreground shrink-0 font-semibold">{p}%</span>
                         </li>
                       );
                     })}
                   </ul>
+                ) : (
+                  <p className="text-emerald-400 text-[11px] sm:text-xs font-semibold">Sem defeitos no mês</p>
+                )}
+              </div>
+
+              {/* Right: PPM */}
+              <div className="shrink-0 text-right leading-none self-center">
+                <div className={cn("text-lg sm:text-xl lg:text-2xl font-black tabular-nums", ppmColor)}>
+                  {fmtNum(s.ppm)}
                 </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-emerald-400 text-sm sm:text-base font-semibold">✓ Sem defeitos no mês</div>
-              )}
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">PPM</div>
+              </div>
             </div>
           );
         };

@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
+  AlertTriangle, Eye, CheckCircle,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -363,31 +364,69 @@ export default function AnaliseRisco() {
 
 
   // ---------- UI helpers ----------
-  const KPICard = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
-    <Card className="p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="text-2xl font-heading font-bold mt-1">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-1">{sub}</div>}
-    </Card>
-  );
+  const KPICard = ({ label, value, sub, subTone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted" }) => {
+    const subClass =
+      subTone === "red" ? "text-destructive" :
+      subTone === "amber" ? "text-amber-500" :
+      subTone === "green" ? "text-emerald-500" :
+      "text-muted-foreground";
+    return (
+      <Card className="p-4 bg-card border-border">
+        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
+        <div className="text-2xl md:text-3xl font-heading font-bold mt-1 text-foreground">{value}</div>
+        {sub && <div className={`text-[11px] mt-1 font-medium ${subClass}`}>{sub}</div>}
+      </Card>
+    );
+  };
 
   const riskBadge = (c: "alto" | "medio" | "baixo") => {
-    if (c === "alto") return <Badge className="bg-destructive/15 text-destructive border-destructive/30">Alto</Badge>;
+    if (c === "alto") return (
+      <Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1">
+        <AlertTriangle className="w-3.5 h-3.5" /> Alto
+      </Badge>
+    );
     if (c === "medio") return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">Médio</Badge>;
     return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Baixo</Badge>;
   };
 
-  const scoreBar = (score: number, c: "alto" | "medio" | "baixo") => {
-    const color = c === "alto" ? "bg-destructive" : c === "medio" ? "bg-amber-500" : "bg-emerald-500";
+  const trendBadge = (t: "up" | "down" | "flat") => {
+    if (t === "up") return (
+      <Badge className="bg-destructive/15 text-destructive border-destructive/30 gap-1">
+        <TrendingUp className="w-3.5 h-3.5" /> subindo
+      </Badge>
+    );
+    if (t === "down") return (
+      <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30 gap-1">
+        <TrendingDown className="w-3.5 h-3.5" /> caindo
+      </Badge>
+    );
+    return <Badge className="bg-muted text-muted-foreground border-border">— estável</Badge>;
+  };
+
+  const scoreCircle = (score: number, c: "alto" | "medio" | "baixo") => {
+    const cls =
+      c === "alto" ? "bg-destructive/15 text-destructive ring-destructive/30" :
+      c === "medio" ? "bg-amber-500/15 text-amber-600 ring-amber-500/30" :
+      "bg-emerald-500/15 text-emerald-600 ring-emerald-500/30";
     return (
-      <div className="flex items-center gap-2 min-w-[120px]">
-        <div className="flex-1 h-2 rounded bg-muted overflow-hidden">
-          <div className={`h-full ${color}`} style={{ width: `${score}%` }} />
-        </div>
-        <span className="text-xs font-semibold w-8 text-right">{score}</span>
+      <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full ring-1 font-bold text-sm ${cls}`}>
+        {score}
       </div>
     );
   };
+
+  const ngColor = (ng: number) => {
+    if (ng >= 10) return "text-destructive";
+    if (ng >= 1) return "text-amber-600";
+    return "text-emerald-600";
+  };
+
+  const actionBadge = (c: "alto" | "medio" | "baixo", text: string) => {
+    if (c === "alto") return <Badge className="bg-destructive/15 text-destructive border-destructive/30">{text}</Badge>;
+    if (c === "medio") return <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">{text}</Badge>;
+    return <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">{text}</Badge>;
+  };
+
 
   if (isError) {
     return (
@@ -504,11 +543,7 @@ export default function AnaliseRisco() {
                         <td className="text-center px-3 py-2 font-semibold">{s.ng}</td>
                         <td className="text-center px-3 py-2">{s.ppm.toLocaleString()}</td>
                         <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
-                        <td className="text-center px-3 py-2">
-                          {s.trend === "up" && <TrendingUp className="w-4 h-4 text-destructive inline" />}
-                          {s.trend === "down" && <TrendingDown className="w-4 h-4 text-emerald-500 inline" />}
-                          {s.trend === "flat" && <Minus className="w-4 h-4 text-muted-foreground inline" />}
-                        </td>
+                        <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
                         <td className="text-center px-3 py-2">
                           {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
                         </td>
@@ -529,7 +564,7 @@ export default function AnaliseRisco() {
               <KPICard label="Alto risco" value={<span className="text-destructive">{counts.a}</span>} sub="100% inspeção" />
               <KPICard label="Médio risco" value={<span className="text-amber-600">{counts.m}</span>} sub="Amostral" />
               <KPICard label="Baixo risco" value={<span className="text-emerald-600">{counts.b}</span>} sub="Liberação direta" />
-              <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="peças fora da 100%" />
+              <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="vs inspeção 100% atual" subTone="green" />
             </div>
 
             <div className="flex items-center gap-3">
@@ -568,11 +603,11 @@ export default function AnaliseRisco() {
                       >
                         <td className="px-3 py-2 font-mono text-xs">{p.pn}</td>
                         <td className="px-3 py-2">{p.fornecedor}</td>
-                        <td className="px-3 py-2">{scoreBar(p.score, p.classification)}</td>
-                        <td className="text-center px-3 py-2">{p.ng}</td>
+                        <td className="px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{p.ng}</td>
                         <td className="text-center px-3 py-2">{p.diasSem}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
-                        <td className="px-3 py-2">{riskBadge(p.classification)} <span className="text-xs text-muted-foreground ml-2">{p.recomendacao}</span></td>
+                        <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (
@@ -587,13 +622,13 @@ export default function AnaliseRisco() {
           {/* ============ RECOMENDAÇÕES ============ */}
           <TabsContent value="reco" className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="alto + médio risco" />
-              <KPICard label="Liberação direta disponível" value={counts.b} sub="baixo risco" />
+              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
+              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
             </div>
 
             <Card className="border-destructive/30 bg-destructive/5">
               <div className="px-4 py-3 border-b border-destructive/20">
-                <h3 className="font-semibold text-destructive">Inspeção 100% — não liberar sem verificação</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "alto").map((p) => (
@@ -601,13 +636,19 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-destructive/10 transition-colors"
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-destructive" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
                       <div className="text-xs text-muted-foreground">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
                     </div>
-                    <Badge className="bg-destructive text-destructive-foreground">Score {p.score}</Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className="bg-destructive/15 text-destructive border-destructive/30">Score {p.score}</Badge>
+                      <span className="text-[10px] text-muted-foreground">Focar em cotas críticas</span>
+                    </div>
                   </button>
                 ))}
                 {!counts.a && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em inspeção 100%.</div>}
@@ -616,7 +657,7 @@ export default function AnaliseRisco() {
 
             <Card className="border-amber-500/30 bg-amber-500/5">
               <div className="px-4 py-3 border-b border-amber-500/20">
-                <h3 className="font-semibold text-amber-700">Inspeção amostral</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-amber-600">Inspeção amostral — verificar lote reduzido</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "medio").map((p) => {
@@ -626,13 +667,16 @@ export default function AnaliseRisco() {
                       type="button"
                       key={p.pn + p.fornecedor}
                       onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-amber-500/10 transition-colors"
+                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 transition-colors"
                     >
-                      <div className="min-w-0">
-                        <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
+                      <div className="shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                        <Eye className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
                         <div className="text-xs text-muted-foreground">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
                       </div>
-                      <Badge className="bg-amber-500 text-white">Score {p.score}</Badge>
+                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0">Score {p.score}</Badge>
                     </button>
                   );
                 })}
@@ -642,7 +686,7 @@ export default function AnaliseRisco() {
 
             <Card className="border-emerald-500/30 bg-emerald-500/5">
               <div className="px-4 py-3 border-b border-emerald-500/20">
-                <h3 className="font-semibold text-emerald-700">Liberação direta — histórico limpo</h3>
+                <h3 className="font-semibold uppercase tracking-wide text-xs text-emerald-600">Liberação direta — histórico limpo</h3>
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "baixo").map((p) => (
@@ -650,21 +694,21 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-emerald-500/10 transition-colors"
+                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <div className="min-w-0">
-                      <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição</div>
+                    <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                      <CheckCircle className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <Badge className="bg-emerald-500 text-white">Score {p.score}</Badge>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
+                    </div>
                   </button>
                 ))}
                 {!counts.b && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em liberação direta.</div>}
               </div>
-              <div className="px-4 py-3 bg-emerald-500/10 border-t border-emerald-500/20 text-xs text-emerald-800">
-                Estas peças possuem histórico verificável no sistema. Liberação direta com rastreabilidade registrada.
-              </div>
             </Card>
+
           </TabsContent>
         </Tabs>
       </main>

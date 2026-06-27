@@ -860,6 +860,47 @@ export default function AnaliseRisco() {
         </Tabs>
       </main>
 
+      {/* ============ EXCLUDED PARTS DIALOG ============ */}
+      <Dialog open={showExcluded} onOpenChange={setShowExcluded}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Peças desconsideradas da análise</DialogTitle>
+            <DialogDescription>
+              Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs sticky top-0">
+                <tr>
+                  <th className="text-left px-3 py-2">Part Number</th>
+                  <th className="text-left px-3 py-2">Fornecedor</th>
+                  <th className="text-center px-3 py-2">NG</th>
+                  <th className="text-left px-3 py-2">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {excludedParts.map((e, idx) => (
+                  <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
+                    <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
+                    <td className="px-3 py-2 truncate max-w-[200px]" title={e.fornecedor}>{e.fornecedor}</td>
+                    <td className="text-center px-3 py-2 tabular-nums">{fmt(e.ng)}</td>
+                    <td className="px-3 py-2">
+                      {e.reason === "sem lançamento"
+                        ? <Badge className="bg-muted text-muted-foreground border-border">sem lançamento</Badge>
+                        : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">recorrente · {e.modoRecorrente}</Badge>}
+                    </td>
+                  </tr>
+                ))}
+                {!excludedParts.length && (
+                  <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nada a desconsiderar.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ============ DRILL-DOWN DIALOG ============ */}
       <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
         <DialogContent className="max-w-3xl">

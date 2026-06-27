@@ -299,7 +299,7 @@ export default function MonitorAdmin() {
                       )}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-auto">
                         <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", m.ativo ? "bg-emerald-500/15 text-emerald-500" : "bg-muted-foreground/15")}>{m.ativo ? "Ativo" : "Inativo"}</span>
-                        {m.tipo === "comunicado" && (
+                        {TIPOS_COM_SLOT.includes(m.tipo) && (
                           <span className="px-2 py-0.5 rounded-full whitespace-nowrap bg-primary/15 text-primary">Pos. {m.slot || 1}</span>
                         )}
                         {(() => { const s = vigenciaStatus(m); return s ? <span className={cn("px-2 py-0.5 rounded-full whitespace-nowrap", s.cls)}>{s.label}</span> : null; })()}

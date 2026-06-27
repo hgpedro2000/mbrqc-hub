@@ -1445,10 +1445,10 @@ const Monitor = () => {
           const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-3 sm:gap-4 min-h-0 min-w-0 overflow-hidden", accent)}>
-              {/* Left: Pie chart (fixed square, never clipped) */}
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 lg:gap-4 min-w-0 overflow-hidden", accent)}>
+              {/* Left: Pie chart (fixed responsive square) */}
               {pieData.length > 0 ? (
-                <div className="shrink-0 aspect-square h-full max-h-[120px] min-h-[64px] w-auto" style={{ aspectRatio: "1 / 1" }}>
+                <div className="shrink-0 aspect-square w-16 sm:w-20 lg:w-24">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <Pie
@@ -1466,15 +1466,15 @@ const Monitor = () => {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="shrink-0 aspect-square h-full max-h-[120px] min-h-[64px] flex items-center justify-center text-emerald-400 text-2xl sm:text-3xl font-black" style={{ aspectRatio: "1 / 1" }}>✓</div>
+                <div className="shrink-0 aspect-square w-16 sm:w-20 lg:w-24 flex items-center justify-center text-emerald-400 text-2xl sm:text-3xl font-black">✓</div>
               )}
 
               {/* Middle: name + defects legend */}
-              <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+              <div className="flex-1 basis-0 min-w-0 flex flex-col justify-center gap-1 overflow-hidden">
                 <h4 className="text-sm sm:text-base lg:text-lg font-bold leading-tight truncate" title={s.fornecedor}>
                   {s.fornecedor}
                 </h4>
-                <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums">
+                <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums truncate">
                   {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
                 </p>
                 {pieData.length > 0 ? (
@@ -1485,19 +1485,19 @@ const Monitor = () => {
                         <li key={d.name} className="flex items-center gap-1.5 min-w-0">
                           <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                           <span className="truncate flex-1 min-w-0" title={d.name}>{d.name}</span>
-                          <span className="tabular-nums text-muted-foreground shrink-0 font-semibold">{p}%</span>
+                          <span className="tabular-nums text-muted-foreground shrink-0 font-semibold w-8 text-right">{p}%</span>
                         </li>
                       );
                     })}
                   </ul>
                 ) : (
-                  <p className="text-emerald-400 text-[11px] sm:text-xs font-semibold">Sem defeitos no mês</p>
+                  <p className="text-emerald-400 text-[11px] sm:text-xs font-semibold truncate">Sem defeitos no mês</p>
                 )}
               </div>
 
               {/* Right: PPM */}
-              <div className="shrink-0 text-right leading-none self-center">
-                <div className={cn("text-lg sm:text-xl lg:text-2xl font-black tabular-nums", ppmColor)}>
+              <div className="shrink-0 text-right leading-none self-center min-w-[48px] sm:min-w-[56px] lg:min-w-[64px]">
+                <div className={cn("text-base sm:text-xl lg:text-2xl font-black tabular-nums whitespace-nowrap", ppmColor)}>
                   {fmtNum(s.ppm)}
                 </div>
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">PPM</div>

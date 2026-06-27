@@ -1379,12 +1379,17 @@ const Monitor = () => {
           { id: "2T", label: "2º Turno" },
           { id: "3T", label: "3º Turno" },
         ];
-        // Rotate shift every 7s so all 3 shifts are always visible in cycle.
-        const shiftIdx = Math.floor(now.getTime() / 7000) % SHIFTS.length;
-        const activeShift = SHIFTS[shiftIdx];
+        const resumoSetting = prefs.blockSettings?.resumo_acumulado ?? {};
+        const shiftPref = resumoSetting.resumoShift ?? "auto";
+        // In "auto" rotate every 7s; otherwise pin to the user-selected shift.
+        const shiftIdx = shiftPref === "auto"
+          ? Math.floor(now.getTime() / 7000) % SHIFTS.length
+          : SHIFTS.findIndex((s) => s.id === shiftPref);
+        const activeShift = SHIFTS[shiftIdx >= 0 ? shiftIdx : 0];
         const filtered = activeShift.id === "all"
           ? apontamentosMonth
           : apontamentosMonth.filter((a) => a.turno === activeShift.id);
+
 
         const today = new Date();
         const year = today.getFullYear();
@@ -1436,46 +1441,47 @@ const Monitor = () => {
             .sort((a, b) => b.value - a.value).slice(0, 3);
           const otherSum = Array.from(s.defects.entries()).reduce((sum, [, v]) => sum + v, 0) - topDefects.reduce((sum, d) => sum + d.value, 0);
           const pieData = topDefects.length ? [...topDefects, ...(otherSum > 0 ? [{ name: "Outros", value: otherSum }] : [])] : [];
+          const totalDef = pieData.reduce((a, b) => a + b.value, 0);
           const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-5 flex flex-col gap-3 overflow-hidden", accent)}>
-              <div className="flex items-baseline justify-between gap-3">
-                <h4 className="text-2xl font-bold truncate">{s.fornecedor}</h4>
-                <span className={cn("text-3xl font-black tabular-nums", ppmColor)}>{fmtNum(s.ppm)}<span className="text-base text-muted-foreground ml-1">PPM</span></span>
+            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-4 flex flex-col gap-2 min-h-0", accent)}>
+              <div className="flex items-baseline justify-between gap-3 min-w-0">
+                <h4 className="text-xl font-bold truncate min-w-0 flex-1">{s.fornecedor}</h4>
+                <span className={cn("text-2xl font-black tabular-nums shrink-0", ppmColor)}>{fmtNum(s.ppm)}<span className="text-xs text-muted-foreground ml-1">PPM</span></span>
               </div>
-              <div className="text-sm text-muted-foreground tabular-nums">{fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.</div>
+              <div className="text-xs text-muted-foreground tabular-nums">{fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.</div>
               {pieData.length > 0 ? (
-                <div className="flex items-center gap-3 flex-1 min-h-0">
-                  <div className="w-32 h-32 flex-shrink-0">
+                <div className="grid grid-cols-[96px_1fr] items-center gap-3 flex-1 min-h-0">
+                  <div className="w-24 h-24">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={28} outerRadius={56} paddingAngle={2}>
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={22} outerRadius={44} paddingAngle={2} isAnimationActive={false}>
                           {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                         </Pie>
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <ul className="flex-1 min-w-0 space-y-1.5 text-sm">
-                    {topDefects.map((d, i) => {
-                      const pct = otherSum + topDefects.reduce((a, b) => a + b.value, 0);
-                      const p = pct > 0 ? Math.round((d.value / pct) * 100) : 0;
+                  <ul className="min-w-0 space-y-1 text-xs">
+                    {pieData.map((d, i) => {
+                      const p = totalDef > 0 ? Math.round((d.value / totalDef) * 100) : 0;
                       return (
-                        <li key={d.name} className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: PIE_COLORS[i] }} />
-                          <span className="truncate flex-1">{d.name}</span>
-                          <span className="tabular-nums text-muted-foreground">{p}%</span>
+                        <li key={d.name} className="flex items-center gap-2 min-w-0">
+                          <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="truncate flex-1 min-w-0">{d.name}</span>
+                          <span className="tabular-nums text-muted-foreground shrink-0">{p}%</span>
                         </li>
                       );
                     })}
                   </ul>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-emerald-400 text-lg font-semibold">✓ Sem defeitos no mês</div>
+                <div className="flex-1 flex items-center justify-center text-emerald-400 text-base font-semibold">✓ Sem defeitos no mês</div>
               )}
             </div>
           );
         };
+
 
         return (
           <div key={activeShift.id} className="w-full h-full flex flex-col gap-4" style={reducedMotion ? undefined : { animation: "fade-in 0.5s ease-out both" }}>
@@ -1487,14 +1493,12 @@ const Monitor = () => {
                 <p className="text-xs text-muted-foreground mt-1">Dia 1 a {lastDay}</p>
               </div>
               <div className="flex items-center gap-2">
-                {SHIFTS.map((s, i) => (
-                  <span key={s.id} className={cn(
-                    "px-4 py-2 rounded-full text-base font-semibold border transition-all",
-                    i === shiftIdx
-                      ? "bg-emerald-500/20 border-emerald-400/70 text-emerald-300 scale-110 shadow-lg shadow-emerald-500/20"
-                      : "bg-card/40 border-border/40 text-muted-foreground"
-                  )}>{s.label}</span>
-                ))}
+                <span className="px-5 py-2 rounded-full text-base font-semibold border bg-emerald-500/20 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/20">
+                  {activeShift.label}
+                </span>
+                {shiftPref === "auto" && (
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Auto</span>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Acumulado</p>
@@ -1510,7 +1514,7 @@ const Monitor = () => {
             <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-5 py-4 flex-shrink-0" style={{ height: 280 }}>
               <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2">Tendência de NG por dia — {activeShift.label}</p>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trend} margin={{ top: 4, right: 12, left: 0, bottom: 18 }}>
+                <AreaChart data={trend} margin={{ top: 18, right: 12, left: 0, bottom: 18 }}>
                   <defs>
                     <linearGradient id="ngFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#f87171" stopOpacity={0.7} />
@@ -1521,10 +1525,20 @@ const Monitor = () => {
                   <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800} />
+                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800}>
+                    <LabelList
+                      dataKey="ng"
+                      position="top"
+                      fill="hsl(var(--foreground))"
+                      fontSize={11}
+                      fontWeight={700}
+                      formatter={(v: number) => (v > 0 ? fmtNum(v) : "")}
+                    />
+                  </Area>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+
 
             {/* Best vs Worst */}
             <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">

@@ -718,21 +718,48 @@ export default function AnaliseRisco() {
               )}
 
               <Card className="p-0 overflow-hidden">
-                <div className="px-3 py-2 border-b text-xs font-semibold text-muted-foreground">
-                  Apontamentos ({drillData.rows.length})
+                <div className="px-3 py-2 border-b flex flex-wrap items-center gap-2">
+                  <div className="text-xs font-semibold text-muted-foreground mr-auto">
+                    Apontamentos ({drillFilteredRows.length}{drillSearch && ` de ${drillData.rows.length}`})
+                  </div>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <Input
+                      ref={drillSearchRef}
+                      value={drillSearch}
+                      onChange={(e) => setDrillSearch(e.target.value)}
+                      placeholder="Buscar data ou modo..."
+                      aria-label="Buscar apontamentos por data ou modo de falha"
+                      className="h-8 pl-7 w-[200px] text-xs"
+                    />
+                  </div>
+                  <Button
+                    size="sm" variant="outline" onClick={exportDrillCSV}
+                    aria-label="Exportar histórico em CSV"
+                    className="h-8"
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1" /> CSV
+                  </Button>
+                  <Button
+                    size="sm" variant="outline" onClick={exportDrillPDF}
+                    aria-label="Exportar histórico em PDF"
+                    className="h-8"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" /> PDF
+                  </Button>
                 </div>
                 <div className="max-h-[280px] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/40 text-xs sticky top-0">
                       <tr>
-                        <th className="text-left px-3 py-2">Data</th>
-                        <th className="text-center px-3 py-2">OK</th>
-                        <th className="text-center px-3 py-2">NG</th>
-                        <th className="text-left px-3 py-2">Modo de falha</th>
+                        <th scope="col" className="text-left px-3 py-2">Data</th>
+                        <th scope="col" className="text-center px-3 py-2">OK</th>
+                        <th scope="col" className="text-center px-3 py-2">NG</th>
+                        <th scope="col" className="text-left px-3 py-2">Modo de falha</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {drillData.rows.map((r) => (
+                      {drillPagedRows.map((r) => (
                         <tr key={r.id} className="border-t">
                           <td className="px-3 py-2">{r.data}</td>
                           <td className="text-center px-3 py-2 text-emerald-600">{r.quantidade_ok || 0}</td>
@@ -740,12 +767,39 @@ export default function AnaliseRisco() {
                           <td className="px-3 py-2 text-muted-foreground">{r.modo_falha ? stripCode(r.modo_falha) : "—"}</td>
                         </tr>
                       ))}
-                      {!drillData.rows.length && (
-                        <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Sem apontamentos.</td></tr>
+                      {!drillPagedRows.length && (
+                        <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">
+                          {drillSearch ? "Nenhum resultado para a busca." : "Sem apontamentos."}
+                        </td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+                {drillTotalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t bg-muted/20">
+                    <span className="text-xs text-muted-foreground" aria-live="polite">
+                      Página {drillPageSafe} de {drillTotalPages}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon" variant="outline" className="h-7 w-7"
+                        onClick={() => setDrillPage((p) => Math.max(1, p - 1))}
+                        disabled={drillPageSafe <= 1}
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon" variant="outline" className="h-7 w-7"
+                        onClick={() => setDrillPage((p) => Math.min(drillTotalPages, p + 1))}
+                        disabled={drillPageSafe >= drillTotalPages}
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             </div>
           )}

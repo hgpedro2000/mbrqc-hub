@@ -343,7 +343,7 @@ export default function AnaliseRisco() {
     doc.setFontSize(10);
     doc.text(`Fornecedor: ${drill.fornecedor}`, margin, y); y += 14;
     doc.text(`Período: últimos ${periodo} dias`, margin, y); y += 14;
-    doc.text(`NG total: ${drillData.totalNg}  |  OK total: ${drillData.totalOk}  |  PPM: ${drillData.ppm.toLocaleString()}`, margin, y); y += 20;
+    doc.text(`NG total: ${fmt(drillData.totalNg)}  |  OK total: ${fmt(drillData.totalOk)}  |  PPM: ${fmt(drillData.ppm)}`, margin, y); y += 20;
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");

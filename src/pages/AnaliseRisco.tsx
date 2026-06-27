@@ -35,7 +35,26 @@ type Apto = {
   quantidade_ng: number | null;
 };
 
-const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+export type PartRisk = {
+  pn: string;
+  partName: string;
+  fornecedor: string;
+  ng: number;
+  diasSem: number;
+  modoRecorrente: string;
+  score: number;
+  classification: "alto" | "medio" | "baixo";
+  recomendacao: string;
+  monthsWithModo: number;
+  ppmFornecedor: number;
+};
+
+// pt-BR number formatter — uses ponto como separador de milhar (ex.: 7.000)
+export const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");
+// pt-BR percent formatter (ex.: 87,5%)
+export const fmtPct = (n: number, digits = 1) =>
+  `${(n ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
+
 
 
 const META_REJEICOES = 200;
@@ -174,13 +193,10 @@ export default function AnaliseRisco() {
   }, [supplierStats]);
 
   // --- Per-part risk score ---
-  type PartRisk = {
-    pn: string; partName: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
-    score: number; classification: "alto" | "medio" | "baixo"; recomendacao: string;
-    monthsWithModo: number; ppmFornecedor: number;
-  };
-
+  // Exported so tests and other modules can reuse this contract.
+  
   const parts: PartRisk[] = useMemo(() => {
+
     type Acc = { pn: string; partName: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
     const m = new Map<string, Acc>();
     for (const i of items) {
@@ -493,37 +509,56 @@ export default function AnaliseRisco() {
 
             <div className="grid lg:grid-cols-2 gap-4">
               <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3">Pareto dos modos de falha</h3>
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
+                  <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
+                </p>
                 <div className="h-[300px]">
                   <ResponsiveContainer>
                     <ComposedChart data={paretoData} margin={{ top: 10, right: 30, left: 0, bottom: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" angle={-30} textAnchor="end" interval={0} fontSize={10} height={70} />
-                      <YAxis yAxisId="left" fontSize={10} />
+                      <YAxis yAxisId="left" fontSize={10} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={10} />
-                      <Tooltip formatter={(v: any, n: any) => [typeof v === "number" ? fmt(v) + (n === "% Acumulado" ? "%" : "") : v, n]} />
+                      <Tooltip
+                        formatter={(v: any, n: any) => {
+                          if (typeof v !== "number") return [v, n];
+                          if (n === "% Acumulado") return [fmtPct(v, 0), n];
+                          return [`${fmt(v)} peças NG`, n];
+                        }}
+                      />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências" />
+                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" />
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} />
-
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               </Card>
 
               <Card className="p-4">
-                <h3 className="text-sm font-semibold mb-3">Tendência mensal de rejeições</h3>
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
+                  <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Soma mensal de peças NG. Linha pontilhada = meta máxima aceitável no período.
+                </p>
                 <div className="h-[300px]">
                   <ResponsiveContainer>
                     <LineChart data={trendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" fontSize={10} />
-                      <YAxis fontSize={10} />
-                      <Tooltip formatter={(v: any) => (typeof v === "number" ? fmt(v) : v)} />
+                      <YAxis fontSize={10} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        labelFormatter={(l) => `Mês: ${l}`}
+                        formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} peças NG`, "Rejeições"] : [v, ""])}
+                      />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)" />
-
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -531,9 +566,13 @@ export default function AnaliseRisco() {
             </div>
 
             <Card className="p-0 overflow-hidden">
-              <div className="px-4 py-3 border-b">
+              <div className="px-4 py-3 border-b flex items-center justify-between gap-2 flex-wrap">
                 <h3 className="text-sm font-semibold">Fornecedores</h3>
+                <span className="text-[10px] text-muted-foreground">
+                  Risco: Alto ≥ 10.000 PPM ou ≥ 30 NG · Médio ≥ 3.000 PPM ou ≥ 10 NG
+                </span>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-xs">
@@ -593,18 +632,21 @@ export default function AnaliseRisco() {
             </div>
 
             <Card className="p-0 overflow-hidden">
+              <div className="px-3 py-2 border-b text-[10px] text-muted-foreground">
+                Score 0–100 · Alto ≥ 60 (inspeção 100%) · Médio 30–59 (amostral) · Baixo &lt; 30 (liberação direta)
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[820px]">
                   <thead className="bg-muted/40 text-xs">
                     <tr>
-                      <th className="text-left px-3 py-2">Part Number</th>
+                      <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
                       <th className="text-left px-3 py-2">Part Name</th>
-                      <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-center px-3 py-2">Score</th>
-                      <th className="text-center px-3 py-2">NG</th>
-                      <th className="text-center px-3 py-2">Dias sem rejeição</th>
-                      <th className="text-left px-3 py-2">Modo recorrente</th>
-                      <th className="text-left px-3 py-2">Ação recomendada</th>
+                      <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
+                      <th className="text-center px-3 py-2 w-[80px]">Score</th>
+                      <th className="text-center px-3 py-2 w-[80px]">NG</th>
+                      <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
+                      <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
+                      <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -615,20 +657,20 @@ export default function AnaliseRisco() {
                         onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
                       >
                         <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
-                        <td className="px-3 py-2 max-w-[220px] truncate" title={p.partName}>{p.partName}</td>
-                        <td className="px-3 py-2">{p.fornecedor}</td>
+                        <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
+                        <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
                         <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
-                        <td className="text-center px-3 py-2">{fmt(p.diasSem)}</td>
-                        <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
+                        <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                        <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
+                        <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
                         <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (
                       <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
                     )}
-
                   </tbody>
+
                 </table>
               </div>
             </Card>
@@ -756,7 +798,11 @@ export default function AnaliseRisco() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="data" fontSize={10} />
                       <YAxis fontSize={10} />
-                      <Tooltip />
+                      <Tooltip
+                        labelFormatter={(l) => `Dia ${l}`}
+                        formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} NG`, "Rejeições"] : [v, ""])}
+                      />
+
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
@@ -768,11 +814,12 @@ export default function AnaliseRisco() {
                   <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Modos de falha</h4>
                   <div className="space-y-1">
                     {drillData.topModos.map(([modo, qty]) => (
-                      <div key={modo} className="flex justify-between text-sm">
-                        <span>{modo}</span>
-                        <span className="font-semibold text-destructive">{qty}</span>
+                      <div key={modo} className="flex justify-between text-sm gap-2">
+                        <span className="truncate" title={modo}>{modo}</span>
+                        <span className="font-semibold text-destructive tabular-nums">{fmt(qty)}</span>
                       </div>
                     ))}
+
                   </div>
                 </Card>
               )}
@@ -821,11 +868,12 @@ export default function AnaliseRisco() {
                     <tbody>
                       {drillPagedRows.map((r) => (
                         <tr key={r.id} className="border-t">
-                          <td className="px-3 py-2">{r.data}</td>
-                          <td className="text-center px-3 py-2 text-emerald-600">{r.quantidade_ok || 0}</td>
-                          <td className="text-center px-3 py-2 font-semibold text-destructive">{r.quantidade_ng || 0}</td>
+                          <td className="px-3 py-2 tabular-nums">{r.data}</td>
+                          <td className="text-center px-3 py-2 text-emerald-600 tabular-nums">{fmt(r.quantidade_ok || 0)}</td>
+                          <td className="text-center px-3 py-2 font-semibold text-destructive tabular-nums">{fmt(r.quantidade_ng || 0)}</td>
                           <td className="px-3 py-2 text-muted-foreground">{r.modo_falha ? stripCode(r.modo_falha) : "—"}</td>
                         </tr>
+
                       ))}
                       {!drillPagedRows.length && (
                         <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">

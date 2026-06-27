@@ -157,7 +157,10 @@
     "error": "Error sending recovery email",
     "emailPlaceholder": "you@email.com",
     "or": "or",
-    "requestAdmin": "I don't have a registered email — request from administrator"
+    "requestAdmin": "I don't have a registered email",
+    "requestAdminLine1": "I don't have a registered email",
+    "requestAdminLine2": "Request from administrator"
+
   },
   "tryout": {
     "headerTitle": "Try-Out",

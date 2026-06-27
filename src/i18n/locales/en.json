@@ -117,7 +117,20 @@
     "forgotPassword": "Forgot my password",
     "welcome": "Welcome",
     "authError": "Authentication error",
-    "mustChangePassword": "You need to change your password on first access."
+    "mustChangePassword": "You need to change your password on first access.",
+    "help": "Help",
+    "close": "Close",
+    "onboardingTitle": "First time? See where to tap",
+    "mobisHint": "Mobis (employee): use only the digits of your employee number.",
+    "terceiroHint": "Third-party: your code contains letters — tap \"I'm Third-party\" below",
+    "numericPlaceholder": "Numbers only",
+    "alphaPlaceholder": "e.g. ABC123",
+    "iAmTerceiro": "I'm Third-party — my code has letters",
+    "backToNumeric": "Back to numeric keyboard (Mobis)",
+    "privacyPolicy": "Privacy Policy",
+    "errorTitle": "Login Error",
+    "understood": "Got it",
+    "sessionEnded": "Your session has ended. Please log in again to load the latest version."
   },
   "changePassword": {
     "title": "Change Password",

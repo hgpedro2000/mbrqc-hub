@@ -117,7 +117,20 @@
     "forgotPassword": "Esqueci minha senha",
     "welcome": "Bem-vindo",
     "authError": "Erro na autenticação",
-    "mustChangePassword": "Você precisa alterar sua senha no primeiro acesso."
+    "mustChangePassword": "Você precisa alterar sua senha no primeiro acesso.",
+    "help": "Ajuda",
+    "close": "Fechar",
+    "onboardingTitle": "Primeira vez? Veja onde clicar",
+    "mobisHint": "Mobis (funcionário): use só números do seu N° de empregado.",
+    "terceiroHint": "Terceiro: seu código tem letras — toque em \"Sou Terceiro\" abaixo",
+    "numericPlaceholder": "Apenas números",
+    "alphaPlaceholder": "Ex: ABC123",
+    "iAmTerceiro": "Sou Terceiro — meu código tem letras",
+    "backToNumeric": "Voltar para teclado numérico (Mobis)",
+    "privacyPolicy": "Política de Privacidade",
+    "errorTitle": "Erro no Login",
+    "understood": "Entendi",
+    "sessionEnded": "Sua sessão foi encerrada. Faça login novamente para carregar a versão mais recente."
   },
   "changePassword": {
     "title": "Alterar Senha",

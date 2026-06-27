@@ -24,6 +24,7 @@ export type MonitorBlock =
   | "inspecionado"
   | "comunicados"
   | "alteracoes_4m"
+  | "retrabalhos"
   | "ultimos_defeitos";
 
 export type MonitorPeriod = "today" | "week" | "month" | "custom";

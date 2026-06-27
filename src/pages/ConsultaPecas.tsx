@@ -21,6 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const ConsultaPecas = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
@@ -35,9 +36,9 @@ const ConsultaPecas = () => {
   const cycleViewMode = () =>
     setViewMode((m) => (m === "list" ? "grid" : m === "grid" ? "compact" : "list"));
   const viewModeMeta = {
-    list: { icon: LayoutList, label: "Grande" },
-    grid: { icon: LayoutGrid, label: "Normal" },
-    compact: { icon: Rows3, label: "Compacto" },
+    list: { icon: LayoutList, label: t("consultaPecas.viewMode.large") },
+    grid: { icon: LayoutGrid, label: t("consultaPecas.viewMode.normal") },
+    compact: { icon: Rows3, label: t("consultaPecas.viewMode.compact") },
   } as const;
   const ViewIcon = viewModeMeta[viewMode].icon;
 

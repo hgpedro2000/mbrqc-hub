@@ -1493,14 +1493,12 @@ const Monitor = () => {
                 <p className="text-xs text-muted-foreground mt-1">Dia 1 a {lastDay}</p>
               </div>
               <div className="flex items-center gap-2">
-                {SHIFTS.map((s, i) => (
-                  <span key={s.id} className={cn(
-                    "px-4 py-2 rounded-full text-base font-semibold border transition-all",
-                    i === shiftIdx
-                      ? "bg-emerald-500/20 border-emerald-400/70 text-emerald-300 scale-110 shadow-lg shadow-emerald-500/20"
-                      : "bg-card/40 border-border/40 text-muted-foreground"
-                  )}>{s.label}</span>
-                ))}
+                <span className="px-5 py-2 rounded-full text-base font-semibold border bg-emerald-500/20 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/20">
+                  {activeShift.label}
+                </span>
+                {shiftPref === "auto" && (
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Auto</span>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground">Acumulado</p>
@@ -1516,7 +1514,7 @@ const Monitor = () => {
             <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-5 py-4 flex-shrink-0" style={{ height: 280 }}>
               <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground mb-2">Tendência de NG por dia — {activeShift.label}</p>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trend} margin={{ top: 4, right: 12, left: 0, bottom: 18 }}>
+                <AreaChart data={trend} margin={{ top: 18, right: 12, left: 0, bottom: 18 }}>
                   <defs>
                     <linearGradient id="ngFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#f87171" stopOpacity={0.7} />
@@ -1527,10 +1525,20 @@ const Monitor = () => {
                   <XAxis dataKey="day" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <YAxis tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800} />
+                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={3} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800}>
+                    <LabelList
+                      dataKey="ng"
+                      position="top"
+                      fill="hsl(var(--foreground))"
+                      fontSize={11}
+                      fontWeight={700}
+                      formatter={(v: number) => (v > 0 ? fmtNum(v) : "")}
+                    />
+                  </Area>
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+
 
             {/* Best vs Worst */}
             <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">

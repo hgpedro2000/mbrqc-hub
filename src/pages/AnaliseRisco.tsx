@@ -521,23 +521,51 @@ export default function AnaliseRisco() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
           <ShieldAlert className="w-6 h-6 text-primary" />
-          <div className="flex-1">
+          <div className="flex-1 min-w-[180px]">
             <h1 className="text-lg font-heading font-bold">Análise de Risco</h1>
             <p className="text-xs text-muted-foreground">Baseado em apontamentos de Incoming</p>
           </div>
+          <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+            <Button
+              size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
+              className="h-8 text-xs"
+              onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
+            >100 dias · BC4B</Button>
+            <Button
+              size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
+              className="h-8 text-xs"
+              onClick={() => setModelFilter("todos")}
+            >Todos</Button>
+          </div>
+          <Button
+            size="sm" variant={excludeNoise ? "default" : "outline"}
+            className="h-8 text-xs"
+            onClick={() => setExcludeNoise((v) => !v)}
+            title="Desconsidera peças recorrentes/sem lançamento na análise"
+          >
+            {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
+          </Button>
+          <Button
+            size="sm" variant="outline" className="h-8 text-xs"
+            onClick={() => setShowExcluded(true)}
+          >
+            Ver excluídos ({excludedParts.length})
+          </Button>
           <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[150px] h-8"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="30">Últimos 30 dias</SelectItem>
               <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="100">Últimos 100 dias</SelectItem>
               <SelectItem value="180">Últimos 180 dias</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </header>
+
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs defaultValue="painel" className="space-y-4">

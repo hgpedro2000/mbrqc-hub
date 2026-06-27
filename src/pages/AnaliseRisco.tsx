@@ -744,7 +744,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "alto").map((p) => (
+                {partsForAnalysis.filter((p) => p.classification === "alto").map((p) => (
                   <button
                     type="button"
                     key={p.pn + p.fornecedor}
@@ -773,7 +773,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-amber-600">Inspeção amostral — verificar lote reduzido</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "medio").map((p) => {
+                {partsForAnalysis.filter((p) => p.classification === "medio").map((p) => {
                   const sampling = p.score >= 45 ? "20%" : "10%";
                   return (
                     <button
@@ -802,7 +802,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-emerald-600">Liberação direta — histórico limpo</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "baixo").map((p) => (
+                {partsForAnalysis.filter((p) => p.classification === "baixo").map((p) => (
                   <button
                     type="button"
                     key={p.pn + p.fornecedor}

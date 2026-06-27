@@ -1135,7 +1135,7 @@ const Monitor = () => {
             <ol className="divide-y divide-border/30 flex-1 overflow-hidden">
               {supplierRanking.length === 0 && <li className="h-full flex items-center justify-center text-5xl text-muted-foreground">Sem dados no período.</li>}
               {supplierRanking.slice(0, 8).map((s, i) => {
-                const isWorst = isV2 && i < 3;
+                const isWorst = isV2 && i < 3 && s.ng > 0;
                 return (
                   <li key={s.fornecedor} className={cn("grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_5rem_9rem] items-center gap-4 py-2.5 tabular-nums", isWorst && "rounded-xl px-2 -mx-2 bg-red-500/5 border border-red-500/30")}
                       style={reducedMotion ? undefined : { animation: `fade-in 0.4s ease-out ${i * 70}ms both${isWorst ? ", pulse-danger 2.4s ease-in-out infinite" : ""}` }}>

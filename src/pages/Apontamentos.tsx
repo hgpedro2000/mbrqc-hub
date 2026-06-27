@@ -27,6 +27,7 @@ import { DefectTagBadge } from "@/components/apontamento/DefectTagBadge";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Input } from "@/components/ui/input";
+import LanguageToggle from "@/components/LanguageToggle";
 const TYPES = ["incoming", "peca", "processo", "oem"] as const;
 type ApontamentoTipo = typeof TYPES[number];
 

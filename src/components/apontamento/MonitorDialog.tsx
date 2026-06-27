@@ -76,6 +76,8 @@ export interface MonitorPreferences {
   animationsEnabled?: boolean;
   /** Split-flap (airport) half-flip duration in ms. Lower = faster. */
   flapSpeedMs?: number;
+  /** Footer ticker (stock-style) loop duration in seconds. Higher = slower. */
+  tickerSpeedSec?: number;
   blockSettings?: Partial<Record<MonitorBlock, MonitorBlockSetting>>;
 }
 

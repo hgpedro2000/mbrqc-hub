@@ -205,9 +205,14 @@ const Login = () => {
               value={employeeNumber}
               onChange={(e) => {
                 const v = e.target.value;
-                setEmployeeNumber(alphaKeyboard ? v.toUpperCase().replace(/\s/g, "") : v.replace(/\D/g, ""));
+                const next = alphaKeyboard ? v.toUpperCase().replace(/\s/g, "") : v.replace(/\D/g, "");
+                setEmployeeNumber(next);
+                // Mobis IDs têm 7 dígitos — pula automaticamente para a senha.
+                if (!alphaKeyboard && next.length === 7) {
+                  passwordRef.current?.focus();
+                }
               }}
-              placeholder={alphaKeyboard ? "Ex: ABC123" : "Apenas números"}
+              placeholder={alphaKeyboard ? t("login.alphaPlaceholder") : t("login.numericPlaceholder")}
               inputMode={alphaKeyboard ? "text" : "numeric"}
               pattern={alphaKeyboard ? undefined : "[0-9]*"}
               autoComplete="username"

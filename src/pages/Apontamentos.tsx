@@ -96,7 +96,7 @@ const Apontamentos = () => {
     monitorChannelRef.current = ch;
     ch.onmessage = (e) => {
       if (e.data?.type === "MONITOR_CLOSED") {
-        toast.message("Monitor foi fechado", { duration: 3000 });
+        toast.message(t("apontamentos.list.monitorClosed"), { duration: 3000 });
       }
     };
     return () => { ch.close(); monitorChannelRef.current = null; };

@@ -157,7 +157,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowOnboarding(false)}
-              aria-label="Fechar"
+              aria-label={t("login.close")}
               className="absolute top-2 right-2 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/40"
             >
               <X className="w-4 h-4" />
@@ -168,16 +168,16 @@ const Login = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-heading font-bold text-foreground">
-                  Primeira vez? Veja onde clicar
+                  {t("login.onboardingTitle")}
                 </h3>
                 <ul className="mt-2 space-y-1.5 text-xs text-foreground/80">
                   <li className="flex items-start gap-2">
                     <Building2 className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
-                    <span><b>Mobis (funcionário):</b> use só números do seu N° de empregado.</span>
+                    <span>{t("login.mobisHint")}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Hash className="w-3.5 h-3.5 text-accent mt-0.5 shrink-0" />
-                    <span><b>Terceiro:</b> seu código tem letras — toque em "Sou Terceiro" abaixo <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
+                    <span>{t("login.terceiroHint")} <ArrowDown className="inline w-3 h-3 -mt-0.5" /></span>
                   </li>
                 </ul>
               </div>

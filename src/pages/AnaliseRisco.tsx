@@ -549,13 +549,18 @@ export default function AnaliseRisco() {
               </div>
               <div className="divide-y">
                 {parts.filter((p) => p.classification === "baixo").map((p) => (
-                  <div key={p.pn + p.fornecedor} className="px-4 py-3 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    key={p.pn + p.fornecedor}
+                    onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                    className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-emerald-500/10 transition-colors"
+                  >
                     <div className="min-w-0">
                       <div className="font-mono text-sm">{p.pn} <span className="text-muted-foreground">· {p.fornecedor}</span></div>
                       <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição</div>
                     </div>
                     <Badge className="bg-emerald-500 text-white">Score {p.score}</Badge>
-                  </div>
+                  </button>
                 ))}
                 {!counts.b && <div className="px-4 py-6 text-center text-muted-foreground text-sm">Nenhuma peça em liberação direta.</div>}
               </div>
@@ -566,6 +571,89 @@ export default function AnaliseRisco() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ============ DRILL-DOWN DIALOG ============ */}
+      <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-mono">{drill?.pn}</DialogTitle>
+            <DialogDescription>
+              {drill?.fornecedor} · histórico completo dos últimos {periodo} dias
+            </DialogDescription>
+          </DialogHeader>
+
+          {drillData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">NG total</div><div className="text-xl font-bold text-destructive">{drillData.totalNg}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">OK total</div><div className="text-xl font-bold text-emerald-600">{drillData.totalOk}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">Inspecionadas</div><div className="text-xl font-bold">{drillData.totalInsp}</div></Card>
+                <Card className="p-3"><div className="text-[11px] text-muted-foreground">PPM</div><div className="text-xl font-bold">{drillData.ppm.toLocaleString()}</div></Card>
+              </div>
+
+              <Card className="p-3">
+                <h4 className="text-xs font-semibold mb-2 text-muted-foreground">NG por dia</h4>
+                <div className="h-[180px]">
+                  <ResponsiveContainer>
+                    <LineChart data={drillData.trend} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="data" fontSize={10} />
+                      <YAxis fontSize={10} />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {drillData.topModos.length > 0 && (
+                <Card className="p-3">
+                  <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Modos de falha</h4>
+                  <div className="space-y-1">
+                    {drillData.topModos.map(([modo, qty]) => (
+                      <div key={modo} className="flex justify-between text-sm">
+                        <span>{modo}</span>
+                        <span className="font-semibold text-destructive">{qty}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
+              <Card className="p-0 overflow-hidden">
+                <div className="px-3 py-2 border-b text-xs font-semibold text-muted-foreground">
+                  Apontamentos ({drillData.rows.length})
+                </div>
+                <div className="max-h-[280px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs sticky top-0">
+                      <tr>
+                        <th className="text-left px-3 py-2">Data</th>
+                        <th className="text-center px-3 py-2">OK</th>
+                        <th className="text-center px-3 py-2">NG</th>
+                        <th className="text-left px-3 py-2">Modo de falha</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drillData.rows.map((r) => (
+                        <tr key={r.id} className="border-t">
+                          <td className="px-3 py-2">{r.data}</td>
+                          <td className="text-center px-3 py-2 text-emerald-600">{r.quantidade_ok || 0}</td>
+                          <td className="text-center px-3 py-2 font-semibold text-destructive">{r.quantidade_ng || 0}</td>
+                          <td className="px-3 py-2 text-muted-foreground">{r.modo_falha ? stripCode(r.modo_falha) : "—"}</td>
+                        </tr>
+                      ))}
+                      {!drillData.rows.length && (
+                        <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Sem apontamentos.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

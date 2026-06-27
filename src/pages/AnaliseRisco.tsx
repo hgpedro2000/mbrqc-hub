@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  LineChart, ResponsiveContainer, ReferenceLine,
+  LineChart, ResponsiveContainer, ReferenceLine, LabelList,
 } from "recharts";
 import jsPDF from "jspdf";
 
@@ -65,7 +65,10 @@ const daysBetween = (a: Date, b: Date) => Math.floor((b.getTime() - a.getTime())
 
 export default function AnaliseRisco() {
   const navigate = useNavigate();
-  const [periodo, setPeriodo] = useState<"30" | "90" | "180">("90");
+  const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
+  const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
+  const [excludeNoise, setExcludeNoise] = useState(true);
+  const [showExcluded, setShowExcluded] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -73,7 +76,7 @@ export default function AnaliseRisco() {
     return d.toISOString().slice(0, 10);
   }, [periodo]);
 
-  const { data: items = [], isLoading, isError, refetch } = useQuery({
+  const { data: rawItems = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["analise-risco", dateFrom],
     queryFn: async () => {
       const all: Apto[] = [];
@@ -93,6 +96,32 @@ export default function AnaliseRisco() {
       return all;
     },
   });
+
+  // Registered parts (PN + supplier) — used to detect "registered but never had any apontamento".
+  const { data: registeredParts = [] } = useQuery({
+    queryKey: ["analise-risco-registered-parts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("part_numbers")
+        .select("part_number,part_name,suppliers(name)")
+        .eq("active", true);
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        pn: r.part_number as string,
+        partName: r.part_name as string,
+        fornecedor: r.suppliers?.name || "—",
+      }));
+    },
+  });
+
+  // Apply model filter (BC4B vs todos) before any aggregation.
+  const items = useMemo(
+    () => modelFilter === "bc4b"
+      ? rawItems.filter((i) => (i.part_number || "").toUpperCase().includes("BC4B"))
+      : rawItems,
+    [rawItems, modelFilter],
+  );
+
 
   // --- Aggregations ---
   const today = new Date();
@@ -251,19 +280,46 @@ export default function AnaliseRisco() {
     }).sort((a, b) => b.score - a.score);
   }, [items, top2PPM, supplierStats, periodo]);
 
+  // Excluded set: parts considered "noise" — registered no fornecedor mas sem lançamento,
+  // ou apontamentos altamente recorrentes (mesmo modo em 3+ meses).
+  const excludedParts = useMemo(() => {
+    const seenKeys = new Set(parts.map((p) => `${p.pn}__${p.fornecedor}`));
+    const noLaunch = (registeredParts || [])
+      .filter((r) => {
+        if (modelFilter === "bc4b" && !r.pn.toUpperCase().includes("BC4B")) return false;
+        return !seenKeys.has(`${r.pn}__${r.fornecedor}`);
+      })
+      .map((r) => ({ ...r, reason: "sem lançamento" as const, ng: 0, monthsWithModo: 0, modoRecorrente: "—" }));
+    const recurrent = parts
+      .filter((p) => p.monthsWithModo >= 3)
+      .map((p) => ({ pn: p.pn, partName: p.partName, fornecedor: p.fornecedor, ng: p.ng, monthsWithModo: p.monthsWithModo, modoRecorrente: p.modoRecorrente, reason: "recorrente" as const }));
+    return [...noLaunch, ...recurrent];
+  }, [parts, registeredParts, modelFilter]);
+
+  const excludedKeys = useMemo(
+    () => new Set(excludedParts.filter((e) => e.reason === "recorrente").map((e) => `${e.pn}__${e.fornecedor}`)),
+    [excludedParts],
+  );
+
+  const partsForAnalysis = useMemo(
+    () => excludeNoise ? parts.filter((p) => !excludedKeys.has(`${p.pn}__${p.fornecedor}`)) : parts,
+    [parts, excludeNoise, excludedKeys],
+  );
+
   const counts = useMemo(() => {
-    const a = parts.filter((p) => p.classification === "alto").length;
-    const m = parts.filter((p) => p.classification === "medio").length;
-    const b = parts.filter((p) => p.classification === "baixo").length;
-    const total = parts.length || 1;
+    const a = partsForAnalysis.filter((p) => p.classification === "alto").length;
+    const m = partsForAnalysis.filter((p) => p.classification === "medio").length;
+    const b = partsForAnalysis.filter((p) => p.classification === "baixo").length;
+    const total = partsForAnalysis.length || 1;
     return { a, m, b, total, reducao: Math.round((b / total) * 100) };
-  }, [parts]);
+  }, [partsForAnalysis]);
 
   const [riskFilter, setRiskFilter] = useState<"todas" | "alto" | "medio" | "baixo">("todas");
   const partsFiltered = useMemo(
-    () => riskFilter === "todas" ? parts : parts.filter((p) => p.classification === riskFilter),
-    [parts, riskFilter],
+    () => riskFilter === "todas" ? partsForAnalysis : partsForAnalysis.filter((p) => p.classification === riskFilter),
+    [partsForAnalysis, riskFilter],
   );
+
 
   // ---------- Drill-down ----------
   const [drill, setDrill] = useState<{ pn: string; fornecedor: string } | null>(null);
@@ -465,23 +521,51 @@ export default function AnaliseRisco() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
           <ShieldAlert className="w-6 h-6 text-primary" />
-          <div className="flex-1">
+          <div className="flex-1 min-w-[180px]">
             <h1 className="text-lg font-heading font-bold">Análise de Risco</h1>
             <p className="text-xs text-muted-foreground">Baseado em apontamentos de Incoming</p>
           </div>
+          <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+            <Button
+              size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
+              className="h-8 text-xs"
+              onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
+            >100 dias · BC4B</Button>
+            <Button
+              size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
+              className="h-8 text-xs"
+              onClick={() => setModelFilter("todos")}
+            >Todos</Button>
+          </div>
+          <Button
+            size="sm" variant={excludeNoise ? "default" : "outline"}
+            className="h-8 text-xs"
+            onClick={() => setExcludeNoise((v) => !v)}
+            title="Desconsidera peças recorrentes/sem lançamento na análise"
+          >
+            {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
+          </Button>
+          <Button
+            size="sm" variant="outline" className="h-8 text-xs"
+            onClick={() => setShowExcluded(true)}
+          >
+            Ver excluídos ({excludedParts.length})
+          </Button>
           <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[150px] h-8"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="30">Últimos 30 dias</SelectItem>
               <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="100">Últimos 100 dias</SelectItem>
               <SelectItem value="180">Últimos 180 dias</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </header>
+
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         <Tabs defaultValue="painel" className="space-y-4">
@@ -531,8 +615,12 @@ export default function AnaliseRisco() {
                         }}
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
-                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" />
-                      <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} />
+                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)">
+                        <LabelList dataKey="value" position="top" fontSize={10} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      </Bar>
+                      <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2}>
+                        <LabelList dataKey="acc" position="top" fontSize={9} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
+                      </Line>
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -558,7 +646,9 @@ export default function AnaliseRisco() {
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
-                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)" />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)">
+                        <LabelList dataKey="ng" position="top" fontSize={10} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      </Line>
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -688,7 +778,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "alto").map((p) => (
+                {partsForAnalysis.filter((p) => p.classification === "alto").map((p) => (
                   <button
                     type="button"
                     key={p.pn + p.fornecedor}
@@ -717,7 +807,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-amber-600">Inspeção amostral — verificar lote reduzido</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "medio").map((p) => {
+                {partsForAnalysis.filter((p) => p.classification === "medio").map((p) => {
                   const sampling = p.score >= 45 ? "20%" : "10%";
                   return (
                     <button
@@ -746,7 +836,7 @@ export default function AnaliseRisco() {
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-emerald-600">Liberação direta — histórico limpo</h3>
               </div>
               <div className="divide-y">
-                {parts.filter((p) => p.classification === "baixo").map((p) => (
+                {partsForAnalysis.filter((p) => p.classification === "baixo").map((p) => (
                   <button
                     type="button"
                     key={p.pn + p.fornecedor}
@@ -769,6 +859,47 @@ export default function AnaliseRisco() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ============ EXCLUDED PARTS DIALOG ============ */}
+      <Dialog open={showExcluded} onOpenChange={setShowExcluded}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Peças desconsideradas da análise</DialogTitle>
+            <DialogDescription>
+              Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/40 text-xs sticky top-0">
+                <tr>
+                  <th className="text-left px-3 py-2">Part Number</th>
+                  <th className="text-left px-3 py-2">Fornecedor</th>
+                  <th className="text-center px-3 py-2">NG</th>
+                  <th className="text-left px-3 py-2">Motivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {excludedParts.map((e, idx) => (
+                  <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
+                    <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
+                    <td className="px-3 py-2 truncate max-w-[200px]" title={e.fornecedor}>{e.fornecedor}</td>
+                    <td className="text-center px-3 py-2 tabular-nums">{fmt(e.ng)}</td>
+                    <td className="px-3 py-2">
+                      {e.reason === "sem lançamento"
+                        ? <Badge className="bg-muted text-muted-foreground border-border">sem lançamento</Badge>
+                        : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">recorrente · {e.modoRecorrente}</Badge>}
+                    </td>
+                  </tr>
+                ))}
+                {!excludedParts.length && (
+                  <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Nada a desconsiderar.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ============ DRILL-DOWN DIALOG ============ */}
       <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
@@ -803,7 +934,9 @@ export default function AnaliseRisco() {
                         formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} NG`, "Rejeições"] : [v, ""])}
                       />
 
-                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 2 }}>
+                        <LabelList dataKey="ng" position="top" fontSize={9} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
+                      </Line>
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

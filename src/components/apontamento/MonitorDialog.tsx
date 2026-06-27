@@ -1476,7 +1476,21 @@ const BlockMock = ({ id, data }: { id: MonitorBlock; data: PreviewData }) => {
           ))}
         </div>
       );
-    case "ultimos_defeitos": {
+    case "retrabalhos": {
+      const items = hasReal
+        ? data.slidesMedia.filter((m: any) => m.tipo === "retrabalho").slice(0, 3).map((m: any, i: number) => ({ t: m.titulo || `Retrabalho ${i+1}` }))
+        : [1,2,3].map((i) => ({ t: `Retrabalho ${i}` }));
+      return (
+        <div className={cn(wrap, "grid grid-cols-3 gap-1.5 h-full")}>
+          {items.map((m, i) => (
+            <div key={i} className="rounded border bg-card p-2 flex flex-col items-center justify-center gap-1">
+              <div className="w-full h-8 bg-gradient-to-br from-amber-500/30 to-amber-500/10 rounded" />
+              <span className="text-[9px] truncate w-full text-center">{m.t}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
       const ngs = data.apontamentos.filter((a: any) => (a.ng_qty ?? 0) > 0).slice(0, 4);
       const cards = hasReal && ngs.length
         ? ngs.map((a: any, i: number) => ({ label: `NG #${a.sequence_number ?? a.id?.toString().slice(0, 4) ?? 1000 + i}` }))

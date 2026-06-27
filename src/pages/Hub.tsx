@@ -457,22 +457,11 @@ const Hub = () => {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
-              <ReportErrorButton moduleName="Hub" showNewUserRequest={canRequestNewUser} />
+              <ReportErrorButton moduleName="Hub" showNewUserRequest={canRequestNewUser} showAdminHelpDeskTickets={showEngineering} />
               {isMobisBrasil && (
                 <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3">
                   <QrCode className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Meu QR Code</span>
-                </Button>
-              )}
-              {showEngineering && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia?tab=erros")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 text-xs md:text-sm px-2 md:px-3 relative">
-                  <LifeBuoy className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Chamados HelpDesk</span>
-                  {helpDeskPending > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-background text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
-                      {helpDeskPending > 99 ? "99+" : helpDeskPending}
-                    </span>
-                  )}
                 </Button>
               )}
               {showEngineering && (

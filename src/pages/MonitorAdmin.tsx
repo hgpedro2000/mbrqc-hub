@@ -279,28 +279,28 @@ export default function MonitorAdmin() {
                           <Input value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} placeholder="Título" />
                           <Textarea rows={2} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} placeholder="Descrição" />
                           {TIPOS_COM_SLOT.includes(m.tipo) && (
-                            <div className="grid gap-2 sm:grid-cols-3">
-                              <div className="grid gap-1">
+                            <div className="grid gap-2 grid-cols-1">
+                              <div className="grid gap-1 min-w-0">
                                 <Label className="text-xs">Posição</Label>
                                 <select
                                   value={editSlot}
                                   onChange={(e) => setEditSlot(Number(e.target.value))}
-                                  className="h-10 sm:h-9 rounded-md border border-input bg-background px-2 text-base md:text-sm"
+                                  className="h-10 sm:h-9 w-full rounded-md border border-input bg-background px-2 text-base md:text-sm"
                                 >
                                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Posição {n}</option>)}
                                 </select>
-
                               </div>
-                              <div className="grid gap-1">
+                              <div className="grid gap-1 min-w-0">
                                 <Label className="text-xs">Início</Label>
-                                <Input type="datetime-local" value={editVigInicio} onChange={(e) => setEditVigInicio(e.target.value)} />
+                                <Input type="datetime-local" value={editVigInicio} onChange={(e) => setEditVigInicio(e.target.value)} className="w-full min-w-0" />
                               </div>
-                              <div className="grid gap-1">
+                              <div className="grid gap-1 min-w-0">
                                 <Label className="text-xs">Fim</Label>
-                                <Input type="datetime-local" value={editVigFim} onChange={(e) => setEditVigFim(e.target.value)} />
+                                <Input type="datetime-local" value={editVigFim} onChange={(e) => setEditVigFim(e.target.value)} className="w-full min-w-0" />
                               </div>
                             </div>
                           )}
+
                         </>
                       ) : (
                         <>

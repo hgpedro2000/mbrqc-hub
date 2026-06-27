@@ -344,11 +344,12 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
             <TabsContent value="geral" className="mt-0 space-y-5">
 
               <Section title="Tema">
-                <div className="flex gap-2 flex-wrap">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   <Button
                     type="button"
                     variant={prefs.theme === "default" ? "default" : "outline"}
                     size="sm"
+                    className="w-full sm:w-auto min-h-[44px] justify-center"
                     onClick={() => setPrefs((p) => ({ ...p, theme: "default" }))}
                   >
                     <Sun className="w-4 h-4 mr-1" /> Padrão
@@ -357,6 +358,7 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
                     type="button"
                     variant={prefs.theme === "dark" ? "default" : "outline"}
                     size="sm"
+                    className="w-full sm:w-auto min-h-[44px] justify-center"
                     onClick={() => setPrefs((p) => ({ ...p, theme: "dark" }))}
                   >
                     <Moon className="w-4 h-4 mr-1" /> Dark (Dashboard)
@@ -365,19 +367,21 @@ export const MonitorDialog = ({ open, onOpenChange, initial, initialTab, onConfi
               </Section>
 
               <Section title="Período dos dados">
-                <div className="flex gap-2 flex-wrap">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                   {PERIOD_OPTIONS.map((p) => (
                     <Button
                       key={p.id}
                       type="button"
                       variant={prefs.period === p.id ? "default" : "outline"}
                       size="sm"
+                      className="w-full sm:w-auto min-h-[44px] justify-center"
                       onClick={() => setPrefs((prev) => ({ ...prev, period: p.id }))}
                     >
                       {p.label}
                     </Button>
                   ))}
                 </div>
+
                 {prefs.period === "custom" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                     <div className="space-y-1">

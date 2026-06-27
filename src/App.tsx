@@ -207,6 +207,7 @@ const App = () => (
             
             {/* Consulta de Peças */}
             <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />
+            <Route path="/analise-risco" element={<ProtectedRoute><AnaliseRisco /></ProtectedRoute>} />
             <Route path="/spec-switch-panel" element={<ProtectedRoute><SpecSwitchPanelCheck /></ProtectedRoute>} />
             
             {/* Matriz de Versatilidade */}

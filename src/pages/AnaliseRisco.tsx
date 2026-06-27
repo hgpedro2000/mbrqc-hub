@@ -175,19 +175,20 @@ export default function AnaliseRisco() {
 
   // --- Per-part risk score ---
   type PartRisk = {
-    pn: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
+    pn: string; partName: string; fornecedor: string; ng: number; diasSem: number; modoRecorrente: string;
     score: number; classification: "alto" | "medio" | "baixo"; recomendacao: string;
     monthsWithModo: number; ppmFornecedor: number;
   };
 
   const parts: PartRisk[] = useMemo(() => {
-    type Acc = { pn: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
+    type Acc = { pn: string; partName: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
     const m = new Map<string, Acc>();
     for (const i of items) {
       if (!i.part_number) continue;
       const key = `${i.part_number}__${i.fornecedor || "—"}`;
-      if (!m.has(key)) m.set(key, { pn: i.part_number, fornecedor: i.fornecedor || "—", ng: 0, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
+      if (!m.has(key)) m.set(key, { pn: i.part_number, partName: i.part_name || "—", fornecedor: i.fornecedor || "—", ng: 0, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
       const e = m.get(key)!;
+      if (i.part_name && e.partName === "—") e.partName = i.part_name;
       const ng = i.quantidade_ng || 0;
       e.ng += ng;
       if (ng > 0) {
@@ -200,6 +201,7 @@ export default function AnaliseRisco() {
         }
       }
     }
+
     return [...m.values()].map((e) => {
       let score = 0;
       if (e.ng >= 30) score += 40;

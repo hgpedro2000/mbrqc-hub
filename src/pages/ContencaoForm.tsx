@@ -115,15 +115,15 @@ const ContencaoForm = () => {
   const handleSave = async () => {
     if (!form.titulo || !form.responsavel) { toast.error(t("contencao.fillRequired")); return; }
     if (!form.mark_check_local.trim() || !form.mark_check_como.trim() || !form.mark_check_com_que.trim()) {
-      toast.error("Preencha os detalhes do Mark Check (local, como, com o que).");
+      toast.error(t("contencao.fillMarkCheck"));
       return;
     }
     if (existingMarkFotos.length === 0 && newMarkFiles.length === 0) {
-      toast.error("Anexe ao menos uma foto do Mark Check.");
+      toast.error(t("contencao.requireMarkFoto"));
       return;
     }
     if (existingProbFotos.length === 0 && newProbFiles.length === 0) {
-      toast.error("Anexe ao menos uma foto do problema.");
+      toast.error(t("contencao.requireProbFoto"));
       return;
     }
     setSaving(true);
@@ -174,7 +174,7 @@ const ContencaoForm = () => {
 
       toast.success(isEdit ? t("contencao.updateSuccess") : t("contencao.saveSuccess"));
       navigate("/contencao");
-    } catch (err: any) { toast.error(err.message || "Erro ao salvar"); } finally { setSaving(false); }
+    } catch (err: any) { toast.error(err.message || t("contencao.saveError")); } finally { setSaving(false); }
   };
 
 
@@ -197,7 +197,7 @@ const ContencaoForm = () => {
           <h2 className="form-section-title">{t("contencao.generalInfo")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Local (Responsabilidade)</Label>
+              <Label>{t("contencao.localResponsabilidade")}</Label>
               <Select value={form.tipo} onValueChange={(v) => set("tipo", v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -205,13 +205,13 @@ const ContencaoForm = () => {
                 </SelectContent>
               </Select>
             </div>
-            {isEdit && (<div className="space-y-2"><Label>{t("common.status")}</Label><Select value={form.status} onValueChange={(v) => set("status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emitida">Emitida</SelectItem><SelectItem value="iniciada">Iniciada</SelectItem><SelectItem value="em_andamento">Em Andamento</SelectItem><SelectItem value="concluida">Concluída</SelectItem><SelectItem value="cancelada">Cancelada</SelectItem></SelectContent></Select></div>)}
+            {isEdit && (<div className="space-y-2"><Label>{t("common.status")}</Label><Select value={form.status} onValueChange={(v) => set("status", v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="emitida">{t("contencao.status.emitida")}</SelectItem><SelectItem value="iniciada">{t("contencao.status.iniciada")}</SelectItem><SelectItem value="em_andamento">{t("contencao.status.em_andamento")}</SelectItem><SelectItem value="concluida">{t("contencao.status.concluida")}</SelectItem><SelectItem value="cancelada">{t("contencao.status.cancelada")}</SelectItem></SelectContent></Select></div>)}
             <div className="space-y-2"><Label>{t("common.title")}</Label><Input value={form.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder={t("contencao.descPlaceholder")} /></div>
             <div className="space-y-2"><Label>{t("common.responsible")}</Label><Input value={form.responsavel} onChange={(e) => set("responsavel", e.target.value)} className={isEdit ? "" : "bg-muted"} readOnly={!isEdit} /></div>
             <div className="space-y-2"><Label>{t("common.date")}</Label><Input type="date" value={form.data} onChange={(e) => set("data", e.target.value)} /></div>
             <div className="space-y-2"><Label>{t("common.sector")}</Label><Select value={form.setor} onValueChange={(v) => set("setor", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{setores.map((s) => <SelectItem key={s.id} value={s.value}>{s.label}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>{t("common.line")}</Label><Select value={form.linha} onValueChange={(v) => set("linha", v)}><SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger><SelectContent>{linhas.map((l) => <SelectItem key={l.id} value={l.value}>{l.label}</SelectItem>)}</SelectContent></Select></div>
-            <div className="space-y-2 md:col-span-2"><Label>Local de Início da Contenção</Label><Input value={form.local} onChange={(e) => set("local", e.target.value)} placeholder='Ex: "Linha 3 — Posto 7", "Área de Incoming", "Sala do Áudio"' /></div>
+            <div className="space-y-2 md:col-span-2"><Label>{t("contencao.localInicio")}</Label><Input value={form.local} onChange={(e) => set("local", e.target.value)} placeholder='Ex: "Linha 3 — Posto 7", "Área de Incoming", "Sala do Áudio"' /></div>
             <SupplierPartSelector fornecedor={form.fornecedor} partNumber={form.part_number} partName={form.part_name} onFornecedorChange={(v) => set("fornecedor", v)} onPartNumberChange={(v) => set("part_number", v)} onPartDataChange={(d) => set("part_name", d.part_name)} />
           </div>
         </div>
@@ -226,23 +226,23 @@ const ContencaoForm = () => {
             <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
               <RadioGroupItem value="def" id="qt-def" className="mt-0.5" />
               <div>
-                <div className="text-sm font-medium">Tenho a quantidade em estoque</div>
-                <div className="text-xs text-muted-foreground">Estoque Mobis fixo; será descontado a cada turno.</div>
+                <div className="text-sm font-medium">{t("contencao.hasQty")}</div>
+                <div className="text-xs text-muted-foreground">{t("contencao.hasQtyDesc")}</div>
               </div>
             </label>
             <label className="flex items-start gap-2 rounded-md border p-3 cursor-pointer">
               <RadioGroupItem value="indef" id="qt-indef" className="mt-0.5" />
               <div>
-                <div className="text-sm font-medium">Não sei a quantidade</div>
-                <div className="text-xs text-muted-foreground">Somatória do que for inspecionado em cada turno.</div>
+                <div className="text-sm font-medium">{t("contencao.unknownQty")}</div>
+                <div className="text-xs text-muted-foreground">{t("contencao.unknownQtyDesc")}</div>
               </div>
             </label>
           </RadioGroup>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {!form.estoque_indefinido && (
               <>
-                <div className="space-y-2"><Label>Quantidade de peças</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
-                <div className="space-y-2"><Label>Estoque Mobis</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder="Quantidade total a inspecionar" /></div>
+                <div className="space-y-2"><Label>{t("contencao.qtdPecas")}</Label><Input type="number" min={0} value={form.quantidade_pecas} onChange={(e) => set("quantidade_pecas", Number(e.target.value))} /></div>
+                <div className="space-y-2"><Label>{t("contencao.estoqueMobis")}</Label><Input type="number" min={0} value={form.estoque_mobis} onChange={(e) => set("estoque_mobis", Number(e.target.value))} placeholder={t("contencao.estoqueMobisPlaceholder")} /></div>
               </>
             )}
           </div>
@@ -250,35 +250,35 @@ const ContencaoForm = () => {
         </div>
 
         <div className="form-section">
-          <h2 className="form-section-title">Mark Check</h2>
-          <p className="text-xs text-muted-foreground mb-3">Definido uma única vez para toda a contenção. Todos os turnos devem seguir.</p>
+          <h2 className="form-section-title">{t("contencao.markCheckSection")}</h2>
+          <p className="text-xs text-muted-foreground mb-3">{t("contencao.markCheckDesc")}</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div className="space-y-2"><Label>Local do Mark Check</Label><Input value={form.mark_check_local} onChange={(e) => set("mark_check_local", e.target.value)} placeholder="Ex: face superior, etiqueta..." /></div>
-            <div className="space-y-2"><Label>Como foi feito</Label><Input value={form.mark_check_como} onChange={(e) => set("mark_check_como", e.target.value)} placeholder="Ex: traço diagonal..." /></div>
-            <div className="space-y-2"><Label>Com o que foi feito</Label><Input value={form.mark_check_com_que} onChange={(e) => set("mark_check_com_que", e.target.value)} placeholder="Ex: caneta vermelha permanente" /></div>
+            <div className="space-y-2"><Label>{t("contencao.markCheckLocal")}</Label><Input value={form.mark_check_local} onChange={(e) => set("mark_check_local", e.target.value)} placeholder="Ex: face superior, etiqueta..." /></div>
+            <div className="space-y-2"><Label>{t("contencao.markCheckComo")}</Label><Input value={form.mark_check_como} onChange={(e) => set("mark_check_como", e.target.value)} placeholder="Ex: traço diagonal..." /></div>
+            <div className="space-y-2"><Label>{t("contencao.markCheckComQue")}</Label><Input value={form.mark_check_com_que} onChange={(e) => set("mark_check_com_que", e.target.value)} placeholder="Ex: caneta vermelha permanente" /></div>
           </div>
           <div className="space-y-2">
-            <Label>Foto do Mark Check <span className="text-red-500">*</span></Label>
+            <Label>{t("contencao.markCheckFoto")} <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2">
               {existingMarkFotos.map((p) => <FotoThumb key={p} path={p} onRemove={() => setExistingMarkFotos((x) => x.filter((y) => y !== p))} />)}
               {newMarkFiles.map((f, i) => <LocalThumb key={i} file={f} onRemove={() => setNewMarkFiles((x) => x.filter((_, j) => j !== i))} />)}
             </div>
             <input ref={markFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) setNewMarkFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-            <Button variant="outline" size="sm" type="button" onClick={() => markFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> Adicionar foto</Button>
+            <Button variant="outline" size="sm" type="button" onClick={() => markFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> {t("contencao.addPhoto")}</Button>
           </div>
         </div>
 
         <div className="form-section">
-          <h2 className="form-section-title">Foto do Problema</h2>
-          <p className="text-xs text-muted-foreground mb-3">Para que cada turno fique ciente do defeito a contar.</p>
+          <h2 className="form-section-title">{t("contencao.fotaProblemaSection")}</h2>
+          <p className="text-xs text-muted-foreground mb-3">{t("contencao.fotaProblemaDesc")}</p>
           <div className="space-y-2">
-            <Label>Foto do problema <span className="text-red-500">*</span></Label>
+            <Label>{t("contencao.fotaProblemaLabel")} <span className="text-red-500">*</span></Label>
             <div className="flex flex-wrap gap-2">
               {existingProbFotos.map((p) => <FotoThumb key={p} path={p} onRemove={() => setExistingProbFotos((x) => x.filter((y) => y !== p))} />)}
               {newProbFiles.map((f, i) => <LocalThumb key={i} file={f} onRemove={() => setNewProbFiles((x) => x.filter((_, j) => j !== i))} />)}
             </div>
             <input ref={probFileRef} type="file" accept="image/*" multiple hidden onChange={(e) => { if (e.target.files) setNewProbFiles((p) => [...p, ...Array.from(e.target.files!)]); e.target.value = ""; }} />
-            <Button variant="outline" size="sm" type="button" onClick={() => probFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> Adicionar foto</Button>
+            <Button variant="outline" size="sm" type="button" onClick={() => probFileRef.current?.click()} className="gap-2"><Upload className="w-4 h-4" /> {t("contencao.addPhoto")}</Button>
           </div>
         </div>
 
@@ -292,7 +292,7 @@ const ContencaoForm = () => {
         </div>
 
         <div className="flex gap-3">
-          <Button onClick={handleSave} disabled={saving} className="gap-2"><Save className="w-4 h-4" /> {saving ? t("common.saving") : isEdit ? t("common.update") : "Solicitar Contenção"}</Button>
+          <Button onClick={handleSave} disabled={saving} className="gap-2"><Save className="w-4 h-4" /> {saving ? t("common.saving") : isEdit ? t("common.update") : t("contencao.requestContencao")}</Button>
           <Button variant="outline" onClick={() => navigate("/contencao")}>{t("common.cancel")}</Button>
         </div>
       </main>

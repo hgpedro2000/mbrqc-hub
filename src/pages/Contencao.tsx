@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import { useTranslation } from "react-i18next";
+import LanguageToggle from "@/components/LanguageToggle";
 import ResumoMensalCard from "@/components/contencao/ResumoMensalCard";
 import ContencaoDetalheDrawer from "@/components/contencao/ContencaoDetalheDrawer";
 import ContencaoFotosStrip from "@/components/contencao/ContencaoFotosStrip";
@@ -126,6 +127,7 @@ const Contencao = () => {
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             <div className="flex items-center gap-1">
+              <LanguageToggle />
               <ReportErrorButton moduleName="Contenção" />
               {isAdmin && <EngineeringMode module="Contenção" />}
             </div>
@@ -144,12 +146,12 @@ const Contencao = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
             <div className="inline-flex rounded-md border border-border overflow-hidden">
-              <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Compacto"><LayoutList className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">Compacto</span></button>
-              <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title="Expandido"><LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">Expandido</span></button>
+              <button type="button" onClick={() => setViewMode("compact")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 ${viewMode === "compact" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title={t("contencao.compact")}><LayoutList className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">{t("contencao.compact")}</span></button>
+              <button type="button" onClick={() => setViewMode("expanded")} className={`px-3 py-1.5 text-xs inline-flex items-center gap-1 border-l border-border ${viewMode === "expanded" ? "bg-accent text-accent-foreground" : "bg-background text-muted-foreground hover:bg-muted/40"}`} title={t("contencao.expanded")}><LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden xs:inline sm:inline">{t("contencao.expanded")}</span></button>
             </div>
             {viewMode === "compact" && isAdmin && (
               <div className="inline-flex items-center gap-2 rounded-md border border-border px-2 py-1">
-                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Fotos</span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{t("contencao.photos")}</span>
                 <input
                   type="range" min={0} max={2} step={1}
                   value={photoSize === "sm" ? 0 : photoSize === "md" ? 1 : 2}
@@ -174,11 +176,11 @@ const Contencao = () => {
         <Tabs value={tab} onValueChange={setTab}>
           <div className="-mx-3 sm:mx-0 overflow-x-auto scrollbar-thin">
             <TabsList className="inline-flex w-max min-w-full sm:w-auto px-3 sm:px-0">
-              <TabsTrigger value="todos" className="whitespace-nowrap">Todos</TabsTrigger>
-              <TabsTrigger value="fornecedor_lp" className="whitespace-nowrap">Fornecedor LP</TabsTrigger>
-              <TabsTrigger value="fornecedor_ckd" className="whitespace-nowrap">Fornecedor CKD</TabsTrigger>
-              <TabsTrigger value="processo_mbr" className="whitespace-nowrap">Processo MBR</TabsTrigger>
-              <TabsTrigger value="processo_hmb" className="whitespace-nowrap">Processo HMB</TabsTrigger>
+              <TabsTrigger value="todos" className="whitespace-nowrap">{t("contencao.all")}</TabsTrigger>
+              <TabsTrigger value="fornecedor_lp" className="whitespace-nowrap">{t("contencao.tabFornecedorLP")}</TabsTrigger>
+              <TabsTrigger value="fornecedor_ckd" className="whitespace-nowrap">{t("contencao.tabFornecedorCKD")}</TabsTrigger>
+              <TabsTrigger value="processo_mbr" className="whitespace-nowrap">{t("contencao.tabProcessoMBR")}</TabsTrigger>
+              <TabsTrigger value="processo_hmb" className="whitespace-nowrap">{t("contencao.tabProcessoHMB")}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -220,17 +222,17 @@ const Contencao = () => {
                             {(item as any).local && <><span>•</span><span>📍 {(item as any).local}</span></>}
                           </div>
                           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground mt-1">
-                            <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" /> {concluida ? `Concluída em ${dias} dia${dias === 1 ? "" : "s"}` : `${dias} dia${dias === 1 ? "" : "s"} em andamento`}</span>
-                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {formatHoras((item as any).total_horas)} registradas</span>
-                            {ultimo && <span>Último: {ultimo.turno} — {formatRelativeBR(ultimo.created_at)}</span>}
+                            <span className="inline-flex items-center gap-1"><Calendar className="w-3 h-3" /> {concluida ? t("contencao.concluida_in", { days: dias, plural: dias === 1 ? "" : "s" }) : t("contencao.in_progress", { days: dias, plural: dias === 1 ? "" : "s" })}</span>
+                            <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" /> {formatHoras((item as any).total_horas)} {t("contencao.recorded")}</span>
+                            {ultimo && <span>{t("contencao.last")}: {ultimo.turno} — {formatRelativeBR(ultimo.created_at)}</span>}
                           </div>
                           {item.motivo && <p className="text-xs md:text-sm text-muted-foreground mt-1 line-clamp-2">{t("contencao.reason")}: {item.motivo}</p>}
                           {viewMode === "expanded" && (
                             <>
                               <div className="mt-2 md:mt-3 grid grid-cols-3 gap-2 md:gap-4 text-xs md:text-sm">
-                                <div><span className="text-muted-foreground">{estoque > 0 ? "Estoque" : "Peças"}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
-                                <div><span className="text-muted-foreground">Inspecionadas:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
-                                <div><span className="text-muted-foreground">NG:</span> <span className="font-semibold text-red-600">{ng}</span></div>
+                                <div><span className="text-muted-foreground">{estoque > 0 ? t("contencao.stock") : t("contencao.qtyContida")}:</span> <span className="font-semibold">{estoque > 0 ? estoque : contidas || "—"}</span></div>
+                                <div><span className="text-muted-foreground">{t("contencao.inspected")}:</span> <span className="font-semibold text-sky-600 dark:text-sky-400">{inspecionado}</span></div>
+                                <div><span className="text-muted-foreground">{t("contencao.ngCount")}:</span> <span className="font-semibold text-red-600">{ng}</span></div>
                               </div>
                               {(inspecionado > 0 || estoque > 0) && (
                                 <div className="mt-2 h-1.5 w-full rounded-full bg-muted overflow-hidden flex">
@@ -253,14 +255,14 @@ const Contencao = () => {
                         })()}
                         <div className="flex flex-col-reverse md:flex-col items-stretch md:items-end gap-2 w-full md:w-[200px] lg:w-[220px] md:shrink-0">
                           <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{t(`contencao.status.${st}`, meta.label)}</span>
                             <div className="flex gap-1">
                               {canClaim && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                  title="Gerar Relatório de Contenção"
+                                  title={t("contencao.claim.dialogTitle")}
                                   onClick={() => setClaimItem(item)}
                                 >
                                   <FileText className="w-3.5 h-3.5" />

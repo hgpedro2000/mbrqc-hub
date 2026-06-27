@@ -248,7 +248,7 @@ const ConsultaPecas = () => {
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar por PN, nome, fornecedor..."
+                placeholder={t("consultaPecas.searchPlaceholder")}
                 className="pl-10 h-12 text-base w-full"
               />
             </div>
@@ -258,40 +258,40 @@ const ConsultaPecas = () => {
                 variant="outline"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-primary/30 bg-primary/5 hover:bg-primary/10 w-full sm:w-32 justify-center"
                 onClick={() => { setScanMode("search"); qrScannerRef.current?.openScanner(); }}
-                title="Buscar por QR / Código de Barras"
+                title={t("consultaPecas.buttons.qrTitle")}
               >
                 <QrCode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">QR</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.qr")}</span>
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm border-sky-400/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-700 w-full sm:w-32 justify-center"
                 onClick={() => setHkmcOpen(true)}
-                title="Barcode Scanner H/KMC"
+                title={t("consultaPecas.buttons.hkmcTitle")}
               >
                 <Barcode className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">H/KMC</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.hkmc")}</span>
               </Button>
               <Button
                 type="button"
                 variant="default"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={openSpecScanner}
-                title="Checar SPEC/ALC"
+                title={t("consultaPecas.buttons.specAlcTitle")}
               >
                 <ScanSearch className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">SPEC/ALC</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.specAlc")}</span>
               </Button>
               <Button
                 type="button"
                 variant="default"
                 className="h-11 sm:h-12 px-2 sm:px-3 gap-1.5 text-xs sm:text-sm bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md w-full sm:w-32 justify-center"
                 onClick={() => navigate("/spec-switch-panel")}
-                title="Validar Painel × Switch"
+                title={t("consultaPecas.buttons.panelSwitchTitle")}
               >
                 <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="font-semibold truncate">Painel×Switch</span>
+                <span className="font-semibold truncate">{t("consultaPecas.buttons.panelSwitch")}</span>
               </Button>
             </div>
           </div>

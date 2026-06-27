@@ -396,10 +396,10 @@ const Apontamentos = () => {
             <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />Visualizar</DropdownMenuItem>
-            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />Exportar</DropdownMenuItem>}
-            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />Editar</DropdownMenuItem>}
-            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />Excluir</DropdownMenuItem>}
+            <DropdownMenuItem onClick={() => setViewTarget(id)}><Eye className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.view")}</DropdownMenuItem>
+            {isFinalized && <DropdownMenuItem onClick={() => setViewTarget(id)}><FileDown className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.export")}</DropdownMenuItem>}
+            {canEdit && <DropdownMenuItem onClick={() => navigate(`/apontamentos/editar/${id}`)}><Pencil className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.edit")}</DropdownMenuItem>}
+            {isAdmin && <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteTarget(id)}><Trash2 className="w-3.5 h-3.5 mr-2" />{t("apontamentos.list.delete")}</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

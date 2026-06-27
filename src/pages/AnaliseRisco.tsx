@@ -798,7 +798,11 @@ export default function AnaliseRisco() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="data" fontSize={10} />
                       <YAxis fontSize={10} />
-                      <Tooltip />
+                      <Tooltip
+                        labelFormatter={(l) => `Dia ${l}`}
+                        formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} NG`, "Rejeições"] : [v, ""])}
+                      />
+
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>

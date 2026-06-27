@@ -1491,6 +1491,7 @@ const BlockMock = ({ id, data }: { id: MonitorBlock; data: PreviewData }) => {
         </div>
       );
     }
+    case "ultimos_defeitos": {
       const ngs = data.apontamentos.filter((a: any) => (a.ng_qty ?? 0) > 0).slice(0, 4);
       const cards = hasReal && ngs.length
         ? ngs.map((a: any, i: number) => ({ label: `NG #${a.sequence_number ?? a.id?.toString().slice(0, 4) ?? 1000 + i}` }))

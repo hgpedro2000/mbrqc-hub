@@ -598,8 +598,9 @@ export default function AnaliseRisco() {
                   <thead className="bg-muted/40 text-xs">
                     <tr>
                       <th className="text-left px-3 py-2">Part Number</th>
+                      <th className="text-left px-3 py-2">Part Name</th>
                       <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-left px-3 py-2">Score</th>
+                      <th className="text-center px-3 py-2">Score</th>
                       <th className="text-center px-3 py-2">NG</th>
                       <th className="text-center px-3 py-2">Dias sem rejeição</th>
                       <th className="text-left px-3 py-2">Modo recorrente</th>
@@ -613,18 +614,20 @@ export default function AnaliseRisco() {
                         className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
                         onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
                       >
-                        <td className="px-3 py-2 font-mono text-xs">{p.pn}</td>
+                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
+                        <td className="px-3 py-2 max-w-[220px] truncate" title={p.partName}>{p.partName}</td>
                         <td className="px-3 py-2">{p.fornecedor}</td>
-                        <td className="px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{p.ng}</td>
-                        <td className="text-center px-3 py-2">{p.diasSem}</td>
+                        <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                        <td className={`text-center px-3 py-2 font-semibold ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                        <td className="text-center px-3 py-2">{fmt(p.diasSem)}</td>
                         <td className="px-3 py-2 text-muted-foreground">{p.modoRecorrente}</td>
                         <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
                       </tr>
                     ))}
                     {!partsFiltered.length && !isLoading && (
-                      <tr><td colSpan={7} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
+                      <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
                     )}
+
                   </tbody>
                 </table>
               </div>

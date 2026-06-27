@@ -268,7 +268,7 @@ export default function MonitorAdmin() {
                         <>
                           <Input value={editTitulo} onChange={(e) => setEditTitulo(e.target.value)} placeholder="Título" />
                           <Textarea rows={2} value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} placeholder="Descrição" />
-                          {m.tipo === "comunicado" && (
+                          {TIPOS_COM_SLOT.includes(m.tipo) && (
                             <div className="grid gap-2 sm:grid-cols-3">
                               <div className="grid gap-1">
                                 <Label className="text-xs">Posição</Label>

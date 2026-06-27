@@ -1272,7 +1272,8 @@ const blockHasRealData = (id: MonitorBlock, d: PreviewData): boolean => {
     case "alerts": return d.alertas.length > 0;
     case "contencao": return d.contencoes.length > 0;
     case "consumiveis": return d.consumiveis.filter((c: any) => (c.stock_qty ?? 0) <= (c.min_qty ?? 0)).length > 0;
-    case "comunicados": return d.slidesMedia.length > 0;
+    case "comunicados": return d.slidesMedia.some((m: any) => m.tipo === "comunicado");
+    case "retrabalhos": return d.slidesMedia.some((m: any) => m.tipo === "retrabalho");
     default: return false;
   }
 };

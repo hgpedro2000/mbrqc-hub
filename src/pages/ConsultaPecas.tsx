@@ -543,7 +543,7 @@ const ConsultaPecas = () => {
                     setSpecDialogOpen(false);
                   }}
                 >
-                  <Search className="w-4 h-4 mr-2" /> Ver na lista
+                  <Search className="w-4 h-4 mr-2" /> {t("consultaPecas.spec.viewInList")}
                 </Button>
                 <Button
                   size="sm"
@@ -553,7 +553,7 @@ const ConsultaPecas = () => {
                     setTimeout(() => openSpecScanner(), 150);
                   }}
                 >
-                  <ScanSearch className="w-4 h-4 mr-2" /> Ler outra
+                  <ScanSearch className="w-4 h-4 mr-2" /> {t("consultaPecas.spec.readAnother")}
                 </Button>
               </div>
 

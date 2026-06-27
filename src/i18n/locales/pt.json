@@ -517,7 +517,15 @@
       "badgeAreaIncoming": "📦 Incoming",
       "photoAlt": "Foto",
       "photoNgAlt": "Foto NG",
-      "photoZoomedAlt": "Foto ampliada"
+      "photoZoomedAlt": "Foto ampliada",
+      "filterStatus": "Status",
+      "filterResultado": "Resultado",
+      "filterProjeto": "Projeto",
+      "filterFornecedor": "Fornecedor",
+      "filterResponsavel": "Apontado por",
+      "filterEmpresa": "Empresa",
+      "resultadoSemDefeito": "Sem defeito encontrado",
+      "resultadoNg": "NG (com defeito)"
     }
   },
   "alertaQualidade": {

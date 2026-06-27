@@ -407,10 +407,10 @@ const ConsultaPecas = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-amber-500" />
-              Selecionar Variante
+              {t("consultaPecas.suffix.title")}
             </DialogTitle>
             <DialogDescription className="text-sm">
-              O Part Number lido possui variantes de cor/sufixo. Selecione o correto:
+              {t("consultaPecas.suffix.description")}
             </DialogDescription>
           </DialogHeader>
           <RadioGroup value={selectedSuffixPn} onValueChange={setSelectedSuffixPn} className="space-y-2">

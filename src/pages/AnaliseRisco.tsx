@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,16 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
+  Search, Download, FileText, ChevronLeft, ChevronRight,
+} from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   LineChart, ResponsiveContainer, ReferenceLine,
 } from "recharts";
+import jsPDF from "jspdf";
 
 type Apto = {
   id: string;
@@ -264,6 +269,98 @@ export default function AnaliseRisco() {
     const topModos = [...modos.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
     return { rows, totalNg, totalOk, totalInsp, ppm, trend, topModos };
   }, [drill, items]);
+
+  // Drill-down: search + pagination + a11y
+  const PAGE_SIZE = 15;
+  const [drillSearch, setDrillSearch] = useState("");
+  const [drillPage, setDrillPage] = useState(1);
+  const drillSearchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setDrillSearch("");
+    setDrillPage(1);
+    if (drill) {
+      const t = setTimeout(() => drillSearchRef.current?.focus(), 50);
+      return () => clearTimeout(t);
+    }
+  }, [drill]);
+
+  const drillFilteredRows = useMemo(() => {
+    if (!drillData) return [];
+    const q = drillSearch.trim().toLowerCase();
+    if (!q) return drillData.rows;
+    return drillData.rows.filter((r) =>
+      r.data.toLowerCase().includes(q) ||
+      (r.modo_falha ? stripCode(r.modo_falha).toLowerCase().includes(q) : false),
+    );
+  }, [drillData, drillSearch]);
+
+  const drillTotalPages = Math.max(1, Math.ceil(drillFilteredRows.length / PAGE_SIZE));
+  const drillPageSafe = Math.min(drillPage, drillTotalPages);
+  const drillPagedRows = useMemo(
+    () => drillFilteredRows.slice((drillPageSafe - 1) * PAGE_SIZE, drillPageSafe * PAGE_SIZE),
+    [drillFilteredRows, drillPageSafe],
+  );
+
+  useEffect(() => { setDrillPage(1); }, [drillSearch]);
+
+  const exportDrillCSV = () => {
+    if (!drill || !drillData) return;
+    const header = ["Data", "OK", "NG", "Modo de falha"];
+    const lines = [
+      `# Peça: ${drill.pn} | Fornecedor: ${drill.fornecedor} | Período: ${periodo} dias`,
+      header.join(","),
+      ...drillData.rows.map((r) => [
+        r.data,
+        r.quantidade_ok || 0,
+        r.quantidade_ng || 0,
+        `"${(r.modo_falha ? stripCode(r.modo_falha) : "").replace(/"/g, '""')}"`,
+      ].join(",")),
+    ];
+    const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `historico_${drill.pn}_${periodo}d.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportDrillPDF = () => {
+    if (!drill || !drillData) return;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 40;
+    let y = margin;
+    doc.setFontSize(14);
+    doc.text(`Histórico - ${drill.pn}`, margin, y); y += 18;
+    doc.setFontSize(10);
+    doc.text(`Fornecedor: ${drill.fornecedor}`, margin, y); y += 14;
+    doc.text(`Período: últimos ${periodo} dias`, margin, y); y += 14;
+    doc.text(`NG total: ${drillData.totalNg}  |  OK total: ${drillData.totalOk}  |  PPM: ${drillData.ppm.toLocaleString()}`, margin, y); y += 20;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Data", margin, y);
+    doc.text("OK", margin + 110, y);
+    doc.text("NG", margin + 150, y);
+    doc.text("Modo de falha", margin + 200, y);
+    doc.setFont("helvetica", "normal");
+    y += 12;
+    doc.line(margin, y, 555, y); y += 10;
+
+    const pageHeight = doc.internal.pageSize.getHeight();
+    for (const r of drillData.rows) {
+      if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+      doc.text(String(r.data), margin, y);
+      doc.text(String(r.quantidade_ok || 0), margin + 110, y);
+      doc.text(String(r.quantidade_ng || 0), margin + 150, y);
+      const modo = r.modo_falha ? stripCode(r.modo_falha) : "—";
+      doc.text(doc.splitTextToSize(modo, 320), margin + 200, y);
+      y += 14;
+    }
+    doc.save(`historico_${drill.pn}_${periodo}d.pdf`);
+  };
+
 
   // ---------- UI helpers ----------
   const KPICard = ({ label, value, sub }: { label: string; value: React.ReactNode; sub?: string }) => (
@@ -621,21 +718,48 @@ export default function AnaliseRisco() {
               )}
 
               <Card className="p-0 overflow-hidden">
-                <div className="px-3 py-2 border-b text-xs font-semibold text-muted-foreground">
-                  Apontamentos ({drillData.rows.length})
+                <div className="px-3 py-2 border-b flex flex-wrap items-center gap-2">
+                  <div className="text-xs font-semibold text-muted-foreground mr-auto">
+                    Apontamentos ({drillFilteredRows.length}{drillSearch && ` de ${drillData.rows.length}`})
+                  </div>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <Input
+                      ref={drillSearchRef}
+                      value={drillSearch}
+                      onChange={(e) => setDrillSearch(e.target.value)}
+                      placeholder="Buscar data ou modo..."
+                      aria-label="Buscar apontamentos por data ou modo de falha"
+                      className="h-8 pl-7 w-[200px] text-xs"
+                    />
+                  </div>
+                  <Button
+                    size="sm" variant="outline" onClick={exportDrillCSV}
+                    aria-label="Exportar histórico em CSV"
+                    className="h-8"
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1" /> CSV
+                  </Button>
+                  <Button
+                    size="sm" variant="outline" onClick={exportDrillPDF}
+                    aria-label="Exportar histórico em PDF"
+                    className="h-8"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" /> PDF
+                  </Button>
                 </div>
                 <div className="max-h-[280px] overflow-y-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/40 text-xs sticky top-0">
                       <tr>
-                        <th className="text-left px-3 py-2">Data</th>
-                        <th className="text-center px-3 py-2">OK</th>
-                        <th className="text-center px-3 py-2">NG</th>
-                        <th className="text-left px-3 py-2">Modo de falha</th>
+                        <th scope="col" className="text-left px-3 py-2">Data</th>
+                        <th scope="col" className="text-center px-3 py-2">OK</th>
+                        <th scope="col" className="text-center px-3 py-2">NG</th>
+                        <th scope="col" className="text-left px-3 py-2">Modo de falha</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {drillData.rows.map((r) => (
+                      {drillPagedRows.map((r) => (
                         <tr key={r.id} className="border-t">
                           <td className="px-3 py-2">{r.data}</td>
                           <td className="text-center px-3 py-2 text-emerald-600">{r.quantidade_ok || 0}</td>
@@ -643,12 +767,39 @@ export default function AnaliseRisco() {
                           <td className="px-3 py-2 text-muted-foreground">{r.modo_falha ? stripCode(r.modo_falha) : "—"}</td>
                         </tr>
                       ))}
-                      {!drillData.rows.length && (
-                        <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">Sem apontamentos.</td></tr>
+                      {!drillPagedRows.length && (
+                        <tr><td colSpan={4} className="text-center py-6 text-muted-foreground">
+                          {drillSearch ? "Nenhum resultado para a busca." : "Sem apontamentos."}
+                        </td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
+                {drillTotalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-t bg-muted/20">
+                    <span className="text-xs text-muted-foreground" aria-live="polite">
+                      Página {drillPageSafe} de {drillTotalPages}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon" variant="outline" className="h-7 w-7"
+                        onClick={() => setDrillPage((p) => Math.max(1, p - 1))}
+                        disabled={drillPageSafe <= 1}
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon" variant="outline" className="h-7 w-7"
+                        onClick={() => setDrillPage((p) => Math.min(drillTotalPages, p + 1))}
+                        disabled={drillPageSafe >= drillTotalPages}
+                        aria-label="Próxima página"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Card>
             </div>
           )}

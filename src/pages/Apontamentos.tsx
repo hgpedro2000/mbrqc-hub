@@ -533,7 +533,7 @@ const Apontamentos = () => {
                       </div>
                     ) : !hasNg ? (
                       <p className="text-xs text-blue-600 bg-blue-50 rounded px-2 py-1 line-clamp-1 border-l-2 border-blue-400 font-medium">
-                        Sem defeito encontrado durante essa inspeção
+                        {t("apontamentos.list.noDefectFound")}
                       </p>
                     ) : null}
 

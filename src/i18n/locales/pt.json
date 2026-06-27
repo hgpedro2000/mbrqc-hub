@@ -160,7 +160,6 @@
     "requestAdmin": "Não tenho e-mail cadastrado",
     "requestAdminLine1": "Não tenho e-mail cadastrado",
     "requestAdminLine2": "Solicitar ao administrador"
-
   },
   "tryout": {
     "headerTitle": "Try-Out",
@@ -501,7 +500,24 @@
         "oemDesc": "Registros de reclamações e defeitos detectados pela montadora (OEM).",
         "contencaoLabel": "Contenção",
         "contencaoDesc": "Registro e acompanhamento de ações de contenção de qualidade."
-      }
+      },
+      "toastDeleted": "Registro excluído com sucesso",
+      "toastBulkDeleted": "{{count}} registros excluídos",
+      "toastSubComingSoon": "{{name}}: em breve",
+      "cancel": "Cancelar",
+      "deleteAction": "Excluir",
+      "processSelectionTitle": "Novo Apontamento — Processos",
+      "processSelectionPrompt": "Selecione a área do processo:",
+      "comingSoonShort": "em breve",
+      "monitorOpenTitle": "🖥️ Monitor já está aberto",
+      "monitorOpenPrompt": "O painel do monitor já está em execução. O que deseja fazer?",
+      "focusMonitor": "Focar no Monitor",
+      "openAnotherMonitor": "Abrir outro Monitor",
+      "badgeSalaAudio": "🔊 Sala do Áudio",
+      "badgeAreaIncoming": "📦 Incoming",
+      "photoAlt": "Foto",
+      "photoNgAlt": "Foto NG",
+      "photoZoomedAlt": "Foto ampliada"
     }
   },
   "alertaQualidade": {

@@ -160,7 +160,6 @@
     "requestAdmin": "I don't have a registered email",
     "requestAdminLine1": "I don't have a registered email",
     "requestAdminLine2": "Request from administrator"
-
   },
   "tryout": {
     "headerTitle": "Try-Out",
@@ -501,7 +500,24 @@
         "oemDesc": "Records of complaints and defects detected by the OEM.",
         "contencaoLabel": "Containment",
         "contencaoDesc": "Logging and follow-up of quality containment actions."
-      }
+      },
+      "toastDeleted": "Record deleted successfully",
+      "toastBulkDeleted": "{{count}} records deleted",
+      "toastSubComingSoon": "{{name}}: coming soon",
+      "cancel": "Cancel",
+      "deleteAction": "Delete",
+      "processSelectionTitle": "New Record — Processes",
+      "processSelectionPrompt": "Select the process area:",
+      "comingSoonShort": "coming soon",
+      "monitorOpenTitle": "🖥️ Monitor already open",
+      "monitorOpenPrompt": "The monitor panel is already running. What do you want to do?",
+      "focusMonitor": "Focus Monitor",
+      "openAnotherMonitor": "Open another Monitor",
+      "badgeSalaAudio": "🔊 Audio Room",
+      "badgeAreaIncoming": "📦 Incoming",
+      "photoAlt": "Photo",
+      "photoNgAlt": "NG Photo",
+      "photoZoomedAlt": "Zoomed photo"
     }
   },
   "alertaQualidade": {

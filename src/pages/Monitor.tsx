@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid, Cell, LabelList } from "recharts";
 import { cn } from "@/lib/utils";
+import { useKioskMode } from "@/hooks/useKioskMode";
 
 // Global in-memory photo cache: prefetched <img> objects keep decoded bytes warm.
 const photoCache = new Map<string, HTMLImageElement>();
@@ -601,21 +602,20 @@ const Monitor = () => {
   const range = useMemo(() => periodRange(prefs), [prefs.period, prefs.customFrom, prefs.customTo]);
   const rangeKey = `${range.start.toISOString()}|${range.end?.toISOString() ?? ""}`;
 
-  // Auto-enter fullscreen on mount; if the browser blocks it (no gesture), show a one-tap prompt.
-  // Skipped in preview-embed mode.
+  // Kiosk Lockdown — blindado. Activated on /monitor (skipped in preview iframe).
+  const { isKioskMode, enterKiosk, exitKiosk, enterFullscreen } = useKioskMode(false);
+
+  // Auto-enter fullscreen + kiosk lockdown on mount; if the browser blocks
+  // fullscreen (no gesture), show a one-tap prompt while kiosk listeners stay armed.
   useEffect(() => {
     if (isPreviewMode) return;
     if (autoFsTried.current) return;
     autoFsTried.current = true;
-    const tryFs = async () => {
-      try {
-        if (!document.fullscreenElement) await document.documentElement.requestFullscreen?.();
-      } catch {
-        setNeedsFsGesture(true);
-      }
-    };
-    tryFs();
-  }, [isPreviewMode]);
+    (async () => {
+      await enterKiosk();
+      if (!document.fullscreenElement) setNeedsFsGesture(true);
+    })();
+  }, [isPreviewMode, enterKiosk]);
 
   useEffect(() => {
     if (isFs) setNeedsFsGesture(false);
@@ -624,10 +624,9 @@ const Monitor = () => {
   const exitMonitor = async () => {
     const ok = window.confirm("Deseja realmente sair do Monitor? A janela será fechada.");
     if (!ok) return;
-    try { if (document.fullscreenElement) await document.exitFullscreen(); } catch { /* noop */ }
-    // Try to close the window/tab (works when opened via window.open)
+    // Single exit point — fully tear down kiosk lockdown before closing.
+    await exitKiosk();
     try { window.close(); } catch { /* noop */ }
-    // Fallback: if the window didn't close (e.g. not opened by script), go back or to apontamentos
     setTimeout(() => {
       if (!window.closed) {
         if (window.history.length > 1) window.history.back();
@@ -635,6 +634,7 @@ const Monitor = () => {
       }
     }, 100);
   };
+
 
   useEffect(() => {
     const root = document.documentElement;
@@ -1591,7 +1591,7 @@ const Monitor = () => {
             <Maximize2 className="w-12 h-12 mx-auto text-primary" />
             <h2 className="text-2xl font-bold">Ativar modo Kiosk</h2>
             <p className="text-muted-foreground">O navegador exige um clique para entrar em tela cheia.</p>
-            <Button size="lg" className="w-full" onClick={() => { toggleFullscreen(); setNeedsFsGesture(false); }}>
+            <Button size="lg" className="w-full" onClick={async () => { await enterFullscreen(); if (!isKioskMode) await enterKiosk(); setNeedsFsGesture(false); }}>
               Entrar em tela cheia
             </Button>
           </div>

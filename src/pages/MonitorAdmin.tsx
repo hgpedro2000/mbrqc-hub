@@ -191,16 +191,25 @@ export default function MonitorAdmin() {
         <h1 className="text-xl sm:text-2xl font-bold w-full sm:w-auto order-3 sm:order-2 text-center sm:text-left">Mídia dos Slides do Monitor</h1>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {TIPOS.map((t) => {
-          const Icon = t.icon;
-          return (
-            <Button key={t.id} variant={tab === t.id ? "default" : "outline"} onClick={() => setTab(t.id)} className="gap-2">
-              <Icon className="w-4 h-4" /> {t.label}
-            </Button>
-          );
-        })}
+      {/* Mobile: tabs roláveis horizontalmente sem quebrar; Desktop: wrap normal */}
+      <div className="-mx-4 sm:mx-0 overflow-x-auto sm:overflow-visible">
+        <div className="flex gap-2 px-4 sm:px-0 sm:flex-wrap w-max sm:w-auto">
+          {TIPOS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <Button
+                key={t.id}
+                variant={tab === t.id ? "default" : "outline"}
+                onClick={() => setTab(t.id)}
+                className="gap-2 shrink-0 min-h-[44px]"
+              >
+                <Icon className="w-4 h-4" /> {t.label}
+              </Button>
+            );
+          })}
+        </div>
       </div>
+
 
       <Card>
         <CardHeader><CardTitle className="text-base sm:text-lg break-words">Enviar novo arquivo ({TIPOS.find(t => t.id === tab)?.label})</CardTitle></CardHeader>

@@ -814,11 +814,12 @@ export default function AnaliseRisco() {
                   <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Modos de falha</h4>
                   <div className="space-y-1">
                     {drillData.topModos.map(([modo, qty]) => (
-                      <div key={modo} className="flex justify-between text-sm">
-                        <span>{modo}</span>
-                        <span className="font-semibold text-destructive">{qty}</span>
+                      <div key={modo} className="flex justify-between text-sm gap-2">
+                        <span className="truncate" title={modo}>{modo}</span>
+                        <span className="font-semibold text-destructive tabular-nums">{fmt(qty)}</span>
                       </div>
                     ))}
+
                   </div>
                 </Card>
               )}

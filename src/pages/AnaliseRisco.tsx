@@ -550,6 +550,38 @@ export default function AnaliseRisco() {
   // ---------- Drill-down ----------
   const [drill, setDrill] = useState<{ pn: string; fornecedor: string } | null>(null);
 
+  // ---------- Insight popup (KPI click) ----------
+  type InsightKind = "modos" | "reincidentes" | "alto" | "medio" | "baixo" | "hoje" | "liberacao";
+  const [insight, setInsight] = useState<InsightKind | null>(null);
+
+  const insightConfig: Record<InsightKind, { title: string; description: string }> = {
+    modos: { title: "Modos de falha distintos", description: "Todos os modos de falha registrados no período, ordenados por quantidade de peças NG." },
+    reincidentes: { title: "Fornecedores reincidentes", description: "Fornecedores com rejeições em 2 ou mais meses distintos do período." },
+    alto: { title: "Peças de alto risco", description: "Score ≥ 60 — exigem inspeção 100%." },
+    medio: { title: "Peças de médio risco", description: "Score 30–59 — inspeção amostral (10% ou 20%)." },
+    baixo: { title: "Peças de baixo risco", description: "Score < 30 — liberação direta autorizada." },
+    hoje: { title: "Peças para inspecionar hoje", description: "Alto e médio risco combinados — prioridade do dia." },
+    liberacao: { title: "Liberação direta disponível", description: "Peças com histórico limpo — podem ser liberadas sem inspeção manual." },
+  };
+
+  const insightParts = useMemo(() => {
+    if (!insight) return [] as PartRisk[];
+    if (insight === "alto") return partsForAnalysis.filter((p) => p.classification === "alto");
+    if (insight === "medio") return partsForAnalysis.filter((p) => p.classification === "medio");
+    if (insight === "baixo" || insight === "liberacao") return partsForAnalysis.filter((p) => p.classification === "baixo");
+    if (insight === "hoje") return partsForAnalysis.filter((p) => p.classification === "alto" || p.classification === "medio");
+    return [];
+  }, [insight, partsForAnalysis]);
+
+  const insightReincidentes = useMemo(() => {
+    if (insight !== "reincidentes") return [] as { name: string; ng: number; months: number; ppm: number }[];
+    return supplierStats
+      .filter((s) => s.months.size >= 2)
+      .map((s) => ({ name: s.name, ng: s.ng, months: s.months.size, ppm: s.ok + s.ng ? Math.round((s.ng / (s.ok + s.ng)) * 1_000_000) : 0 }))
+      .sort((a, b) => b.ng - a.ng);
+  }, [insight, supplierStats]);
+
+
   const drillData = useMemo(() => {
     if (!drill) return null;
     const rows = items
@@ -876,19 +908,33 @@ export default function AnaliseRisco() {
 
 
   // ---------- UI helpers ----------
-  const KPICard = ({ label, value, sub, subTone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted" }) => {
+  const KPICard = ({ label, value, sub, subTone, onClick }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted"; onClick?: () => void }) => {
     const subClass =
       subTone === "red" ? "text-destructive" :
       subTone === "amber" ? "text-amber-500" :
       subTone === "green" ? "text-emerald-500" :
       "text-muted-foreground";
-    return (
-      <Card className="p-4 bg-card border-border">
+    const inner = (
+      <>
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
         <div className="text-2xl md:text-3xl font-heading font-bold mt-1 text-foreground">{value}</div>
         {sub && <div className={`text-[11px] mt-1 font-medium ${subClass}`}>{sub}</div>}
-      </Card>
+      </>
     );
+    if (onClick) {
+      return (
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+          className="p-4 bg-card border-border text-left cursor-pointer hover:bg-muted/40 hover:border-primary/40 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+        >
+          {inner}
+        </Card>
+      );
+    }
+    return <Card className="p-4 bg-card border-border">{inner}</Card>;
   };
 
   const riskBadge = (c: "alto" | "medio" | "baixo") => {
@@ -1042,9 +1088,9 @@ export default function AnaliseRisco() {
             ) : (
               <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 <KPICard label="Peças NG (90d)" value={fmt(totalNG)} sub="▲ 12% vs período anterior" subTone="red" />
-                <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" />
+                <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" onClick={() => setInsight("modos")} />
                 <KPICard label="PPM médio (fornecedores)" value={fmt(ppmMedio)} sub="▲ 8% vs período anterior" subTone="red" />
-                <KPICard label="Fornecedores reincidentes" value={fmt(reincidentes)} sub="▲ 1 novo este mês" subTone="red" />
+                <KPICard label="Fornecedores reincidentes" value={fmt(reincidentes)} sub="▲ 1 novo este mês" subTone="red" onClick={() => setInsight("reincidentes")} />
 
               </div>
             )}
@@ -1229,9 +1275,9 @@ export default function AnaliseRisco() {
           {/* ============ MAPA DE RISCO ============ */}
           <TabsContent value="mapa" className="space-y-4 min-w-0">
             <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
-              <KPICard label="Alto risco" value={<span className="text-destructive">{fmt(counts.a)}</span>} sub="100% inspeção" />
-              <KPICard label="Médio risco" value={<span className="text-amber-600">{fmt(counts.m)}</span>} sub="Amostral" />
-              <KPICard label="Baixo risco" value={<span className="text-emerald-600">{fmt(counts.b)}</span>} sub="Liberação direta" />
+              <KPICard label="Alto risco" value={<span className="text-destructive">{fmt(counts.a)}</span>} sub="100% inspeção" onClick={() => setInsight("alto")} />
+              <KPICard label="Médio risco" value={<span className="text-amber-600">{fmt(counts.m)}</span>} sub="Amostral" onClick={() => setInsight("medio")} />
+              <KPICard label="Baixo risco" value={<span className="text-emerald-600">{fmt(counts.b)}</span>} sub="Liberação direta" onClick={() => setInsight("baixo")} />
               <KPICard label="Redução de esforço" value={`${counts.reducao}%`} sub="vs inspeção 100% atual" subTone="green" />
 
             </div>
@@ -1328,13 +1374,14 @@ export default function AnaliseRisco() {
           {/* ============ RECOMENDAÇÕES ============ */}
           <TabsContent value="reco" className="space-y-4 min-w-0">
             <div className="grid grid-cols-1 min-[430px]:grid-cols-2 gap-3">
-              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
-              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
+              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" onClick={() => setInsight("hoje")} />
+              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" onClick={() => setInsight("liberacao")} />
             </div>
 
             <Card className="border-destructive/30 bg-destructive/5">
-              <div className="px-4 py-3 border-b border-destructive/20">
+              <div className="px-4 py-3 border-b border-destructive/20 flex items-center justify-between gap-2">
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
+                <Button size="sm" variant="ghost" className="h-8 text-[11px]" onClick={() => setInsight("alto")}>Ver lista</Button>
               </div>
               <div className="divide-y">
                 {partsForAnalysis.filter((p) => p.classification === "alto").map((p) => (
@@ -1362,8 +1409,9 @@ export default function AnaliseRisco() {
             </Card>
 
             <Card className="border-amber-500/30 bg-amber-500/5">
-              <div className="px-4 py-3 border-b border-amber-500/20">
+              <div className="px-4 py-3 border-b border-amber-500/20 flex items-center justify-between gap-2">
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-amber-600">Inspeção amostral — verificar lote reduzido</h3>
+                <Button size="sm" variant="ghost" className="h-8 text-[11px]" onClick={() => setInsight("medio")}>Ver lista</Button>
               </div>
               <div className="divide-y">
                 {partsForAnalysis.filter((p) => p.classification === "medio").map((p) => {
@@ -1391,8 +1439,9 @@ export default function AnaliseRisco() {
             </Card>
 
             <Card className="border-emerald-500/30 bg-emerald-500/5">
-              <div className="px-4 py-3 border-b border-emerald-500/20">
+              <div className="px-4 py-3 border-b border-emerald-500/20 flex items-center justify-between gap-2">
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-emerald-600">Liberação direta — histórico limpo</h3>
+                <Button size="sm" variant="ghost" className="h-8 text-[11px]" onClick={() => setInsight("liberacao")}>Ver lista</Button>
               </div>
               <div className="divide-y">
                 {partsForAnalysis.filter((p) => p.classification === "baixo").map((p) => (
@@ -1418,6 +1467,84 @@ export default function AnaliseRisco() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ============ INSIGHT DIALOG (KPI click) ============ */}
+      <Dialog open={!!insight} onOpenChange={(v) => { if (!v) setInsight(null); }}>
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col gap-3 p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>{insight ? insightConfig[insight].title : ""}</DialogTitle>
+            <DialogDescription>{insight ? insightConfig[insight].description : ""}</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+            {insight === "modos" && (
+              <div className="divide-y rounded-md border">
+                {modosFalha.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Sem dados no período.</div>}
+                {modosFalha.map(([name, ng], idx) => (
+                  <div key={name} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="shrink-0 inline-flex w-6 h-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold tabular-nums">{idx + 1}</span>
+                      <span className="truncate" title={name}>{name}</span>
+                    </div>
+                    <span className="shrink-0 font-semibold tabular-nums">{fmt(ng)} NG</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {insight === "reincidentes" && (
+              <div className="divide-y rounded-md border">
+                {insightReincidentes.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum fornecedor reincidente.</div>}
+                {insightReincidentes.map((s) => (
+                  <div key={s.name} className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-1 min-[480px]:gap-3 px-3 py-2 text-sm">
+                    <div className="font-medium flex-1 truncate" title={s.name}>{s.name}</div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span><span className="text-muted-foreground">NG:</span> <span className="font-semibold tabular-nums">{fmt(s.ng)}</span></span>
+                      <span><span className="text-muted-foreground">PPM:</span> <span className="font-semibold tabular-nums">{fmt(s.ppm)}</span></span>
+                      <Badge variant="outline" className="text-[10px]">{s.months} meses</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {insight && ["alto", "medio", "baixo", "hoje", "liberacao"].includes(insight) && (
+              <div className="divide-y rounded-md border">
+                {insightParts.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma peça nesta classificação.</div>}
+                {insightParts.map((p) => (
+                  <button
+                    key={`${p.pn}-${p.fornecedor}`}
+                    type="button"
+                    onClick={() => { setDrill({ pn: p.pn, fornecedor: p.fornecedor }); setInsight(null); }}
+                    className="w-full text-left px-3 py-2 hover:bg-muted/40 transition-colors flex flex-col min-[520px]:flex-row min-[520px]:items-center gap-2 min-[520px]:gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-xs font-semibold break-all">{p.pn}</div>
+                      <div className="text-sm break-words">{p.partName}</div>
+                      <div className="text-xs text-muted-foreground break-words">{p.fornecedor} · modo: {p.modoRecorrente}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      <Badge variant="outline" className="text-[10px] tabular-nums">{p.ng} NG</Badge>
+                      <Badge variant="outline" className="text-[10px] tabular-nums">{p.diasSem}d s/rej</Badge>
+                      {riskBadge(p.classification)}
+                      <Badge className="text-[10px]" variant="secondary">Score {p.score}</Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground border-t pt-2">
+            <span>
+              {insight === "modos" && `${modosFalha.length} modos`}
+              {insight === "reincidentes" && `${insightReincidentes.length} fornecedores`}
+              {insight && ["alto", "medio", "baixo", "hoje", "liberacao"].includes(insight) && `${insightParts.length} peças`}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => setInsight(null)}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ============ EXCLUDED PARTS DIALOG ============ */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>

@@ -1103,7 +1103,7 @@ export default function AnaliseRisco() {
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={paretoData} margin={{ top: 64, right: 42, left: 10, bottom: paretoBottomMargin }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={11} height={paretoBottomMargin} />
+                      <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={isMobile ? 12 : 11} height={paretoBottomMargin} />
                       <YAxis yAxisId="left" fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={11} />
                       <Tooltip

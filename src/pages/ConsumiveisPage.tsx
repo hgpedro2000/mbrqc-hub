@@ -358,6 +358,14 @@ const RequisitarItem = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <QrScannerModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onScan={handleScan}
+        title="Confirmar entrega via QR"
+      />
+
+
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Requisitar Consumível</DialogTitle></DialogHeader>

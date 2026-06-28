@@ -1320,8 +1320,8 @@ export default function AnaliseRisco() {
           </TabsContent>
 
           {/* ============ RECOMENDAÇÕES ============ */}
-          <TabsContent value="reco" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+          <TabsContent value="reco" className="space-y-4 min-w-0">
+            <div className="grid grid-cols-1 min-[430px]:grid-cols-2 gap-3">
               <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
               <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
             </div>
@@ -1336,16 +1336,16 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors"
+                    className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-destructive/10 transition-colors"
                   >
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                    <div className="shrink-0 w-11 h-11 rounded-lg bg-destructive/20 flex items-center justify-center self-start min-[480px]:self-auto">
                       <AlertTriangle className="w-5 h-5 text-destructive" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
+                      <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground break-words">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex flex-row min-[480px]:flex-col items-start min-[480px]:items-end gap-2 min-[480px]:gap-1 shrink-0 w-full min-[480px]:w-auto">
                       <Badge className="bg-destructive/15 text-destructive border-destructive/30">Score {p.score}</Badge>
                       <span className="text-[10px] text-muted-foreground">Focar em cotas críticas</span>
                     </div>
@@ -1367,16 +1367,16 @@ export default function AnaliseRisco() {
                       type="button"
                       key={p.pn + p.fornecedor}
                       onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 transition-colors"
+                      className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-amber-500/10 transition-colors"
                     >
-                      <div className="shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <div className="shrink-0 w-11 h-11 rounded-lg bg-amber-500/20 flex items-center justify-center self-start min-[480px]:self-auto">
                         <Eye className="w-5 h-5 text-amber-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                        <div className="text-xs text-muted-foreground">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
+                        <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                        <div className="text-xs text-muted-foreground break-words">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
                       </div>
-                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0">Score {p.score}</Badge>
+                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0 self-start min-[480px]:self-auto">Score {p.score}</Badge>
                     </button>
                   );
                 })}
@@ -1394,14 +1394,14 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-emerald-500/10 transition-colors"
+                    className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <div className="shrink-0 w-11 h-11 rounded-lg bg-emerald-500/20 flex items-center justify-center self-start min-[480px]:self-auto">
                       <CheckCircle className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
+                      <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground break-words">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
                     </div>
                   </button>
                 ))}

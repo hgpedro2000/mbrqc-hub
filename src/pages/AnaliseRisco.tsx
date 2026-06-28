@@ -876,19 +876,33 @@ export default function AnaliseRisco() {
 
 
   // ---------- UI helpers ----------
-  const KPICard = ({ label, value, sub, subTone }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted" }) => {
+  const KPICard = ({ label, value, sub, subTone, onClick }: { label: string; value: React.ReactNode; sub?: React.ReactNode; subTone?: "red" | "amber" | "green" | "muted"; onClick?: () => void }) => {
     const subClass =
       subTone === "red" ? "text-destructive" :
       subTone === "amber" ? "text-amber-500" :
       subTone === "green" ? "text-emerald-500" :
       "text-muted-foreground";
-    return (
-      <Card className="p-4 bg-card border-border">
+    const inner = (
+      <>
         <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
         <div className="text-2xl md:text-3xl font-heading font-bold mt-1 text-foreground">{value}</div>
         {sub && <div className={`text-[11px] mt-1 font-medium ${subClass}`}>{sub}</div>}
-      </Card>
+      </>
     );
+    if (onClick) {
+      return (
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={onClick}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+          className="p-4 bg-card border-border text-left cursor-pointer hover:bg-muted/40 hover:border-primary/40 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+        >
+          {inner}
+        </Card>
+      );
+    }
+    return <Card className="p-4 bg-card border-border">{inner}</Card>;
   };
 
   const riskBadge = (c: "alto" | "medio" | "baixo") => {

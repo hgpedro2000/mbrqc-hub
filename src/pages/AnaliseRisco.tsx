@@ -1067,12 +1067,12 @@ export default function AnaliseRisco() {
             </div>
 
             <div className={chartLayout === "double" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
-              <Card className="p-4 min-w-0">
-                <div className="flex items-start justify-between mb-1 gap-2">
-                  <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
-                  <div className="flex items-center gap-2">
+              <Card className="p-3 sm:p-4 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-3 mb-1 sm:flex-row sm:items-start sm:justify-between">
+                  <h3 className="text-[clamp(0.9rem,3.8vw,1rem)] font-semibold leading-tight">Pareto dos modos de falha</h3>
+                  <div className="grid grid-cols-2 gap-2 min-[480px]:flex min-[480px]:items-center min-[480px]:flex-wrap sm:justify-end">
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">Top 10 · ordenado por ocorrências</span>
-                    <label className="flex items-center gap-1 text-[10px] text-muted-foreground" title="Limiar (px) para acionar o stagger automático dos rótulos. Maior = afasta mais.">
+                    <label className="flex min-h-11 items-center justify-center gap-1 rounded-md border px-2 text-[10px] text-muted-foreground" title="Limiar (px) para acionar o stagger automático dos rótulos. Maior = afasta mais.">
                       <span className="hidden sm:inline">Stagger</span>
                       <input
                         type="number"
@@ -1081,14 +1081,14 @@ export default function AnaliseRisco() {
                         step={1}
                         value={paretoMinGap}
                         onChange={(e) => setParetoMinGap(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
-                        className="h-7 w-14 rounded-md border border-input bg-background px-2 text-xs"
+                        className="h-9 w-14 rounded-md border border-input bg-background px-2 text-xs"
                       />
                       <span>px</span>
                     </label>
-                    <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
+                    <Button size="sm" variant="outline" className="min-h-11 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
                       <Maximize2 className="h-3.5 w-3.5" /> Ampliar
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
+                    <Button size="sm" variant="ghost" className="col-span-2 min-[480px]:col-span-1 min-h-11 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
                       Reset rótulos
                     </Button>
                   </div>
@@ -1096,8 +1096,9 @@ export default function AnaliseRisco() {
                 <p className="text-[11px] text-muted-foreground mb-3">
                   Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
                 </p>
-                <div className={paretoChartHeight}>
-                  <ResponsiveContainer>
+                <div className="overflow-x-auto pb-2">
+                  <div className={paretoChartHeight} style={{ minWidth: isMobile ? 760 : undefined }}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={paretoData} margin={{ top: 64, right: 42, left: 10, bottom: paretoBottomMargin }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={11} height={paretoBottomMargin} />
@@ -1119,12 +1120,13 @@ export default function AnaliseRisco() {
                       </Line>
                     </ComposedChart>
                   </ResponsiveContainer>
+                  </div>
                 </div>
               </Card>
 
-              <Card className="p-4 min-w-0">
-                <div className="flex items-start justify-between mb-1 gap-2">
-                  <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
+              <Card className="p-3 sm:p-4 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-1 mb-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                  <h3 className="text-[clamp(0.9rem,3.8vw,1rem)] font-semibold leading-tight">Tendência mensal de rejeições</h3>
                   <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">

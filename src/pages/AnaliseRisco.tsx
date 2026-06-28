@@ -1082,6 +1082,9 @@ export default function AnaliseRisco() {
                     <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
                       <Maximize2 className="h-3.5 w-3.5" /> Ampliar
                     </Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
+                      Reset rótulos
+                    </Button>
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">

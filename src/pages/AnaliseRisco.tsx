@@ -105,6 +105,27 @@ export default function AnaliseRisco() {
   useEffect(() => {
     try { localStorage.setItem(PARETO_GAP_LS_KEY, String(paretoMinGap)); } catch { /* noop */ }
   }, [paretoMinGap]);
+  // Per-point manual extra lift (in px) applied on top of the auto stagger.
+  // The user clicks a label to bump it +12px (cycles 0 → 12 → 24 → 36 → 0).
+  const PARETO_BUMP_LS_KEY = "analise_risco_pareto_label_bumps_v1";
+  const [paretoBumps, setParetoBumps] = useState<{ bar: Record<string, number>; acc: Record<string, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(PARETO_BUMP_LS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* noop */ }
+    return { bar: {}, acc: {} };
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PARETO_BUMP_LS_KEY, JSON.stringify(paretoBumps)); } catch { /* noop */ }
+  }, [paretoBumps]);
+  const bumpLabel = (kind: "bar" | "acc", key: string) => {
+    setParetoBumps((prev) => {
+      const cur = prev[kind][key] ?? 0;
+      const next = (cur + 12) % 48; // 0 / 12 / 24 / 36
+      return { ...prev, [kind]: { ...prev[kind], [key]: next } };
+    });
+  };
+  const resetParetoBumps = () => setParetoBumps({ bar: {}, acc: {} });
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
@@ -151,8 +172,10 @@ export default function AnaliseRisco() {
   const renderParetoAccLabel = (props: any) => {
     const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
+    const key = paretoData[index ?? 0]?.name ?? String(index ?? 0);
     const slot = paretoAccSlotsRef.current[index ?? 0] ?? 0;
-    const labelY = computeAccLabelY(y, index ?? 0, slot);
+    const bump = paretoBumps.acc[key] ?? 0;
+    const labelY = computeAccLabelY(y, index ?? 0, slot) - bump;
     return (
       <text
         x={x}
@@ -161,19 +184,23 @@ export default function AnaliseRisco() {
         fontSize={paretoLabelFs}
         fontWeight={800}
         fill="hsl(var(--primary))"
+        style={{ cursor: "pointer" }}
+        onClick={() => bumpLabel("acc", key)}
       >
+        <title>Clique para afastar este rótulo (atual: +{bump}px)</title>
         {`${value}%`}
       </text>
     );
   };
 
-  // NG (barra): stagger apenas quando barras vizinhas têm altura similar.
   const renderParetoBarLabel = (props: any) => {
     const { x, y, width, value, index } = props;
     if (x == null || y == null || value == null) return null;
     const cx = x + (width ?? 0) / 2;
+    const key = paretoData[index ?? 0]?.name ?? String(index ?? 0);
     const slot = paretoBarSlotsRef.current[index ?? 0] ?? 0;
-    const labelY = computeBarLabelY(y, index ?? 0, slot);
+    const bump = paretoBumps.bar[key] ?? 0;
+    const labelY = computeBarLabelY(y, index ?? 0, slot) - bump;
     return (
       <text
         x={cx}
@@ -182,7 +209,10 @@ export default function AnaliseRisco() {
         fontSize={paretoLabelFs}
         fontWeight={700}
         fill="hsl(var(--foreground))"
+        style={{ cursor: "pointer" }}
+        onClick={() => bumpLabel("bar", key)}
       >
+        <title>Clique para afastar este rótulo (atual: +{bump}px)</title>
         {fmt(Number(value))}
       </text>
     );
@@ -1051,6 +1081,9 @@ export default function AnaliseRisco() {
                     </label>
                     <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
                       <Maximize2 className="h-3.5 w-3.5" /> Ampliar
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
+                      Reset rótulos
                     </Button>
                   </div>
                 </div>

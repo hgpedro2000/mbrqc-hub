@@ -384,6 +384,49 @@ const RequisitarItem = () => {
         title="Confirmar entrega via QR"
       />
 
+      <Dialog open={appConfirmOpen} onOpenChange={setAppConfirmOpen}>
+        <DialogContent className="max-w-md w-[95vw]">
+          <DialogHeader><DialogTitle>Confirmar recebimento via App</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Confirme abaixo apenas os pedidos que você efetivamente recebeu. Cada confirmação valida que o item registrado no app foi entregue.
+            </p>
+            {(() => {
+              const pending = (myRequests as any[]).filter((r) => r.status === "entregue_pendente_confirmacao");
+              const groups = new Map<string, any[]>();
+              pending.forEach((r) => {
+                const k = r.pedido_id || r.id;
+                if (!groups.has(k)) groups.set(k, []);
+                groups.get(k)!.push(r);
+              });
+              if (groups.size === 0) {
+                return <p className="text-center text-sm text-muted-foreground py-6">Nenhum pedido aguardando sua confirmação</p>;
+              }
+              return Array.from(groups.entries()).map(([pid, rows]) => (
+                <div key={pid} className="border rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-mono text-muted-foreground">{rows[0].numero || "—"}</span>
+                    <Badge variant="outline" className="text-[10px] border-blue-500 text-blue-600 bg-blue-500/10">Aguardando confirmação</Badge>
+                  </div>
+                  <ul className="text-sm space-y-1">
+                    {rows.map((r) => (
+                      <li key={r.id} className="flex justify-between gap-2">
+                        <span className="truncate">{r.item_name}</span>
+                        <span className="text-muted-foreground">Qtd: <strong>{r.quantity}</strong></span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button size="sm" className="w-full h-8 text-xs" disabled={confirming} onClick={async () => { await confirmPedido(pid); }}>
+                    <Check className="w-3.5 h-3.5 mr-1" /> Confirmo que recebi
+                  </Button>
+                </div>
+              ));
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">

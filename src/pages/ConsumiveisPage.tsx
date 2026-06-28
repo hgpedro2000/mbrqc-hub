@@ -428,6 +428,7 @@ const InventarioRequisicoes = () => {
   const [replenishSaving, setReplenishSaving] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyItemId, setHistoryItemId] = useState("");
+  const [qrPedidoId, setQrPedidoId] = useState<string | null>(null);
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],

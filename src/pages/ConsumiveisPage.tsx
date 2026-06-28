@@ -542,22 +542,22 @@ const InventarioRequisicoes = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
-            <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
+        <div className={`grid ${isAdmin ? "grid-cols-2" : "grid-cols-1"} sm:flex sm:flex-wrap gap-2 w-full sm:w-auto`}>
+          <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+            <Package className="w-4 h-4" /> <span className="truncate">Ver Estoque ({items.filter((i: any) => i.active).length})</span>
           </Button>
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1">
-                <UserCog className="w-4 h-4" /> Gerenciar Acessos
+              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <UserCog className="w-4 h-4" /> <span className="truncate">Gerenciar Acessos</span>
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
-                <RotateCcw className="w-4 h-4" /> Atualizar Estoque
+              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <RotateCcw className="w-4 h-4" /> <span className="truncate">Atualizar Estoque</span>
               </Button>
-              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
-                <Plus className="w-4 h-4" /> Registrar Consumível
+              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <Plus className="w-4 h-4" /> <span className="truncate">Registrar Consumível</span>
               </Button>
             </>
           )}

@@ -282,14 +282,19 @@ type MemberOrder = { items: ListaItem[] };
 
 export const PedidoTime = ({ initialList }: { initialList?: { nome: string; itens: ListaItem[] } | null }) => {
   const { user, profile } = useAuth();
+  const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const role = getConsumivelRole(profile?.cargo, isAdmin);
+  const isManager = role === "manager"; // admin/analista/supervisor/gerente
 
   // Map of memberId -> their items list. Each entry becomes ONE pedido.
   const [memberOrders, setMemberOrders] = useState<Record<string, MemberOrder>>({});
   const [savedListId, setSavedListId] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [teamSearch, setTeamSearch] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["consumable-items-active"],
@@ -301,18 +306,26 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
   });
 
   const { data: teamMembers = [], isLoading: loadingTeam, isError: errTeam, refetch: refetchTeam } = useQuery({
-    queryKey: ["team-members-by-turno", profile?.turno],
+    queryKey: ["team-members-pedido", profile?.turno, isManager],
     queryFn: async () => {
-      if (!profile?.turno) return [];
-      const { data, error } = await supabase
+      // Managers/Admins → ALL active MOBIS employees (regardless of turno).
+      // Leaders → only members from their own turno.
+      let q = supabase
         .from("profiles")
-        .select("id, full_name, turno, cargo, employee_number")
-        .eq("turno", profile.turno)
+        .select("id, full_name, turno, cargo, employee_number, empresa")
         .eq("status", "active");
+      if (isManager) {
+        q = q.eq("empresa", "mobis_brasil");
+      } else if (profile?.turno) {
+        q = q.eq("turno", profile.turno);
+      } else {
+        return [];
+      }
+      const { data, error } = await q.order("full_name");
       if (error) throw error;
       return (data || []).filter((p: any) => p.full_name !== "TESTER");
     },
-    enabled: !!profile?.turno,
+    enabled: !!profile && (isManager || !!profile?.turno),
   });
 
   const { data: savedLists = [] } = useQuery({

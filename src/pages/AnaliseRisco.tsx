@@ -996,16 +996,15 @@ export default function AnaliseRisco() {
               Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
-            <Button
-              size="sm" variant="outline" className="h-8 text-xs gap-1"
-              disabled={!excludedParts.length}
-              onClick={async () => {
+          <div className="flex justify-end gap-2">
+            {(() => {
+              const buildExcludedPdf = async () => {
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 const pageW = doc.internal.pageSize.getWidth();
                 const pageH = doc.internal.pageSize.getHeight();
-                const M = 12; // margin
+                const M = 12;
                 const now = new Date();
+
 
                 // Palette — header uses Mobis HYUNDAI blue (not red, since the logo "O" already provides red accent)
                 const HYUNDAI_BLUE: [number, number, number] = [0, 47, 108];

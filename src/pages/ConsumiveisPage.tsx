@@ -134,9 +134,9 @@ const RequisitarItem = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-heading font-semibold">Requisitar Item</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h2 className="text-base sm:text-lg font-heading font-semibold">Requisitar Item</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 w-full sm:w-auto min-h-[40px]">
           <Plus className="w-4 h-4" /> Adicionar Item
         </Button>
       </div>
@@ -152,7 +152,7 @@ const RequisitarItem = () => {
       
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por item ou número..." className="pl-9 h-8 text-xs" />
+        <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por item ou número..." className="pl-9 h-9 text-xs w-full" />
       </div>
 
       {isLoading ? (
@@ -542,22 +542,22 @@ const InventarioRequisicoes = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1">
-            <Package className="w-4 h-4" /> Ver Estoque ({items.filter((i: any) => i.active).length})
+        <div className={`grid ${isAdmin ? "grid-cols-2" : "grid-cols-1"} sm:flex sm:flex-wrap gap-2 w-full sm:w-auto`}>
+          <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+            <Package className="w-4 h-4" /> <span className="truncate">Ver Estoque ({items.filter((i: any) => i.active).length})</span>
           </Button>
           {isAdmin && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1">
-                <UserCog className="w-4 h-4" /> Gerenciar Acessos
+              <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <UserCog className="w-4 h-4" /> <span className="truncate">Gerenciar Acessos</span>
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1">
-                <RotateCcw className="w-4 h-4" /> Atualizar Estoque
+              <Button variant="secondary" size="sm" onClick={() => setReplenishOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <RotateCcw className="w-4 h-4" /> <span className="truncate">Atualizar Estoque</span>
               </Button>
-              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1">
-                <Plus className="w-4 h-4" /> Registrar Consumível
+              <Button size="sm" onClick={() => setAddItemOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
+                <Plus className="w-4 h-4" /> <span className="truncate">Registrar Consumível</span>
               </Button>
             </>
           )}
@@ -636,15 +636,15 @@ const InventarioRequisicoes = () => {
 
       {/* Requests table */}
       <div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <h3 className="text-base font-heading font-semibold">Requisições</h3>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
+          <div className="grid grid-cols-1 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-56">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-8 text-xs w-full sm:w-48" />
+              <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar..." className="pl-9 h-9 text-xs w-full" />
             </div>
             <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-full sm:w-40 h-8 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-40 h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os turnos</SelectItem>
                 <SelectItem value="1º Turno">1º Turno</SelectItem>

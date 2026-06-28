@@ -92,6 +92,9 @@ export default function AnaliseRisco() {
   const [showHelp, setShowHelp] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [buildingPdf, setBuildingPdf] = useState(false);
+  const [excFiltProjeto, setExcFiltProjeto] = useState<string>("__all__");
+  const [excFiltModelo, setExcFiltModelo] = useState<string>("__all__");
+  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>("__all__");
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -323,6 +326,28 @@ export default function AnaliseRisco() {
       .map((p) => ({ pn: p.pn, partName: p.partName, fornecedor: p.fornecedor, projeto: (p as any).projeto || "—", ng: p.ng, monthsWithModo: p.monthsWithModo, modoRecorrente: p.modoRecorrente, reason: "recorrente" as const, firstNgDate: (p as any).firstNgDate ?? null, lastNgDate: (p as any).lastNgDate ?? null }));
     return [...noLaunch, ...recurrent];
   }, [parts, registeredParts, modelFilter]);
+
+  const excludedFilterOptions = useMemo(() => {
+    const projetos = new Set<string>();
+    const modelos = new Set<string>();
+    const fornecedores = new Set<string>();
+    excludedParts.forEach((e: any) => {
+      if (e.projeto && e.projeto !== "—") projetos.add(e.projeto);
+      if (e.partName && e.partName !== "—") modelos.add(e.partName);
+      if (e.fornecedor && e.fornecedor !== "—") fornecedores.add(e.fornecedor);
+    });
+    const sort = (s: Set<string>) => Array.from(s).sort((a, b) => a.localeCompare(b));
+    return { projetos: sort(projetos), modelos: sort(modelos), fornecedores: sort(fornecedores) };
+  }, [excludedParts]);
+
+  const filteredExcluded = useMemo(() => {
+    return excludedParts.filter((e: any) => {
+      if (excFiltProjeto !== "__all__" && (e.projeto || "—") !== excFiltProjeto) return false;
+      if (excFiltModelo !== "__all__" && (e.partName || "—") !== excFiltModelo) return false;
+      if (excFiltFornecedor !== "__all__" && (e.fornecedor || "—") !== excFiltFornecedor) return false;
+      return true;
+    });
+  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor]);
 
 
   const excludedKeys = useMemo(
@@ -996,6 +1021,51 @@ export default function AnaliseRisco() {
               Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="flex flex-col gap-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">Projeto</label>
+              <Select value={excFiltProjeto} onValueChange={setExcFiltProjeto}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.projetos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">Modelo (peça)</label>
+              <Select value={excFiltModelo} onValueChange={setExcFiltModelo}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.modelos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+              <label className="text-[11px] text-muted-foreground">Fornecedor</label>
+              <Select value={excFiltFornecedor} onValueChange={setExcFiltFornecedor}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.fornecedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__") && (
+              <Button
+                variant="ghost" size="sm" className="h-8 text-xs"
+                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); }}
+              >
+                Limpar filtros
+              </Button>
+            )}
+            <div className="text-xs text-muted-foreground ml-auto self-center">
+              {filteredExcluded.length} de {excludedParts.length}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
             {(() => {
               const buildExcludedPdf = async () => {
@@ -1317,7 +1387,7 @@ export default function AnaliseRisco() {
                 </tr>
               </thead>
               <tbody>
-                {excludedParts.map((e: any, idx) => (
+                {filteredExcluded.map((e: any, idx) => (
                   <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
                     <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
                     <td className="px-3 py-2 text-xs">{e.projeto || "—"}</td>
@@ -1333,8 +1403,10 @@ export default function AnaliseRisco() {
                     </td>
                   </tr>
                 ))}
-                {!excludedParts.length && (
-                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Nada a desconsiderar.</td></tr>
+                {!filteredExcluded.length && (
+                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">
+                    {excludedParts.length ? "Nenhum resultado para os filtros aplicados." : "Nada a desconsiderar."}
+                  </td></tr>
                 )}
               </tbody>
             </table>

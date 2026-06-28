@@ -367,12 +367,12 @@ export default function AnaliseRisco() {
   const paretoChartH = isMobile ? 420 : chartIsDouble ? 280 : 360;
   // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
-    () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
-    [paretoData, paretoChartH, paretoMinGap],
+    () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoEffectiveMinGap }),
+    [paretoData, paretoChartH, paretoEffectiveMinGap],
   );
   paretoAccSlotsRef.current = useMemo(
-    () => assignSlotsAuto(paretoData.map((d) => d.acc), { chartHeight: paretoChartH, maxValue: 100, minGapPx: paretoMinGap }),
-    [paretoData, paretoChartH, paretoMinGap],
+    () => assignSlotsAuto(paretoData.map((d) => d.acc), { chartHeight: paretoChartH, maxValue: 100, minGapPx: paretoEffectiveMinGap }),
+    [paretoData, paretoChartH, paretoEffectiveMinGap],
   );
 
 

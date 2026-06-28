@@ -661,9 +661,9 @@ export default function AnaliseRisco() {
       try {
         const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(drillChartRef.current, {
-          backgroundColor: "#ffffff", scale: 2, useCORS: true,
+          backgroundColor: "#ffffff", scale: 1.5, useCORS: true,
         });
-        chartImg = canvas.toDataURL("image/png");
+        chartImg = canvas.toDataURL("image/jpeg", 0.72);
         chartRatio = canvas.height / canvas.width;
       } catch {}
     }
@@ -673,7 +673,7 @@ export default function AnaliseRisco() {
       doc.rect(0, 0, pageW, 22, "F");
       doc.setFillColor(...HYUNDAI_BLUE);
       doc.rect(0, 22, pageW, 1.2, "F");
-      if (logoB64) { try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {} }
+      if (logoB64) { try { doc.addImage(logoB64, "PNG", M, 4, 24, 16); } catch {} }
       doc.setTextColor(...HYUNDAI_BLUE);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
@@ -740,7 +740,7 @@ export default function AnaliseRisco() {
     doc.setDrawColor(...HYUNDAI_BLUE); doc.setLineWidth(0.5);
     doc.line(M, blockTop + 1.2, M + 18, blockTop + 1.2);
     if (chartImg) {
-      try { doc.addImage(chartImg, "PNG", M, blockTop + 3, colW, chartH); } catch {}
+      try { doc.addImage(chartImg, "JPEG", M, blockTop + 3, colW, chartH); } catch {}
     } else {
       doc.setFillColor(...SOFT);
       doc.roundedRect(M, blockTop + 3, colW, chartH, 1.5, 1.5, "F");
@@ -1027,13 +1027,11 @@ export default function AnaliseRisco() {
         )}
 
         <Tabs defaultValue="painel" className="space-y-4 min-w-0">
-          <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-            <TabsList className="w-max min-w-full sm:w-auto sm:min-w-0 justify-start h-auto min-h-11 gap-1 p-1">
-              <TabsTrigger value="painel" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Painel de Falhas</TabsTrigger>
-              <TabsTrigger value="mapa" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Mapa de Risco</TabsTrigger>
-              <TabsTrigger value="reco" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Recomendações</TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid grid-cols-3 w-full h-auto min-h-11 gap-1 p-1">
+            <TabsTrigger value="painel" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Painel de Falhas</TabsTrigger>
+            <TabsTrigger value="mapa" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Mapa de Risco</TabsTrigger>
+            <TabsTrigger value="reco" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Recomendações</TabsTrigger>
+          </TabsList>
 
           {/* ============ PAINEL ============ */}
           <TabsContent value="painel" className="space-y-4 min-w-0">
@@ -1620,7 +1618,7 @@ export default function AnaliseRisco() {
                   doc.setFillColor(...HYUNDAI_BLUE);
                   doc.rect(0, 22, pageW, 1.2, "F");
                   if (logoB64) {
-                    try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {}
+                    try { doc.addImage(logoB64, "PNG", M, 4, 24, 16); } catch {}
                   }
                   doc.setTextColor(...HYUNDAI_BLUE);
                   doc.setFont("helvetica", "bold");

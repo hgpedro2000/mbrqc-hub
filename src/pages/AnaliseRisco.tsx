@@ -327,6 +327,28 @@ export default function AnaliseRisco() {
     return [...noLaunch, ...recurrent];
   }, [parts, registeredParts, modelFilter]);
 
+  const excludedFilterOptions = useMemo(() => {
+    const projetos = new Set<string>();
+    const modelos = new Set<string>();
+    const fornecedores = new Set<string>();
+    excludedParts.forEach((e: any) => {
+      if (e.projeto && e.projeto !== "—") projetos.add(e.projeto);
+      if (e.partName && e.partName !== "—") modelos.add(e.partName);
+      if (e.fornecedor && e.fornecedor !== "—") fornecedores.add(e.fornecedor);
+    });
+    const sort = (s: Set<string>) => Array.from(s).sort((a, b) => a.localeCompare(b));
+    return { projetos: sort(projetos), modelos: sort(modelos), fornecedores: sort(fornecedores) };
+  }, [excludedParts]);
+
+  const filteredExcluded = useMemo(() => {
+    return excludedParts.filter((e: any) => {
+      if (excFiltProjeto !== "__all__" && (e.projeto || "—") !== excFiltProjeto) return false;
+      if (excFiltModelo !== "__all__" && (e.partName || "—") !== excFiltModelo) return false;
+      if (excFiltFornecedor !== "__all__" && (e.fornecedor || "—") !== excFiltFornecedor) return false;
+      return true;
+    });
+  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor]);
+
 
   const excludedKeys = useMemo(
     () => new Set(excludedParts.filter((e) => e.reason === "recorrente").map((e) => `${e.pn}__${e.fornecedor}`)),

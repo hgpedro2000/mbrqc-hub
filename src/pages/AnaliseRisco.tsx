@@ -204,7 +204,7 @@ export default function AnaliseRisco() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number,part_name,project,suppliers(name)")
+        .select("part_number,part_name,project,origem,suppliers(name)")
         .eq("active", true);
       if (error) throw error;
       return (data || []).map((r: any) => ({
@@ -212,18 +212,28 @@ export default function AnaliseRisco() {
         partName: r.part_name as string,
         projeto: (r.project as string) || "—",
         fornecedor: r.suppliers?.name || "—",
+        origem: (r.origem as string) || "",
       }));
     },
   });
 
-
-  // Apply model filter (BC4B vs todos) before any aggregation.
-  const items = useMemo(
-    () => modelFilter === "bc4b"
-      ? rawItems.filter((i) => (i.projeto || "").toUpperCase().includes("BC4B"))
-      : rawItems,
-    [rawItems, modelFilter],
+  // Only "LP" parts (origem = 'LP') count in the analysis.
+  const lpPartSet = useMemo(
+    () => new Set(registeredParts.filter((p) => (p.origem || "").toUpperCase() === "LP").map((p) => p.pn)),
+    [registeredParts],
   );
+
+  // Apply LP origin + model filter (BC4B vs todos) before any aggregation.
+  const items = useMemo(() => {
+    const base = lpPartSet.size > 0
+      ? rawItems.filter((i) => i.part_number && lpPartSet.has(i.part_number))
+      : rawItems;
+    return modelFilter === "bc4b"
+      ? base.filter((i) => (i.projeto || "").toUpperCase().includes("BC4B"))
+      : base;
+  }, [rawItems, modelFilter, lpPartSet]);
+
+
 
 
   // --- Aggregations ---

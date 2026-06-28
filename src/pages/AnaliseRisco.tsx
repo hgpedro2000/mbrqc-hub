@@ -158,9 +158,9 @@ export default function AnaliseRisco() {
   }, [excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
   const chartIsDouble = chartLayout === "double" && !isMobile;
-  const paretoChartHeight = chartIsDouble ? "h-[500px]" : "h-[560px]";
-  const paretoBottomMargin = chartIsDouble ? 130 : 100;
-  const paretoXAxisAngle = chartIsDouble ? -45 : -25;
+  const paretoChartHeight = isMobile ? "h-[620px]" : chartIsDouble ? "h-[500px]" : "h-[560px]";
+  const paretoBottomMargin = isMobile ? 170 : chartIsDouble ? 130 : 100;
+  const paretoXAxisAngle = isMobile ? -45 : chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
   // Slot arrays are filled later (after paretoData is computed) so the
   // anti-overlap rule only triggers for labels that are actually close.
@@ -362,7 +362,7 @@ export default function AnaliseRisco() {
   // o limiar de proximidade é calculado em PIXELS a partir da altura real do
   // gráfico e da fonte do rótulo, então o stagger só é aplicado quando há risco
   // real de sobreposição.
-  const paretoChartH = chartIsDouble ? 280 : 360;
+  const paretoChartH = isMobile ? 420 : chartIsDouble ? 280 : 360;
   // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
     () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
@@ -946,17 +946,17 @@ export default function AnaliseRisco() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2">
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10 overflow-x-clip">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
             <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
-              <h1 className="text-base sm:text-lg font-heading font-bold truncate">Análise de Risco</h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Baseado em apontamentos de Incoming</p>
+              <h1 className="text-[clamp(0.95rem,4vw,1.125rem)] font-heading font-bold leading-tight truncate" title="Análise de Risco">Análise de Risco</h1>
+              <p className="text-[clamp(0.65rem,2.8vw,0.75rem)] text-muted-foreground leading-tight truncate" title="Baseado em apontamentos de Incoming">Baseado em apontamentos de Incoming</p>
             </div>
             <Button
-              size="sm" variant="outline" className="h-9 px-2 text-xs gap-1 shrink-0"
+              size="sm" variant="outline" className="min-h-11 min-w-11 px-2 text-xs gap-1 shrink-0"
               onClick={() => setShowHelp(true)}
               title="Entenda este módulo"
             >
@@ -964,35 +964,35 @@ export default function AnaliseRisco() {
               <span className="hidden sm:inline">Entenda este módulo</span>
             </Button>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 shrink-0">
+          <div className="grid grid-cols-1 min-[480px]:flex min-[480px]:items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1 min-w-0">
+            <div className="grid grid-cols-2 min-[480px]:flex items-center gap-1 rounded-md border bg-background p-0.5 min-w-0 min-[480px]:shrink-0">
               <Button
                 size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
-                className="h-8 text-xs whitespace-nowrap"
+                className="min-h-11 px-2 text-xs whitespace-normal min-[480px]:whitespace-nowrap leading-tight"
                 onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
               >100 dias · BC4B</Button>
               <Button
                 size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
-                className="h-8 text-xs"
+                className="min-h-11 px-2 text-xs"
                 onClick={() => setModelFilter("todos")}
               >Todos</Button>
             </div>
             <Button
               size="sm" variant={excludeNoise ? "default" : "outline"}
-              className="h-8 text-xs whitespace-nowrap shrink-0"
+              className="min-h-11 px-3 text-xs whitespace-normal min-[480px]:whitespace-nowrap shrink-0 leading-tight"
               onClick={() => setExcludeNoise((v) => !v)}
               title="Desconsidera peças recorrentes/sem lançamento na análise"
             >
               {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
             </Button>
             <Button
-              size="sm" variant="outline" className="h-8 text-xs whitespace-nowrap shrink-0"
+              size="sm" variant="outline" className="min-h-11 px-3 text-xs whitespace-nowrap shrink-0"
               onClick={() => setShowExcluded(true)}
             >
               Excluídos ({excludedParts.length})
             </Button>
             <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-              <SelectTrigger className="w-[140px] h-8 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full min-[480px]:w-[150px] min-h-11 shrink-0 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="30">Últimos 30 dias</SelectItem>
                 <SelectItem value="90">Últimos 90 dias</SelectItem>
@@ -1018,23 +1018,23 @@ export default function AnaliseRisco() {
           </div>
         )}
 
-        <Tabs defaultValue="painel" className="space-y-4">
+        <Tabs defaultValue="painel" className="space-y-4 min-w-0">
           <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-            <TabsList className="w-max sm:w-auto">
-              <TabsTrigger value="painel" className="text-xs sm:text-sm">Painel de Falhas</TabsTrigger>
-              <TabsTrigger value="mapa" className="text-xs sm:text-sm">Mapa de Risco</TabsTrigger>
-              <TabsTrigger value="reco" className="text-xs sm:text-sm">Recomendações do Dia</TabsTrigger>
+            <TabsList className="w-max min-w-full sm:w-auto sm:min-w-0 justify-start h-auto min-h-11 gap-1 p-1">
+              <TabsTrigger value="painel" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Painel de Falhas</TabsTrigger>
+              <TabsTrigger value="mapa" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Mapa de Risco</TabsTrigger>
+              <TabsTrigger value="reco" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Recomendações</TabsTrigger>
             </TabsList>
           </div>
 
           {/* ============ PAINEL ============ */}
-          <TabsContent value="painel" className="space-y-4">
+          <TabsContent value="painel" className="space-y-4 min-w-0">
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 <KPICard label="Peças NG (90d)" value={fmt(totalNG)} sub="▲ 12% vs período anterior" subTone="red" />
                 <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" />
                 <KPICard label="PPM médio (fornecedores)" value={fmt(ppmMedio)} sub="▲ 8% vs período anterior" subTone="red" />
@@ -1048,18 +1048,18 @@ export default function AnaliseRisco() {
                 <h3 className="text-sm font-semibold">Exibição dos gráficos</h3>
                 <p className="text-[11px] text-muted-foreground">Alterna entre visualização vertical ou lado a lado.</p>
               </div>
-              <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/30 p-1 sm:w-[260px]">
+              <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-1 rounded-md border bg-muted/30 p-1 w-full sm:w-[260px]">
                 <button
                   type="button"
                   onClick={() => setChartLayout("single")}
-                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                  className={`min-h-11 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
                 >
                   1 por linha
                 </button>
                 <button
                   type="button"
                   onClick={() => setChartLayout("double")}
-                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "double" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                  className={`min-h-11 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "double" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
                 >
                   2 por linha
                 </button>
@@ -1067,12 +1067,12 @@ export default function AnaliseRisco() {
             </div>
 
             <div className={chartLayout === "double" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
-              <Card className="p-4 min-w-0">
-                <div className="flex items-start justify-between mb-1 gap-2">
-                  <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
-                  <div className="flex items-center gap-2">
+              <Card className="p-3 sm:p-4 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-3 mb-1 sm:flex-row sm:items-start sm:justify-between">
+                  <h3 className="text-[clamp(0.9rem,3.8vw,1rem)] font-semibold leading-tight">Pareto dos modos de falha</h3>
+                  <div className="grid grid-cols-2 gap-2 min-[480px]:flex min-[480px]:items-center min-[480px]:flex-wrap sm:justify-end">
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">Top 10 · ordenado por ocorrências</span>
-                    <label className="flex items-center gap-1 text-[10px] text-muted-foreground" title="Limiar (px) para acionar o stagger automático dos rótulos. Maior = afasta mais.">
+                    <label className="flex min-h-11 items-center justify-center gap-1 rounded-md border px-2 text-[10px] text-muted-foreground" title="Limiar (px) para acionar o stagger automático dos rótulos. Maior = afasta mais.">
                       <span className="hidden sm:inline">Stagger</span>
                       <input
                         type="number"
@@ -1081,14 +1081,14 @@ export default function AnaliseRisco() {
                         step={1}
                         value={paretoMinGap}
                         onChange={(e) => setParetoMinGap(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
-                        className="h-7 w-14 rounded-md border border-input bg-background px-2 text-xs"
+                        className="h-9 w-14 rounded-md border border-input bg-background px-2 text-xs"
                       />
                       <span>px</span>
                     </label>
-                    <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
+                    <Button size="sm" variant="outline" className="min-h-11 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
                       <Maximize2 className="h-3.5 w-3.5" /> Ampliar
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
+                    <Button size="sm" variant="ghost" className="col-span-2 min-[480px]:col-span-1 min-h-11 px-2 text-[10px]" onClick={resetParetoBumps} title="Limpar afastamentos manuais dos rótulos">
                       Reset rótulos
                     </Button>
                   </div>
@@ -1096,8 +1096,9 @@ export default function AnaliseRisco() {
                 <p className="text-[11px] text-muted-foreground mb-3">
                   Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
                 </p>
-                <div className={paretoChartHeight}>
-                  <ResponsiveContainer>
+                <div className="overflow-x-auto pb-2">
+                  <div className={paretoChartHeight} style={{ minWidth: isMobile ? 760 : undefined }}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={paretoData} margin={{ top: 64, right: 42, left: 10, bottom: paretoBottomMargin }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                       <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={11} height={paretoBottomMargin} />
@@ -1119,12 +1120,13 @@ export default function AnaliseRisco() {
                       </Line>
                     </ComposedChart>
                   </ResponsiveContainer>
+                  </div>
                 </div>
               </Card>
 
-              <Card className="p-4 min-w-0">
-                <div className="flex items-start justify-between mb-1 gap-2">
-                  <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
+              <Card className="p-3 sm:p-4 min-w-0 overflow-hidden">
+                <div className="flex flex-col gap-1 mb-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                  <h3 className="text-[clamp(0.9rem,3.8vw,1rem)] font-semibold leading-tight">Tendência mensal de rejeições</h3>
                   <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">
@@ -1159,44 +1161,68 @@ export default function AnaliseRisco() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40 text-xs">
-                    <tr>
-                      <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-center px-3 py-2">NG</th>
-                      <th className="text-center px-3 py-2">PPM</th>
-                      <th className="text-left px-3 py-2">Modo principal</th>
-                      <th className="text-center px-3 py-2">Tendência</th>
-                      <th className="text-center px-3 py-2">Risco</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {supplierTable.map((s) => (
-                      <tr key={s.name} className="border-t">
-                        <td className="px-3 py-2">{s.name}</td>
-                        <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
-                        <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
-
-                        <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
-                        <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
-                        <td className="text-center px-3 py-2">
-                          {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
-                        </td>
+              {isMobile ? (
+                <div className="divide-y">
+                  {supplierTable.map((s) => (
+                    <div key={s.name} className="px-3 py-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold break-words" title={s.name}>{s.name}</div>
+                          <div className="text-xs text-muted-foreground break-words" title={s.mainModo}>{s.mainModo}</div>
+                        </div>
+                        <div className="shrink-0">{riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">NG</div><div className="font-semibold tabular-nums">{fmt(s.ng)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">PPM</div><div className="font-semibold tabular-nums">{fmt(s.ppm)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11 flex items-center justify-center">{trendBadge(s.trend)}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {!supplierTable.length && !isLoading && (
+                    <div className="text-center py-6 text-muted-foreground text-sm">Sem dados no período.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs">
+                      <tr>
+                        <th className="text-left px-3 py-2">Fornecedor</th>
+                        <th className="text-center px-3 py-2">NG</th>
+                        <th className="text-center px-3 py-2">PPM</th>
+                        <th className="text-left px-3 py-2">Modo principal</th>
+                        <th className="text-center px-3 py-2">Tendência</th>
+                        <th className="text-center px-3 py-2">Risco</th>
                       </tr>
-                    ))}
-                    {!supplierTable.length && !isLoading && (
-                      <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Sem dados no período.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {supplierTable.map((s) => (
+                        <tr key={s.name} className="border-t">
+                          <td className="px-3 py-2">{s.name}</td>
+                          <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
+                          <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
+
+                          <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
+                          <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
+                          <td className="text-center px-3 py-2">
+                            {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
+                          </td>
+                        </tr>
+                      ))}
+                      {!supplierTable.length && !isLoading && (
+                        <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Sem dados no período.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
           {/* ============ MAPA DE RISCO ============ */}
-          <TabsContent value="mapa" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <TabsContent value="mapa" className="space-y-4 min-w-0">
+            <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard label="Alto risco" value={<span className="text-destructive">{fmt(counts.a)}</span>} sub="100% inspeção" />
               <KPICard label="Médio risco" value={<span className="text-amber-600">{fmt(counts.m)}</span>} sub="Amostral" />
               <KPICard label="Baixo risco" value={<span className="text-emerald-600">{fmt(counts.b)}</span>} sub="Liberação direta" />
@@ -1204,10 +1230,10 @@ export default function AnaliseRisco() {
 
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-2 min-w-0">
               <span className="text-xs text-muted-foreground">Filtrar:</span>
               <Select value={riskFilter} onValueChange={(v) => setRiskFilter(v as any)}>
-                <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full min-[480px]:w-[220px] min-h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="alto">Somente alto</SelectItem>
@@ -1221,50 +1247,81 @@ export default function AnaliseRisco() {
               <div className="px-3 py-2 border-b text-[10px] text-muted-foreground">
                 Score 0–100 · Alto ≥ 60 (inspeção 100%) · Médio 30–59 (amostral) · Baixo &lt; 30 (liberação direta)
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[820px]">
-                  <thead className="bg-muted/40 text-xs">
-                    <tr>
-                      <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
-                      <th className="text-left px-3 py-2">Part Name</th>
-                      <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
-                      <th className="text-center px-3 py-2 w-[80px]">Score</th>
-                      <th className="text-center px-3 py-2 w-[80px]">NG</th>
-                      <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
-                      <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
-                      <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {partsFiltered.map((p) => (
-                      <tr
-                        key={`${p.pn}-${p.fornecedor}`}
-                        className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
-                        onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      >
-                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
-                        <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
-                        <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
-                        <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
-                        <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
-                        <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
-                        <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
+              {isMobile ? (
+                <div className="divide-y">
+                  {partsFiltered.map((p) => (
+                    <button
+                      key={`${p.pn}-${p.fornecedor}`}
+                      type="button"
+                      className="w-full min-h-11 px-3 py-3 text-left hover:bg-muted/40 transition-colors"
+                      onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-mono text-xs font-semibold break-all" title={p.pn}>{p.pn}</div>
+                          <div className="text-sm font-medium break-words" title={p.partName}>{p.partName}</div>
+                          <div className="text-xs text-muted-foreground break-words" title={p.fornecedor}>{p.fornecedor}</div>
+                        </div>
+                        <div className="shrink-0">{scoreCircle(p.score, p.classification)}</div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">NG</div><div className={`font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">Dias</div><div className="font-semibold tabular-nums">{fmt(p.diasSem)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11 flex items-center justify-center">{actionBadge(p.classification, p.recomendacao)}</div>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground break-words" title={p.modoRecorrente}>Modo recorrente: {p.modoRecorrente}</div>
+                    </button>
+                  ))}
+                  {!partsFiltered.length && !isLoading && (
+                    <div className="text-center py-6 text-muted-foreground text-sm">Sem peças.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[820px]">
+                    <thead className="bg-muted/40 text-xs">
+                      <tr>
+                        <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
+                        <th className="text-left px-3 py-2">Part Name</th>
+                        <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
+                        <th className="text-center px-3 py-2 w-[80px]">Score</th>
+                        <th className="text-center px-3 py-2 w-[80px]">NG</th>
+                        <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
+                        <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
+                        <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
                       </tr>
-                    ))}
-                    {!partsFiltered.length && !isLoading && (
-                      <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
-                    )}
-                  </tbody>
+                    </thead>
+                    <tbody>
+                      {partsFiltered.map((p) => (
+                        <tr
+                          key={`${p.pn}-${p.fornecedor}`}
+                          className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
+                          onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                        >
+                          <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
+                          <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
+                          <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
+                          <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                          <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                          <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
+                          <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
+                          <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
+                        </tr>
+                      ))}
+                      {!partsFiltered.length && !isLoading && (
+                        <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
+                      )}
+                    </tbody>
 
-                </table>
-              </div>
+                  </table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
           {/* ============ RECOMENDAÇÕES ============ */}
-          <TabsContent value="reco" className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+          <TabsContent value="reco" className="space-y-4 min-w-0">
+            <div className="grid grid-cols-1 min-[430px]:grid-cols-2 gap-3">
               <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
               <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
             </div>
@@ -1279,16 +1336,16 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-destructive/10 transition-colors"
+                    className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-destructive/10 transition-colors"
                   >
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-destructive/20 flex items-center justify-center">
+                    <div className="shrink-0 w-11 h-11 rounded-lg bg-destructive/20 flex items-center justify-center self-start min-[480px]:self-auto">
                       <AlertTriangle className="w-5 h-5 text-destructive" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
+                      <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground break-words">{p.ng} rejeições no período · modo recorrente: {p.modoRecorrente}</div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex flex-row min-[480px]:flex-col items-start min-[480px]:items-end gap-2 min-[480px]:gap-1 shrink-0 w-full min-[480px]:w-auto">
                       <Badge className="bg-destructive/15 text-destructive border-destructive/30">Score {p.score}</Badge>
                       <span className="text-[10px] text-muted-foreground">Focar em cotas críticas</span>
                     </div>
@@ -1310,16 +1367,16 @@ export default function AnaliseRisco() {
                       type="button"
                       key={p.pn + p.fornecedor}
                       onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-amber-500/10 transition-colors"
+                      className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-amber-500/10 transition-colors"
                     >
-                      <div className="shrink-0 w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                      <div className="shrink-0 w-11 h-11 rounded-lg bg-amber-500/20 flex items-center justify-center self-start min-[480px]:self-auto">
                         <Eye className="w-5 h-5 text-amber-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                        <div className="text-xs text-muted-foreground">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
+                        <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                        <div className="text-xs text-muted-foreground break-words">{p.ng} rejeições · modo: {p.modoRecorrente} · amostragem {sampling}</div>
                       </div>
-                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0">Score {p.score}</Badge>
+                      <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30 shrink-0 self-start min-[480px]:self-auto">Score {p.score}</Badge>
                     </button>
                   );
                 })}
@@ -1337,14 +1394,14 @@ export default function AnaliseRisco() {
                     type="button"
                     key={p.pn + p.fornecedor}
                     onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                    className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-emerald-500/10 transition-colors"
+                    className="w-full min-h-11 text-left px-3 sm:px-4 py-3 flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-3 hover:bg-emerald-500/10 transition-colors"
                   >
-                    <div className="shrink-0 w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <div className="shrink-0 w-11 h-11 rounded-lg bg-emerald-500/20 flex items-center justify-center self-start min-[480px]:self-auto">
                       <CheckCircle className="w-5 h-5 text-emerald-600" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="font-mono text-sm font-semibold">{p.pn} <span className="text-muted-foreground font-sans font-normal">· {p.fornecedor}</span></div>
-                      <div className="text-xs text-muted-foreground">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
+                      <div className="font-mono text-sm font-semibold break-all">{p.pn} <span className="text-muted-foreground font-sans font-normal break-words">· {p.fornecedor}</span></div>
+                      <div className="text-xs text-muted-foreground break-words">{p.diasSem} dias sem rejeição · liberação direta com rastreabilidade</div>
                     </div>
                   </button>
                 ))}
@@ -1495,7 +1552,7 @@ export default function AnaliseRisco() {
             <span>{filteredExcluded.length} de {excludedParts.length} registros</span>
             {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
-                variant="ghost" size="sm" className="h-8 text-xs"
+                variant="ghost" size="sm" className="min-h-11 text-xs"
                 onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); setExcSearch(""); }}
               >
                 Limpar filtros
@@ -1842,7 +1899,7 @@ export default function AnaliseRisco() {
                         <button
                           key={c.k}
                           onClick={() => toggleSort(c.k)}
-                          className={`px-2 py-1 rounded-md border ${excSortKey === c.k ? "bg-primary/10 border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                          className={`min-h-11 px-3 py-2 rounded-md border ${excSortKey === c.k ? "bg-primary/10 border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
                         >
                           {c.label}{arrow(c.k)}
                         </button>
@@ -2048,20 +2105,20 @@ export default function AnaliseRisco() {
                       onChange={(e) => setDrillSearch(e.target.value)}
                       placeholder="Buscar data ou modo..."
                       aria-label="Buscar apontamentos por data ou modo de falha"
-                      className="h-8 pl-7 w-[200px] text-xs"
+                      className="min-h-11 pl-7 w-full sm:w-[200px] text-xs"
                     />
                   </div>
                   <Button
                     size="sm" variant="outline" onClick={exportDrillCSV}
                     aria-label="Exportar histórico em CSV"
-                    className="h-8"
+                    className="min-h-11"
                   >
                     <Download className="w-3.5 h-3.5 mr-1" /> CSV
                   </Button>
                   <Button
                     size="sm" variant="outline" onClick={previewDrillPDF}
                     aria-label="Pré-visualizar PDF"
-                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
+                    className="min-h-11" disabled={buildingPdf} aria-busy={buildingPdf}
                   >
                     {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
                     Pré-visualizar
@@ -2069,7 +2126,7 @@ export default function AnaliseRisco() {
                   <Button
                     size="sm" onClick={exportDrillPDF}
                     aria-label="Exportar histórico em PDF"
-                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
+                    className="min-h-11" disabled={buildingPdf} aria-busy={buildingPdf}
                   >
                     {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
                     PDF
@@ -2110,7 +2167,7 @@ export default function AnaliseRisco() {
                     </span>
                     <div className="flex gap-1">
                       <Button
-                        size="icon" variant="outline" className="h-7 w-7"
+                        size="icon" variant="outline" className="h-11 w-11"
                         onClick={() => setDrillPage((p) => Math.max(1, p - 1))}
                         disabled={drillPageSafe <= 1}
                         aria-label="Página anterior"
@@ -2118,7 +2175,7 @@ export default function AnaliseRisco() {
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
                       <Button
-                        size="icon" variant="outline" className="h-7 w-7"
+                        size="icon" variant="outline" className="h-11 w-11"
                         onClick={() => setDrillPage((p) => Math.min(drillTotalPages, p + 1))}
                         disabled={drillPageSafe >= drillTotalPages}
                         aria-label="Próxima página"

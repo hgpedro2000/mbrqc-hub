@@ -1871,11 +1871,20 @@ export default function AnaliseRisco() {
                     <Download className="w-3.5 h-3.5 mr-1" /> CSV
                   </Button>
                   <Button
-                    size="sm" variant="outline" onClick={exportDrillPDF}
-                    aria-label="Exportar histórico em PDF"
-                    className="h-8"
+                    size="sm" variant="outline" onClick={previewDrillPDF}
+                    aria-label="Pré-visualizar PDF"
+                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
                   >
-                    <FileText className="w-3.5 h-3.5 mr-1" /> PDF
+                    {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
+                    Pré-visualizar
+                  </Button>
+                  <Button
+                    size="sm" onClick={exportDrillPDF}
+                    aria-label="Exportar histórico em PDF"
+                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
+                  >
+                    {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
+                    PDF
                   </Button>
                 </div>
                 <div className="max-h-[280px] overflow-y-auto">

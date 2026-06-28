@@ -275,12 +275,15 @@ export const MeuHistorico = () => {
 };
 
 /* ───────────────────────────  PEDIDO DE TIME  ─────────────────────────── */
+type MemberOrder = { items: ListaItem[] };
+
 export const PedidoTime = ({ initialList }: { initialList?: { nome: string; itens: ListaItem[] } | null }) => {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [orderItems, setOrderItems] = useState<ListaItem[]>(initialList?.itens || [{ item_id: "", item_name: "", quantity: 1 }]);
+
+  // Map of memberId -> their items list. Each entry becomes ONE pedido.
+  const [memberOrders, setMemberOrders] = useState<Record<string, MemberOrder>>({});
   const [savedListId, setSavedListId] = useState<string>("");
   const [sending, setSending] = useState(false);
 
@@ -297,7 +300,11 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     queryKey: ["team-members-by-turno", profile?.turno],
     queryFn: async () => {
       if (!profile?.turno) return [];
-      const { data, error } = await supabase.from("profiles").select("id, full_name, turno, cargo").eq("turno", profile.turno).eq("status", "active");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, turno, cargo, employee_number")
+        .eq("turno", profile.turno)
+        .eq("status", "active");
       if (error) throw error;
       return (data || []).filter((p: any) => p.full_name !== "TESTER");
     },
@@ -313,24 +320,50 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     },
   });
 
-  const loadList = () => {
-    const lst = savedLists.find((l: any) => l.id === savedListId);
-    if (!lst) return;
-    setOrderItems(Array.isArray(lst.itens) ? lst.itens : []);
-    toast.success(`Lista "${lst.nome}" carregada`);
+  const selectedIds = Object.keys(memberOrders);
+  const totalPedidos = selectedIds.length;
+  const totalItens = selectedIds.reduce((s, id) => s + memberOrders[id].items.filter(i => i.item_id).length, 0);
+
+  const addMember = (id: string, itens?: ListaItem[]) => {
+    setMemberOrders((prev) => prev[id]
+      ? prev
+      : { ...prev, [id]: { items: itens && itens.length ? itens : [{ item_id: "", item_name: "", quantity: 1 }] } });
+  };
+  const removeMember = (id: string) => {
+    setMemberOrders((prev) => {
+      const n = { ...prev }; delete n[id]; return n;
+    });
+  };
+  const toggleMember = (id: string) => {
+    if (memberOrders[id]) removeMember(id); else addMember(id);
+  };
+  const updateMemberItems = (id: string, items: ListaItem[]) => {
+    setMemberOrders((prev) => ({ ...prev, [id]: { items } }));
   };
 
-  const toggleMember = (id: string) => {
-    setSelectedMembers((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  const loadListForAll = () => {
+    const lst = savedLists.find((l: any) => l.id === savedListId);
+    if (!lst) return;
+    const itens: ListaItem[] = Array.isArray(lst.itens) ? lst.itens : [];
+    if (selectedIds.length === 0) { toast.error("Selecione ao menos um membro primeiro"); return; }
+    setMemberOrders((prev) => {
+      const n = { ...prev };
+      for (const id of Object.keys(n)) n[id] = { items: itens.map((i) => ({ ...i })) };
+      return n;
+    });
+    toast.success(`Lista "${lst.nome}" aplicada a ${selectedIds.length} pedido(s)`);
   };
 
   const downloadTemplate = () => {
+    const ex = items.slice(0, 2);
+    const sampleMember = teamMembers[0];
     const ws = XLSX.utils.aoa_to_sheet([
-      ["item", "quantidade"],
-      ...items.slice(0, 3).map((i: any) => [i.name, 1]),
+      ["matricula", "nome", "item", "quantidade"],
+      [sampleMember?.employee_number || "1234567", sampleMember?.full_name || "Nome do membro", ex[0]?.name || "Item A", 1],
+      [sampleMember?.employee_number || "1234567", sampleMember?.full_name || "Nome do membro", ex[1]?.name || "Item B", 2],
     ]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.utils.book_append_sheet(wb, ws, "Pedido de Time");
     XLSX.writeFile(wb, "template_pedido_time.xlsx");
   };
 
@@ -342,22 +375,46 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       const wb = XLSX.read(buf, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
-      const parsed: ListaItem[] = [];
-      const unknown: string[] = [];
+
+      const grouped: Record<string, ListaItem[]> = {};
+      const unknownItems = new Set<string>();
+      const unknownMembers = new Set<string>();
+
       for (const row of json) {
-        const name = String(row["item"] ?? row["Item"] ?? row["nome"] ?? "").trim();
+        const matricula = String(row["matricula"] ?? row["Matricula"] ?? row["matrícula"] ?? row["Matrícula"] ?? "").trim();
+        const nome = String(row["nome"] ?? row["Nome"] ?? "").trim();
+        const itemName = String(row["item"] ?? row["Item"] ?? "").trim();
         const qty = Math.max(1, Number(row["quantidade"] ?? row["Quantidade"] ?? row["qty"] ?? 1));
-        if (!name) continue;
-        const match = items.find((i: any) => i.name.toLowerCase() === name.toLowerCase());
-        if (!match) { unknown.push(name); continue; }
-        parsed.push({ item_id: match.id, item_name: match.name, quantity: qty });
+        if (!itemName) continue;
+
+        const member = teamMembers.find((m: any) =>
+          (matricula && String(m.employee_number || "").trim() === matricula) ||
+          (nome && m.full_name?.toLowerCase() === nome.toLowerCase())
+        );
+        if (!member) { unknownMembers.add(matricula || nome); continue; }
+
+        const it = items.find((i: any) => i.name.toLowerCase() === itemName.toLowerCase());
+        if (!it) { unknownItems.add(itemName); continue; }
+
+        (grouped[member.id] ||= []).push({ item_id: it.id, item_name: it.name, quantity: qty });
       }
-      if (parsed.length === 0) {
-        toast.error("Nenhum item válido encontrado. Use as colunas 'item' e 'quantidade'.");
+
+      const ids = Object.keys(grouped);
+      if (ids.length === 0) {
+        toast.error("Nenhuma linha válida. Use colunas: matricula (ou nome), item, quantidade.");
         return;
       }
-      setOrderItems(parsed);
-      toast.success(`${parsed.length} item(ns) importado(s)${unknown.length ? ` — ${unknown.length} ignorado(s): ${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? "…" : ""}` : ""}`);
+
+      setMemberOrders((prev) => {
+        const n = { ...prev };
+        for (const id of ids) n[id] = { items: grouped[id] };
+        return n;
+      });
+
+      const warns: string[] = [];
+      if (unknownMembers.size) warns.push(`${unknownMembers.size} membro(s) não encontrados`);
+      if (unknownItems.size) warns.push(`${unknownItems.size} item(ns) não cadastrados`);
+      toast.success(`${ids.length} pedido(s) preparado(s)${warns.length ? ` — ${warns.join(", ")}` : ""}`);
     } catch {
       toast.error("Erro ao ler o arquivo. Use .xlsx, .xls ou .csv.");
     } finally {
@@ -366,33 +423,37 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
   };
 
   const handleSend = async () => {
-    const validItems = orderItems.filter((i) => i.item_id && i.quantity > 0);
-    if (selectedMembers.length === 0) { toast.error("Selecione ao menos um membro"); return; }
-    if (validItems.length === 0) { toast.error("Adicione ao menos um item"); return; }
+    if (selectedIds.length === 0) { toast.error("Selecione ao menos um membro"); return; }
+    const payload: any[] = [];
+    for (const memberId of selectedIds) {
+      const member = teamMembers.find((m: any) => m.id === memberId);
+      if (!member) continue;
+      const valid = memberOrders[memberId].items.filter((i) => i.item_id && i.quantity > 0);
+      if (valid.length === 0) continue;
+      const pedido_id = (crypto as any).randomUUID();
+      for (const it of valid) {
+        payload.push({
+          pedido_id,
+          user_id: memberId,
+          user_name: member.full_name,
+          turno: member.turno,
+          item_id: it.item_id,
+          item_name: it.item_name,
+          quantity: it.quantity,
+          origem: "pedido_coletivo",
+          criado_por: user?.id,
+        });
+      }
+    }
+    if (payload.length === 0) { toast.error("Adicione ao menos um item por pessoa"); return; }
+
     setSending(true);
     try {
-      const rows: any[] = [];
-      for (const memberId of selectedMembers) {
-        const member = teamMembers.find((m: any) => m.id === memberId);
-        if (!member) continue;
-        for (const it of validItems) {
-          rows.push({
-            user_id: memberId,
-            user_name: member.full_name,
-            turno: member.turno,
-            item_id: it.item_id,
-            item_name: it.item_name,
-            quantity: it.quantity,
-            origem: "pedido_coletivo",
-            criado_por: user?.id,
-          });
-        }
-      }
-      const { error } = await (supabase as any).from("consumable_requests").insert(rows);
+      const { error } = await (supabase as any).from("consumable_requests").insert(payload);
       if (error) throw error;
-      toast.success(`${rows.length} requisições criadas com sucesso!`);
-      setSelectedMembers([]);
-      setOrderItems([{ item_id: "", item_name: "", quantity: 1 }]);
+      const uniqPedidos = new Set(payload.map((r) => r.pedido_id)).size;
+      toast.success(`${uniqPedidos} pedido(s) criados (${payload.length} itens)`);
+      setMemberOrders({});
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["team-consumable-requests"] });
     } catch (e: any) {
@@ -402,10 +463,17 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     }
   };
 
+  // Apply initialList once: pre-load the current user with the chosen list as a starting point
+  const appliedInitial = useRef(false);
+  if (initialList && !appliedInitial.current && selectedIds.length === 0 && user?.id && teamMembers.some((m: any) => m.id === user.id)) {
+    appliedInitial.current = true;
+    setTimeout(() => addMember(user.id!, initialList.itens), 0);
+  }
+
   return (
     <div className="space-y-4">
       <div className="form-section p-3 space-y-2">
-        <Label className="text-xs font-semibold">Usar lista salva</Label>
+        <Label className="text-xs font-semibold">Usar lista salva (aplica os mesmos itens em todos os membros selecionados)</Label>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <Select value={savedListId} onValueChange={setSavedListId}>
             <SelectTrigger className="flex-1 h-9 text-xs min-w-0"><SelectValue placeholder="Selecione uma lista..." /></SelectTrigger>
@@ -413,13 +481,15 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
               <SelectItem key={l.id} value={l.id}>{l.nome} ({(l.itens || []).length} itens)</SelectItem>
             ))}</SelectContent>
           </Select>
-          <Button size="sm" variant="outline" onClick={loadList} disabled={!savedListId} className="min-h-[36px]">Carregar lista</Button>
+          <Button size="sm" variant="outline" onClick={loadListForAll} disabled={!savedListId || selectedIds.length === 0} className="min-h-[36px]">
+            Aplicar nos selecionados
+          </Button>
         </div>
       </div>
 
       <div className="form-section p-3 space-y-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <Label className="text-xs font-semibold">Importar lista por planilha</Label>
+          <Label className="text-xs font-semibold">Importar pedidos por planilha</Label>
           <div className="flex gap-1.5">
             <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={downloadTemplate}>
               <FileSpreadsheet className="w-3.5 h-3.5" /> Template
@@ -430,7 +500,9 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
           </div>
         </div>
-        <p className="text-[11px] text-muted-foreground">Colunas: <code>item</code>, <code>quantidade</code>. Nomes devem coincidir com os itens cadastrados.</p>
+        <p className="text-[11px] text-muted-foreground">
+          Colunas: <code>matricula</code> (ou <code>nome</code>), <code>item</code>, <code>quantidade</code>. Cada matrícula vira um pedido com os itens listados.
+        </p>
       </div>
 
       <div className="form-section p-3 space-y-2">
@@ -445,28 +517,47 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
             {teamMembers.map((m: any) => (
               <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
-                <Checkbox checked={selectedMembers.includes(m.id)} onCheckedChange={() => toggleMember(m.id)} />
+                <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
                 <span className="truncate">{m.full_name}</span>
               </label>
             ))}
             {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado neste turno.</p>}
           </div>
         )}
-        <p className="text-xs text-muted-foreground">{selectedMembers.length} selecionado(s)</p>
+        <p className="text-xs text-muted-foreground">{totalPedidos} pedido(s) — {totalItens} item(ns) no total</p>
       </div>
 
-      <div className="form-section p-3 space-y-2">
-        <Label className="text-xs font-semibold">Itens do pedido</Label>
-        <ItemQtyEditor items={items} value={orderItems} onChange={setOrderItems} />
-      </div>
+      {selectedIds.length > 0 && (
+        <div className="space-y-3">
+          <Label className="text-xs font-semibold">Itens por pessoa (um pedido por membro)</Label>
+          {selectedIds.map((id) => {
+            const m = teamMembers.find((tm: any) => tm.id === id);
+            return (
+              <div key={id} className="form-section p-3 space-y-2 border-l-2 border-primary">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{m?.full_name || id}</p>
+                    <p className="text-[11px] text-muted-foreground">{m?.employee_number || ""}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-destructive h-8" onClick={() => removeMember(id)}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Remover
+                  </Button>
+                </div>
+                <ItemQtyEditor items={items} value={memberOrders[id].items} onChange={(v) => updateMemberItems(id, v)} />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
-      <Button onClick={handleSend} disabled={sending} className="w-full min-h-[44px]">
+      <Button onClick={handleSend} disabled={sending || selectedIds.length === 0} className="w-full min-h-[44px]">
         {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-        Enviar pedido para o time
+        Enviar {totalPedidos} pedido(s) individuais
       </Button>
     </div>
   );
 };
+
 
 /* ───────────────────────────  LISTAS SALVAS  ─────────────────────────── */
 export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; itens: ListaItem[] }) => void }) => {

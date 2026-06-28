@@ -1492,7 +1492,7 @@ export default function AnaliseRisco() {
           <DialogHeader>
             <DialogTitle>Pré-visualização do PDF</DialogTitle>
             <DialogDescription>
-              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {excludedParts.length} peça(s) desconsiderada(s)
+              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {filteredExcluded.length} peça(s) desconsiderada(s)
             </DialogDescription>
           </DialogHeader>
           {pdfPreviewUrl && (

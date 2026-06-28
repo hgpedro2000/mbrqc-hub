@@ -230,18 +230,20 @@ export default function AnaliseRisco() {
   
   const parts: PartRisk[] = useMemo(() => {
 
-    type Acc = { pn: string; partName: string; fornecedor: string; ng: number; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
+    type Acc = { pn: string; partName: string; fornecedor: string; projeto: string; ng: number; firstNgDate: string | null; lastNgDate: string | null; modoMonths: Map<string, Set<string>>; modos: Map<string, number> };
     const m = new Map<string, Acc>();
     for (const i of items) {
       if (!i.part_number) continue;
       const key = `${i.part_number}__${i.fornecedor || "—"}`;
-      if (!m.has(key)) m.set(key, { pn: i.part_number, partName: i.part_name || "—", fornecedor: i.fornecedor || "—", ng: 0, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
+      if (!m.has(key)) m.set(key, { pn: i.part_number, partName: i.part_name || "—", fornecedor: i.fornecedor || "—", projeto: i.projeto || "—", ng: 0, firstNgDate: null, lastNgDate: null, modoMonths: new Map(), modos: new Map() });
       const e = m.get(key)!;
       if (i.part_name && e.partName === "—") e.partName = i.part_name;
+      if (i.projeto && e.projeto === "—") e.projeto = i.projeto;
       const ng = i.quantidade_ng || 0;
       e.ng += ng;
       if (ng > 0) {
         if (!e.lastNgDate || i.data > e.lastNgDate) e.lastNgDate = i.data;
+        if (!e.firstNgDate || i.data < e.firstNgDate) e.firstNgDate = i.data;
         if (i.modo_falha) {
           const mk = stripCode(i.modo_falha);
           e.modos.set(mk, (e.modos.get(mk) || 0) + ng);
@@ -278,7 +280,8 @@ export default function AnaliseRisco() {
       const ppmFornecedor = ppmF && ppmF.ok + ppmF.ng > 0 ? Math.round((ppmF.ng / (ppmF.ok + ppmF.ng)) * 1_000_000) : 0;
 
       return {
-        pn: e.pn, partName: e.partName, fornecedor: e.fornecedor, ng: e.ng, diasSem, modoRecorrente,
+        pn: e.pn, partName: e.partName, fornecedor: e.fornecedor, projeto: e.projeto, ng: e.ng, diasSem, modoRecorrente,
+        firstNgDate: e.firstNgDate, lastNgDate: e.lastNgDate,
         score, classification, recomendacao, monthsWithModo: maxModoMonths, ppmFornecedor,
       };
     }).sort((a, b) => b.score - a.score);
@@ -290,15 +293,16 @@ export default function AnaliseRisco() {
     const seenKeys = new Set(parts.map((p) => `${p.pn}__${p.fornecedor}`));
     const noLaunch = (registeredParts || [])
       .filter((r) => {
-        if (modelFilter === "bc4b" && !r.pn.toUpperCase().includes("BC4B")) return false;
+        if (modelFilter === "bc4b" && !(r.projeto || "").toUpperCase().includes("BC4B")) return false;
         return !seenKeys.has(`${r.pn}__${r.fornecedor}`);
       })
-      .map((r) => ({ ...r, reason: "sem lançamento" as const, ng: 0, monthsWithModo: 0, modoRecorrente: "—" }));
+      .map((r) => ({ ...r, reason: "sem lançamento" as const, ng: 0, monthsWithModo: 0, modoRecorrente: "—", firstNgDate: null as string | null, lastNgDate: null as string | null }));
     const recurrent = parts
       .filter((p) => p.monthsWithModo >= 3)
-      .map((p) => ({ pn: p.pn, partName: p.partName, fornecedor: p.fornecedor, ng: p.ng, monthsWithModo: p.monthsWithModo, modoRecorrente: p.modoRecorrente, reason: "recorrente" as const }));
+      .map((p) => ({ pn: p.pn, partName: p.partName, fornecedor: p.fornecedor, projeto: (p as any).projeto || "—", ng: p.ng, monthsWithModo: p.monthsWithModo, modoRecorrente: p.modoRecorrente, reason: "recorrente" as const, firstNgDate: (p as any).firstNgDate ?? null, lastNgDate: (p as any).lastNgDate ?? null }));
     return [...noLaunch, ...recurrent];
   }, [parts, registeredParts, modelFilter]);
+
 
   const excludedKeys = useMemo(
     () => new Set(excludedParts.filter((e) => e.reason === "recorrente").map((e) => `${e.pn}__${e.fornecedor}`)),

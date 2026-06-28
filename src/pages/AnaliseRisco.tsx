@@ -26,7 +26,7 @@ import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { computeAccLabelY, computeBarLabelY, assignSlots } from "@/lib/paretoLabels";
+import { computeAccLabelY, computeBarLabelY, assignSlotsAuto } from "@/lib/paretoLabels";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {
@@ -148,7 +148,7 @@ export default function AnaliseRisco() {
         y={labelY}
         textAnchor="middle"
         fontSize={paretoLabelFs}
-        fontWeight={700}
+        fontWeight={800}
         fill="hsl(var(--primary))"
       >
         {`${value}%`}
@@ -317,16 +317,19 @@ export default function AnaliseRisco() {
     });
   }, [modosFalha]);
 
-  // Recompute stagger slots whenever the Pareto dataset changes. Labels whose
-  // neighbour values aren't close get slot 0 (no lift) — the rule is applied
-  // only where it's actually needed.
+  // Recompute stagger slots whenever the Pareto dataset changes. Modo automático:
+  // o limiar de proximidade é calculado em PIXELS a partir da altura real do
+  // gráfico e da fonte do rótulo, então o stagger só é aplicado quando há risco
+  // real de sobreposição.
+  const paretoChartH = chartIsDouble ? 280 : 360;
+  const paretoMinGap = paretoLabelFs + 6;
   paretoBarSlotsRef.current = useMemo(
-    () => assignSlots(paretoData.map((d) => d.value)),
-    [paretoData],
+    () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
+    [paretoData, paretoChartH, paretoMinGap],
   );
   paretoAccSlotsRef.current = useMemo(
-    () => assignSlots(paretoData.map((d) => d.acc)),
-    [paretoData],
+    () => assignSlotsAuto(paretoData.map((d) => d.acc), { chartHeight: paretoChartH, maxValue: 100, minGapPx: paretoMinGap }),
+    [paretoData, paretoChartH, paretoMinGap],
   );
 
 

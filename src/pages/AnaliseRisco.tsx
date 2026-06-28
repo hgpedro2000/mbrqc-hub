@@ -270,20 +270,26 @@ export default function AnaliseRisco() {
   });
 
   // Only "LP" parts (origem = 'LP') count in the analysis.
-  const lpPartSet = useMemo(
-    () => new Set(registeredParts.filter((p) => (p.origem || "").toUpperCase() === "LP").map((p) => p.pn)),
+  // Filtra por (PN + fornecedor) — uma mesma peça pode estar cadastrada como LP
+  // para um fornecedor e CKD para outro; apenas o par LP deve entrar.
+  const lpPairSet = useMemo(
+    () => new Set(
+      registeredParts
+        .filter((p) => (p.origem || "").toUpperCase() === "LP")
+        .map((p) => `${p.pn}__${p.fornecedor || "—"}`),
+    ),
     [registeredParts],
   );
 
   // Apply LP origin + model filter (BC4B vs todos) before any aggregation.
   const items = useMemo(() => {
-    const base = lpPartSet.size > 0
-      ? rawItems.filter((i) => i.part_number && lpPartSet.has(i.part_number))
+    const base = lpPairSet.size > 0
+      ? rawItems.filter((i) => i.part_number && lpPairSet.has(`${i.part_number}__${i.fornecedor || "—"}`))
       : rawItems;
     return modelFilter === "bc4b"
       ? base.filter((i) => (i.projeto || "").toUpperCase().includes("BC4B"))
       : base;
-  }, [rawItems, modelFilter, lpPartSet]);
+  }, [rawItems, modelFilter, lpPairSet]);
 
 
 

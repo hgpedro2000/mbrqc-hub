@@ -697,7 +697,7 @@ export default function AnaliseRisco() {
         const c = cols[ci];
         doc.setFont("helvetica", cell.bold ? "bold" : "normal");
         doc.setTextColor(...cell.tone);
-        const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+        const tx = c.align === "right" ? cx + c.w - 2 : cx + 2;
         const txt = ci === 3
           ? (cell.v.length > 90 ? cell.v.slice(0, 89) + "…" : cell.v)
           : cell.v;

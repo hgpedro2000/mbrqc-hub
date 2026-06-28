@@ -93,6 +93,8 @@ const RequisitarItem = () => {
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
     } catch (e: any) { toast.error(e.message); }
   };
+
+  const openEditReq = (r: any) => {
     setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);
   };
   const handleEditReq = async () => {

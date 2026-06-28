@@ -53,6 +53,7 @@ const VersionBadge = () => {
 
   useEffect(() => {
     let subscribed = false;
+    let disposed = false;
     let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
     const refreshHistory = () => {
@@ -62,6 +63,7 @@ const VersionBadge = () => {
     };
 
     const startFallback = () => {
+      if (disposed) return;
       setHistoryRealtime("fallback");
       if (!fallbackTimer) fallbackTimer = setInterval(refreshHistory, 30_000);
     };
@@ -74,6 +76,7 @@ const VersionBadge = () => {
       .channel(`app-changelog-${Date.now()}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "app_changelog" }, refreshHistory)
       .subscribe((status) => {
+        if (disposed) return;
         if (status === "SUBSCRIBED") {
           subscribed = true;
           setHistoryRealtime("active");
@@ -90,6 +93,7 @@ const VersionBadge = () => {
       });
 
     return () => {
+      disposed = true;
       clearTimeout(fallbackDelay);
       if (fallbackTimer) clearInterval(fallbackTimer);
       supabase.removeChannel(channel);

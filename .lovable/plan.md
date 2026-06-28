@@ -1,44 +1,30 @@
-## 1. HelpDesk button — mover de Engenharia para Incoming
+## Objetivo
+Melhorar legibilidade dos rótulos dos gráficos e tornar o diálogo "Peças desconsideradas" simétrico e responsivo (desktop + mobile).
 
-- **Remover** o `<ReportErrorButton moduleName="Engenharia" />` do header da página `Engenharia.tsx` (já existe a aba Help Desk lá dentro, redundante).
-- **Manter** o botão "Chamados HelpDesk" do Hub (esse leva direto para a aba).
-- **Adicionar** `<ReportErrorButton moduleName="Apontamento Incoming" />` no header de `ApontamentoForm.tsx`, exibido **apenas quando `tipo === "incoming"`** (rota `/apontamentos/novo/incoming`).
+## Mudanças em `src/pages/AnaliseRisco.tsx`
 
-## 2. Monitor — slide "Avisos / Comunicados"
+### 1. Rótulos de dados dos gráficos
+- Aumentar `fontSize` dos `<LabelList>` de ~10/11px para **13px desktop / 12px mobile** (via hook `useIsMobile` já existente no projeto).
+- Aplicar `fontWeight: 600` e `fill` com cor de alto contraste (token `--foreground`) em todos os charts (Pareto modos de falha, barras por projeto, por fornecedor, mapa de risco, etc.).
+- Em gráficos de barra horizontal, mover rótulo para `position="right"` com offset para não cortar.
+- Em barras verticais, usar `position="top"` com offset 6.
 
-Hoje o slide mostra **1 aviso por vez**, em rotação de 8s, sem janela de validade. Vou expandir:
+### 2. Diálogo "Peças desconsideradas" — simetria
+- Padronizar o grid de filtros (Projeto / Modelo / Fornecedor / Busca) em:
+  - Mobile: `grid-cols-1` (stack)
+  - Tablet: `grid-cols-2`
+  - Desktop: `grid-cols-4` com larguras iguais (`gap-3`)
+- Altura uniforme nos `Select`/`Input` (`h-10`), labels com mesmo tamanho/peso.
+- Botões "Limpar filtros", "Pré-visualizar" e "Exportar PDF" alinhados em uma barra inferior `flex flex-wrap justify-end gap-2`, com `w-full sm:w-auto` no mobile.
 
-### 2.1 Banco (`monitor_slides_media`)
-Migration adicionando três colunas (não-quebrantes):
-- `vigencia_inicio  timestamptz null` — quando o aviso começa a aparecer
-- `vigencia_fim     timestamptz null` — quando para de aparecer
-- `slot             smallint default 1 check (slot between 1 and 4)` — em qual posição (1–4) ele aparece quando o slide está em modo multi-aviso
+### 3. Responsividade da tabela de excluídos
+- Wrap em `overflow-x-auto` com `min-w-[720px]` para preservar colunas no desktop.
+- No mobile (`<768px`): renderizar como **cards empilhados** (padrão do projeto — ver memory Mobile Patterns) com PN/Projeto/Fornecedor/NG/Último NG, mantendo os cabeçalhos clicáveis para ordenação acima da lista (chips de "Ordenar por").
+- Cabeçalhos da tabela desktop: padding consistente `px-3 py-2`, ordenação com ícone alinhado.
 
-Itens sem vigência continuam sempre vigentes (compatibilidade).
+### 4. Diálogo geral
+- `DialogContent` com `max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden flex flex-col`.
+- Corpo scrollável `flex-1 overflow-y-auto` para evitar que filtros/botões saiam da viewport.
 
-### 2.2 Admin (`MonitorAdmin.tsx`)
-Na seção "Comunicados", adicionar ao formulário de upload **e** ao card de edição:
-- Seletor "Posição no slide" (1, 2, 3 ou 4) — define em qual quadrante o aviso aparece.
-- "Início da vigência" e "Fim da vigência" (datetime-local, ambos opcionais).
-- Mostrar badge "Agendado" / "Expirado" / "Ativo" no card baseado nas datas.
-
-### 2.3 Slide do Monitor (`Monitor.tsx`, case `comunicados`/`alteracoes_4m`)
-- Filtrar `items` por vigência (`now ∈ [inicio, fim]` quando preenchidos).
-- Agrupar por `slot`. Layout dinâmico conforme quantidade de slots **com itens ativos no momento**:
-  - 1 slot → tela cheia (como hoje)
-  - 2 slots → grid 2 colunas
-  - 3 slots → grid 3 colunas
-  - 4 slots → grid 2×2
-- Dentro de cada slot, se houver vários avisos no mesmo slot, rotaciona-os a cada 8s (mantém o comportamento atual, mas por slot).
-- Contador "x / total" passa a ser por slot.
-
-## Detalhes técnicos
-
-- Migration emite `GRANT`s já presentes na tabela; só adiciono colunas.
-- `MonitorAdmin` envia `vigencia_inicio`, `vigencia_fim` (ISO) e `slot` no `insert`/`update`.
-- `Monitor.tsx` recalcula slots a cada tick (já há `now` rodando), sem refazer fetch.
-- Sem mudança nas políticas RLS (colunas novas herdam as policies existentes).
-- Nenhuma alteração nos slides de "Alterações 4M" (mesmo case mas a UI multi-slot é opt-in: o `slot` default = 1, então sem configuração ele continua igual).
-
-## Changelog
-Bump patch + entrada em `app_changelog` descrevendo as três mudanças.
+## Sem alterações
+- Lógica de filtros, ordenação, persistência (localStorage) e geração de PDF permanecem intactas.

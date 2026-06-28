@@ -1058,49 +1058,53 @@ export default function AnaliseRisco() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex flex-col gap-1 min-w-[160px]">
-              <label className="text-[11px] text-muted-foreground">Projeto</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Projeto</label>
               <Select value={excFiltProjeto} onValueChange={setExcFiltProjeto}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.projetos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[160px]">
-              <label className="text-[11px] text-muted-foreground">Modelo (peça)</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Modelo (peça)</label>
               <Select value={excFiltModelo} onValueChange={setExcFiltModelo}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.modelos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-              <label className="text-[11px] text-muted-foreground">Fornecedor</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Fornecedor</label>
               <Select value={excFiltFornecedor} onValueChange={setExcFiltFornecedor}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.fornecedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[180px] flex-1">
-              <label className="text-[11px] text-muted-foreground">Busca (PN / Projeto / Modelo / Fornecedor)</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Busca</label>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
                   value={excSearch}
                   onChange={(e) => setExcSearch(e.target.value)}
-                  placeholder="Digite para filtrar..."
-                  className="h-8 text-xs pl-7"
+                  placeholder="PN / Projeto / Modelo / Fornecedor"
+                  className="h-10 text-xs pl-7 w-full"
                 />
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground flex-wrap">
+            <span>{filteredExcluded.length} de {excludedParts.length} registros</span>
             {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
                 variant="ghost" size="sm" className="h-8 text-xs"
@@ -1109,10 +1113,8 @@ export default function AnaliseRisco() {
                 Limpar filtros
               </Button>
             )}
-            <div className="text-xs text-muted-foreground ml-auto self-center">
-              {filteredExcluded.length} de {excludedParts.length}
-            </div>
           </div>
+
 
           <div className="flex justify-end gap-2">
             {(() => {

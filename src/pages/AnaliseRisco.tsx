@@ -1379,8 +1379,9 @@ export default function AnaliseRisco() {
             </div>
 
             <Card className="border-destructive/30 bg-destructive/5">
-              <div className="px-4 py-3 border-b border-destructive/20">
+              <div className="px-4 py-3 border-b border-destructive/20 flex items-center justify-between gap-2">
                 <h3 className="font-semibold uppercase tracking-wide text-xs text-destructive">Inspeção 100% — não liberar sem verificação</h3>
+                <Button size="sm" variant="ghost" className="h-8 text-[11px]" onClick={() => setInsight("alto")}>Ver lista</Button>
               </div>
               <div className="divide-y">
                 {partsForAnalysis.filter((p) => p.classification === "alto").map((p) => (

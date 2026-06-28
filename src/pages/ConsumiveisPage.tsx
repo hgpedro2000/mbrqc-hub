@@ -162,6 +162,7 @@ const RequisitarItem = () => {
         <div className="sm:hidden space-y-2">
           {filteredRequests.map((r: any) => {
             const cfg = statusConfig[r.status] || statusConfig.aguardando;
+            const editable = r.status === "aguardando";
             return (
               <div key={r.id} className="border rounded-lg p-3 space-y-1">
                 <div className="flex items-center justify-between">
@@ -173,6 +174,16 @@ const RequisitarItem = () => {
                   <span>Qtd: <strong>{r.quantity}</strong></span>
                   <span>{new Date(r.created_at).toLocaleDateString("pt-BR")}</span>
                 </div>
+                {editable && (
+                  <div className="flex gap-2 pt-1">
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs" onClick={() => openEditReq(r)}>
+                      <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+                    </Button>
+                    <Button size="sm" variant="outline" className="flex-1 h-8 text-xs text-destructive" onClick={() => setCancelReqId(r.id)}>
+                      <XIcon className="w-3.5 h-3.5 mr-1" /> Cancelar
+                    </Button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -189,11 +200,13 @@ const RequisitarItem = () => {
                 <TableHead className="text-xs text-center">Qtd</TableHead>
                 <TableHead className="text-xs">Data</TableHead>
                 <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredRequests.map((r: any) => {
                 const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                const editable = r.status === "aguardando";
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
@@ -201,17 +214,69 @@ const RequisitarItem = () => {
                     <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                    <TableCell className="text-right">
+                      {editable ? (
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditReq(r)} title="Editar">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => setCancelReqId(r.id)} title="Cancelar">
+                            <XIcon className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
+                    </TableCell>
                   </TableRow>
                 );
               })}
               {filteredRequests.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhum pedido encontrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Nenhum pedido encontrado</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </div>
         </>
       )}
+
+      <Dialog open={!!editReq} onOpenChange={(o) => !o && setEditReq(null)}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader><DialogTitle>Editar Pedido</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Item *</Label>
+              <Select value={editItemId} onValueChange={setEditItemId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+                <SelectContent>
+                  {items.map((i: any) => (
+                    <SelectItem key={i.id} value={i.id}>{i.name} ({i.unit})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Quantidade *</Label>
+              <Input type="number" min={1} value={editQty} onChange={(e) => setEditQty(Math.max(1, Number(e.target.value)))} />
+            </div>
+            <Button onClick={handleEditReq} disabled={editSaving} className="w-full min-h-[44px]">
+              {editSaving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
+              Salvar alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!cancelReqId} onOpenChange={(o) => !o && setCancelReqId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar pedido</AlertDialogTitle>
+            <AlertDialogDescription>Esta ação remove o pedido. Só é possível enquanto estiver "Aguardando".</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleCancelReq}>Cancelar pedido</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">

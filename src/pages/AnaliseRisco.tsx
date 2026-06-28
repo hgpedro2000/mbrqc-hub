@@ -40,15 +40,19 @@ export type PartRisk = {
   pn: string;
   partName: string;
   fornecedor: string;
+  projeto?: string;
   ng: number;
   diasSem: number;
   modoRecorrente: string;
+  firstNgDate?: string | null;
+  lastNgDate?: string | null;
   score: number;
   classification: "alto" | "medio" | "baixo";
   recomendacao: string;
   monthsWithModo: number;
   ppmFornecedor: number;
 };
+
 
 // pt-BR number formatter — uses ponto como separador de milhar (ex.: 7.000)
 export const fmt = (n: number) => (n ?? 0).toLocaleString("pt-BR");

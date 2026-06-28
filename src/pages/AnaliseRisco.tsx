@@ -1086,10 +1086,22 @@ export default function AnaliseRisco() {
                 </SelectContent>
               </Select>
             </div>
-            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__") && (
+            <div className="flex flex-col gap-1 min-w-[180px] flex-1">
+              <label className="text-[11px] text-muted-foreground">Busca (PN / Projeto / Modelo / Fornecedor)</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  value={excSearch}
+                  onChange={(e) => setExcSearch(e.target.value)}
+                  placeholder="Digite para filtrar..."
+                  className="h-8 text-xs pl-7"
+                />
+              </div>
+            </div>
+            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
                 variant="ghost" size="sm" className="h-8 text-xs"
-                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); }}
+                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); setExcSearch(""); }}
               >
                 Limpar filtros
               </Button>

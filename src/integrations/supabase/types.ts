@@ -885,6 +885,7 @@ export type Database = {
           item_name: string
           numero: string | null
           origem: string
+          pedido_id: string | null
           quantity: number
           status: string
           turno: string | null
@@ -901,6 +902,7 @@ export type Database = {
           item_name?: string
           numero?: string | null
           origem?: string
+          pedido_id?: string | null
           quantity?: number
           status?: string
           turno?: string | null
@@ -917,6 +919,7 @@ export type Database = {
           item_name?: string
           numero?: string | null
           origem?: string
+          pedido_id?: string | null
           quantity?: number
           status?: string
           turno?: string | null

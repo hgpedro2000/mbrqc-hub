@@ -33,6 +33,7 @@ export const getConsumivelRole = (cargo?: string | null, isAdmin?: boolean): Con
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
+  entregue_pendente_confirmacao: { label: "Aguardando confirmação", color: "border-blue-500 text-blue-600 bg-blue-500/10" },
   entregue: { label: "Entregue", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
   rejeitado: { label: "Rejeitado", color: "border-red-500 text-red-600 bg-red-500/10" },
 };

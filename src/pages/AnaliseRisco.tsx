@@ -119,7 +119,7 @@ export default function AnaliseRisco() {
   // Apply model filter (BC4B vs todos) before any aggregation.
   const items = useMemo(
     () => modelFilter === "bc4b"
-      ? rawItems.filter((i) => (i.part_number || "").toUpperCase().includes("BC4B"))
+      ? rawItems.filter((i) => (i.projeto || "").toUpperCase().includes("BC4B"))
       : rawItems,
     [rawItems, modelFilter],
   );

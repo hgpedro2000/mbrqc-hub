@@ -92,9 +92,29 @@ export default function AnaliseRisco() {
   const [showHelp, setShowHelp] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [buildingPdf, setBuildingPdf] = useState(false);
-  const [excFiltProjeto, setExcFiltProjeto] = useState<string>("__all__");
-  const [excFiltModelo, setExcFiltModelo] = useState<string>("__all__");
-  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>("__all__");
+  const EXC_LS_KEY = "analise_risco_excluded_filters_v1";
+  const initialExcFilters = (() => {
+    try {
+      const raw = localStorage.getItem(EXC_LS_KEY);
+      if (raw) return JSON.parse(raw) as { projeto?: string; modelo?: string; fornecedor?: string; q?: string; sortKey?: string; sortDir?: string };
+    } catch { /* noop */ }
+    return {};
+  })();
+  const [excFiltProjeto, setExcFiltProjeto] = useState<string>(initialExcFilters.projeto || "__all__");
+  const [excFiltModelo, setExcFiltModelo] = useState<string>(initialExcFilters.modelo || "__all__");
+  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>(initialExcFilters.fornecedor || "__all__");
+  const [excSearch, setExcSearch] = useState<string>(initialExcFilters.q || "");
+  const [excSortKey, setExcSortKey] = useState<"pn" | "projeto" | "fornecedor" | "ng" | "lastNgDate">((initialExcFilters.sortKey as any) || "ng");
+  const [excSortDir, setExcSortDir] = useState<"asc" | "desc">((initialExcFilters.sortDir as any) || "desc");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXC_LS_KEY, JSON.stringify({
+        projeto: excFiltProjeto, modelo: excFiltModelo, fornecedor: excFiltFornecedor,
+        q: excSearch, sortKey: excSortKey, sortDir: excSortDir,
+      }));
+    } catch { /* noop */ }
+  }, [excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -341,13 +361,26 @@ export default function AnaliseRisco() {
   }, [excludedParts]);
 
   const filteredExcluded = useMemo(() => {
-    return excludedParts.filter((e: any) => {
+    const q = excSearch.trim().toLowerCase();
+    const arr = excludedParts.filter((e: any) => {
       if (excFiltProjeto !== "__all__" && (e.projeto || "—") !== excFiltProjeto) return false;
       if (excFiltModelo !== "__all__" && (e.partName || "—") !== excFiltModelo) return false;
       if (excFiltFornecedor !== "__all__" && (e.fornecedor || "—") !== excFiltFornecedor) return false;
+      if (q) {
+        const hay = `${e.pn || ""} ${e.projeto || ""} ${e.partName || ""} ${e.fornecedor || ""} ${e.modoRecorrente || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor]);
+    const dir = excSortDir === "asc" ? 1 : -1;
+    arr.sort((a: any, b: any) => {
+      const av = a[excSortKey] ?? "";
+      const bv = b[excSortKey] ?? "";
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return arr;
+  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
 
   const excludedKeys = useMemo(
@@ -1053,10 +1086,22 @@ export default function AnaliseRisco() {
                 </SelectContent>
               </Select>
             </div>
-            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__") && (
+            <div className="flex flex-col gap-1 min-w-[180px] flex-1">
+              <label className="text-[11px] text-muted-foreground">Busca (PN / Projeto / Modelo / Fornecedor)</label>
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  value={excSearch}
+                  onChange={(e) => setExcSearch(e.target.value)}
+                  placeholder="Digite para filtrar..."
+                  className="h-8 text-xs pl-7"
+                />
+              </div>
+            </div>
+            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
                 variant="ghost" size="sm" className="h-8 text-xs"
-                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); }}
+                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); setExcSearch(""); }}
               >
                 Limpar filtros
               </Button>
@@ -1090,14 +1135,15 @@ export default function AnaliseRisco() {
 
                 const logoB64 = await urlToBase64(logoMobis);
 
-                const semLanc = excludedParts.filter((e: any) => e.reason === "sem lançamento").length;
-                const recorr = excludedParts.length - semLanc;
-                const totalNG = excludedParts.reduce((a: number, e: any) => a + (e.ng || 0), 0);
+                const pdfData = filteredExcluded;
+                const semLanc = pdfData.filter((e: any) => e.reason === "sem lançamento").length;
+                const recorr = pdfData.length - semLanc;
+                const totalNG = pdfData.reduce((a: number, e: any) => a + (e.ng || 0), 0);
 
                 // Breakdown by Modelo (projeto) and Módulo (fornecedor)
                 const groupCount = (key: "projeto" | "fornecedor") => {
                   const m = new Map<string, number>();
-                  excludedParts.forEach((e: any) => {
+                  pdfData.forEach((e: any) => {
                     const k = (e[key] || "—").toString().trim() || "—";
                     m.set(k, (m.get(k) || 0) + 1);
                   });
@@ -1158,7 +1204,7 @@ export default function AnaliseRisco() {
                 const cardW = (pageW - M * 2 - 9) / 4;
                 const cardH = 20;
                 const kpis: Array<{ label: string; value: string; tone: [number, number, number] }> = [
-                  { label: "Total desconsideradas", value: fmt(excludedParts.length), tone: HYUNDAI_BLUE },
+                  { label: "Total desconsideradas", value: fmt(pdfData.length), tone: HYUNDAI_BLUE },
                   { label: "Sem lançamento", value: fmt(semLanc), tone: SLATE },
                   { label: "Recorrentes (3+ meses)", value: fmt(recorr), tone: AMBER },
                   { label: "NG acumuladas", value: fmt(totalNG), tone: RED },
@@ -1277,7 +1323,7 @@ export default function AnaliseRisco() {
 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(8.5);
-                excludedParts.forEach((e: any, idx: number) => {
+                pdfData.forEach((e: any, idx: number) => {
                   if (y + rowH > pageH - 14) {
                     drawFooter(doc.getNumberOfPages(), 0);
                     doc.addPage();
@@ -1349,7 +1395,7 @@ export default function AnaliseRisco() {
                 <>
                   <Button
                     size="sm" variant="outline" className="h-8 text-xs gap-1"
-                    disabled={!excludedParts.length || buildingPdf}
+                    disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handlePreview}
                     aria-busy={buildingPdf}
                   >
@@ -1360,7 +1406,7 @@ export default function AnaliseRisco() {
                   </Button>
                   <Button
                     size="sm" className="h-8 text-xs gap-1"
-                    disabled={!excludedParts.length || buildingPdf}
+                    disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handleSave}
                     aria-busy={buildingPdf}
                   >
@@ -1377,14 +1423,31 @@ export default function AnaliseRisco() {
           <div className="max-h-[60vh] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs sticky top-0">
-                <tr>
-                  <th className="text-left px-3 py-2">Part Number</th>
-                  <th className="text-left px-3 py-2">Projeto</th>
-                  <th className="text-left px-3 py-2">Fornecedor</th>
-                  <th className="text-center px-3 py-2">NG</th>
-                  <th className="text-center px-3 py-2">Último NG</th>
-                  <th className="text-left px-3 py-2">Motivo</th>
-                </tr>
+                {(() => {
+                  const toggleSort = (k: typeof excSortKey) => {
+                    if (excSortKey === k) setExcSortDir(excSortDir === "asc" ? "desc" : "asc");
+                    else { setExcSortKey(k); setExcSortDir(k === "ng" ? "desc" : "asc"); }
+                  };
+                  const arrow = (k: typeof excSortKey) => excSortKey === k ? (excSortDir === "asc" ? " ▲" : " ▼") : "";
+                  const Th = ({ k, label, align = "left" }: { k: typeof excSortKey; label: string; align?: "left" | "center" }) => (
+                    <th
+                      className={`px-3 py-2 cursor-pointer select-none hover:bg-muted/60 text-${align}`}
+                      onClick={() => toggleSort(k)}
+                    >
+                      {label}{arrow(k)}
+                    </th>
+                  );
+                  return (
+                    <tr>
+                      <Th k="pn" label="Part Number" />
+                      <Th k="projeto" label="Projeto" />
+                      <Th k="fornecedor" label="Fornecedor" />
+                      <Th k="ng" label="NG" align="center" />
+                      <Th k="lastNgDate" label="Último NG" align="center" />
+                      <th className="text-left px-3 py-2">Motivo</th>
+                    </tr>
+                  );
+                })()}
               </thead>
               <tbody>
                 {filteredExcluded.map((e: any, idx) => (
@@ -1429,7 +1492,7 @@ export default function AnaliseRisco() {
           <DialogHeader>
             <DialogTitle>Pré-visualização do PDF</DialogTitle>
             <DialogDescription>
-              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {excludedParts.length} peça(s) desconsiderada(s)
+              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {filteredExcluded.length} peça(s) desconsiderada(s)
             </DialogDescription>
           </DialogHeader>
           {pdfPreviewUrl && (

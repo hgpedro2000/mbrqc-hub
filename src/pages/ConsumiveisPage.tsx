@@ -39,6 +39,42 @@ const RequisitarItem = () => {
   const [qty, setQty] = useState(1);
   const [sending, setSending] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editReq, setEditReq] = useState<any>(null);
+  const [editQty, setEditQty] = useState(1);
+  const [editItemId, setEditItemId] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [cancelReqId, setCancelReqId] = useState<string | null>(null);
+
+  const openEditReq = (r: any) => {
+    setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);
+  };
+  const handleEditReq = async () => {
+    if (!editReq) return;
+    if (editQty < 1) { toast.error("Quantidade mínima é 1"); return; }
+    setEditSaving(true);
+    try {
+      const itemObj = items.find((i: any) => i.id === editItemId);
+      const { error } = await supabase.from("consumable_requests")
+        .update({ item_id: editItemId, item_name: itemObj?.name || editReq.item_name, quantity: editQty } as any)
+        .eq("id", editReq.id).eq("status", "aguardando");
+      if (error) throw error;
+      toast.success("Pedido atualizado");
+      setEditReq(null);
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); } finally { setEditSaving(false); }
+  };
+  const handleCancelReq = async () => {
+    if (!cancelReqId) return;
+    try {
+      const { error } = await supabase.from("consumable_requests").delete().eq("id", cancelReqId).eq("status", "aguardando");
+      if (error) throw error;
+      toast.success("Pedido cancelado");
+      setCancelReqId(null);
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const { data: items = [] } = useQuery({
     queryKey: ["consumable-items-active"],

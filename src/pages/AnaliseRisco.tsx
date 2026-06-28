@@ -158,9 +158,9 @@ export default function AnaliseRisco() {
   }, [excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
   const chartIsDouble = chartLayout === "double" && !isMobile;
-  const paretoChartHeight = chartIsDouble ? "h-[500px]" : "h-[560px]";
-  const paretoBottomMargin = chartIsDouble ? 130 : 100;
-  const paretoXAxisAngle = chartIsDouble ? -45 : -25;
+  const paretoChartHeight = isMobile ? "h-[620px]" : chartIsDouble ? "h-[500px]" : "h-[560px]";
+  const paretoBottomMargin = isMobile ? 170 : chartIsDouble ? 130 : 100;
+  const paretoXAxisAngle = isMobile ? -45 : chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
   // Slot arrays are filled later (after paretoData is computed) so the
   // anti-overlap rule only triggers for labels that are actually close.
@@ -362,7 +362,7 @@ export default function AnaliseRisco() {
   // o limiar de proximidade é calculado em PIXELS a partir da altura real do
   // gráfico e da fonte do rótulo, então o stagger só é aplicado quando há risco
   // real de sobreposição.
-  const paretoChartH = chartIsDouble ? 280 : 360;
+  const paretoChartH = isMobile ? 420 : chartIsDouble ? 280 : 360;
   // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
     () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),

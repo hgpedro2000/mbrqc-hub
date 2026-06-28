@@ -1552,7 +1552,7 @@ export default function AnaliseRisco() {
             <span>{filteredExcluded.length} de {excludedParts.length} registros</span>
             {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
-                variant="ghost" size="sm" className="h-8 text-xs"
+                variant="ghost" size="sm" className="min-h-11 text-xs"
                 onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); setExcSearch(""); }}
               >
                 Limpar filtros
@@ -1899,7 +1899,7 @@ export default function AnaliseRisco() {
                         <button
                           key={c.k}
                           onClick={() => toggleSort(c.k)}
-                          className={`px-2 py-1 rounded-md border ${excSortKey === c.k ? "bg-primary/10 border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                          className={`min-h-11 px-3 py-2 rounded-md border ${excSortKey === c.k ? "bg-primary/10 border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
                         >
                           {c.label}{arrow(c.k)}
                         </button>
@@ -2105,20 +2105,20 @@ export default function AnaliseRisco() {
                       onChange={(e) => setDrillSearch(e.target.value)}
                       placeholder="Buscar data ou modo..."
                       aria-label="Buscar apontamentos por data ou modo de falha"
-                      className="h-8 pl-7 w-[200px] text-xs"
+                      className="min-h-11 pl-7 w-full sm:w-[200px] text-xs"
                     />
                   </div>
                   <Button
                     size="sm" variant="outline" onClick={exportDrillCSV}
                     aria-label="Exportar histórico em CSV"
-                    className="h-8"
+                    className="min-h-11"
                   >
                     <Download className="w-3.5 h-3.5 mr-1" /> CSV
                   </Button>
                   <Button
                     size="sm" variant="outline" onClick={previewDrillPDF}
                     aria-label="Pré-visualizar PDF"
-                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
+                    className="min-h-11" disabled={buildingPdf} aria-busy={buildingPdf}
                   >
                     {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
                     Pré-visualizar
@@ -2126,7 +2126,7 @@ export default function AnaliseRisco() {
                   <Button
                     size="sm" onClick={exportDrillPDF}
                     aria-label="Exportar histórico em PDF"
-                    className="h-8" disabled={buildingPdf} aria-busy={buildingPdf}
+                    className="min-h-11" disabled={buildingPdf} aria-busy={buildingPdf}
                   >
                     {buildingPdf ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <FileText className="w-3.5 h-3.5 mr-1" />}
                     PDF
@@ -2167,7 +2167,7 @@ export default function AnaliseRisco() {
                     </span>
                     <div className="flex gap-1">
                       <Button
-                        size="icon" variant="outline" className="h-7 w-7"
+                        size="icon" variant="outline" className="h-11 w-11"
                         onClick={() => setDrillPage((p) => Math.max(1, p - 1))}
                         disabled={drillPageSafe <= 1}
                         aria-label="Página anterior"
@@ -2175,7 +2175,7 @@ export default function AnaliseRisco() {
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
                       <Button
-                        size="icon" variant="outline" className="h-7 w-7"
+                        size="icon" variant="outline" className="h-11 w-11"
                         onClick={() => setDrillPage((p) => Math.min(drillTotalPages, p + 1))}
                         disabled={drillPageSafe >= drillTotalPages}
                         aria-label="Próxima página"

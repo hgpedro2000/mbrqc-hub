@@ -218,12 +218,19 @@ const RequisitarItem = () => {
           {filteredRequests.map((r: any) => {
             const cfg = statusConfig[r.status] || statusConfig.aguardando;
             const editable = r.status === "aguardando";
+            const fromLeader = r.origem === "pedido_coletivo" && r.criado_por && r.criado_por !== r.user_id;
+            const needsConfirm = r.status === "entregue_pendente_confirmacao";
             return (
               <div key={r.id} className="border rounded-lg p-3 space-y-1">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
                   <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
                 </div>
+                {fromLeader && (
+                  <Badge variant="outline" className="text-[10px] border-primary/40 text-primary bg-primary/5">
+                    Pedido gerado pelo Líder
+                  </Badge>
+                )}
                 <p className="text-sm font-medium">{r.item_name}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>Qtd: <strong>{r.quantity}</strong></span>
@@ -238,6 +245,11 @@ const RequisitarItem = () => {
                       <XIcon className="w-3.5 h-3.5 mr-1" /> Cancelar
                     </Button>
                   </div>
+                )}
+                {needsConfirm && (
+                  <Button size="sm" className="w-full h-8 text-xs mt-1" disabled={confirming} onClick={() => confirmReceipt(r.id)}>
+                    <Check className="w-3.5 h-3.5 mr-1" /> Confirmar recebimento
+                  </Button>
                 )}
               </div>
             );

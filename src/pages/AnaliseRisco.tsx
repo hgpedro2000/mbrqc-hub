@@ -105,16 +105,18 @@ export default function AnaliseRisco() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("part_numbers")
-        .select("part_number,part_name,suppliers(name)")
+        .select("part_number,part_name,project,suppliers(name)")
         .eq("active", true);
       if (error) throw error;
       return (data || []).map((r: any) => ({
         pn: r.part_number as string,
         partName: r.part_name as string,
+        projeto: (r.project as string) || "—",
         fornecedor: r.suppliers?.name || "—",
       }));
     },
   });
+
 
   // Apply model filter (BC4B vs todos) before any aggregation.
   const items = useMemo(

@@ -1811,7 +1811,7 @@ export default function AnaliseRisco() {
 
               </div>
 
-              <Card className="p-3">
+              <Card className="p-3" ref={drillChartRef}>
                 <h4 className="text-xs font-semibold mb-2 text-muted-foreground">NG por dia</h4>
                 <div className="h-[180px]">
                   <ResponsiveContainer>

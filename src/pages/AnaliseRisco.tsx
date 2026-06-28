@@ -495,39 +495,243 @@ export default function AnaliseRisco() {
     URL.revokeObjectURL(url);
   };
 
-  const exportDrillPDF = () => {
-    if (!drill || !drillData) return;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const margin = 40;
-    let y = margin;
-    doc.setFontSize(14);
-    doc.text(`Histórico - ${drill.pn}`, margin, y); y += 18;
-    doc.setFontSize(10);
-    doc.text(`Fornecedor: ${drill.fornecedor}`, margin, y); y += 14;
-    doc.text(`Período: últimos ${periodo} dias`, margin, y); y += 14;
-    doc.text(`NG total: ${fmt(drillData.totalNg)}  |  OK total: ${fmt(drillData.totalOk)}  |  PPM: ${fmt(drillData.ppm)}`, margin, y); y += 20;
+  const drillChartRef = useRef<HTMLDivElement>(null);
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Data", margin, y);
-    doc.text("OK", margin + 110, y);
-    doc.text("NG", margin + 150, y);
-    doc.text("Modo de falha", margin + 200, y);
-    doc.setFont("helvetica", "normal");
-    y += 12;
-    doc.line(margin, y, 555, y); y += 10;
+  const buildDrillPdf = async () => {
+    if (!drill || !drillData) return null;
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const M = 12;
+    const now = new Date();
 
-    const pageHeight = doc.internal.pageSize.getHeight();
-    for (const r of drillData.rows) {
-      if (y > pageHeight - margin) { doc.addPage(); y = margin; }
-      doc.text(String(r.data), margin, y);
-      doc.text(String(r.quantidade_ok || 0), margin + 110, y);
-      doc.text(String(r.quantidade_ng || 0), margin + 150, y);
-      const modo = r.modo_falha ? stripCode(r.modo_falha) : "—";
-      doc.text(doc.splitTextToSize(modo, 320), margin + 200, y);
-      y += 14;
+    const HYUNDAI_BLUE: [number, number, number] = [0, 47, 108];
+    const NAVY: [number, number, number] = [31, 78, 121];
+    const TEAL: [number, number, number] = [13, 148, 136];
+    const RED: [number, number, number] = [196, 30, 58];
+    const SLATE: [number, number, number] = [71, 85, 105];
+    const MUTED: [number, number, number] = [148, 163, 184];
+    const SOFT: [number, number, number] = [241, 245, 249];
+    const ZEBRA: [number, number, number] = [249, 250, 251];
+    const EMERALD: [number, number, number] = [16, 122, 87];
+    const GREY: [number, number, number] = [107, 114, 128];
+
+    const logoB64 = await urlToBase64(logoMobis);
+
+    // Capture chart
+    let chartImg: string | null = null;
+    let chartRatio = 0;
+    if (drillChartRef.current) {
+      try {
+        const html2canvas = (await import("html2canvas")).default;
+        const canvas = await html2canvas(drillChartRef.current, {
+          backgroundColor: "#ffffff", scale: 2, useCORS: true,
+        });
+        chartImg = canvas.toDataURL("image/png");
+        chartRatio = canvas.height / canvas.width;
+      } catch {}
     }
-    doc.save(`historico_${drill.pn}_${periodo}d.pdf`);
+
+    const drawHeader = () => {
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pageW, 22, "F");
+      doc.setFillColor(...HYUNDAI_BLUE);
+      doc.rect(0, 22, pageW, 1.2, "F");
+      if (logoB64) { try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {} }
+      doc.setTextColor(...HYUNDAI_BLUE);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.text(`Histórico Completo — ${drill.pn}`, pageW - M, 11, { align: "right" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...SLATE);
+      doc.text(
+        `${drill.fornecedor} · Últimos ${periodo} dias · Gerado em ${now.toLocaleString("pt-BR")}`,
+        pageW - M, 17, { align: "right" }
+      );
+    };
+
+    const drawFooter = (page: number, pages: number) => {
+      doc.setDrawColor(...MUTED); doc.setLineWidth(0.2);
+      doc.line(M, pageH - 10, pageW - M, pageH - 10);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8); doc.setTextColor(...GREY);
+      doc.text("Hyundai Mobis — Quality Tools", M, pageH - 5);
+      doc.text(`Página ${page} de ${pages}`, pageW - M, pageH - 5, { align: "right" });
+    };
+
+    drawHeader();
+    let y = 32;
+
+    // ===== KPIs =====
+    doc.setTextColor(...HYUNDAI_BLUE);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("Resumo", M, y);
+    doc.setDrawColor(...HYUNDAI_BLUE); doc.setLineWidth(0.6);
+    doc.line(M, y + 1.5, M + 22, y + 1.5);
+    y += 6;
+
+    const cardW = (pageW - M * 2 - 9) / 4;
+    const cardH = 20;
+    const kpis: Array<{ label: string; value: string; tone: [number, number, number] }> = [
+      { label: "NG Total", value: fmt(drillData.totalNg), tone: RED },
+      { label: "OK Total", value: fmt(drillData.totalOk), tone: EMERALD },
+      { label: "Inspecionadas", value: fmt(drillData.totalInsp), tone: NAVY },
+      { label: "PPM", value: fmt(drillData.ppm), tone: AMBER_TONE },
+    ];
+    kpis.forEach((k, i) => {
+      const x = M + i * (cardW + 3);
+      doc.setFillColor(...SOFT);
+      doc.roundedRect(x, y, cardW, cardH, 2, 2, "F");
+      doc.setFillColor(...k.tone);
+      doc.rect(x, y, 1.6, cardH, "F");
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...SLATE);
+      doc.text(k.label.toUpperCase(), x + 4, y + 6);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(...k.tone);
+      doc.text(k.value, x + 4, y + 15);
+    });
+    y += cardH + 5;
+
+    // ===== Chart + Top Modos side by side =====
+    const colW = (pageW - M * 2 - 6) / 2;
+    const blockTop = y;
+    const chartH = chartImg ? Math.min(70, colW * chartRatio) : 60;
+
+    // Chart card
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setTextColor(...HYUNDAI_BLUE);
+    doc.text("NG por dia", M, blockTop);
+    doc.setDrawColor(...HYUNDAI_BLUE); doc.setLineWidth(0.5);
+    doc.line(M, blockTop + 1.2, M + 18, blockTop + 1.2);
+    if (chartImg) {
+      try { doc.addImage(chartImg, "PNG", M, blockTop + 3, colW, chartH); } catch {}
+    } else {
+      doc.setFillColor(...SOFT);
+      doc.roundedRect(M, blockTop + 3, colW, chartH, 1.5, 1.5, "F");
+    }
+
+    // Top modos card
+    const x2 = M + colW + 6;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.setTextColor(...HYUNDAI_BLUE);
+    doc.text("Modos de falha", x2, blockTop);
+    doc.setDrawColor(...TEAL); doc.setLineWidth(0.5);
+    doc.line(x2, blockTop + 1.2, x2 + 22, blockTop + 1.2);
+    const modos = drillData.topModos.slice(0, 8);
+    const bh = Math.max(chartH, modos.length * 5.5 + 4);
+    doc.setFillColor(...SOFT);
+    doc.roundedRect(x2, blockTop + 3, colW, bh, 1.5, 1.5, "F");
+    let by = blockTop + 8;
+    if (!modos.length) {
+      doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(...GREY);
+      doc.text("Sem dados", x2 + 3, by);
+    } else {
+      doc.setFontSize(8.5);
+      modos.forEach(([modo, qty]) => {
+        const lbl = modo.length > 56 ? modo.slice(0, 55) + "…" : modo;
+        doc.setFont("helvetica", "normal"); doc.setTextColor(...SLATE);
+        doc.text(lbl, x2 + 3, by);
+        doc.setFont("helvetica", "bold"); doc.setTextColor(...RED);
+        doc.text(fmt(qty), x2 + colW - 3, by, { align: "right" });
+        by += 5.5;
+      });
+    }
+    y = blockTop + 3 + Math.max(chartH, bh) + 5;
+
+    // ===== TABLE =====
+    doc.setTextColor(...NAVY);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("Apontamentos", M, y);
+    doc.setDrawColor(...RED); doc.setLineWidth(0.6);
+    doc.line(M, y + 1.5, M + 28, y + 1.5);
+    y += 5;
+
+    const cols = [
+      { h: "Data", w: 30, align: "left" as const },
+      { h: "OK", w: 25, align: "right" as const },
+      { h: "NG", w: 25, align: "right" as const },
+      { h: "Modo de falha", w: pageW - M * 2 - 80, align: "left" as const },
+    ];
+    const rowH = 7;
+
+    const drawTableHeader = () => {
+      doc.setFillColor(...NAVY);
+      doc.rect(M, y, pageW - M * 2, rowH, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9);
+      let cx = M;
+      cols.forEach((c) => {
+        const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+        doc.text(c.h, tx, y + 4.8, { align: c.align });
+        cx += c.w;
+      });
+      y += rowH;
+    };
+    drawTableHeader();
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+    drillData.rows.forEach((r: any, idx: number) => {
+      if (y + rowH > pageH - 14) {
+        drawFooter(doc.getNumberOfPages(), 0);
+        doc.addPage();
+        drawHeader();
+        y = 30;
+        drawTableHeader();
+        doc.setFont("helvetica", "normal"); doc.setFontSize(8.5);
+      }
+      if (idx % 2 === 0) {
+        doc.setFillColor(...ZEBRA);
+        doc.rect(M, y, pageW - M * 2, rowH, "F");
+      }
+      const ng = r.quantidade_ng || 0;
+      const ok = r.quantidade_ok || 0;
+      const modo = r.modo_falha ? stripCode(r.modo_falha) : "—";
+      const values: Array<{ v: string; tone: [number, number, number]; bold?: boolean }> = [
+        { v: String(r.data), tone: SLATE },
+        { v: fmt(ok), tone: EMERALD },
+        { v: fmt(ng), tone: ng > 0 ? RED : SLATE, bold: ng > 0 },
+        { v: modo, tone: SLATE },
+      ];
+      let cx = M;
+      values.forEach((cell, ci) => {
+        const c = cols[ci];
+        doc.setFont("helvetica", cell.bold ? "bold" : "normal");
+        doc.setTextColor(...cell.tone);
+        const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+        const txt = ci === 3
+          ? (cell.v.length > 90 ? cell.v.slice(0, 89) + "…" : cell.v)
+          : cell.v;
+        doc.text(txt, tx, y + 4.8, { align: c.align });
+        cx += c.w;
+      });
+      y += rowH;
+    });
+
+    doc.setDrawColor(...MUTED); doc.setLineWidth(0.2);
+    doc.line(M, y, pageW - M, y);
+
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) { doc.setPage(p); drawFooter(p, pages); }
+    return doc;
+  };
+
+  const exportDrillPDF = async () => {
+    setBuildingPdf(true);
+    try {
+      const doc = await buildDrillPdf();
+      if (doc && drill) doc.save(`historico_${drill.pn}_${periodo}d.pdf`);
+    } finally { setBuildingPdf(false); }
+  };
+
+  const previewDrillPDF = async () => {
+    setBuildingPdf(true);
+    try {
+      const doc = await buildDrillPdf();
+      if (!doc) return;
+      const url = doc.output("bloburl") as unknown as string;
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+      setPdfPreviewUrl(String(url));
+    } finally { setBuildingPdf(false); }
   };
 
 

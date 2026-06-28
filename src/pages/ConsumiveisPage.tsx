@@ -214,9 +214,14 @@ const RequisitarItem = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
-        <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto" onClick={() => setScanOpen(true)}>
-          <ScanLine className="w-3.5 h-3.5" /> Confirmar via QR
-        </Button>
+        <div className="grid grid-cols-1 sm:flex sm:flex-row gap-2 w-full sm:w-auto">
+          <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto" onClick={() => setAppConfirmOpen(true)}>
+            <Check className="w-3.5 h-3.5" /> Confirmar via App
+          </Button>
+          <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto" onClick={() => setScanOpen(true)}>
+            <ScanLine className="w-3.5 h-3.5" /> Confirmar via QR
+          </Button>
+        </div>
       </div>
 
       <div className="relative">

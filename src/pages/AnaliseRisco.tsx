@@ -1395,7 +1395,7 @@ export default function AnaliseRisco() {
                 <>
                   <Button
                     size="sm" variant="outline" className="h-8 text-xs gap-1"
-                    disabled={!excludedParts.length || buildingPdf}
+                    disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handlePreview}
                     aria-busy={buildingPdf}
                   >

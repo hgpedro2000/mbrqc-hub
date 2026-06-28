@@ -1050,7 +1050,7 @@ export default function AnaliseRisco() {
       </Dialog>
 
       <Dialog open={showExcluded} onOpenChange={setShowExcluded}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-3 p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Peças desconsideradas da análise</DialogTitle>
             <DialogDescription>

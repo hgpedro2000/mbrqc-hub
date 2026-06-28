@@ -24,6 +24,7 @@ import {
 import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {

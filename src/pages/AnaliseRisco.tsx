@@ -608,7 +608,7 @@ export default function AnaliseRisco() {
               <p className="text-[11px] text-muted-foreground mb-3">
                 Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
               </p>
-              <div className="h-[420px]">
+              <div className="h-[560px]">
                 <ResponsiveContainer>
                   <ComposedChart data={paretoData} margin={{ top: 20, right: 40, left: 10, bottom: 90 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />

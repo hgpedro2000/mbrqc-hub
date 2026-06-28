@@ -161,7 +161,9 @@ export default function AnaliseRisco() {
   const paretoChartHeight = isMobile ? "h-[620px]" : chartIsDouble ? "h-[500px]" : "h-[560px]";
   const paretoBottomMargin = isMobile ? 170 : chartIsDouble ? 130 : 100;
   const paretoXAxisAngle = isMobile ? -45 : chartIsDouble ? -45 : -25;
-  const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  const paretoLabelFs = isMobile ? 13 : Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  // No mobile, força um afastamento mínimo maior entre rótulos para manter legibilidade.
+  const paretoEffectiveMinGap = isMobile ? Math.max(paretoMinGap, 24) : paretoMinGap;
   // Slot arrays are filled later (after paretoData is computed) so the
   // anti-overlap rule only triggers for labels that are actually close.
   const paretoBarSlotsRef = useRef<number[]>([]);
@@ -365,12 +367,12 @@ export default function AnaliseRisco() {
   const paretoChartH = isMobile ? 420 : chartIsDouble ? 280 : 360;
   // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
-    () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
-    [paretoData, paretoChartH, paretoMinGap],
+    () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoEffectiveMinGap }),
+    [paretoData, paretoChartH, paretoEffectiveMinGap],
   );
   paretoAccSlotsRef.current = useMemo(
-    () => assignSlotsAuto(paretoData.map((d) => d.acc), { chartHeight: paretoChartH, maxValue: 100, minGapPx: paretoMinGap }),
-    [paretoData, paretoChartH, paretoMinGap],
+    () => assignSlotsAuto(paretoData.map((d) => d.acc), { chartHeight: paretoChartH, maxValue: 100, minGapPx: paretoEffectiveMinGap }),
+    [paretoData, paretoChartH, paretoEffectiveMinGap],
   );
 
 
@@ -1101,7 +1103,7 @@ export default function AnaliseRisco() {
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={paretoData} margin={{ top: 64, right: 42, left: 10, bottom: paretoBottomMargin }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={11} height={paretoBottomMargin} />
+                      <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={isMobile ? 12 : 11} height={paretoBottomMargin} />
                       <YAxis yAxisId="left" fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                       <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={11} />
                       <Tooltip

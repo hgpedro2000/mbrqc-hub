@@ -1387,7 +1387,7 @@ export default function AnaliseRisco() {
                 </tr>
               </thead>
               <tbody>
-                {excludedParts.map((e: any, idx) => (
+                {filteredExcluded.map((e: any, idx) => (
                   <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
                     <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
                     <td className="px-3 py-2 text-xs">{e.projeto || "—"}</td>
@@ -1403,8 +1403,10 @@ export default function AnaliseRisco() {
                     </td>
                   </tr>
                 ))}
-                {!excludedParts.length && (
-                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Nada a desconsiderar.</td></tr>
+                {!filteredExcluded.length && (
+                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">
+                    {excludedParts.length ? "Nenhum resultado para os filtros aplicados." : "Nada a desconsiderar."}
+                  </td></tr>
                 )}
               </tbody>
             </table>

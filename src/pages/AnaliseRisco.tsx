@@ -92,9 +92,29 @@ export default function AnaliseRisco() {
   const [showHelp, setShowHelp] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [buildingPdf, setBuildingPdf] = useState(false);
-  const [excFiltProjeto, setExcFiltProjeto] = useState<string>("__all__");
-  const [excFiltModelo, setExcFiltModelo] = useState<string>("__all__");
-  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>("__all__");
+  const EXC_LS_KEY = "analise_risco_excluded_filters_v1";
+  const initialExcFilters = (() => {
+    try {
+      const raw = localStorage.getItem(EXC_LS_KEY);
+      if (raw) return JSON.parse(raw) as { projeto?: string; modelo?: string; fornecedor?: string; q?: string; sortKey?: string; sortDir?: string };
+    } catch { /* noop */ }
+    return {};
+  })();
+  const [excFiltProjeto, setExcFiltProjeto] = useState<string>(initialExcFilters.projeto || "__all__");
+  const [excFiltModelo, setExcFiltModelo] = useState<string>(initialExcFilters.modelo || "__all__");
+  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>(initialExcFilters.fornecedor || "__all__");
+  const [excSearch, setExcSearch] = useState<string>(initialExcFilters.q || "");
+  const [excSortKey, setExcSortKey] = useState<"pn" | "projeto" | "fornecedor" | "ng" | "lastNgDate">((initialExcFilters.sortKey as any) || "ng");
+  const [excSortDir, setExcSortDir] = useState<"asc" | "desc">((initialExcFilters.sortDir as any) || "desc");
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EXC_LS_KEY, JSON.stringify({
+        projeto: excFiltProjeto, modelo: excFiltModelo, fornecedor: excFiltFornecedor,
+        q: excSearch, sortKey: excSortKey, sortDir: excSortDir,
+      }));
+    } catch { /* noop */ }
+  }, [excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
   const dateFrom = useMemo(() => {
     const d = new Date();

@@ -3,13 +3,14 @@
 
 export function computeAccLabelY(y: number, index: number): number {
   const slot = (index ?? 0) % 3; // 0, 1, 2
-  const offset = 30 + slot * 16; // 30 / 46 / 62
+  const offset = 42 + slot * 16; // 42 / 58 / 74 — always above the bar label
   return Math.max(14, y - offset);
 }
 
 export function computeBarLabelY(y: number, index: number): number {
-  const stagger = (index ?? 0) % 2 === 0 ? 6 : 14;
-  return Math.max(10, y - stagger);
+  const slot = (index ?? 0) % 3; // cycle 3 slots so adjacent NG labels never collide
+  const offset = 6 + slot * 12; // 6 / 18 / 30
+  return Math.max(10, y - offset);
 }
 
 // Returns the minimum vertical distance between any two label centers

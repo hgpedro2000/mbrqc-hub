@@ -6,12 +6,14 @@
 // caller can decide NOT to stagger labels that are visually far apart).
 export function computeAccLabelY(y: number, indexOrSlot: number, slot?: number): number {
   const s = (slot ?? indexOrSlot ?? 0) % 3;
-  const offset = 42 + s * 16; // 42 / 58 / 74 — always above the bar label
+  // base 18px above the point; only lift further when stagger is needed.
+  const offset = 18 + s * 14; // 18 / 32 / 46
   return Math.max(14, y - offset);
 }
 
 export function computeBarLabelY(y: number, indexOrSlot: number, slot?: number): number {
   const s = (slot ?? indexOrSlot ?? 0) % 3;
+  // base 6px above the bar top; lift only adjacent close bars.
   const offset = 6 + s * 12; // 6 / 18 / 30
   return Math.max(10, y - offset);
 }

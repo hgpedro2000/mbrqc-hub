@@ -126,33 +126,21 @@ export default function AnaliseRisco() {
   const paretoBottomMargin = chartIsDouble ? 130 : 100;
   const paretoXAxisAngle = chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
-  const renderParetoCombinedLabel = (props: any) => {
-    const { x, y, value, payload, index } = props;
-    if (x == null || y == null || value == null || !payload) return null;
-    const labelY = Math.max(24, y - (index % 2 === 0 ? 30 : 48));
+  const renderParetoAccLabel = (props: any) => {
+    const { x, y, value } = props;
+    if (x == null || y == null || value == null) return null;
+    const labelY = Math.max(12, y - 12);
     return (
-      <g>
-        <text
-          x={x}
-          y={labelY}
-          textAnchor="middle"
-          fontSize={paretoLabelFs}
-          fontWeight={700}
-          fill="hsl(var(--foreground))"
-        >
-          {fmt(Number(payload.value || 0))}
-        </text>
-        <text
-          x={x}
-          y={labelY + paretoLabelFs + 2}
-          textAnchor="middle"
-          fontSize={paretoLabelFs}
-          fontWeight={700}
-          fill="hsl(var(--primary))"
-        >
-          {value}%
-        </text>
-      </g>
+      <text
+        x={x}
+        y={labelY}
+        textAnchor="middle"
+        fontSize={paretoLabelFs}
+        fontWeight={700}
+        fill="hsl(var(--primary))"
+      >
+        {`${value}%`}
+      </text>
     );
   };
 

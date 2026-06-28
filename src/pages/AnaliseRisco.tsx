@@ -161,7 +161,9 @@ export default function AnaliseRisco() {
   const paretoChartHeight = isMobile ? "h-[620px]" : chartIsDouble ? "h-[500px]" : "h-[560px]";
   const paretoBottomMargin = isMobile ? 170 : chartIsDouble ? 130 : 100;
   const paretoXAxisAngle = isMobile ? -45 : chartIsDouble ? -45 : -25;
-  const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  const paretoLabelFs = isMobile ? 13 : Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  // No mobile, força um afastamento mínimo maior entre rótulos para manter legibilidade.
+  const paretoEffectiveMinGap = isMobile ? Math.max(paretoMinGap, 24) : paretoMinGap;
   // Slot arrays are filled later (after paretoData is computed) so the
   // anti-overlap rule only triggers for labels that are actually close.
   const paretoBarSlotsRef = useRef<number[]>([]);

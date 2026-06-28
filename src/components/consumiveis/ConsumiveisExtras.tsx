@@ -536,10 +536,43 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
         </div>
       )}
 
-      <Button onClick={handleSend} disabled={sending || selectedIds.length === 0} className="w-full min-h-[44px]">
-        {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-        Enviar {totalPedidos} pedido(s) individuais
+      <Button onClick={openPreview} disabled={sending || selectedIds.length === 0} className="w-full min-h-[44px]">
+        <Send className="w-4 h-4 mr-1" />
+        Pré-visualizar {totalPedidos} pedido(s) individuais
       </Button>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Confirmar envio — {previewByMember.length} pedido(s)</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Cada pessoa receberá <strong>um único pedido</strong> com os itens abaixo. Revise antes de confirmar.
+            </p>
+            {previewByMember.map((p) => (
+              <div key={p.pedido_id} className="border rounded-lg p-3 space-y-1">
+                <p className="text-sm font-semibold">{p.name}</p>
+                <ul className="text-xs text-muted-foreground space-y-0.5 pl-3 list-disc">
+                  {p.items.map((it, i) => (
+                    <li key={i}><span className="text-foreground">{it.item_name}</span> — qtd {it.quantity}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              <Button variant="outline" className="flex-1 min-h-[44px]" onClick={() => setPreviewOpen(false)} disabled={sending}>
+                Voltar e ajustar
+              </Button>
+              <Button className="flex-1 min-h-[44px]" onClick={confirmSend} disabled={sending}>
+                {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+                Confirmar envio
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

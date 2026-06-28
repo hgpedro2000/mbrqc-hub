@@ -16,6 +16,7 @@ import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
   AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList, Loader2,
+  Maximize2, ZoomIn, ZoomOut,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,

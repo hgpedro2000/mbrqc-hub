@@ -1400,7 +1400,7 @@ export default function AnaliseRisco() {
               return (
                 <>
                   <Button
-                    size="sm" variant="outline" className="h-8 text-xs gap-1"
+                    size="sm" variant="outline" className="h-9 text-xs gap-1 w-full sm:w-auto"
                     disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handlePreview}
                     aria-busy={buildingPdf}

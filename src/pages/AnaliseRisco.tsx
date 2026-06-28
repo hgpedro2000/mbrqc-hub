@@ -90,6 +90,8 @@ export default function AnaliseRisco() {
   const [excludeNoise, setExcludeNoise] = useState(true);
   const [showExcluded, setShowExcluded] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [buildingPdf, setBuildingPdf] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -994,16 +996,15 @@ export default function AnaliseRisco() {
               Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
-            <Button
-              size="sm" variant="outline" className="h-8 text-xs gap-1"
-              disabled={!excludedParts.length}
-              onClick={async () => {
+          <div className="flex justify-end gap-2">
+            {(() => {
+              const buildExcludedPdf = async () => {
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 const pageW = doc.internal.pageSize.getWidth();
                 const pageH = doc.internal.pageSize.getHeight();
-                const M = 12; // margin
+                const M = 12;
                 const now = new Date();
+
 
                 // Palette — header uses Mobis HYUNDAI blue (not red, since the logo "O" already provides red accent)
                 const HYUNDAI_BLUE: [number, number, number] = [0, 47, 108];
@@ -1254,14 +1255,49 @@ export default function AnaliseRisco() {
                   doc.setPage(p);
                   drawFooter(p, pages);
                 }
-                doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
-              }}
-            >
+                return doc;
+              };
 
-              <FileText className="w-3.5 h-3.5" />
-              Exportar em PDF
-            </Button>
+              const handlePreview = async () => {
+                setBuildingPdf(true);
+                try {
+                  const doc = await buildExcludedPdf();
+                  const url = doc.output("bloburl") as unknown as string;
+                  if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                  setPdfPreviewUrl(String(url));
+                } finally { setBuildingPdf(false); }
+              };
+              const handleSave = async () => {
+                setBuildingPdf(true);
+                try {
+                  const doc = await buildExcludedPdf();
+                  doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
+                } finally { setBuildingPdf(false); }
+              };
+
+              return (
+                <>
+                  <Button
+                    size="sm" variant="outline" className="h-8 text-xs gap-1"
+                    disabled={!excludedParts.length || buildingPdf}
+                    onClick={handlePreview}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Pré-visualizar
+                  </Button>
+                  <Button
+                    size="sm" className="h-8 text-xs gap-1"
+                    disabled={!excludedParts.length || buildingPdf}
+                    onClick={handleSave}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Exportar em PDF
+                  </Button>
+                </>
+              );
+            })()}
           </div>
+
           <div className="max-h-[60vh] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs sticky top-0">
@@ -1300,6 +1336,57 @@ export default function AnaliseRisco() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ============ PDF PREVIEW DIALOG ============ */}
+      <Dialog
+        open={!!pdfPreviewUrl}
+        onOpenChange={(o) => {
+          if (!o) {
+            if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+            setPdfPreviewUrl(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-6xl">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização do PDF</DialogTitle>
+            <DialogDescription>
+              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {excludedParts.length} peça(s) desconsiderada(s)
+            </DialogDescription>
+          </DialogHeader>
+          {pdfPreviewUrl && (
+            <iframe
+              title="PDF Preview"
+              src={pdfPreviewUrl}
+              className="w-full h-[70vh] rounded border"
+            />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                setPdfPreviewUrl(null);
+              }}
+            >
+              Fechar
+            </Button>
+            <Button
+              className="gap-1"
+              onClick={() => {
+                if (!pdfPreviewUrl) return;
+                const a = document.createElement("a");
+                a.href = pdfPreviewUrl;
+                a.download = `pecas-excluidas-${periodo}d-${modelFilter}.pdf`;
+                a.click();
+              }}
+            >
+              <FileText className="w-4 h-4" /> Baixar PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {/* ============ DRILL-DOWN DIALOG ============ */}
       <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>

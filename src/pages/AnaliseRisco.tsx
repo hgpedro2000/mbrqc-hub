@@ -1221,8 +1221,8 @@ export default function AnaliseRisco() {
           </TabsContent>
 
           {/* ============ MAPA DE RISCO ============ */}
-          <TabsContent value="mapa" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <TabsContent value="mapa" className="space-y-4 min-w-0">
+            <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
               <KPICard label="Alto risco" value={<span className="text-destructive">{fmt(counts.a)}</span>} sub="100% inspeção" />
               <KPICard label="Médio risco" value={<span className="text-amber-600">{fmt(counts.m)}</span>} sub="Amostral" />
               <KPICard label="Baixo risco" value={<span className="text-emerald-600">{fmt(counts.b)}</span>} sub="Liberação direta" />
@@ -1230,10 +1230,10 @@ export default function AnaliseRisco() {
 
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-2 min-w-0">
               <span className="text-xs text-muted-foreground">Filtrar:</span>
               <Select value={riskFilter} onValueChange={(v) => setRiskFilter(v as any)}>
-                <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full min-[480px]:w-[220px] min-h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="alto">Somente alto</SelectItem>
@@ -1247,44 +1247,75 @@ export default function AnaliseRisco() {
               <div className="px-3 py-2 border-b text-[10px] text-muted-foreground">
                 Score 0–100 · Alto ≥ 60 (inspeção 100%) · Médio 30–59 (amostral) · Baixo &lt; 30 (liberação direta)
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm min-w-[820px]">
-                  <thead className="bg-muted/40 text-xs">
-                    <tr>
-                      <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
-                      <th className="text-left px-3 py-2">Part Name</th>
-                      <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
-                      <th className="text-center px-3 py-2 w-[80px]">Score</th>
-                      <th className="text-center px-3 py-2 w-[80px]">NG</th>
-                      <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
-                      <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
-                      <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {partsFiltered.map((p) => (
-                      <tr
-                        key={`${p.pn}-${p.fornecedor}`}
-                        className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
-                        onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
-                      >
-                        <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
-                        <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
-                        <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
-                        <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
-                        <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
-                        <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
-                        <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
-                        <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
+              {isMobile ? (
+                <div className="divide-y">
+                  {partsFiltered.map((p) => (
+                    <button
+                      key={`${p.pn}-${p.fornecedor}`}
+                      type="button"
+                      className="w-full min-h-11 px-3 py-3 text-left hover:bg-muted/40 transition-colors"
+                      onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-mono text-xs font-semibold break-all" title={p.pn}>{p.pn}</div>
+                          <div className="text-sm font-medium break-words" title={p.partName}>{p.partName}</div>
+                          <div className="text-xs text-muted-foreground break-words" title={p.fornecedor}>{p.fornecedor}</div>
+                        </div>
+                        <div className="shrink-0">{scoreCircle(p.score, p.classification)}</div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">NG</div><div className={`font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">Dias</div><div className="font-semibold tabular-nums">{fmt(p.diasSem)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11 flex items-center justify-center">{actionBadge(p.classification, p.recomendacao)}</div>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground break-words" title={p.modoRecorrente}>Modo recorrente: {p.modoRecorrente}</div>
+                    </button>
+                  ))}
+                  {!partsFiltered.length && !isLoading && (
+                    <div className="text-center py-6 text-muted-foreground text-sm">Sem peças.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[820px]">
+                    <thead className="bg-muted/40 text-xs">
+                      <tr>
+                        <th className="text-left px-3 py-2 w-[130px]">Part Number</th>
+                        <th className="text-left px-3 py-2">Part Name</th>
+                        <th className="text-left px-3 py-2 w-[160px]">Fornecedor</th>
+                        <th className="text-center px-3 py-2 w-[80px]">Score</th>
+                        <th className="text-center px-3 py-2 w-[80px]">NG</th>
+                        <th className="text-center px-3 py-2 w-[110px]">Dias s/ rej.</th>
+                        <th className="text-left px-3 py-2 w-[180px]">Modo recorrente</th>
+                        <th className="text-left px-3 py-2 w-[160px]">Ação recomendada</th>
                       </tr>
-                    ))}
-                    {!partsFiltered.length && !isLoading && (
-                      <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
-                    )}
-                  </tbody>
+                    </thead>
+                    <tbody>
+                      {partsFiltered.map((p) => (
+                        <tr
+                          key={`${p.pn}-${p.fornecedor}`}
+                          className="border-t cursor-pointer hover:bg-muted/40 transition-colors"
+                          onClick={() => setDrill({ pn: p.pn, fornecedor: p.fornecedor })}
+                        >
+                          <td className="px-3 py-2 font-mono text-xs whitespace-nowrap">{p.pn}</td>
+                          <td className="px-3 py-2 max-w-[260px] truncate" title={p.partName}>{p.partName}</td>
+                          <td className="px-3 py-2 truncate" title={p.fornecedor}>{p.fornecedor}</td>
+                          <td className="text-center px-3 py-2">{scoreCircle(p.score, p.classification)}</td>
+                          <td className={`text-center px-3 py-2 font-semibold tabular-nums ${ngColor(p.ng)}`}>{fmt(p.ng)}</td>
+                          <td className="text-center px-3 py-2 tabular-nums">{fmt(p.diasSem)}</td>
+                          <td className="px-3 py-2 text-muted-foreground truncate" title={p.modoRecorrente}>{p.modoRecorrente}</td>
+                          <td className="px-3 py-2">{actionBadge(p.classification, p.recomendacao)}</td>
+                        </tr>
+                      ))}
+                      {!partsFiltered.length && !isLoading && (
+                        <tr><td colSpan={8} className="text-center py-6 text-muted-foreground">Sem peças.</td></tr>
+                      )}
+                    </tbody>
 
-                </table>
-              </div>
+                  </table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 

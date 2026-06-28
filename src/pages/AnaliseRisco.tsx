@@ -1566,7 +1566,7 @@ export default function AnaliseRisco() {
                       />
 
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 2 }}>
-                        <LabelList dataKey="ng" position="top" fontSize={9} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
+                        <LabelList dataKey="ng" position="top" offset={6} fontSize={isMobile ? 11 : 12} fontWeight={600} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
                       </Line>
                     </LineChart>
                   </ResponsiveContainer>

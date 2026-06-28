@@ -22,6 +22,21 @@ import {
   LineChart, ResponsiveContainer, ReferenceLine, LabelList,
 } from "recharts";
 import jsPDF from "jspdf";
+import logoMobis from "@/assets/hyundai-mobis-logo.png";
+
+async function urlToBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
 
 type Apto = {
   id: string;

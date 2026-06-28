@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
-  AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList,
+  AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList, Loader2,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -1281,17 +1281,23 @@ export default function AnaliseRisco() {
                     size="sm" variant="outline" className="h-8 text-xs gap-1"
                     disabled={!excludedParts.length || buildingPdf}
                     onClick={handlePreview}
+                    aria-busy={buildingPdf}
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    Pré-visualizar
+                    {buildingPdf
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Eye className="w-3.5 h-3.5" />}
+                    {buildingPdf ? "Gerando..." : "Pré-visualizar"}
                   </Button>
                   <Button
                     size="sm" className="h-8 text-xs gap-1"
                     disabled={!excludedParts.length || buildingPdf}
                     onClick={handleSave}
+                    aria-busy={buildingPdf}
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    Exportar em PDF
+                    {buildingPdf
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <FileText className="w-3.5 h-3.5" />}
+                    {buildingPdf ? "Gerando..." : "Exportar em PDF"}
                   </Button>
                 </>
               );

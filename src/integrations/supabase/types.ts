@@ -878,8 +878,10 @@ export type Database = {
       consumable_requests: {
         Row: {
           admin_notes: string | null
+          confirmado_em: string | null
           created_at: string
           criado_por: string | null
+          entregue_em: string | null
           id: string
           item_id: string
           item_name: string
@@ -895,8 +897,10 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          confirmado_em?: string | null
           created_at?: string
           criado_por?: string | null
+          entregue_em?: string | null
           id?: string
           item_id: string
           item_name?: string
@@ -912,8 +916,10 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          confirmado_em?: string | null
           created_at?: string
           criado_por?: string | null
+          entregue_em?: string | null
           id?: string
           item_id?: string
           item_name?: string

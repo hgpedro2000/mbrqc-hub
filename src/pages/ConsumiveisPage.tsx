@@ -533,6 +533,11 @@ const InventarioRequisicoes = () => {
       const request = allRequests.find((r: any) => r.id === id);
       if (!request) return;
 
+      // For team orders (pedido_coletivo), "entregue" actually means
+      // delivered-by-leader, awaiting inspector confirmation.
+      let nextStatus = status;
+      const isTeamDelivery = status === "entregue" && request.origem === "pedido_coletivo" && request.criado_por && request.criado_por !== request.user_id;
+
       if (status === "entregue") {
         const item = items.find((i: any) => i.id === request.item_id);
         if (item && item.stock_qty < request.quantity) {
@@ -548,11 +553,22 @@ const InventarioRequisicoes = () => {
           const { error: stockErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", item.id);
           if (stockErr) throw stockErr;
         }
+        if (isTeamDelivery) nextStatus = "entregue_pendente_confirmacao";
       }
 
-      const { error } = await supabase.from("consumable_requests").update({ status } as any).eq("id", id);
+      const patch: any = { status: nextStatus };
+      if (nextStatus === "entregue_pendente_confirmacao") patch.entregue_em = new Date().toISOString();
+      if (nextStatus === "entregue") patch.entregue_em = patch.entregue_em || new Date().toISOString();
+
+      const { error } = await supabase.from("consumable_requests").update(patch).eq("id", id);
       if (error) throw error;
-      toast.success("Status atualizado");
+      if (isTeamDelivery) {
+        toast.success("Entregue — aguardando confirmação do inspetor (via app ou QR)");
+        // Open QR dialog so leader can show the code
+        setQrPedidoId(request.pedido_id || request.id);
+      } else {
+        toast.success("Status atualizado");
+      }
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["consumable-items"] });

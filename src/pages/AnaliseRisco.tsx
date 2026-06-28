@@ -148,7 +148,7 @@ export default function AnaliseRisco() {
         y={labelY}
         textAnchor="middle"
         fontSize={paretoLabelFs}
-        fontWeight={700}
+        fontWeight={800}
         fill="hsl(var(--primary))"
       >
         {`${value}%`}

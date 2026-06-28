@@ -172,8 +172,10 @@ export default function AnaliseRisco() {
   const renderParetoAccLabel = (props: any) => {
     const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
+    const key = paretoData[index ?? 0]?.name ?? String(index ?? 0);
     const slot = paretoAccSlotsRef.current[index ?? 0] ?? 0;
-    const labelY = computeAccLabelY(y, index ?? 0, slot);
+    const bump = paretoBumps.acc[key] ?? 0;
+    const labelY = computeAccLabelY(y, index ?? 0, slot) - bump;
     return (
       <text
         x={x}
@@ -182,19 +184,23 @@ export default function AnaliseRisco() {
         fontSize={paretoLabelFs}
         fontWeight={800}
         fill="hsl(var(--primary))"
+        style={{ cursor: "pointer" }}
+        onClick={() => bumpLabel("acc", key)}
       >
+        <title>Clique para afastar este rótulo (atual: +{bump}px)</title>
         {`${value}%`}
       </text>
     );
   };
 
-  // NG (barra): stagger apenas quando barras vizinhas têm altura similar.
   const renderParetoBarLabel = (props: any) => {
     const { x, y, width, value, index } = props;
     if (x == null || y == null || value == null) return null;
     const cx = x + (width ?? 0) / 2;
+    const key = paretoData[index ?? 0]?.name ?? String(index ?? 0);
     const slot = paretoBarSlotsRef.current[index ?? 0] ?? 0;
-    const labelY = computeBarLabelY(y, index ?? 0, slot);
+    const bump = paretoBumps.bar[key] ?? 0;
+    const labelY = computeBarLabelY(y, index ?? 0, slot) - bump;
     return (
       <text
         x={cx}

@@ -661,7 +661,7 @@ export default function AnaliseRisco() {
       doc.setFont("helvetica", "bold"); doc.setFontSize(9);
       let cx = M;
       cols.forEach((c) => {
-        const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+        const tx = c.align === "right" ? cx + c.w - 2 : cx + 2;
         doc.text(c.h, tx, y + 4.8, { align: c.align });
         cx += c.w;
       });

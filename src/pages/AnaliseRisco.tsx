@@ -333,7 +333,7 @@ export default function AnaliseRisco() {
   // gráfico e da fonte do rótulo, então o stagger só é aplicado quando há risco
   // real de sobreposição.
   const paretoChartH = chartIsDouble ? 280 : 360;
-  const paretoMinGap = paretoLabelFs + 6;
+  // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
     () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
     [paretoData, paretoChartH, paretoMinGap],

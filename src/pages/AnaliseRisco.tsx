@@ -33,6 +33,7 @@ type Apto = {
   modo_falha: string | null;
   quantidade_ok: number | null;
   quantidade_ng: number | null;
+  projeto: string | null;
 };
 
 export type PartRisk = {

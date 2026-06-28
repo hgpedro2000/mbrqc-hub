@@ -957,6 +957,46 @@ export default function AnaliseRisco() {
               Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
             </DialogDescription>
           </DialogHeader>
+          <div className="flex justify-end">
+            <Button
+              size="sm" variant="outline" className="h-8 text-xs gap-1"
+              disabled={!excludedParts.length}
+              onClick={() => {
+                const doc = new jsPDF();
+                doc.setFontSize(14);
+                doc.text("Peças desconsideradas da análise", 14, 16);
+                doc.setFontSize(9);
+                doc.text(
+                  `Período: ${periodo} dias · Modelo: ${modelFilter === "bc4b" ? "BC4B" : "Todos"} · Total: ${excludedParts.length}`,
+                  14, 22,
+                );
+                let y = 32;
+                doc.setFontSize(9);
+                doc.text("Part Number", 14, y);
+                doc.text("Fornecedor", 70, y);
+                doc.text("NG", 140, y);
+                doc.text("Motivo", 155, y);
+                y += 4;
+                doc.line(14, y, 196, y);
+                y += 5;
+                excludedParts.forEach((e) => {
+                  if (y > 280) { doc.addPage(); y = 20; }
+                  doc.text(String(e.pn).slice(0, 28), 14, y);
+                  doc.text(String(e.fornecedor || "—").slice(0, 32), 70, y);
+                  doc.text(fmt(e.ng), 140, y);
+                  const motivo = e.reason === "sem lançamento"
+                    ? "sem lançamento"
+                    : `recorrente · ${e.modoRecorrente || ""}`.slice(0, 28);
+                  doc.text(motivo, 155, y);
+                  y += 6;
+                });
+                doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
+              }}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              Exportar em PDF
+            </Button>
+          </div>
           <div className="max-h-[60vh] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs sticky top-0">

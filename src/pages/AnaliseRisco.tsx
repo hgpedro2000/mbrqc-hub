@@ -16,6 +16,7 @@ import {
   ArrowLeft, ShieldAlert, TrendingUp, TrendingDown, Minus, RefreshCw,
   Search, Download, FileText, ChevronLeft, ChevronRight,
   AlertTriangle, Eye, CheckCircle, HelpCircle, BarChart2, ClipboardList, Loader2,
+  Maximize2, ZoomIn, ZoomOut,
 } from "lucide-react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -90,6 +91,8 @@ export default function AnaliseRisco() {
   const isMobile = useIsMobile();
   const labelFs = isMobile ? 12 : 13;
   const [chartLayout, setChartLayout] = useState<"single" | "double">("single");
+  const [paretoZoomOpen, setParetoZoomOpen] = useState(false);
+  const [paretoZoom, setParetoZoom] = useState(150);
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
@@ -961,7 +964,12 @@ export default function AnaliseRisco() {
               <Card className="p-4 min-w-0">
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
-                  <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">Top 10 · ordenado por ocorrências</span>
+                    <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
+                      <Maximize2 className="h-3.5 w-3.5" /> Ampliar
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">
                   Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
@@ -2001,6 +2009,60 @@ export default function AnaliseRisco() {
               </Card>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={paretoZoomOpen} onOpenChange={setParetoZoomOpen}>
+        <DialogContent className="max-w-[98vw] w-[98vw] h-[95vh] flex flex-col p-4">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Pareto dos modos de falha — Zoom</DialogTitle>
+            <DialogDescription>Use os controles para ampliar e ler os rótulos com mais precisão.</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 flex-shrink-0 py-2 flex-wrap">
+            <Button size="sm" variant="outline" onClick={() => setParetoZoom((z) => Math.max(100, z - 25))}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-xs font-medium w-14 text-center">{paretoZoom}%</span>
+            <Button size="sm" variant="outline" onClick={() => setParetoZoom((z) => Math.min(400, z + 25))}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <input
+              type="range"
+              min={100}
+              max={400}
+              step={25}
+              value={paretoZoom}
+              onChange={(e) => setParetoZoom(Number(e.target.value))}
+              className="flex-1 min-w-[150px] max-w-md"
+            />
+            <Button size="sm" variant="ghost" onClick={() => setParetoZoom(150)}>Reset</Button>
+          </div>
+          <div className="flex-1 overflow-auto border rounded-md bg-card">
+            <div style={{ width: `${paretoZoom}%`, height: `${Math.max(100, paretoZoom * 0.9)}%`, minHeight: "100%" }}>
+              <ResponsiveContainer>
+                <ComposedChart data={paretoData} margin={{ top: 80, right: 60, left: 20, bottom: 160 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                  <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} fontSize={13} height={160} />
+                  <YAxis yAxisId="left" fontSize={13} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 13, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={13} />
+                  <Tooltip
+                    formatter={(v: any, n: any) => {
+                      if (typeof v !== "number") return [v, n];
+                      if (n === "% Acumulado") return [fmtPct(v, 0), n];
+                      return [`${fmt(v)} peças NG`, n];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 13 }} />
+                  <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={90}>
+                    <LabelList dataKey="value" position="top" offset={10} fontSize={14} fontWeight={700} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                  </Bar>
+                  <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2.5} dot={{ r: 4 }}>
+                    <LabelList dataKey="acc" position="top" offset={14} fontSize={13} fontWeight={700} fill="hsl(var(--primary))" formatter={(v: any) => `${v}%`} />
+                  </Line>
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

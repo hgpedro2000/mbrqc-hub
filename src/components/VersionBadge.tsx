@@ -34,7 +34,7 @@ const VersionBadge = () => {
     openRef.current = open;
   }, [open]);
 
-  const { data: entries = [], isLoading, refetch } = useQuery({
+  const { data: entries = [], isLoading } = useQuery({
     queryKey: CHANGELOG_QUERY_KEY,
     queryFn: async () => {
       const { data } = await supabase
@@ -58,7 +58,6 @@ const VersionBadge = () => {
 
     const refreshHistory = () => {
       queryClient.invalidateQueries({ queryKey: CHANGELOG_QUERY_KEY });
-      if (openRef.current) void refetch();
       void recheck();
     };
 
@@ -98,7 +97,7 @@ const VersionBadge = () => {
       if (fallbackTimer) clearInterval(fallbackTimer);
       supabase.removeChannel(channel);
     };
-  }, [queryClient, refetch, recheck]);
+  }, [queryClient, recheck]);
 
   return (
     <>

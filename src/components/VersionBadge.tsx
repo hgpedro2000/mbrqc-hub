@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppVersion } from "@/hooks/useAppVersion";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -19,14 +19,18 @@ interface ChangelogEntry {
   released_at: string;
 }
 
+const CHANGELOG_QUERY_KEY = ["app_changelog"] as const;
+
 const VersionBadge = () => {
   const { clientVersion, updateAvailable, deployedVersion, minRequiredVersion, lastCheckedAt, recheck } = useAppVersion();
   const { isAdmin } = useUserRole();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [rechecking, setRechecking] = useState(false);
+  const [historyRealtime, setHistoryRealtime] = useState<"connecting" | "active" | "fallback">("connecting");
 
   const { data: entries = [], isLoading } = useQuery({
-    queryKey: ["app_changelog"],
+    queryKey: CHANGELOG_QUERY_KEY,
     queryFn: async () => {
       const { data } = await supabase
         .from("app_changelog" as any)
@@ -36,8 +40,58 @@ const VersionBadge = () => {
       return (data ?? []) as unknown as ChangelogEntry[];
     },
     enabled: open,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    let subscribed = false;
+    let disposed = false;
+    let fallbackTimer: ReturnType<typeof setInterval> | null = null;
+
+    const refreshHistory = () => {
+      queryClient.invalidateQueries({ queryKey: CHANGELOG_QUERY_KEY });
+      void recheck();
+    };
+
+    const startFallback = () => {
+      if (disposed) return;
+      setHistoryRealtime("fallback");
+      if (!fallbackTimer) fallbackTimer = setInterval(refreshHistory, 30_000);
+    };
+
+    const fallbackDelay = setTimeout(() => {
+      if (!subscribed) startFallback();
+    }, 8000);
+
+    const channel = supabase
+      .channel(`app-changelog-${Date.now()}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_changelog" }, refreshHistory)
+      .subscribe((status) => {
+        if (disposed) return;
+        if (status === "SUBSCRIBED") {
+          subscribed = true;
+          setHistoryRealtime("active");
+          clearTimeout(fallbackDelay);
+          if (fallbackTimer) {
+            clearInterval(fallbackTimer);
+            fallbackTimer = null;
+          }
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          subscribed = false;
+          startFallback();
+        }
+      });
+
+    return () => {
+      disposed = true;
+      clearTimeout(fallbackDelay);
+      if (fallbackTimer) clearInterval(fallbackTimer);
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient, recheck]);
 
   return (
     <>
@@ -108,6 +162,7 @@ const VersionBadge = () => {
                 → updateAvailable: <span className="font-semibold">{String(updateAvailable)}</span>
               </div>
               <div>último check: {lastCheckedAt ? lastCheckedAt.toLocaleTimeString("pt-BR") : "—"}</div>
+              <div>histórico: <span className="font-semibold">{historyRealtime === "active" ? "realtime ativo" : historyRealtime === "fallback" ? "fallback polling" : "conectando"}</span></div>
               {!deployedVersion && (
                 <div className="text-red-600 dark:text-red-400">
                   ⚠ meta tag não encontrada no HTML implantado — botão de atualizar não aparece.

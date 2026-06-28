@@ -740,7 +740,7 @@ export default function AnaliseRisco() {
     doc.setDrawColor(...HYUNDAI_BLUE); doc.setLineWidth(0.5);
     doc.line(M, blockTop + 1.2, M + 18, blockTop + 1.2);
     if (chartImg) {
-      try { doc.addImage(chartImg, "PNG", M, blockTop + 3, colW, chartH); } catch {}
+      try { doc.addImage(chartImg, "JPEG", M, blockTop + 3, colW, chartH); } catch {}
     } else {
       doc.setFillColor(...SOFT);
       doc.roundedRect(M, blockTop + 3, colW, chartH, 1.5, 1.5, "F");

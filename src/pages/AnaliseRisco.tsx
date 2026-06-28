@@ -361,13 +361,26 @@ export default function AnaliseRisco() {
   }, [excludedParts]);
 
   const filteredExcluded = useMemo(() => {
-    return excludedParts.filter((e: any) => {
+    const q = excSearch.trim().toLowerCase();
+    const arr = excludedParts.filter((e: any) => {
       if (excFiltProjeto !== "__all__" && (e.projeto || "—") !== excFiltProjeto) return false;
       if (excFiltModelo !== "__all__" && (e.partName || "—") !== excFiltModelo) return false;
       if (excFiltFornecedor !== "__all__" && (e.fornecedor || "—") !== excFiltFornecedor) return false;
+      if (q) {
+        const hay = `${e.pn || ""} ${e.projeto || ""} ${e.partName || ""} ${e.fornecedor || ""} ${e.modoRecorrente || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor]);
+    const dir = excSortDir === "asc" ? 1 : -1;
+    arr.sort((a: any, b: any) => {
+      const av = a[excSortKey] ?? "";
+      const bv = b[excSortKey] ?? "";
+      if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return arr;
+  }, [excludedParts, excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
 
 
   const excludedKeys = useMemo(

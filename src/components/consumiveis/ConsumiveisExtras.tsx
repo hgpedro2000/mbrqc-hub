@@ -1,10 +1,12 @@
-import { useState, useMemo } from "react";
-import { Loader2, Plus, Trash2, Send, ListChecks, BarChart3, Search, Save, RefreshCw } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import * as XLSX from "xlsx";
+import { Loader2, Plus, Trash2, Send, ListChecks, Search, Save, RefreshCw, Download, Upload, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -36,6 +38,63 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 interface ListaItem { item_id: string; item_name: string; quantity: number; }
 
+/* ─────────────────────────  Shared UI helpers  ───────────────────────── */
+const TableSkeleton = ({ rows = 5, cols = 4 }: { rows?: number; cols?: number }) => (
+  <div className="space-y-2">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="flex gap-2">
+        {Array.from({ length: cols }).map((_, j) => (
+          <Skeleton key={j} className="h-9 flex-1" />
+        ))}
+      </div>
+    ))}
+  </div>
+);
+
+const KpiSkeletons = ({ count = 3 }: { count?: number }) => (
+  <div className={`grid grid-cols-2 ${count > 3 ? "md:grid-cols-4" : "sm:grid-cols-3"} gap-3`}>
+    {Array.from({ length: count }).map((_, i) => (
+      <Skeleton key={i} className="h-20" />
+    ))}
+  </div>
+);
+
+const RetryBox = ({ msg, onRetry }: { msg: string; onRetry: () => void }) => (
+  <div className="border border-destructive/40 bg-destructive/5 rounded-lg p-4 text-center space-y-2">
+    <p className="text-sm text-destructive font-medium">{msg}</p>
+    <p className="text-xs text-muted-foreground">Verifique sua conexão e tente novamente.</p>
+    <Button size="sm" variant="outline" onClick={onRetry}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+  </div>
+);
+
+const exportRows = (rows: Record<string, any>[], fileBase: string, format: "csv" | "xlsx") => {
+  if (rows.length === 0) { toast.error("Sem dados para exportar"); return; }
+  const ws = XLSX.utils.json_to_sheet(rows);
+  if (format === "csv") {
+    const csv = XLSX.utils.sheet_to_csv(ws);
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${fileBase}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  } else {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dados");
+    XLSX.writeFile(wb, `${fileBase}.xlsx`);
+  }
+};
+
+const ExportButtons = ({ rows, fileBase }: { rows: Record<string, any>[]; fileBase: string }) => (
+  <div className="flex gap-1.5">
+    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => exportRows(rows, fileBase, "csv")}>
+      <Download className="w-3.5 h-3.5" /> CSV
+    </Button>
+    <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => exportRows(rows, fileBase, "xlsx")}>
+      <Download className="w-3.5 h-3.5" /> Excel
+    </Button>
+  </div>
+);
+
 const ItemQtyEditor = ({ items, value, onChange }: { items: any[]; value: ListaItem[]; onChange: (v: ListaItem[]) => void; }) => {
   const update = (idx: number, patch: Partial<ListaItem>) => {
     const next = value.map((r, i) => i === idx ? { ...r, ...patch } : r);
@@ -46,20 +105,22 @@ const ItemQtyEditor = ({ items, value, onChange }: { items: any[]; value: ListaI
   return (
     <div className="space-y-2">
       {value.map((row, idx) => (
-        <div key={idx} className="flex items-center gap-2">
+        <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2">
           <Select value={row.item_id} onValueChange={(v) => {
             const it = items.find((i: any) => i.id === v);
             update(idx, { item_id: v, item_name: it?.name || "" });
           }}>
-            <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+            <SelectTrigger className="flex-1 h-9 text-xs min-w-0"><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
             <SelectContent>{items.map((i: any) => (
               <SelectItem key={i.id} value={i.id}>{i.name} ({i.unit})</SelectItem>
             ))}</SelectContent>
           </Select>
-          <Input type="number" min={1} value={row.quantity} onChange={(e) => update(idx, { quantity: Math.max(1, Number(e.target.value)) })} className="w-20 h-9 text-xs" />
-          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => remove(idx)}>
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Input type="number" min={1} value={row.quantity} onChange={(e) => update(idx, { quantity: Math.max(1, Number(e.target.value)) })} className="w-20 h-9 text-xs" />
+            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive shrink-0" onClick={() => remove(idx)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       ))}
       <Button variant="outline" size="sm" onClick={add} className="gap-1">
@@ -99,7 +160,6 @@ export const MeuHistorico = () => {
     }
     const itemsArr = Array.from(byItem.values()).sort((a, b) => b.req - a.req);
     const top = itemsArr[0]?.name || "—";
-    // 6-month chart
     const now = new Date();
     const months: { label: string; key: string; total: number }[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -116,16 +176,27 @@ export const MeuHistorico = () => {
     return { totalReq, totalEntregue, top, itemsArr, months };
   }, [data]);
 
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  if (isError) return (
-    <div className="text-center py-8 space-y-3">
-      <p className="text-sm text-destructive">Erro ao carregar histórico.</p>
-      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+  const exportData = useMemo(() => stats.itemsArr.map((r) => ({
+    Item: r.name, Requisitado: r.req, Entregue: r.entregue, Rejeitado: r.rejeitado,
+    "Última requisição": new Date(r.last).toLocaleDateString("pt-BR"),
+  })), [stats.itemsArr]);
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <KpiSkeletons count={3} />
+      <Skeleton className="h-56" />
+      <TableSkeleton rows={5} cols={5} />
     </div>
   );
+  if (isError) return <RetryBox msg="Erro ao carregar histórico" onRetry={refetch} />;
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-base font-heading font-semibold">Meu Histórico</h2>
+        <ExportButtons rows={exportData} fileBase="meu_historico_consumiveis" />
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="form-section p-3 text-center">
           <p className="text-2xl font-bold text-foreground">{stats.totalReq}</p>
@@ -156,7 +227,23 @@ export const MeuHistorico = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-2">
+        {stats.itemsArr.map((r) => (
+          <div key={r.name} className="border rounded-lg p-3 space-y-1">
+            <p className="text-sm font-semibold">{r.name}</p>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div><span className="text-muted-foreground">Req:</span> <strong>{r.req}</strong></div>
+              <div className="text-emerald-600"><span className="text-muted-foreground">OK:</span> <strong>{r.entregue}</strong></div>
+              <div className="text-destructive"><span className="text-muted-foreground">Rej:</span> <strong>{r.rejeitado}</strong></div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Última: {new Date(r.last).toLocaleDateString("pt-BR")}</p>
+          </div>
+        ))}
+        {stats.itemsArr.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido registrado</p>}
+      </div>
+
+      <div className="hidden sm:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -191,6 +278,7 @@ export const MeuHistorico = () => {
 export const PedidoTime = ({ initialList }: { initialList?: { nome: string; itens: ListaItem[] } | null }) => {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [orderItems, setOrderItems] = useState<ListaItem[]>(initialList?.itens || [{ item_id: "", item_name: "", quantity: 1 }]);
   const [savedListId, setSavedListId] = useState<string>("");
@@ -205,7 +293,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     },
   });
 
-  const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
+  const { data: teamMembers = [], isLoading: loadingTeam, isError: errTeam, refetch: refetchTeam } = useQuery({
     queryKey: ["team-members-by-turno", profile?.turno],
     queryFn: async () => {
       if (!profile?.turno) return [];
@@ -234,6 +322,47 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
 
   const toggleMember = (id: string) => {
     setSelectedMembers((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  };
+
+  const downloadTemplate = () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["item", "quantidade"],
+      ...items.slice(0, 3).map((i: any) => [i.name, 1]),
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+    XLSX.writeFile(wb, "template_pedido_time.xlsx");
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
+      const parsed: ListaItem[] = [];
+      const unknown: string[] = [];
+      for (const row of json) {
+        const name = String(row["item"] ?? row["Item"] ?? row["nome"] ?? "").trim();
+        const qty = Math.max(1, Number(row["quantidade"] ?? row["Quantidade"] ?? row["qty"] ?? 1));
+        if (!name) continue;
+        const match = items.find((i: any) => i.name.toLowerCase() === name.toLowerCase());
+        if (!match) { unknown.push(name); continue; }
+        parsed.push({ item_id: match.id, item_name: match.name, quantity: qty });
+      }
+      if (parsed.length === 0) {
+        toast.error("Nenhum item válido encontrado. Use as colunas 'item' e 'quantidade'.");
+        return;
+      }
+      setOrderItems(parsed);
+      toast.success(`${parsed.length} item(ns) importado(s)${unknown.length ? ` — ${unknown.length} ignorado(s): ${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? "…" : ""}` : ""}`);
+    } catch {
+      toast.error("Erro ao ler o arquivo. Use .xlsx, .xls ou .csv.");
+    } finally {
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const handleSend = async () => {
@@ -277,20 +406,42 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     <div className="space-y-4">
       <div className="form-section p-3 space-y-2">
         <Label className="text-xs font-semibold">Usar lista salva</Label>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <Select value={savedListId} onValueChange={setSavedListId}>
-            <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Selecione uma lista..." /></SelectTrigger>
+            <SelectTrigger className="flex-1 h-9 text-xs min-w-0"><SelectValue placeholder="Selecione uma lista..." /></SelectTrigger>
             <SelectContent>{savedLists.map((l: any) => (
               <SelectItem key={l.id} value={l.id}>{l.nome} ({(l.itens || []).length} itens)</SelectItem>
             ))}</SelectContent>
           </Select>
-          <Button size="sm" variant="outline" onClick={loadList} disabled={!savedListId}>Carregar lista</Button>
+          <Button size="sm" variant="outline" onClick={loadList} disabled={!savedListId} className="min-h-[36px]">Carregar lista</Button>
         </div>
       </div>
 
       <div className="form-section p-3 space-y-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <Label className="text-xs font-semibold">Importar lista por planilha</Label>
+          <div className="flex gap-1.5">
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={downloadTemplate}>
+              <FileSpreadsheet className="w-3.5 h-3.5" /> Template
+            </Button>
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => fileRef.current?.click()}>
+              <Upload className="w-3.5 h-3.5" /> Importar
+            </Button>
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+          </div>
+        </div>
+        <p className="text-[11px] text-muted-foreground">Colunas: <code>item</code>, <code>quantidade</code>. Nomes devem coincidir com os itens cadastrados.</p>
+      </div>
+
+      <div className="form-section p-3 space-y-2">
         <Label className="text-xs font-semibold">Selecionar membros do time (turno {profile?.turno || "—"})</Label>
-        {loadingTeam ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : (
+        {loadingTeam ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8" />)}
+          </div>
+        ) : errTeam ? (
+          <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
             {teamMembers.map((m: any) => (
               <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
@@ -377,13 +528,14 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
     } catch (e: any) { toast.error(e.message); }
   };
 
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  if (isError) return (
-    <div className="text-center py-8 space-y-3">
-      <p className="text-sm text-destructive">Erro ao carregar listas.</p>
-      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+  if (isLoading) return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-32" />)}
+      </div>
     </div>
   );
+  if (isError) return <RetryBox msg="Erro ao carregar listas" onRetry={refetch} />;
 
   return (
     <div className="space-y-4">
@@ -404,10 +556,10 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
             </div>
             <p className="text-xs text-muted-foreground">{new Date(l.criado_em).toLocaleDateString("pt-BR")}</p>
             <div className="flex items-center gap-2 pt-1">
-              <Button size="sm" variant="outline" className="flex-1" onClick={() => onUseList({ nome: l.nome, itens: l.itens || [] })}>
+              <Button size="sm" variant="outline" className="flex-1 min-h-[36px]" onClick={() => onUseList({ nome: l.nome, itens: l.itens || [] })}>
                 <ListChecks className="w-3.5 h-3.5 mr-1" /> Usar
               </Button>
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(l.id)}>
+              <Button size="sm" variant="ghost" className="text-destructive min-h-[36px]" onClick={() => setDeleteId(l.id)}>
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
@@ -417,7 +569,7 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg w-[95vw]">
           <DialogHeader><DialogTitle>Nova lista</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -428,7 +580,7 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
               <Label className="text-xs">Itens *</Label>
               <ItemQtyEditor items={items} value={itens} onChange={setItens} />
             </div>
-            <Button onClick={handleSave} disabled={saving} className="w-full">
+            <Button onClick={handleSave} disabled={saving} className="w-full min-h-[44px]">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />} Salvar lista
             </Button>
           </div>
@@ -502,27 +654,45 @@ export const ConsumoTime = () => {
     return r;
   }, [data, statusFilter, searchTerm]);
 
-  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  if (isError) return (
-    <div className="text-center py-8 space-y-3">
-      <p className="text-sm text-destructive">Erro ao carregar dados do time.</p>
-      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+  const exportData = useMemo(() => filtered.map((r: any) => ({
+    Numero: r.numero || "",
+    Usuario: r.user_name,
+    Turno: r.turno || "",
+    Item: r.item_name,
+    Quantidade: r.quantity,
+    Data: new Date(r.created_at).toLocaleDateString("pt-BR"),
+    Status: statusConfig[r.status]?.label || r.status,
+    Origem: r.origem === "pedido_coletivo" ? "Pedido coletivo" : "Individual",
+  })), [filtered]);
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <KpiSkeletons count={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Skeleton className="h-64" />
+        <Skeleton className="h-64" />
+      </div>
+      <TableSkeleton rows={6} cols={6} />
     </div>
   );
+  if (isError) return <RetryBox msg="Erro ao carregar consumo do time" onRetry={refetch} />;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-base font-heading font-semibold">Consumo do Time — turno {profile?.turno || "—"}</h2>
-        <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>
-          <SelectTrigger className="w-44 h-9 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="30">Últimos 30 dias</SelectItem>
-            <SelectItem value="90">Últimos 90 dias</SelectItem>
-            <SelectItem value="180">Últimos 6 meses</SelectItem>
-            <SelectItem value="365">Último ano</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ExportButtons rows={exportData} fileBase={`consumo_time_${periodo}d`} />
+          <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>
+            <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="180">Últimos 6 meses</SelectItem>
+              <SelectItem value="365">Último ano</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -581,7 +751,27 @@ export const ConsumoTime = () => {
         </Select>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-2">
+        {filtered.map((r: any) => {
+          const cfg = statusConfig[r.status] || statusConfig.aguardando;
+          const origemLabel = r.origem === "pedido_coletivo" ? "Pedido coletivo" : "Individual";
+          return (
+            <div key={r.id} className="border rounded-lg p-3 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
+                <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
+              </div>
+              <p className="text-sm font-medium">{r.item_name} <span className="text-xs text-muted-foreground">× {r.quantity}</span></p>
+              <p className="text-xs">{r.user_name} <span className="text-muted-foreground">• {r.turno || "—"} • {origemLabel}</span></p>
+              <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição no período</p>}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -593,7 +783,6 @@ export const ConsumoTime = () => {
               <TableHead className="text-xs">Data</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs">Origem</TableHead>
-              <TableHead className="text-xs">Criado por</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -610,12 +799,11 @@ export const ConsumoTime = () => {
                   <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                   <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
                   <TableCell className="text-xs">{origemLabel}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{r.criado_por ? "—" : ""}</TableCell>
                 </TableRow>
               );
             })}
             {filtered.length === 0 && (
-              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição no período</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição no período</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

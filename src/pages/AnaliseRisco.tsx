@@ -577,7 +577,7 @@ export default function AnaliseRisco() {
       { label: "NG Total", value: fmt(drillData.totalNg), tone: RED },
       { label: "OK Total", value: fmt(drillData.totalOk), tone: EMERALD },
       { label: "Inspecionadas", value: fmt(drillData.totalInsp), tone: NAVY },
-      { label: "PPM", value: fmt(drillData.ppm), tone: AMBER_TONE },
+      { label: "PPM", value: fmt(drillData.ppm), tone: [180, 83, 9] },
     ];
     kpis.forEach((k, i) => {
       const x = M + i * (cardW + 3);

@@ -474,13 +474,13 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       </div>
 
       <div className="form-section p-3 space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <Label className="text-xs font-semibold">Importar pedidos por planilha</Label>
-          <div className="flex gap-1.5">
-            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={downloadTemplate}>
+          <div className="grid grid-cols-1 sm:flex gap-1.5 w-full sm:w-auto">
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto justify-center" onClick={downloadTemplate}>
               <FileSpreadsheet className="w-3.5 h-3.5" /> Template
             </Button>
-            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs" onClick={() => fileRef.current?.click()}>
+            <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto justify-center" onClick={() => fileRef.current?.click()}>
               <Upload className="w-3.5 h-3.5" /> Importar
             </Button>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />

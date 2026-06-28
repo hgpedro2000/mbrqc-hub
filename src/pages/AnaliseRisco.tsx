@@ -24,6 +24,7 @@ import {
 import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {
@@ -728,9 +729,13 @@ export default function AnaliseRisco() {
     try {
       const doc = await buildDrillPdf();
       if (!doc) return;
-      const url = doc.output("bloburl") as unknown as string;
+      const blob = doc.output("blob") as Blob;
+      const url = URL.createObjectURL(blob);
       if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-      setPdfPreviewUrl(String(url));
+      setPdfPreviewUrl(url);
+    } catch (e) {
+      console.error("Erro ao gerar pré-visualização do PDF:", e);
+      toast.error("Não foi possível gerar a pré-visualização do PDF");
     } finally { setBuildingPdf(false); }
   };
 
@@ -1588,9 +1593,13 @@ export default function AnaliseRisco() {
                 setBuildingPdf(true);
                 try {
                   const doc = await buildExcludedPdf();
-                  const url = doc.output("bloburl") as unknown as string;
+                  const blob = doc.output("blob") as Blob;
+                  const url = URL.createObjectURL(blob);
                   if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                  setPdfPreviewUrl(String(url));
+                  setPdfPreviewUrl(url);
+                } catch (e) {
+                  console.error("Erro ao gerar pré-visualização do PDF:", e);
+                  toast.error("Não foi possível gerar a pré-visualização do PDF");
                 } finally { setBuildingPdf(false); }
               };
               const handleSave = async () => {

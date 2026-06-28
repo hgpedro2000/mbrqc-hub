@@ -1005,9 +1005,9 @@ export default function AnaliseRisco() {
       </header>
 
 
-      <main className="max-w-7xl mx-auto px-4 py-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {isError && (
-          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm flex items-center justify-between gap-3">
+          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <span className="text-destructive">Não foi possível carregar os dados para o período selecionado.</span>
             <Button size="sm" variant="outline" onClick={() => refetch()}>Tentar novamente</Button>
           </div>
@@ -1019,11 +1019,13 @@ export default function AnaliseRisco() {
         )}
 
         <Tabs defaultValue="painel" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="painel">Painel de Falhas</TabsTrigger>
-            <TabsTrigger value="mapa">Mapa de Risco</TabsTrigger>
-            <TabsTrigger value="reco">Recomendações do Dia</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
+            <TabsList className="w-max sm:w-auto">
+              <TabsTrigger value="painel" className="text-xs sm:text-sm">Painel de Falhas</TabsTrigger>
+              <TabsTrigger value="mapa" className="text-xs sm:text-sm">Mapa de Risco</TabsTrigger>
+              <TabsTrigger value="reco" className="text-xs sm:text-sm">Recomendações do Dia</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ============ PAINEL ============ */}
           <TabsContent value="painel" className="space-y-4">

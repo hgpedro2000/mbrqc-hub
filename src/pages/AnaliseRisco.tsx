@@ -947,56 +947,60 @@ export default function AnaliseRisco() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
-          <ShieldAlert className="w-6 h-6 text-primary" />
-          <div className="flex-1 min-w-[180px]">
-            <h1 className="text-lg font-heading font-bold">Análise de Risco</h1>
-            <p className="text-xs text-muted-foreground">Baseado em apontamentos de Incoming</p>
-          </div>
-          <div className="flex items-center gap-1 rounded-md border bg-background p-0.5">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
+            <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-heading font-bold truncate">Análise de Risco</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Baseado em apontamentos de Incoming</p>
+            </div>
             <Button
-              size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
-              className="h-8 text-xs"
-              onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
-            >100 dias · BC4B</Button>
-            <Button
-              size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
-              className="h-8 text-xs"
-              onClick={() => setModelFilter("todos")}
-            >Todos</Button>
+              size="sm" variant="outline" className="h-9 px-2 text-xs gap-1 shrink-0"
+              onClick={() => setShowHelp(true)}
+              title="Entenda este módulo"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Entenda este módulo</span>
+            </Button>
           </div>
-          <Button
-            size="sm" variant={excludeNoise ? "default" : "outline"}
-            className="h-8 text-xs"
-            onClick={() => setExcludeNoise((v) => !v)}
-            title="Desconsidera peças recorrentes/sem lançamento na análise"
-          >
-            {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
-          </Button>
-          <Button
-            size="sm" variant="outline" className="h-8 text-xs"
-            onClick={() => setShowExcluded(true)}
-          >
-            Ver excluídos ({excludedParts.length})
-          </Button>
-          <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-            <SelectTrigger className="w-[150px] h-8"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="90">Últimos 90 dias</SelectItem>
-              <SelectItem value="100">Últimos 100 dias</SelectItem>
-              <SelectItem value="180">Últimos 180 dias</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm" variant="outline" className="h-8 text-xs gap-1"
-            onClick={() => setShowHelp(true)}
-            title="Entenda este módulo"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            Entenda este módulo
-          </Button>
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
+            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 shrink-0">
+              <Button
+                size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
+                className="h-8 text-xs whitespace-nowrap"
+                onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
+              >100 dias · BC4B</Button>
+              <Button
+                size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
+                className="h-8 text-xs"
+                onClick={() => setModelFilter("todos")}
+              >Todos</Button>
+            </div>
+            <Button
+              size="sm" variant={excludeNoise ? "default" : "outline"}
+              className="h-8 text-xs whitespace-nowrap shrink-0"
+              onClick={() => setExcludeNoise((v) => !v)}
+              title="Desconsidera peças recorrentes/sem lançamento na análise"
+            >
+              {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
+            </Button>
+            <Button
+              size="sm" variant="outline" className="h-8 text-xs whitespace-nowrap shrink-0"
+              onClick={() => setShowExcluded(true)}
+            >
+              Excluídos ({excludedParts.length})
+            </Button>
+            <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
+              <SelectTrigger className="w-[140px] h-8 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">Últimos 30 dias</SelectItem>
+                <SelectItem value="90">Últimos 90 dias</SelectItem>
+                <SelectItem value="100">Últimos 100 dias</SelectItem>
+                <SelectItem value="180">Últimos 180 dias</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </header>
 

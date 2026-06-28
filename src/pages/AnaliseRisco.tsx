@@ -584,6 +584,18 @@ export default function AnaliseRisco() {
 
 
       <main className="max-w-7xl mx-auto px-4 py-6">
+        {isError && (
+          <div className="mb-4 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm flex items-center justify-between gap-3">
+            <span className="text-destructive">Não foi possível carregar os dados para o período selecionado.</span>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>Tentar novamente</Button>
+          </div>
+        )}
+        {!isLoading && !isError && rawItems.length === 0 && (
+          <div className="mb-4 rounded-md border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+            Nenhum apontamento encontrado nos últimos {periodo} dias{modelFilter === "bc4b" ? " para o modelo BC4B" : ""}.
+          </div>
+        )}
+
         <Tabs defaultValue="painel" className="space-y-4">
           <TabsList>
             <TabsTrigger value="painel">Painel de Falhas</TabsTrigger>

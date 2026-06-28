@@ -90,6 +90,8 @@ export default function AnaliseRisco() {
   const [excludeNoise, setExcludeNoise] = useState(true);
   const [showExcluded, setShowExcluded] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [buildingPdf, setBuildingPdf] = useState(false);
 
   const dateFrom = useMemo(() => {
     const d = new Date();

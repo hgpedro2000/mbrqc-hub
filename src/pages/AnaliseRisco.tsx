@@ -1468,6 +1468,84 @@ export default function AnaliseRisco() {
         </Tabs>
       </main>
 
+      {/* ============ INSIGHT DIALOG (KPI click) ============ */}
+      <Dialog open={!!insight} onOpenChange={(v) => { if (!v) setInsight(null); }}>
+        <DialogContent className="max-w-3xl w-[95vw] max-h-[85vh] overflow-hidden flex flex-col gap-3 p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>{insight ? insightConfig[insight].title : ""}</DialogTitle>
+            <DialogDescription>{insight ? insightConfig[insight].description : ""}</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+            {insight === "modos" && (
+              <div className="divide-y rounded-md border">
+                {modosFalha.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Sem dados no período.</div>}
+                {modosFalha.map(([name, ng], idx) => (
+                  <div key={name} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="shrink-0 inline-flex w-6 h-6 items-center justify-center rounded-full bg-muted text-[11px] font-semibold tabular-nums">{idx + 1}</span>
+                      <span className="truncate" title={name}>{name}</span>
+                    </div>
+                    <span className="shrink-0 font-semibold tabular-nums">{fmt(ng)} NG</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {insight === "reincidentes" && (
+              <div className="divide-y rounded-md border">
+                {insightReincidentes.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhum fornecedor reincidente.</div>}
+                {insightReincidentes.map((s) => (
+                  <div key={s.name} className="flex flex-col min-[480px]:flex-row min-[480px]:items-center gap-1 min-[480px]:gap-3 px-3 py-2 text-sm">
+                    <div className="font-medium flex-1 truncate" title={s.name}>{s.name}</div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span><span className="text-muted-foreground">NG:</span> <span className="font-semibold tabular-nums">{fmt(s.ng)}</span></span>
+                      <span><span className="text-muted-foreground">PPM:</span> <span className="font-semibold tabular-nums">{fmt(s.ppm)}</span></span>
+                      <Badge variant="outline" className="text-[10px]">{s.months} meses</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {insight && ["alto", "medio", "baixo", "hoje", "liberacao"].includes(insight) && (
+              <div className="divide-y rounded-md border">
+                {insightParts.length === 0 && <div className="px-4 py-6 text-center text-sm text-muted-foreground">Nenhuma peça nesta classificação.</div>}
+                {insightParts.map((p) => (
+                  <button
+                    key={`${p.pn}-${p.fornecedor}`}
+                    type="button"
+                    onClick={() => { setDrill({ pn: p.pn, fornecedor: p.fornecedor }); setInsight(null); }}
+                    className="w-full text-left px-3 py-2 hover:bg-muted/40 transition-colors flex flex-col min-[520px]:flex-row min-[520px]:items-center gap-2 min-[520px]:gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-xs font-semibold break-all">{p.pn}</div>
+                      <div className="text-sm break-words">{p.partName}</div>
+                      <div className="text-xs text-muted-foreground break-words">{p.fornecedor} · modo: {p.modoRecorrente}</div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      <Badge variant="outline" className="text-[10px] tabular-nums">{p.ng} NG</Badge>
+                      <Badge variant="outline" className="text-[10px] tabular-nums">{p.diasSem}d s/rej</Badge>
+                      {riskBadge(p.classification)}
+                      <Badge className="text-[10px]" variant="secondary">Score {p.score}</Badge>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground border-t pt-2">
+            <span>
+              {insight === "modos" && `${modosFalha.length} modos`}
+              {insight === "reincidentes" && `${insightReincidentes.length} fornecedores`}
+              {insight && ["alto", "medio", "baixo", "hoje", "liberacao"].includes(insight) && `${insightParts.length} peças`}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => setInsight(null)}>Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* ============ EXCLUDED PARTS DIALOG ============ */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="max-w-[560px] max-h-[85vh] overflow-y-auto">

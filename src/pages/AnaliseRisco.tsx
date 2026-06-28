@@ -134,9 +134,7 @@ export default function AnaliseRisco() {
   const renderParetoAccLabel = (props: any) => {
     const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    const slot = (index ?? 0) % 3; // 0,1,2
-    const offset = 30 + slot * 16; // 30 / 46 / 62
-    const labelY = Math.max(14, y - offset);
+    const labelY = computeAccLabelY(y, index ?? 0);
     return (
       <text
         x={x}
@@ -155,9 +153,8 @@ export default function AnaliseRisco() {
   const renderParetoBarLabel = (props: any) => {
     const { x, y, width, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    const stagger = (index ?? 0) % 2 === 0 ? 6 : 14;
     const cx = x + (width ?? 0) / 2;
-    const labelY = Math.max(10, y - stagger);
+    const labelY = computeBarLabelY(y, index ?? 0);
     return (
       <text
         x={cx}

@@ -47,8 +47,52 @@ const RequisitarItem = () => {
   const [editItemId, setEditItemId] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [cancelReqId, setCancelReqId] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  const openEditReq = (r: any) => {
+  const confirmReceipt = async (reqId: string) => {
+    if (!reqId) return;
+    setConfirming(true);
+    try {
+      const { error } = await supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .eq("id", reqId)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao");
+      if (error) throw error;
+      toast.success("Recebimento confirmado");
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
+  };
+
+  const handleScan = async (value: string) => {
+    setScanOpen(false);
+    let pedidoId = value.trim();
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed?.type === "consumivel_confirm" && parsed.pedido_id) pedidoId = parsed.pedido_id;
+    } catch { /* raw uuid */ }
+    // Find any pending row in my list belonging to this pedido_id
+    const target = (myRequests as any[]).find(
+      (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
+    );
+    if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
+    // Confirm ALL rows sharing the same pedido_id for me
+    try {
+      const { error } = await supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao")
+        .or(`pedido_id.eq.${pedidoId},id.eq.${pedidoId}`);
+      if (error) throw error;
+      toast.success("Recebimento confirmado via QR");
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); }
+  };
     setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);
   };
   const handleEditReq = async () => {

@@ -105,6 +105,27 @@ export default function AnaliseRisco() {
   useEffect(() => {
     try { localStorage.setItem(PARETO_GAP_LS_KEY, String(paretoMinGap)); } catch { /* noop */ }
   }, [paretoMinGap]);
+  // Per-point manual extra lift (in px) applied on top of the auto stagger.
+  // The user clicks a label to bump it +12px (cycles 0 → 12 → 24 → 36 → 0).
+  const PARETO_BUMP_LS_KEY = "analise_risco_pareto_label_bumps_v1";
+  const [paretoBumps, setParetoBumps] = useState<{ bar: Record<string, number>; acc: Record<string, number> }>(() => {
+    try {
+      const raw = localStorage.getItem(PARETO_BUMP_LS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch { /* noop */ }
+    return { bar: {}, acc: {} };
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PARETO_BUMP_LS_KEY, JSON.stringify(paretoBumps)); } catch { /* noop */ }
+  }, [paretoBumps]);
+  const bumpLabel = (kind: "bar" | "acc", key: string) => {
+    setParetoBumps((prev) => {
+      const cur = prev[kind][key] ?? 0;
+      const next = (cur + 12) % 48; // 0 / 12 / 24 / 36
+      return { ...prev, [kind]: { ...prev[kind], [key]: next } };
+    });
+  };
+  const resetParetoBumps = () => setParetoBumps({ bar: {}, acc: {} });
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);

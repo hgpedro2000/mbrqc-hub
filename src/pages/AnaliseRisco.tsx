@@ -1021,6 +1021,51 @@ export default function AnaliseRisco() {
               Registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo em 3+ meses).
             </DialogDescription>
           </DialogHeader>
+
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="flex flex-col gap-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">Projeto</label>
+              <Select value={excFiltProjeto} onValueChange={setExcFiltProjeto}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.projetos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1 min-w-[160px]">
+              <label className="text-[11px] text-muted-foreground">Modelo (peça)</label>
+              <Select value={excFiltModelo} onValueChange={setExcFiltModelo}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.modelos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1 min-w-[200px] flex-1">
+              <label className="text-[11px] text-muted-foreground">Fornecedor</label>
+              <Select value={excFiltFornecedor} onValueChange={setExcFiltFornecedor}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {excludedFilterOptions.fornecedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__") && (
+              <Button
+                variant="ghost" size="sm" className="h-8 text-xs"
+                onClick={() => { setExcFiltProjeto("__all__"); setExcFiltModelo("__all__"); setExcFiltFornecedor("__all__"); }}
+              >
+                Limpar filtros
+              </Button>
+            )}
+            <div className="text-xs text-muted-foreground ml-auto self-center">
+              {filteredExcluded.length} de {excludedParts.length}
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
             {(() => {
               const buildExcludedPdf = async () => {

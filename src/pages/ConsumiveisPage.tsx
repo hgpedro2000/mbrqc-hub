@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine } from "lucide-react";
+import QrScannerModal from "@/components/QrScannerModal";
+import { QRCodeSVG } from "qrcode.react";
 import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
 import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
+  entregue_pendente_confirmacao: { label: "Aguardando confirmação", color: "border-blue-500 text-blue-600 bg-blue-500/10" },
   entregue: { label: "Entregue", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
   rejeitado: { label: "Rejeitado", color: "border-red-500 text-red-600 bg-red-500/10" },
 };
@@ -44,6 +47,52 @@ const RequisitarItem = () => {
   const [editItemId, setEditItemId] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [cancelReqId, setCancelReqId] = useState<string | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+
+  const confirmReceipt = async (reqId: string) => {
+    if (!reqId) return;
+    setConfirming(true);
+    try {
+      const { error } = await supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .eq("id", reqId)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao");
+      if (error) throw error;
+      toast.success("Recebimento confirmado");
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
+  };
+
+  const handleScan = async (value: string) => {
+    setScanOpen(false);
+    let pedidoId = value.trim();
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed?.type === "consumivel_confirm" && parsed.pedido_id) pedidoId = parsed.pedido_id;
+    } catch { /* raw uuid */ }
+    // Find any pending row in my list belonging to this pedido_id
+    const target = (myRequests as any[]).find(
+      (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
+    );
+    if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
+    // Confirm ALL rows sharing the same pedido_id for me
+    try {
+      const { error } = await supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao")
+        .or(`pedido_id.eq.${pedidoId},id.eq.${pedidoId}`);
+      if (error) throw error;
+      toast.success("Recebimento confirmado via QR");
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); }
+  };
 
   const openEditReq = (r: any) => {
     setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);
@@ -142,14 +191,20 @@ const RequisitarItem = () => {
       </div>
 
       <div className="form-section">
-        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-3">
           <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{activeProfile?.full_name}</p></div>
+          <div><span className="text-muted-foreground text-xs">Matrícula</span><p className="font-medium font-mono">{(activeProfile as any)?.employee_number || "—"}</p></div>
           <div><span className="text-muted-foreground text-xs">Turno</span><p className="font-medium">{activeProfile?.turno || "—"}</p></div>
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
-      
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">Histórico de Pedidos</h3>
+        <Button size="sm" variant="outline" className="h-8 gap-1 text-xs w-full sm:w-auto" onClick={() => setScanOpen(true)}>
+          <ScanLine className="w-3.5 h-3.5" /> Confirmar via QR
+        </Button>
+      </div>
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar por item ou número..." className="pl-9 h-9 text-xs w-full" />
@@ -163,12 +218,19 @@ const RequisitarItem = () => {
           {filteredRequests.map((r: any) => {
             const cfg = statusConfig[r.status] || statusConfig.aguardando;
             const editable = r.status === "aguardando";
+            const fromLeader = r.origem === "pedido_coletivo" && r.criado_por && r.criado_por !== r.user_id;
+            const needsConfirm = r.status === "entregue_pendente_confirmacao";
             return (
               <div key={r.id} className="border rounded-lg p-3 space-y-1">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</span>
                   <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
                 </div>
+                {fromLeader && (
+                  <Badge variant="outline" className="text-[10px] border-primary/40 text-primary bg-primary/5">
+                    Pedido gerado pelo Líder
+                  </Badge>
+                )}
                 <p className="text-sm font-medium">{r.item_name}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>Qtd: <strong>{r.quantity}</strong></span>
@@ -183,6 +245,11 @@ const RequisitarItem = () => {
                       <XIcon className="w-3.5 h-3.5 mr-1" /> Cancelar
                     </Button>
                   </div>
+                )}
+                {needsConfirm && (
+                  <Button size="sm" className="w-full h-8 text-xs mt-1" disabled={confirming} onClick={() => confirmReceipt(r.id)}>
+                    <Check className="w-3.5 h-3.5 mr-1" /> Confirmar recebimento
+                  </Button>
                 )}
               </div>
             );
@@ -207,15 +274,28 @@ const RequisitarItem = () => {
               {filteredRequests.map((r: any) => {
                 const cfg = statusConfig[r.status] || statusConfig.aguardando;
                 const editable = r.status === "aguardando";
+                const fromLeader = r.origem === "pedido_coletivo" && r.criado_por && r.criado_por !== r.user_id;
+                const needsConfirm = r.status === "entregue_pendente_confirmacao";
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
-                    <TableCell className="text-sm">{r.item_name}</TableCell>
+                    <TableCell className="text-sm">
+                      {r.item_name}
+                      {fromLeader && (
+                        <Badge variant="outline" className="ml-2 text-[10px] border-primary/40 text-primary bg-primary/5">
+                          Pelo Líder
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
                     <TableCell className="text-right">
-                      {editable ? (
+                      {needsConfirm ? (
+                        <Button size="sm" className="h-7 text-xs" disabled={confirming} onClick={() => confirmReceipt(r.id)}>
+                          <Check className="w-3.5 h-3.5 mr-1" /> Confirmar
+                        </Button>
+                      ) : editable ? (
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditReq(r)} title="Editar">
                             <Pencil className="w-3.5 h-3.5" />
@@ -277,6 +357,14 @@ const RequisitarItem = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <QrScannerModal
+        open={scanOpen}
+        onClose={() => setScanOpen(false)}
+        onScan={handleScan}
+        title="Confirmar entrega via QR"
+      />
+
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-sm">
@@ -340,6 +428,7 @@ const InventarioRequisicoes = () => {
   const [replenishSaving, setReplenishSaving] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyItemId, setHistoryItemId] = useState("");
+  const [qrPedidoId, setQrPedidoId] = useState<string | null>(null);
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],
@@ -445,6 +534,11 @@ const InventarioRequisicoes = () => {
       const request = allRequests.find((r: any) => r.id === id);
       if (!request) return;
 
+      // For team orders (pedido_coletivo), "entregue" actually means
+      // delivered-by-leader, awaiting inspector confirmation.
+      let nextStatus = status;
+      const isTeamDelivery = status === "entregue" && request.origem === "pedido_coletivo" && request.criado_por && request.criado_por !== request.user_id;
+
       if (status === "entregue") {
         const item = items.find((i: any) => i.id === request.item_id);
         if (item && item.stock_qty < request.quantity) {
@@ -460,11 +554,22 @@ const InventarioRequisicoes = () => {
           const { error: stockErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", item.id);
           if (stockErr) throw stockErr;
         }
+        if (isTeamDelivery) nextStatus = "entregue_pendente_confirmacao";
       }
 
-      const { error } = await supabase.from("consumable_requests").update({ status } as any).eq("id", id);
+      const patch: any = { status: nextStatus };
+      if (nextStatus === "entregue_pendente_confirmacao") patch.entregue_em = new Date().toISOString();
+      if (nextStatus === "entregue") patch.entregue_em = patch.entregue_em || new Date().toISOString();
+
+      const { error } = await supabase.from("consumable_requests").update(patch).eq("id", id);
       if (error) throw error;
-      toast.success("Status atualizado");
+      if (isTeamDelivery) {
+        toast.success("Entregue — aguardando confirmação do inspetor (via app ou QR)");
+        // Open QR dialog so leader can show the code
+        setQrPedidoId(request.pedido_id || request.id);
+      } else {
+        toast.success("Status atualizado");
+      }
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["consumable-items"] });
@@ -634,7 +739,27 @@ const InventarioRequisicoes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Requests table */}
+      {/* QR for inspector to scan and confirm leader delivery */}
+      <Dialog open={!!qrPedidoId} onOpenChange={(o) => !o && setQrPedidoId(null)}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader><DialogTitle>Mostrar para o inspetor</DialogTitle></DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-lg">
+              {qrPedidoId && (
+                <QRCodeSVG
+                  value={JSON.stringify({ type: "consumivel_confirm", pedido_id: qrPedidoId })}
+                  size={220}
+                />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              O inspetor confirma o recebimento abrindo Consumíveis → "Confirmar via QR".
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground break-all">{qrPedidoId}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <h3 className="text-base font-heading font-semibold">Requisições</h3>

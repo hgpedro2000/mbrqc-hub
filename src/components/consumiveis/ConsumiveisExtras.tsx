@@ -14,6 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { parseImportRows, buildPedidoRows } from "@/lib/pedidoTime";
@@ -33,6 +34,7 @@ export const getConsumivelRole = (cargo?: string | null, isAdmin?: boolean): Con
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
+  entregue_pendente_confirmacao: { label: "Aguardando confirmação", color: "border-blue-500 text-blue-600 bg-blue-500/10" },
   entregue: { label: "Entregue", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
   rejeitado: { label: "Rejeitado", color: "border-red-500 text-red-600 bg-red-500/10" },
 };
@@ -280,14 +282,19 @@ type MemberOrder = { items: ListaItem[] };
 
 export const PedidoTime = ({ initialList }: { initialList?: { nome: string; itens: ListaItem[] } | null }) => {
   const { user, profile } = useAuth();
+  const { isAdmin } = useUserRole();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const role = getConsumivelRole(profile?.cargo, isAdmin);
+  const isManager = role === "manager"; // admin/analista/supervisor/gerente
 
   // Map of memberId -> their items list. Each entry becomes ONE pedido.
   const [memberOrders, setMemberOrders] = useState<Record<string, MemberOrder>>({});
   const [savedListId, setSavedListId] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [teamSearch, setTeamSearch] = useState("");
 
   const { data: items = [] } = useQuery({
     queryKey: ["consumable-items-active"],
@@ -299,18 +306,26 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
   });
 
   const { data: teamMembers = [], isLoading: loadingTeam, isError: errTeam, refetch: refetchTeam } = useQuery({
-    queryKey: ["team-members-by-turno", profile?.turno],
+    queryKey: ["team-members-pedido", profile?.turno, isManager],
     queryFn: async () => {
-      if (!profile?.turno) return [];
-      const { data, error } = await supabase
+      // Managers/Admins → ALL active MOBIS employees (regardless of turno).
+      // Leaders → only members from their own turno.
+      let q = supabase
         .from("profiles")
-        .select("id, full_name, turno, cargo, employee_number")
-        .eq("turno", profile.turno)
+        .select("id, full_name, turno, cargo, employee_number, empresa")
         .eq("status", "active");
+      if (isManager) {
+        q = q.eq("empresa", "mobis_brasil");
+      } else if (profile?.turno) {
+        q = q.eq("turno", profile.turno);
+      } else {
+        return [];
+      }
+      const { data, error } = await q.order("full_name");
       if (error) throw error;
       return (data || []).filter((p: any) => p.full_name !== "TESTER");
     },
-    enabled: !!profile?.turno,
+    enabled: !!profile && (isManager || !!profile?.turno),
   });
 
   const { data: savedLists = [] } = useQuery({
@@ -492,7 +507,19 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       </div>
 
       <div className="form-section p-3 space-y-2">
-        <Label className="text-xs font-semibold">Selecionar membros do time (turno {profile?.turno || "—"})</Label>
+        <Label className="text-xs font-semibold">
+          {isManager
+            ? `Selecionar membros (todos funcionários MOBIS — ${teamMembers.length})`
+            : `Selecionar membros do time (turno ${profile?.turno || "—"})`}
+        </Label>
+        {isManager && (
+          <Input
+            value={teamSearch}
+            onChange={(e) => setTeamSearch(e.target.value)}
+            placeholder="Buscar por nome ou matrícula..."
+            className="h-8 text-xs"
+          />
+        )}
         {loadingTeam ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8" />)}
@@ -500,14 +527,25 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
         ) : errTeam ? (
           <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
-            {teamMembers.map((m: any) => (
-              <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
-                <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
-                <span className="truncate">{m.full_name}</span>
-              </label>
-            ))}
-            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado neste turno.</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
+            {teamMembers
+              .filter((m: any) => {
+                if (!teamSearch.trim()) return true;
+                const t = teamSearch.toLowerCase();
+                return (m.full_name || "").toLowerCase().includes(t)
+                  || String(m.employee_number || "").toLowerCase().includes(t);
+              })
+              .map((m: any) => (
+                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
+                  <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
+                  <span className="truncate flex-1">
+                    {m.full_name}
+                    {m.employee_number && <span className="text-[10px] text-muted-foreground ml-1 font-mono">({m.employee_number})</span>}
+                    {isManager && m.turno && <span className="text-[10px] text-muted-foreground ml-1">· {m.turno}</span>}
+                  </span>
+                </label>
+              ))}
+            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado.</p>}
           </div>
         )}
         <p className="text-xs text-muted-foreground">{totalPedidos} pedido(s) — {totalItens} item(ns) no total</p>

@@ -642,7 +642,7 @@ export default function AnaliseRisco() {
               <p className="text-[11px] text-muted-foreground mb-3">
                 Soma mensal de peças NG. Linha pontilhada = meta máxima aceitável no período.
               </p>
-              <div className="h-[320px]">
+              <div className="h-[440px]">
                 <ResponsiveContainer>
                   <LineChart data={trendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />

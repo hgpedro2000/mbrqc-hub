@@ -142,8 +142,9 @@ const RequisitarItem = () => {
       </div>
 
       <div className="form-section">
-        <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm mb-3">
           <div><span className="text-muted-foreground text-xs">Usuário</span><p className="font-medium">{activeProfile?.full_name}</p></div>
+          <div><span className="text-muted-foreground text-xs">Matrícula</span><p className="font-medium font-mono">{(activeProfile as any)?.employee_number || "—"}</p></div>
           <div><span className="text-muted-foreground text-xs">Turno</span><p className="font-medium">{activeProfile?.turno || "—"}</p></div>
         </div>
       </div>

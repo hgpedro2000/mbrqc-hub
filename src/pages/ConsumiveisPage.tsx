@@ -739,7 +739,27 @@ const InventarioRequisicoes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Requests table */}
+      {/* QR for inspector to scan and confirm leader delivery */}
+      <Dialog open={!!qrPedidoId} onOpenChange={(o) => !o && setQrPedidoId(null)}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader><DialogTitle>Mostrar para o inspetor</DialogTitle></DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-lg">
+              {qrPedidoId && (
+                <QRCodeSVG
+                  value={JSON.stringify({ type: "consumivel_confirm", pedido_id: qrPedidoId })}
+                  size={220}
+                />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              O inspetor confirma o recebimento abrindo Consumíveis → "Confirmar via QR".
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground break-all">{qrPedidoId}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <h3 className="text-base font-heading font-semibold">Requisições</h3>

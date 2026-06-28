@@ -92,6 +92,9 @@ export default function AnaliseRisco() {
   const [showHelp, setShowHelp] = useState(false);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [buildingPdf, setBuildingPdf] = useState(false);
+  const [excFiltProjeto, setExcFiltProjeto] = useState<string>("__all__");
+  const [excFiltModelo, setExcFiltModelo] = useState<string>("__all__");
+  const [excFiltFornecedor, setExcFiltFornecedor] = useState<string>("__all__");
 
   const dateFrom = useMemo(() => {
     const d = new Date();

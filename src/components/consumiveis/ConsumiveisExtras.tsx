@@ -377,28 +377,8 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       const ws = wb.Sheets[wb.SheetNames[0]];
       const json = XLSX.utils.sheet_to_json<Record<string, any>>(ws, { defval: "" });
 
-      const grouped: Record<string, ListaItem[]> = {};
-      const unknownItems = new Set<string>();
-      const unknownMembers = new Set<string>();
-
-      for (const row of json) {
-        const matricula = String(row["matricula"] ?? row["Matricula"] ?? row["matrícula"] ?? row["Matrícula"] ?? "").trim();
-        const nome = String(row["nome"] ?? row["Nome"] ?? "").trim();
-        const itemName = String(row["item"] ?? row["Item"] ?? "").trim();
-        const qty = Math.max(1, Number(row["quantidade"] ?? row["Quantidade"] ?? row["qty"] ?? 1));
-        if (!itemName) continue;
-
-        const member = teamMembers.find((m: any) =>
-          (matricula && String(m.employee_number || "").trim() === matricula) ||
-          (nome && m.full_name?.toLowerCase() === nome.toLowerCase())
-        );
-        if (!member) { unknownMembers.add(matricula || nome); continue; }
-
-        const it = items.find((i: any) => i.name.toLowerCase() === itemName.toLowerCase());
-        if (!it) { unknownItems.add(itemName); continue; }
-
-        (grouped[member.id] ||= []).push({ item_id: it.id, item_name: it.name, quantity: qty });
-      }
+      const { grouped, unknownMembers, unknownItems, duplicates, skippedEmpty } =
+        parseImportRows(json as any, teamMembers as any, items as any);
 
       const ids = Object.keys(grouped);
       if (ids.length === 0) {
@@ -413,8 +393,10 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       });
 
       const warns: string[] = [];
-      if (unknownMembers.size) warns.push(`${unknownMembers.size} membro(s) não encontrados`);
-      if (unknownItems.size) warns.push(`${unknownItems.size} item(ns) não cadastrados`);
+      if (duplicates.length) warns.push(`${duplicates.length} duplicata(s) somada(s)`);
+      if (unknownMembers.length) warns.push(`${unknownMembers.length} membro(s) não encontrados`);
+      if (unknownItems.length) warns.push(`${unknownItems.length} item(ns) não cadastrados`);
+      if (skippedEmpty) warns.push(`${skippedEmpty} linha(s) sem item`);
       toast.success(`${ids.length} pedido(s) preparado(s)${warns.length ? ` — ${warns.join(", ")}` : ""}`);
     } catch {
       toast.error("Erro ao ler o arquivo. Use .xlsx, .xls ou .csv.");
@@ -423,38 +405,39 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
     }
   };
 
-  const handleSend = async () => {
-    if (selectedIds.length === 0) { toast.error("Selecione ao menos um membro"); return; }
-    const payload: any[] = [];
-    for (const memberId of selectedIds) {
-      const member = teamMembers.find((m: any) => m.id === memberId);
-      if (!member) continue;
-      const valid = memberOrders[memberId].items.filter((i) => i.item_id && i.quantity > 0);
-      if (valid.length === 0) continue;
-      const pedido_id = (crypto as any).randomUUID();
-      for (const it of valid) {
-        payload.push({
-          pedido_id,
-          user_id: memberId,
-          user_name: member.full_name,
-          turno: member.turno,
-          item_id: it.item_id,
-          item_name: it.item_name,
-          quantity: it.quantity,
-          origem: "pedido_coletivo",
-          criado_por: user?.id,
-        });
-      }
-    }
-    if (payload.length === 0) { toast.error("Adicione ao menos um item por pessoa"); return; }
+  // Compute the rows that will be inserted (used for preview + submit).
+  const previewRows = useMemo(() => {
+    const flat: Record<string, ListaItem[]> = {};
+    for (const id of selectedIds) flat[id] = memberOrders[id].items;
+    return buildPedidoRows(flat, teamMembers as any, { createdBy: user?.id || null });
+  }, [memberOrders, selectedIds, teamMembers, user?.id]);
 
+  const previewByMember = useMemo(() => {
+    const map = new Map<string, { name: string; pedido_id: string; items: { item_name: string; quantity: number }[] }>();
+    for (const r of previewRows) {
+      const cur = map.get(r.user_id) || { name: r.user_name, pedido_id: r.pedido_id, items: [] };
+      cur.items.push({ item_name: r.item_name, quantity: r.quantity });
+      map.set(r.user_id, cur);
+    }
+    return Array.from(map.values());
+  }, [previewRows]);
+
+  const openPreview = () => {
+    if (selectedIds.length === 0) { toast.error("Selecione ao menos um membro"); return; }
+    if (previewRows.length === 0) { toast.error("Adicione ao menos um item válido por pessoa"); return; }
+    setPreviewOpen(true);
+  };
+
+  const confirmSend = async () => {
+    if (previewRows.length === 0) return;
     setSending(true);
     try {
-      const { error } = await (supabase as any).from("consumable_requests").insert(payload);
+      const { error } = await (supabase as any).from("consumable_requests").insert(previewRows);
       if (error) throw error;
-      const uniqPedidos = new Set(payload.map((r) => r.pedido_id)).size;
-      toast.success(`${uniqPedidos} pedido(s) criados (${payload.length} itens)`);
+      const uniqPedidos = new Set(previewRows.map((r) => r.pedido_id)).size;
+      toast.success(`${uniqPedidos} pedido(s) criados (${previewRows.length} itens)`);
       setMemberOrders({});
+      setPreviewOpen(false);
       qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
       qc.invalidateQueries({ queryKey: ["team-consumable-requests"] });
     } catch (e: any) {
@@ -463,6 +446,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       setSending(false);
     }
   };
+
 
   // Apply initialList once: pre-load the current user with the chosen list as a starting point
   const appliedInitial = useRef(false);

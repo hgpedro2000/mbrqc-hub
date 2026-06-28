@@ -1337,6 +1337,57 @@ export default function AnaliseRisco() {
         </DialogContent>
       </Dialog>
 
+      {/* ============ PDF PREVIEW DIALOG ============ */}
+      <Dialog
+        open={!!pdfPreviewUrl}
+        onOpenChange={(o) => {
+          if (!o) {
+            if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+            setPdfPreviewUrl(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-6xl">
+          <DialogHeader>
+            <DialogTitle>Pré-visualização do PDF</DialogTitle>
+            <DialogDescription>
+              {modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos {periodo} dias · {excludedParts.length} peça(s) desconsiderada(s)
+            </DialogDescription>
+          </DialogHeader>
+          {pdfPreviewUrl && (
+            <iframe
+              title="PDF Preview"
+              src={pdfPreviewUrl}
+              className="w-full h-[70vh] rounded border"
+            />
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                setPdfPreviewUrl(null);
+              }}
+            >
+              Fechar
+            </Button>
+            <Button
+              className="gap-1"
+              onClick={() => {
+                if (!pdfPreviewUrl) return;
+                const a = document.createElement("a");
+                a.href = pdfPreviewUrl;
+                a.download = `pecas-excluidas-${periodo}d-${modelFilter}.pdf`;
+                a.click();
+              }}
+            >
+              <FileText className="w-4 h-4" /> Baixar PDF
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {/* ============ DRILL-DOWN DIALOG ============ */}
       <Dialog open={!!drill} onOpenChange={(o) => !o && setDrill(null)}>
         <DialogContent className="max-w-3xl">

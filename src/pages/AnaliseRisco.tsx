@@ -946,17 +946,17 @@ export default function AnaliseRisco() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2">
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10 overflow-x-clip">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
             <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
-              <h1 className="text-base sm:text-lg font-heading font-bold truncate">Análise de Risco</h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Baseado em apontamentos de Incoming</p>
+              <h1 className="text-[clamp(0.95rem,4vw,1.125rem)] font-heading font-bold leading-tight truncate" title="Análise de Risco">Análise de Risco</h1>
+              <p className="text-[clamp(0.65rem,2.8vw,0.75rem)] text-muted-foreground leading-tight truncate" title="Baseado em apontamentos de Incoming">Baseado em apontamentos de Incoming</p>
             </div>
             <Button
-              size="sm" variant="outline" className="h-9 px-2 text-xs gap-1 shrink-0"
+              size="sm" variant="outline" className="min-h-11 min-w-11 px-2 text-xs gap-1 shrink-0"
               onClick={() => setShowHelp(true)}
               title="Entenda este módulo"
             >
@@ -964,35 +964,35 @@ export default function AnaliseRisco() {
               <span className="hidden sm:inline">Entenda este módulo</span>
             </Button>
           </div>
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-            <div className="flex items-center gap-1 rounded-md border bg-background p-0.5 shrink-0">
+          <div className="grid grid-cols-1 min-[480px]:flex min-[480px]:items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1 min-w-0">
+            <div className="grid grid-cols-2 min-[480px]:flex items-center gap-1 rounded-md border bg-background p-0.5 min-w-0 min-[480px]:shrink-0">
               <Button
                 size="sm" variant={modelFilter === "bc4b" && periodo === "100" ? "default" : "ghost"}
-                className="h-8 text-xs whitespace-nowrap"
+                className="min-h-11 px-2 text-xs whitespace-normal min-[480px]:whitespace-nowrap leading-tight"
                 onClick={() => { setModelFilter("bc4b"); setPeriodo("100"); }}
               >100 dias · BC4B</Button>
               <Button
                 size="sm" variant={modelFilter === "todos" ? "default" : "ghost"}
-                className="h-8 text-xs"
+                className="min-h-11 px-2 text-xs"
                 onClick={() => setModelFilter("todos")}
               >Todos</Button>
             </div>
             <Button
               size="sm" variant={excludeNoise ? "default" : "outline"}
-              className="h-8 text-xs whitespace-nowrap shrink-0"
+              className="min-h-11 px-3 text-xs whitespace-normal min-[480px]:whitespace-nowrap shrink-0 leading-tight"
               onClick={() => setExcludeNoise((v) => !v)}
               title="Desconsidera peças recorrentes/sem lançamento na análise"
             >
               {excludeNoise ? "Excluindo ruído" : "Incluindo todos"}
             </Button>
             <Button
-              size="sm" variant="outline" className="h-8 text-xs whitespace-nowrap shrink-0"
+              size="sm" variant="outline" className="min-h-11 px-3 text-xs whitespace-nowrap shrink-0"
               onClick={() => setShowExcluded(true)}
             >
               Excluídos ({excludedParts.length})
             </Button>
             <Select value={periodo} onValueChange={(v) => setPeriodo(v as any)}>
-              <SelectTrigger className="w-[140px] h-8 shrink-0"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full min-[480px]:w-[150px] min-h-11 shrink-0 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="30">Últimos 30 dias</SelectItem>
                 <SelectItem value="90">Últimos 90 dias</SelectItem>

@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {
@@ -85,6 +86,8 @@ const daysBetween = (a: Date, b: Date) => Math.floor((b.getTime() - a.getTime())
 
 export default function AnaliseRisco() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const labelFs = isMobile ? 12 : 13;
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
@@ -722,10 +725,10 @@ export default function AnaliseRisco() {
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={70}>
-                      <LabelList dataKey="value" position="top" fontSize={11} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      <LabelList dataKey="value" position="top" offset={6} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
                     </Bar>
                     <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2}>
-                      <LabelList dataKey="acc" position="top" fontSize={10} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
+                      <LabelList dataKey="acc" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -753,7 +756,7 @@ export default function AnaliseRisco() {
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
                     <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)">
-                      <LabelList dataKey="ng" position="top" fontSize={11} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      <LabelList dataKey="ng" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
                     </Line>
                   </LineChart>
                 </ResponsiveContainer>
@@ -1047,7 +1050,7 @@ export default function AnaliseRisco() {
       </Dialog>
 
       <Dialog open={showExcluded} onOpenChange={setShowExcluded}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden flex flex-col gap-3 p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Peças desconsideradas da análise</DialogTitle>
             <DialogDescription>
@@ -1055,49 +1058,53 @@ export default function AnaliseRisco() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex flex-col gap-1 min-w-[160px]">
-              <label className="text-[11px] text-muted-foreground">Projeto</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Projeto</label>
               <Select value={excFiltProjeto} onValueChange={setExcFiltProjeto}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.projetos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[160px]">
-              <label className="text-[11px] text-muted-foreground">Modelo (peça)</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Modelo (peça)</label>
               <Select value={excFiltModelo} onValueChange={setExcFiltModelo}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.modelos.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-              <label className="text-[11px] text-muted-foreground">Fornecedor</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Fornecedor</label>
               <Select value={excFiltFornecedor} onValueChange={setExcFiltFornecedor}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
                   {excludedFilterOptions.fornecedores.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col gap-1 min-w-[180px] flex-1">
-              <label className="text-[11px] text-muted-foreground">Busca (PN / Projeto / Modelo / Fornecedor)</label>
+            <div className="flex flex-col gap-1 min-w-0">
+              <label className="text-[11px] font-medium text-muted-foreground">Busca</label>
               <div className="relative">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
                   value={excSearch}
                   onChange={(e) => setExcSearch(e.target.value)}
-                  placeholder="Digite para filtrar..."
-                  className="h-8 text-xs pl-7"
+                  placeholder="PN / Projeto / Modelo / Fornecedor"
+                  className="h-10 text-xs pl-7 w-full"
                 />
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground flex-wrap">
+            <span>{filteredExcluded.length} de {excludedParts.length} registros</span>
             {(excFiltProjeto !== "__all__" || excFiltModelo !== "__all__" || excFiltFornecedor !== "__all__" || excSearch) && (
               <Button
                 variant="ghost" size="sm" className="h-8 text-xs"
@@ -1106,12 +1113,11 @@ export default function AnaliseRisco() {
                 Limpar filtros
               </Button>
             )}
-            <div className="text-xs text-muted-foreground ml-auto self-center">
-              {filteredExcluded.length} de {excludedParts.length}
-            </div>
           </div>
 
-          <div className="flex justify-end gap-2">
+
+          <div className="flex flex-wrap justify-end gap-2">
+
             {(() => {
               const buildExcludedPdf = async () => {
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -1394,7 +1400,7 @@ export default function AnaliseRisco() {
               return (
                 <>
                   <Button
-                    size="sm" variant="outline" className="h-8 text-xs gap-1"
+                    size="sm" variant="outline" className="h-9 text-xs gap-1 w-full sm:w-auto"
                     disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handlePreview}
                     aria-busy={buildingPdf}
@@ -1405,7 +1411,7 @@ export default function AnaliseRisco() {
                     {buildingPdf ? "Gerando..." : "Pré-visualizar"}
                   </Button>
                   <Button
-                    size="sm" className="h-8 text-xs gap-1"
+                    size="sm" className="h-9 text-xs gap-1 w-full sm:w-auto"
                     disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handleSave}
                     aria-busy={buildingPdf}
@@ -1420,60 +1426,112 @@ export default function AnaliseRisco() {
             })()}
           </div>
 
-          <div className="max-h-[60vh] overflow-y-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-xs sticky top-0">
-                {(() => {
-                  const toggleSort = (k: typeof excSortKey) => {
-                    if (excSortKey === k) setExcSortDir(excSortDir === "asc" ? "desc" : "asc");
-                    else { setExcSortKey(k); setExcSortDir(k === "ng" ? "desc" : "asc"); }
-                  };
-                  const arrow = (k: typeof excSortKey) => excSortKey === k ? (excSortDir === "asc" ? " ▲" : " ▼") : "";
-                  const Th = ({ k, label, align = "left" }: { k: typeof excSortKey; label: string; align?: "left" | "center" }) => (
-                    <th
-                      className={`px-3 py-2 cursor-pointer select-none hover:bg-muted/60 text-${align}`}
-                      onClick={() => toggleSort(k)}
-                    >
-                      {label}{arrow(k)}
-                    </th>
-                  );
-                  return (
-                    <tr>
-                      <Th k="pn" label="Part Number" />
-                      <Th k="projeto" label="Projeto" />
-                      <Th k="fornecedor" label="Fornecedor" />
-                      <Th k="ng" label="NG" align="center" />
-                      <Th k="lastNgDate" label="Último NG" align="center" />
-                      <th className="text-left px-3 py-2">Motivo</th>
-                    </tr>
-                  );
-                })()}
-              </thead>
-              <tbody>
-                {filteredExcluded.map((e: any, idx) => (
-                  <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
-                    <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
-                    <td className="px-3 py-2 text-xs">{e.projeto || "—"}</td>
-                    <td className="px-3 py-2 truncate max-w-[200px]" title={e.fornecedor}>{e.fornecedor}</td>
-                    <td className="text-center px-3 py-2 tabular-nums">{fmt(e.ng)}</td>
-                    <td className="text-center px-3 py-2 text-xs tabular-nums">
-                      {e.lastNgDate ? new Date(e.lastNgDate + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
-                    </td>
-                    <td className="px-3 py-2">
-                      {e.reason === "sem lançamento"
-                        ? <Badge className="bg-muted text-muted-foreground border-border">sem lançamento</Badge>
-                        : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">recorrente · {e.modoRecorrente}</Badge>}
-                    </td>
-                  </tr>
-                ))}
-                {!filteredExcluded.length && (
-                  <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">
-                    {excludedParts.length ? "Nenhum resultado para os filtros aplicados." : "Nada a desconsiderar."}
-                  </td></tr>
-                )}
-              </tbody>
-            </table>
+          <div className="flex-1 overflow-y-auto -mx-4 sm:-mx-6 px-4 sm:px-6">
+            {(() => {
+              const toggleSort = (k: typeof excSortKey) => {
+                if (excSortKey === k) setExcSortDir(excSortDir === "asc" ? "desc" : "asc");
+                else { setExcSortKey(k); setExcSortDir(k === "ng" ? "desc" : "asc"); }
+              };
+              const arrow = (k: typeof excSortKey) => excSortKey === k ? (excSortDir === "asc" ? " ▲" : " ▼") : "";
 
+              if (isMobile) {
+                const sortChips: { k: typeof excSortKey; label: string }[] = [
+                  { k: "pn", label: "PN" },
+                  { k: "projeto", label: "Projeto" },
+                  { k: "fornecedor", label: "Fornecedor" },
+                  { k: "ng", label: "NG" },
+                  { k: "lastNgDate", label: "Último NG" },
+                ];
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                      <span className="text-muted-foreground mr-1">Ordenar:</span>
+                      {sortChips.map((c) => (
+                        <button
+                          key={c.k}
+                          onClick={() => toggleSort(c.k)}
+                          className={`px-2 py-1 rounded-md border ${excSortKey === c.k ? "bg-primary/10 border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                        >
+                          {c.label}{arrow(c.k)}
+                        </button>
+                      ))}
+                    </div>
+                    {filteredExcluded.map((e: any, idx) => (
+                      <Card key={`${e.pn}-${e.fornecedor}-${idx}`} className="p-3 space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono text-xs break-all">{e.pn}</span>
+                          <span className="text-sm font-semibold tabular-nums">{fmt(e.ng)} NG</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                          <div><span className="text-foreground/70">Projeto:</span> {e.projeto || "—"}</div>
+                          <div><span className="text-foreground/70">Último NG:</span> {e.lastNgDate ? new Date(e.lastNgDate + "T12:00:00").toLocaleDateString("pt-BR") : "—"}</div>
+                          <div className="col-span-2 truncate"><span className="text-foreground/70">Fornecedor:</span> {e.fornecedor}</div>
+                        </div>
+                        <div>
+                          {e.reason === "sem lançamento"
+                            ? <Badge className="bg-muted text-muted-foreground border-border">sem lançamento</Badge>
+                            : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">recorrente · {e.modoRecorrente}</Badge>}
+                        </div>
+                      </Card>
+                    ))}
+                    {!filteredExcluded.length && (
+                      <div className="text-center py-6 text-muted-foreground text-sm">
+                        {excludedParts.length ? "Nenhum resultado para os filtros aplicados." : "Nada a desconsiderar."}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const Th = ({ k, label, align = "left" }: { k: typeof excSortKey; label: string; align?: "left" | "center" }) => (
+                <th
+                  className={`px-3 py-2 cursor-pointer select-none hover:bg-muted/60 text-${align}`}
+                  onClick={() => toggleSort(k)}
+                >
+                  {label}{arrow(k)}
+                </th>
+              );
+
+              return (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm min-w-[720px]">
+                    <thead className="bg-muted/40 text-xs sticky top-0">
+                      <tr>
+                        <Th k="pn" label="Part Number" />
+                        <Th k="projeto" label="Projeto" />
+                        <Th k="fornecedor" label="Fornecedor" />
+                        <Th k="ng" label="NG" align="center" />
+                        <Th k="lastNgDate" label="Último NG" align="center" />
+                        <th className="text-left px-3 py-2">Motivo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredExcluded.map((e: any, idx) => (
+                        <tr key={`${e.pn}-${e.fornecedor}-${idx}`} className="border-t">
+                          <td className="px-3 py-2 font-mono text-xs">{e.pn}</td>
+                          <td className="px-3 py-2 text-xs">{e.projeto || "—"}</td>
+                          <td className="px-3 py-2 truncate max-w-[200px]" title={e.fornecedor}>{e.fornecedor}</td>
+                          <td className="text-center px-3 py-2 tabular-nums">{fmt(e.ng)}</td>
+                          <td className="text-center px-3 py-2 text-xs tabular-nums">
+                            {e.lastNgDate ? new Date(e.lastNgDate + "T12:00:00").toLocaleDateString("pt-BR") : "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            {e.reason === "sem lançamento"
+                              ? <Badge className="bg-muted text-muted-foreground border-border">sem lançamento</Badge>
+                              : <Badge className="bg-amber-500/15 text-amber-600 border-amber-500/30">recorrente · {e.modoRecorrente}</Badge>}
+                          </td>
+                        </tr>
+                      ))}
+                      {!filteredExcluded.length && (
+                        <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">
+                          {excludedParts.length ? "Nenhum resultado para os filtros aplicados." : "Nada a desconsiderar."}
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </DialogContent>
       </Dialog>
@@ -1563,7 +1621,7 @@ export default function AnaliseRisco() {
                       />
 
                       <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 2 }}>
-                        <LabelList dataKey="ng" position="top" fontSize={9} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
+                        <LabelList dataKey="ng" position="top" offset={6} fontSize={isMobile ? 11 : 12} fontWeight={600} formatter={(v: any) => (v > 0 ? fmt(v) : "")} fill="hsl(var(--foreground))" />
                       </Line>
                     </LineChart>
                   </ResponsiveContainer>

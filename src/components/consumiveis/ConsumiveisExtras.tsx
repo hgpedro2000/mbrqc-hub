@@ -16,6 +16,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { parseImportRows, buildPedidoRows } from "@/lib/pedidoTime";
 
 /* ─────────────────────────────  Role helpers  ───────────────────────────── */
 export type ConsumivelRole = "inspetor" | "lider" | "manager" | "none";

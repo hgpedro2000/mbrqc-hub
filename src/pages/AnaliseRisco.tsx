@@ -1618,7 +1618,7 @@ export default function AnaliseRisco() {
                   doc.setFillColor(...HYUNDAI_BLUE);
                   doc.rect(0, 22, pageW, 1.2, "F");
                   if (logoB64) {
-                    try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {}
+                    try { doc.addImage(logoB64, "PNG", M, 4, 24, 16); } catch {}
                   }
                   doc.setTextColor(...HYUNDAI_BLUE);
                   doc.setFont("helvetica", "bold");

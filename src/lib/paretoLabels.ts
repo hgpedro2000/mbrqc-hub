@@ -37,6 +37,31 @@ export function assignSlots(values: number[], closeRatio = 0.06): number[] {
   return slots;
 }
 
+// Modo automático: usa o limiar de proximidade EM PIXELS (baseado na altura
+// real do gráfico e no valor máximo) para decidir quando aplicar o stagger.
+// Assim só lifta rótulos quando o gap vertical previsto for menor que
+// `minGapPx`, evitando staggers desnecessários.
+export function assignSlotsAuto(
+  values: number[],
+  opts: { chartHeight: number; maxValue?: number; minGapPx?: number },
+): number[] {
+  const { chartHeight } = opts;
+  const max = Math.max(1, opts.maxValue ?? Math.max(...values.map((v) => Math.abs(v ?? 0))));
+  const minGapPx = opts.minGapPx ?? 16;
+  const yOf = (v: number) => chartHeight * (1 - Math.min(1, Math.abs(v ?? 0) / max));
+  const slots: number[] = [];
+  for (let i = 0; i < values.length; i++) {
+    if (i === 0) {
+      slots.push(0);
+      continue;
+    }
+    const dy = Math.abs(yOf(values[i]) - yOf(values[i - 1]));
+    const close = dy < minGapPx;
+    slots.push(close ? (slots[i - 1] + 1) % 3 : 0);
+  }
+  return slots;
+}
+
 // Returns the minimum vertical distance between any two label centers
 // across the provided indices, given each point's bar Y and line (acc) Y.
 // Bar label and Acc label for the SAME index are intentionally separated

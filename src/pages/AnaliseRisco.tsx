@@ -1027,13 +1027,11 @@ export default function AnaliseRisco() {
         )}
 
         <Tabs defaultValue="painel" className="space-y-4 min-w-0">
-          <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-            <TabsList className="w-max min-w-full sm:w-auto sm:min-w-0 justify-start h-auto min-h-11 gap-1 p-1">
-              <TabsTrigger value="painel" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Painel de Falhas</TabsTrigger>
-              <TabsTrigger value="mapa" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Mapa de Risco</TabsTrigger>
-              <TabsTrigger value="reco" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Recomendações</TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid grid-cols-3 w-full h-auto min-h-11 gap-1 p-1">
+            <TabsTrigger value="painel" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Painel de Falhas</TabsTrigger>
+            <TabsTrigger value="mapa" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Mapa de Risco</TabsTrigger>
+            <TabsTrigger value="reco" className="min-h-11 px-1 sm:px-3 text-[clamp(0.65rem,2.6vw,0.875rem)] leading-tight whitespace-normal text-center">Recomendações</TabsTrigger>
+          </TabsList>
 
           {/* ============ PAINEL ============ */}
           <TabsContent value="painel" className="space-y-4 min-w-0">

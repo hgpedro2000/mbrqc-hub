@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList } from "lucide-react";
 import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
+import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -805,17 +806,32 @@ const InventarioRequisicoes = () => {
 const ConsumiveisPage = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const { profile } = useAuth();
   const { impersonating } = useImpersonation();
-  const { enabledModules } = useEnabledModules(impersonating?.id);
-  
-  const hasParent = enabledModules.includes("consumiveis" as any);
-  const hasRequisitar = enabledModules.includes("consumiveis_requisitar" as any);
-  const hasInventario = enabledModules.includes("consumiveis_inventario" as any);
-  const showRequisitar = impersonating 
-    ? (hasRequisitar || (hasParent && !hasRequisitar && !hasInventario))
-    : (isAdmin || hasRequisitar || (hasParent && !hasRequisitar && !hasInventario));
-  const showInventario = impersonating ? hasInventario : (isAdmin || hasInventario);
-  const defaultTab = showRequisitar ? "requisitar" : showInventario ? "inventario" : "requisitar";
+  const activeProfile = impersonating || profile;
+  const role = getConsumivelRole(activeProfile?.cargo, isAdmin && !impersonating);
+
+  const [activeTab, setActiveTab] = useState<string>("meu_pedido");
+  const [prefilledList, setPrefilledList] = useState<{ nome: string; itens: any[] } | null>(null);
+
+  const showTeam = role === "lider" || role === "manager";
+  const showManager = role === "manager";
+
+  const tabs = useMemo(() => {
+    const t: { value: string; label: string; icon: any }[] = [
+      { value: "meu_pedido", label: "Meu Pedido", icon: ShoppingCart },
+      { value: "meu_historico", label: "Meu Histórico", icon: LineChart },
+    ];
+    if (showTeam) {
+      t.push({ value: "pedido_time", label: "Pedido de Time", icon: Users });
+      t.push({ value: "listas_salvas", label: "Listas Salvas", icon: ListChecks });
+    }
+    if (showManager) {
+      t.push({ value: "gestao_estoque", label: "Gestão e Estoque", icon: BarChart3 });
+      t.push({ value: "consumo_time", label: "Consumo do Time", icon: ClipboardList });
+    }
+    return t;
+  }, [showTeam, showManager]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -840,30 +856,35 @@ const ConsumiveisPage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-5xl -mt-4">
-        <Tabs defaultValue={defaultTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 h-auto">
-            {showRequisitar && (
-              <TabsTrigger value="requisitar" className="gap-1.5 text-xs sm:text-sm py-2">
-                <ShoppingCart className="w-4 h-4" /> Requisitar Item
-              </TabsTrigger>
-            )}
-            {showInventario && (
-              <TabsTrigger value="inventario" className="gap-1.5 text-xs sm:text-sm py-2">
-                <BarChart3 className="w-4 h-4" /> Inventário e Requisições
-              </TabsTrigger>
-            )}
-          </TabsList>
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl -mt-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="overflow-x-auto -mx-1 px-1">
+            <TabsList className="inline-flex w-auto min-w-full h-auto flex-nowrap">
+              {tabs.map((t) => (
+                <TabsTrigger key={t.value} value={t.value} className="gap-1.5 text-xs sm:text-sm py-2 whitespace-nowrap">
+                  <t.icon className="w-4 h-4" /> {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
-          {showRequisitar && (
-            <TabsContent value="requisitar" className="form-section">
-              <RequisitarItem />
-            </TabsContent>
+          <TabsContent value="meu_pedido" className="form-section"><RequisitarItem /></TabsContent>
+          <TabsContent value="meu_historico" className="form-section"><MeuHistorico /></TabsContent>
+          {showTeam && (
+            <>
+              <TabsContent value="pedido_time" className="form-section">
+                <PedidoTime initialList={prefilledList} />
+              </TabsContent>
+              <TabsContent value="listas_salvas" className="form-section">
+                <ListasSalvas onUseList={(l) => { setPrefilledList(l); setActiveTab("pedido_time"); }} />
+              </TabsContent>
+            </>
           )}
-          {showInventario && (
-            <TabsContent value="inventario" className="form-section">
-              <InventarioRequisicoes />
-            </TabsContent>
+          {showManager && (
+            <>
+              <TabsContent value="gestao_estoque" className="form-section"><InventarioRequisicoes /></TabsContent>
+              <TabsContent value="consumo_time" className="form-section"><ConsumoTime /></TabsContent>
+            </>
           )}
         </Tabs>
       </main>

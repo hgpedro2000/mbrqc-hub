@@ -879,10 +879,12 @@ export type Database = {
         Row: {
           admin_notes: string | null
           created_at: string
+          criado_por: string | null
           id: string
           item_id: string
           item_name: string
           numero: string | null
+          origem: string
           quantity: number
           status: string
           turno: string | null
@@ -893,10 +895,12 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           created_at?: string
+          criado_por?: string | null
           id?: string
           item_id: string
           item_name?: string
           numero?: string | null
+          origem?: string
           quantity?: number
           status?: string
           turno?: string | null
@@ -907,10 +911,12 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           created_at?: string
+          criado_por?: string | null
           id?: string
           item_id?: string
           item_name?: string
           numero?: string | null
+          origem?: string
           quantity?: number
           status?: string
           turno?: string | null
@@ -927,6 +933,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      consumption_lists: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string
+          id: string
+          itens: Json
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string
+          id?: string
+          itens?: Json
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string
+          id?: string
+          itens?: Json
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       contencao: {
         Row: {

@@ -1,0 +1,625 @@
+import { useState, useMemo } from "react";
+import { Loader2, Plus, Trash2, Send, ListChecks, BarChart3, Search, Save, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+
+/* ─────────────────────────────  Role helpers  ───────────────────────────── */
+export type ConsumivelRole = "inspetor" | "lider" | "manager" | "none";
+
+export const getConsumivelRole = (cargo?: string | null, isAdmin?: boolean): ConsumivelRole => {
+  if (isAdmin) return "manager";
+  const c = (cargo || "").toLowerCase();
+  if (!c) return "none";
+  if (c.includes("analista") || c.includes("supervisor") || c.includes("gerente")) return "manager";
+  if (c.includes("lider") || c.includes("líder") || c.includes("assistente")) return "lider";
+  if (c.includes("inspetor")) return "inspetor";
+  return "none";
+};
+
+const statusConfig: Record<string, { label: string; color: string }> = {
+  aguardando: { label: "Aguardando", color: "border-yellow-500 text-yellow-600 bg-yellow-500/10" },
+  entregue: { label: "Entregue", color: "border-emerald-500 text-emerald-600 bg-emerald-500/10" },
+  rejeitado: { label: "Rejeitado", color: "border-red-500 text-red-600 bg-red-500/10" },
+};
+
+interface ListaItem { item_id: string; item_name: string; quantity: number; }
+
+const ItemQtyEditor = ({ items, value, onChange }: { items: any[]; value: ListaItem[]; onChange: (v: ListaItem[]) => void; }) => {
+  const update = (idx: number, patch: Partial<ListaItem>) => {
+    const next = value.map((r, i) => i === idx ? { ...r, ...patch } : r);
+    onChange(next);
+  };
+  const add = () => onChange([...value, { item_id: "", item_name: "", quantity: 1 }]);
+  const remove = (idx: number) => onChange(value.filter((_, i) => i !== idx));
+  return (
+    <div className="space-y-2">
+      {value.map((row, idx) => (
+        <div key={idx} className="flex items-center gap-2">
+          <Select value={row.item_id} onValueChange={(v) => {
+            const it = items.find((i: any) => i.id === v);
+            update(idx, { item_id: v, item_name: it?.name || "" });
+          }}>
+            <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Selecione o item..." /></SelectTrigger>
+            <SelectContent>{items.map((i: any) => (
+              <SelectItem key={i.id} value={i.id}>{i.name} ({i.unit})</SelectItem>
+            ))}</SelectContent>
+          </Select>
+          <Input type="number" min={1} value={row.quantity} onChange={(e) => update(idx, { quantity: Math.max(1, Number(e.target.value)) })} className="w-20 h-9 text-xs" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive" onClick={() => remove(idx)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      ))}
+      <Button variant="outline" size="sm" onClick={add} className="gap-1">
+        <Plus className="w-3.5 h-3.5" /> Adicionar item
+      </Button>
+    </div>
+  );
+};
+
+/* ───────────────────────────  MEU HISTÓRICO  ─────────────────────────── */
+export const MeuHistorico = () => {
+  const { user } = useAuth();
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["meu-historico-consumiveis", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [] as any[];
+      const { data, error } = await supabase.from("consumable_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const stats = useMemo(() => {
+    const all = data || [];
+    const totalReq = all.reduce((s, r: any) => s + (r.quantity || 0), 0);
+    const totalEntregue = all.filter((r: any) => r.status === "entregue").reduce((s, r: any) => s + (r.quantity || 0), 0);
+    const byItem = new Map<string, { name: string; req: number; entregue: number; rejeitado: number; last: string }>();
+    for (const r of all) {
+      const k = r.item_name || "—";
+      const cur = byItem.get(k) || { name: k, req: 0, entregue: 0, rejeitado: 0, last: r.created_at };
+      cur.req += r.quantity || 0;
+      if (r.status === "entregue") cur.entregue += r.quantity || 0;
+      if (r.status === "rejeitado") cur.rejeitado += r.quantity || 0;
+      if (!cur.last || new Date(r.created_at) > new Date(cur.last)) cur.last = r.created_at;
+      byItem.set(k, cur);
+    }
+    const itemsArr = Array.from(byItem.values()).sort((a, b) => b.req - a.req);
+    const top = itemsArr[0]?.name || "—";
+    // 6-month chart
+    const now = new Date();
+    const months: { label: string; key: string; total: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      months.push({ key, label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""), total: 0 });
+    }
+    for (const r of all) {
+      const d = new Date(r.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const m = months.find((mm) => mm.key === key);
+      if (m) m.total += 1;
+    }
+    return { totalReq, totalEntregue, top, itemsArr, months };
+  }, [data]);
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  if (isError) return (
+    <div className="text-center py-8 space-y-3">
+      <p className="text-sm text-destructive">Erro ao carregar histórico.</p>
+      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-foreground">{stats.totalReq}</p>
+          <p className="text-xs text-muted-foreground">Total requisitado</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-emerald-600">{stats.totalEntregue}</p>
+          <p className="text-xs text-muted-foreground">Total entregue</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-sm font-bold text-foreground truncate" title={stats.top}>{stats.top}</p>
+          <p className="text-xs text-muted-foreground">Item mais requisitado</p>
+        </div>
+      </div>
+
+      <div className="form-section p-3">
+        <h3 className="text-sm font-semibold mb-2">Requisições nos últimos 6 meses</h3>
+        <div className="h-56">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={stats.months}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs">Item</TableHead>
+              <TableHead className="text-xs text-center">Requisitado</TableHead>
+              <TableHead className="text-xs text-center">Entregue</TableHead>
+              <TableHead className="text-xs text-center">Rejeitado</TableHead>
+              <TableHead className="text-xs">Última</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {stats.itemsArr.map((r) => (
+              <TableRow key={r.name}>
+                <TableCell className="text-sm font-medium">{r.name}</TableCell>
+                <TableCell className="text-center text-sm">{r.req}</TableCell>
+                <TableCell className="text-center text-sm text-emerald-600">{r.entregue}</TableCell>
+                <TableCell className="text-center text-sm text-destructive">{r.rejeitado}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{new Date(r.last).toLocaleDateString("pt-BR")}</TableCell>
+              </TableRow>
+            ))}
+            {stats.itemsArr.length === 0 && (
+              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6 text-sm">Nenhum pedido registrado</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
+/* ───────────────────────────  PEDIDO DE TIME  ─────────────────────────── */
+export const PedidoTime = ({ initialList }: { initialList?: { nome: string; itens: ListaItem[] } | null }) => {
+  const { user, profile } = useAuth();
+  const qc = useQueryClient();
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [orderItems, setOrderItems] = useState<ListaItem[]>(initialList?.itens || [{ item_id: "", item_name: "", quantity: 1 }]);
+  const [savedListId, setSavedListId] = useState<string>("");
+  const [sending, setSending] = useState(false);
+
+  const { data: items = [] } = useQuery({
+    queryKey: ["consumable-items-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("consumable_items").select("*").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: teamMembers = [], isLoading: loadingTeam } = useQuery({
+    queryKey: ["team-members-by-turno", profile?.turno],
+    queryFn: async () => {
+      if (!profile?.turno) return [];
+      const { data, error } = await supabase.from("profiles").select("id, full_name, turno, cargo").eq("turno", profile.turno).eq("status", "active");
+      if (error) throw error;
+      return (data || []).filter((p: any) => p.full_name !== "TESTER");
+    },
+    enabled: !!profile?.turno,
+  });
+
+  const { data: savedLists = [] } = useQuery({
+    queryKey: ["consumption-lists"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("consumption_lists").select("*").order("criado_em", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const loadList = () => {
+    const lst = savedLists.find((l: any) => l.id === savedListId);
+    if (!lst) return;
+    setOrderItems(Array.isArray(lst.itens) ? lst.itens : []);
+    toast.success(`Lista "${lst.nome}" carregada`);
+  };
+
+  const toggleMember = (id: string) => {
+    setSelectedMembers((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  };
+
+  const handleSend = async () => {
+    const validItems = orderItems.filter((i) => i.item_id && i.quantity > 0);
+    if (selectedMembers.length === 0) { toast.error("Selecione ao menos um membro"); return; }
+    if (validItems.length === 0) { toast.error("Adicione ao menos um item"); return; }
+    setSending(true);
+    try {
+      const rows: any[] = [];
+      for (const memberId of selectedMembers) {
+        const member = teamMembers.find((m: any) => m.id === memberId);
+        if (!member) continue;
+        for (const it of validItems) {
+          rows.push({
+            user_id: memberId,
+            user_name: member.full_name,
+            turno: member.turno,
+            item_id: it.item_id,
+            item_name: it.item_name,
+            quantity: it.quantity,
+            origem: "pedido_coletivo",
+            criado_por: user?.id,
+          });
+        }
+      }
+      const { error } = await (supabase as any).from("consumable_requests").insert(rows);
+      if (error) throw error;
+      toast.success(`${rows.length} requisições criadas com sucesso!`);
+      setSelectedMembers([]);
+      setOrderItems([{ item_id: "", item_name: "", quantity: 1 }]);
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["team-consumable-requests"] });
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="form-section p-3 space-y-2">
+        <Label className="text-xs font-semibold">Usar lista salva</Label>
+        <div className="flex items-center gap-2">
+          <Select value={savedListId} onValueChange={setSavedListId}>
+            <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue placeholder="Selecione uma lista..." /></SelectTrigger>
+            <SelectContent>{savedLists.map((l: any) => (
+              <SelectItem key={l.id} value={l.id}>{l.nome} ({(l.itens || []).length} itens)</SelectItem>
+            ))}</SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={loadList} disabled={!savedListId}>Carregar lista</Button>
+        </div>
+      </div>
+
+      <div className="form-section p-3 space-y-2">
+        <Label className="text-xs font-semibold">Selecionar membros do time (turno {profile?.turno || "—"})</Label>
+        {loadingTeam ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
+            {teamMembers.map((m: any) => (
+              <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
+                <Checkbox checked={selectedMembers.includes(m.id)} onCheckedChange={() => toggleMember(m.id)} />
+                <span className="truncate">{m.full_name}</span>
+              </label>
+            ))}
+            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado neste turno.</p>}
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">{selectedMembers.length} selecionado(s)</p>
+      </div>
+
+      <div className="form-section p-3 space-y-2">
+        <Label className="text-xs font-semibold">Itens do pedido</Label>
+        <ItemQtyEditor items={items} value={orderItems} onChange={setOrderItems} />
+      </div>
+
+      <Button onClick={handleSend} disabled={sending} className="w-full min-h-[44px]">
+        {sending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
+        Enviar pedido para o time
+      </Button>
+    </div>
+  );
+};
+
+/* ───────────────────────────  LISTAS SALVAS  ─────────────────────────── */
+export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; itens: ListaItem[] }) => void }) => {
+  const { user, profile } = useAuth();
+  const qc = useQueryClient();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [itens, setItens] = useState<ListaItem[]>([{ item_id: "", item_name: "", quantity: 1 }]);
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const { data: items = [] } = useQuery({
+    queryKey: ["consumable-items-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("consumable_items").select("*").eq("active", true).order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: lists = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["consumption-lists"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("consumption_lists").select("*").order("criado_em", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const handleSave = async () => {
+    if (!nome.trim()) { toast.error("Informe o nome da lista"); return; }
+    const valid = itens.filter((i) => i.item_id && i.quantity > 0);
+    if (valid.length === 0) { toast.error("Adicione pelo menos um item"); return; }
+    setSaving(true);
+    try {
+      const { error } = await (supabase as any).from("consumption_lists").insert({
+        nome: nome.trim(),
+        criado_por: user?.id,
+        criado_por_nome: profile?.full_name || "",
+        itens: valid,
+      });
+      if (error) throw error;
+      toast.success("Lista salva!");
+      setCreateOpen(false);
+      setNome("");
+      setItens([{ item_id: "", item_name: "", quantity: 1 }]);
+      qc.invalidateQueries({ queryKey: ["consumption-lists"] });
+    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const { error } = await (supabase as any).from("consumption_lists").delete().eq("id", deleteId);
+      if (error) throw error;
+      toast.success("Lista excluída");
+      setDeleteId(null);
+      qc.invalidateQueries({ queryKey: ["consumption-lists"] });
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  if (isError) return (
+    <div className="text-center py-8 space-y-3">
+      <p className="text-sm text-destructive">Erro ao carregar listas.</p>
+      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-heading font-semibold">Listas Salvas</h2>
+        <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1"><Plus className="w-4 h-4" /> Nova lista</Button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {lists.map((l: any) => (
+          <div key={l.id} className="border rounded-lg p-3 space-y-2 bg-card">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm truncate">{l.nome}</p>
+                <p className="text-xs text-muted-foreground">por {l.criado_por_nome || "—"}</p>
+              </div>
+              <Badge variant="outline" className="text-[10px]">{(l.itens || []).length} itens</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{new Date(l.criado_em).toLocaleDateString("pt-BR")}</p>
+            <div className="flex items-center gap-2 pt-1">
+              <Button size="sm" variant="outline" className="flex-1" onClick={() => onUseList({ nome: l.nome, itens: l.itens || [] })}>
+                <ListChecks className="w-3.5 h-3.5 mr-1" /> Usar
+              </Button>
+              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setDeleteId(l.id)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {lists.length === 0 && <p className="text-sm text-muted-foreground col-span-full text-center py-8">Nenhuma lista salva</p>}
+      </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Nova lista</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nome da lista *</Label>
+              <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex: Kit inspetor turno 1" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Itens *</Label>
+              <ItemQtyEditor items={items} value={itens} onChange={setItens} />
+            </div>
+            <Button onClick={handleSave} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />} Salvar lista
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Excluir lista</AlertDialogTitle><AlertDialogDescription>Tem certeza? Esta ação não pode ser desfeita.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={handleDelete}>Excluir</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+/* ───────────────────────────  CONSUMO DO TIME  ─────────────────────────── */
+export const ConsumoTime = () => {
+  const { profile } = useAuth();
+  const [periodo, setPeriodo] = useState<"30" | "90" | "180" | "365">("30");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const dateFrom = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - parseInt(periodo, 10));
+    return d.toISOString();
+  }, [periodo]);
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["team-consumable-requests", profile?.turno, dateFrom],
+    queryFn: async () => {
+      if (!profile?.turno) return [];
+      const { data, error } = await supabase.from("consumable_requests").select("*").eq("turno", profile.turno).gte("created_at", dateFrom).order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile?.turno,
+  });
+
+  const stats = useMemo(() => {
+    const all = data || [];
+    const total = all.length;
+    const entregue = all.filter((r: any) => r.status === "entregue").length;
+    const aguardando = all.filter((r: any) => r.status === "aguardando").length;
+    const byMember = new Map<string, number>();
+    const byItem = new Map<string, number>();
+    for (const r of all) {
+      if (r.status === "entregue") {
+        byMember.set(r.user_name, (byMember.get(r.user_name) || 0) + (r.quantity || 0));
+        byItem.set(r.item_name, (byItem.get(r.item_name) || 0) + (r.quantity || 0));
+      }
+    }
+    const byMemberArr = Array.from(byMember.entries()).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+    const byItemArr = Array.from(byItem.entries()).map(([name, total]) => ({ name, total })).sort((a, b) => b.total - a.total);
+    const topMember = byMemberArr[0]?.name || "—";
+    return { total, entregue, aguardando, byMember: byMemberArr.slice(0, 10), byItem: byItemArr.slice(0, 10), topMember };
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    let r = data || [];
+    if (statusFilter !== "all") r = r.filter((x: any) => x.status === statusFilter);
+    if (searchTerm.trim()) {
+      const t = searchTerm.toLowerCase();
+      r = r.filter((x: any) =>
+        x.item_name?.toLowerCase().includes(t) ||
+        x.user_name?.toLowerCase().includes(t) ||
+        x.numero?.toLowerCase().includes(t)
+      );
+    }
+    return r;
+  }, [data, statusFilter, searchTerm]);
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  if (isError) return (
+    <div className="text-center py-8 space-y-3">
+      <p className="text-sm text-destructive">Erro ao carregar dados do time.</p>
+      <Button size="sm" variant="outline" onClick={() => refetch()}><RefreshCw className="w-4 h-4 mr-1" />Tentar novamente</Button>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-base font-heading font-semibold">Consumo do Time — turno {profile?.turno || "—"}</h2>
+        <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>
+          <SelectTrigger className="w-44 h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">Últimos 30 dias</SelectItem>
+            <SelectItem value="90">Últimos 90 dias</SelectItem>
+            <SelectItem value="180">Últimos 6 meses</SelectItem>
+            <SelectItem value="365">Último ano</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="form-section p-3 text-center"><p className="text-2xl font-bold">{stats.total}</p><p className="text-xs text-muted-foreground">Total requisições</p></div>
+        <div className="form-section p-3 text-center"><p className="text-2xl font-bold text-emerald-600">{stats.entregue}</p><p className="text-xs text-muted-foreground">Entregue</p></div>
+        <div className="form-section p-3 text-center"><p className="text-2xl font-bold text-yellow-600">{stats.aguardando}</p><p className="text-xs text-muted-foreground">Aguardando</p></div>
+        <div className="form-section p-3 text-center"><p className="text-sm font-bold truncate" title={stats.topMember}>{stats.topMember}</p><p className="text-xs text-muted-foreground">Mais requisitou</p></div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="form-section p-3">
+          <h3 className="text-xs font-semibold mb-2">Consumo por membro (entregue)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byMember} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="form-section p-3">
+          <h3 className="text-xs font-semibold mb-2">Consumo por item (entregue)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byItem}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" height={50} interval={0} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}>
+                  {stats.byItem.map((_, i) => <Cell key={i} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Buscar usuário, item ou nº..." className="pl-9 h-9 text-xs" />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos status</SelectItem>
+            <SelectItem value="aguardando">Aguardando</SelectItem>
+            <SelectItem value="entregue">Entregue</SelectItem>
+            <SelectItem value="rejeitado">Rejeitado</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-xs">Nº</TableHead>
+              <TableHead className="text-xs">Usuário</TableHead>
+              <TableHead className="text-xs">Turno</TableHead>
+              <TableHead className="text-xs">Item</TableHead>
+              <TableHead className="text-xs text-center">Qtd</TableHead>
+              <TableHead className="text-xs">Data</TableHead>
+              <TableHead className="text-xs">Status</TableHead>
+              <TableHead className="text-xs">Origem</TableHead>
+              <TableHead className="text-xs">Criado por</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((r: any) => {
+              const cfg = statusConfig[r.status] || statusConfig.aguardando;
+              const origemLabel = r.origem === "pedido_coletivo" ? "Pedido coletivo" : "Individual";
+              return (
+                <TableRow key={r.id}>
+                  <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
+                  <TableCell className="text-xs">{r.user_name}</TableCell>
+                  <TableCell className="text-xs">{r.turno || "—"}</TableCell>
+                  <TableCell className="text-sm">{r.item_name}</TableCell>
+                  <TableCell className="text-center text-sm">{r.quantity}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                  <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
+                  <TableCell className="text-xs">{origemLabel}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{r.criado_por ? "—" : ""}</TableCell>
+                </TableRow>
+              );
+            })}
+            {filtered.length === 0 && (
+              <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-6 text-sm">Nenhuma requisição no período</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};

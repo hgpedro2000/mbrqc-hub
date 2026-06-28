@@ -657,13 +657,12 @@ export default function AnaliseRisco() {
     // Capture chart
     let chartImg: string | null = null;
     let chartRatio = 0;
-    if (drillChartRef.current) {
       try {
         const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(drillChartRef.current, {
-          backgroundColor: "#ffffff", scale: 2, useCORS: true,
+          backgroundColor: "#ffffff", scale: 1.5, useCORS: true,
         });
-        chartImg = canvas.toDataURL("image/png");
+        chartImg = canvas.toDataURL("image/jpeg", 0.72);
         chartRatio = canvas.height / canvas.width;
       } catch {}
     }
@@ -673,7 +672,7 @@ export default function AnaliseRisco() {
       doc.rect(0, 0, pageW, 22, "F");
       doc.setFillColor(...HYUNDAI_BLUE);
       doc.rect(0, 22, pageW, 1.2, "F");
-      if (logoB64) { try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {} }
+      if (logoB64) { try { doc.addImage(logoB64, "PNG", M, 4, 24, 16); } catch {} }
       doc.setTextColor(...HYUNDAI_BLUE);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);

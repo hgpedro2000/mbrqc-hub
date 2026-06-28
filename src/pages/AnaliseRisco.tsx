@@ -1423,14 +1423,31 @@ export default function AnaliseRisco() {
           <div className="max-h-[60vh] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs sticky top-0">
-                <tr>
-                  <th className="text-left px-3 py-2">Part Number</th>
-                  <th className="text-left px-3 py-2">Projeto</th>
-                  <th className="text-left px-3 py-2">Fornecedor</th>
-                  <th className="text-center px-3 py-2">NG</th>
-                  <th className="text-center px-3 py-2">Último NG</th>
-                  <th className="text-left px-3 py-2">Motivo</th>
-                </tr>
+                {(() => {
+                  const toggleSort = (k: typeof excSortKey) => {
+                    if (excSortKey === k) setExcSortDir(excSortDir === "asc" ? "desc" : "asc");
+                    else { setExcSortKey(k); setExcSortDir(k === "ng" ? "desc" : "asc"); }
+                  };
+                  const arrow = (k: typeof excSortKey) => excSortKey === k ? (excSortDir === "asc" ? " ▲" : " ▼") : "";
+                  const Th = ({ k, label, align = "left" }: { k: typeof excSortKey; label: string; align?: "left" | "center" }) => (
+                    <th
+                      className={`px-3 py-2 cursor-pointer select-none hover:bg-muted/60 text-${align}`}
+                      onClick={() => toggleSort(k)}
+                    >
+                      {label}{arrow(k)}
+                    </th>
+                  );
+                  return (
+                    <tr>
+                      <Th k="pn" label="Part Number" />
+                      <Th k="projeto" label="Projeto" />
+                      <Th k="fornecedor" label="Fornecedor" />
+                      <Th k="ng" label="NG" align="center" />
+                      <Th k="lastNgDate" label="Último NG" align="center" />
+                      <th className="text-left px-3 py-2">Motivo</th>
+                    </tr>
+                  );
+                })()}
               </thead>
               <tbody>
                 {filteredExcluded.map((e: any, idx) => (

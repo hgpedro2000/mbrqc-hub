@@ -317,6 +317,19 @@ export default function AnaliseRisco() {
     });
   }, [modosFalha]);
 
+  // Recompute stagger slots whenever the Pareto dataset changes. Labels whose
+  // neighbour values aren't close get slot 0 (no lift) — the rule is applied
+  // only where it's actually needed.
+  paretoBarSlotsRef.current = useMemo(
+    () => assignSlots(paretoData.map((d) => d.value)),
+    [paretoData],
+  );
+  paretoAccSlotsRef.current = useMemo(
+    () => assignSlots(paretoData.map((d) => d.acc)),
+    [paretoData],
+  );
+
+
   // Tendência mensal
   const trendData = useMemo(() => {
     const m = new Map<string, number>();

@@ -274,15 +274,28 @@ const RequisitarItem = () => {
               {filteredRequests.map((r: any) => {
                 const cfg = statusConfig[r.status] || statusConfig.aguardando;
                 const editable = r.status === "aguardando";
+                const fromLeader = r.origem === "pedido_coletivo" && r.criado_por && r.criado_por !== r.user_id;
+                const needsConfirm = r.status === "entregue_pendente_confirmacao";
                 return (
                   <TableRow key={r.id}>
                     <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
-                    <TableCell className="text-sm">{r.item_name}</TableCell>
+                    <TableCell className="text-sm">
+                      {r.item_name}
+                      {fromLeader && (
+                        <Badge variant="outline" className="ml-2 text-[10px] border-primary/40 text-primary bg-primary/5">
+                          Pelo Líder
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center text-sm">{r.quantity}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell><Badge variant="outline" className={cfg.color}>{cfg.label}</Badge></TableCell>
                     <TableCell className="text-right">
-                      {editable ? (
+                      {needsConfirm ? (
+                        <Button size="sm" className="h-7 text-xs" disabled={confirming} onClick={() => confirmReceipt(r.id)}>
+                          <Check className="w-3.5 h-3.5 mr-1" /> Confirmar
+                        </Button>
+                      ) : editable ? (
                         <div className="flex justify-end gap-1">
                           <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEditReq(r)} title="Editar">
                             <Pencil className="w-3.5 h-3.5" />

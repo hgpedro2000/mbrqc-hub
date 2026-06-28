@@ -134,9 +134,9 @@ const RequisitarItem = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-heading font-semibold">Requisitar Item</h2>
-        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h2 className="text-base sm:text-lg font-heading font-semibold">Requisitar Item</h2>
+        <Button size="sm" onClick={() => setAddOpen(true)} className="gap-1 w-full sm:w-auto min-h-[40px]">
           <Plus className="w-4 h-4" /> Adicionar Item
         </Button>
       </div>

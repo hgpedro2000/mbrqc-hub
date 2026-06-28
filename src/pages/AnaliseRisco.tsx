@@ -86,6 +86,8 @@ const daysBetween = (a: Date, b: Date) => Math.floor((b.getTime() - a.getTime())
 
 export default function AnaliseRisco() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const labelFs = isMobile ? 12 : 13;
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);

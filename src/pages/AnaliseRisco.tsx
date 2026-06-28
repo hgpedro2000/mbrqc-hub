@@ -1005,9 +1005,11 @@ export default function AnaliseRisco() {
                 const M = 12; // margin
                 const now = new Date();
 
-                // Palette (Mobis red + neutrals)
-                const RED: [number, number, number] = [196, 30, 58];
+                // Palette — header uses Mobis HYUNDAI blue (not red, since the logo "O" already provides red accent)
+                const HYUNDAI_BLUE: [number, number, number] = [0, 47, 108];
                 const NAVY: [number, number, number] = [31, 78, 121];
+                const TEAL: [number, number, number] = [13, 148, 136];
+                const RED: [number, number, number] = [196, 30, 58];
                 const SLATE: [number, number, number] = [71, 85, 105];
                 const MUTED: [number, number, number] = [148, 163, 184];
                 const SOFT: [number, number, number] = [241, 245, 249];
@@ -1021,19 +1023,36 @@ export default function AnaliseRisco() {
                 const recorr = excludedParts.length - semLanc;
                 const totalNG = excludedParts.reduce((a: number, e: any) => a + (e.ng || 0), 0);
 
+                // Breakdown by Modelo (projeto) and Módulo (fornecedor)
+                const groupCount = (key: "projeto" | "fornecedor") => {
+                  const m = new Map<string, number>();
+                  excludedParts.forEach((e: any) => {
+                    const k = (e[key] || "—").toString().trim() || "—";
+                    m.set(k, (m.get(k) || 0) + 1);
+                  });
+                  return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+                };
+                const porModelo = groupCount("projeto");
+                const porModulo = groupCount("fornecedor");
+
                 // ===== HEADER BAND =====
                 const drawHeader = () => {
-                  doc.setFillColor(...RED);
+                  // White band so the logo's own colors (HYUNDAI blue + red "O") read correctly
+                  doc.setFillColor(255, 255, 255);
                   doc.rect(0, 0, pageW, 22, "F");
+                  // Thin blue accent at bottom of band
+                  doc.setFillColor(...HYUNDAI_BLUE);
+                  doc.rect(0, 22, pageW, 1.2, "F");
                   if (logoB64) {
                     try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {}
                   }
-                  doc.setTextColor(255, 255, 255);
+                  doc.setTextColor(...HYUNDAI_BLUE);
                   doc.setFont("helvetica", "bold");
                   doc.setFontSize(15);
                   doc.text("Análise de Risco — Peças Desconsideradas", pageW - M, 11, { align: "right" });
                   doc.setFont("helvetica", "normal");
                   doc.setFontSize(9);
+                  doc.setTextColor(...SLATE);
                   doc.text(
                     `${modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos ${periodo} dias · Gerado em ${now.toLocaleString("pt-BR")}`,
                     pageW - M, 17, { align: "right" }
@@ -1054,12 +1073,12 @@ export default function AnaliseRisco() {
                 drawHeader();
 
                 // ===== OVERVIEW / RESUMO =====
-                let y = 30;
-                doc.setTextColor(...NAVY);
+                let y = 32;
+                doc.setTextColor(...HYUNDAI_BLUE);
                 doc.setFont("helvetica", "bold");
                 doc.setFontSize(12);
                 doc.text("Resumo", M, y);
-                doc.setDrawColor(...RED);
+                doc.setDrawColor(...HYUNDAI_BLUE);
                 doc.setLineWidth(0.6);
                 doc.line(M, y + 1.5, M + 22, y + 1.5);
                 y += 6;
@@ -1068,7 +1087,7 @@ export default function AnaliseRisco() {
                 const cardW = (pageW - M * 2 - 9) / 4;
                 const cardH = 20;
                 const kpis: Array<{ label: string; value: string; tone: [number, number, number] }> = [
-                  { label: "Total desconsideradas", value: fmt(excludedParts.length), tone: NAVY },
+                  { label: "Total desconsideradas", value: fmt(excludedParts.length), tone: HYUNDAI_BLUE },
                   { label: "Sem lançamento", value: fmt(semLanc), tone: SLATE },
                   { label: "Recorrentes (3+ meses)", value: fmt(recorr), tone: AMBER },
                   { label: "NG acumuladas", value: fmt(totalNG), tone: RED },
@@ -1088,7 +1107,51 @@ export default function AnaliseRisco() {
                   doc.setTextColor(...k.tone);
                   doc.text(k.value, x + 4, y + 15);
                 });
-                y += cardH + 4;
+                y += cardH + 5;
+
+                // ===== Breakdown — Por Modelo / Por Módulo =====
+                const colW = (pageW - M * 2 - 6) / 2;
+                const blockTop = y;
+                const drawBreakdown = (
+                  title: string, items: Array<[string, number]>, x: number, accent: [number, number, number],
+                ) => {
+                  let by = blockTop;
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(10);
+                  doc.setTextColor(...HYUNDAI_BLUE);
+                  doc.text(title, x, by);
+                  doc.setDrawColor(...accent);
+                  doc.setLineWidth(0.5);
+                  doc.line(x, by + 1.2, x + 18, by + 1.2);
+                  by += 4.5;
+                  doc.setFillColor(...SOFT);
+                  const rows = items.slice(0, 6);
+                  const bh = rows.length ? rows.length * 5.5 + 2 : 7;
+                  doc.roundedRect(x, by, colW, bh, 1.5, 1.5, "F");
+                  by += 4;
+                  if (!rows.length) {
+                    doc.setFont("helvetica", "italic");
+                    doc.setFontSize(8);
+                    doc.setTextColor(...GREY);
+                    doc.text("Sem dados", x + 3, by);
+                    return blockTop + 4.5 + bh + 2;
+                  }
+                  doc.setFontSize(8.5);
+                  rows.forEach(([label, count]) => {
+                    doc.setFont("helvetica", "normal");
+                    doc.setTextColor(...SLATE);
+                    const lbl = label.length > 42 ? label.slice(0, 41) + "…" : label;
+                    doc.text(lbl, x + 3, by);
+                    doc.setFont("helvetica", "bold");
+                    doc.setTextColor(...accent);
+                    doc.text(String(count), x + colW - 3, by, { align: "right" });
+                    by += 5.5;
+                  });
+                  return blockTop + 4.5 + bh + 2;
+                };
+                const yA = drawBreakdown("Por Modelo (Projeto)", porModelo, M, HYUNDAI_BLUE);
+                const yB = drawBreakdown("Por Módulo (Fornecedor)", porModulo, M + colW + 6, TEAL);
+                y = Math.max(yA, yB) + 2;
 
                 // Context line
                 doc.setFont("helvetica", "italic");

@@ -286,6 +286,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
   const [memberOrders, setMemberOrders] = useState<Record<string, MemberOrder>>({});
   const [savedListId, setSavedListId] = useState<string>("");
   const [sending, setSending] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const { data: items = [] } = useQuery({
     queryKey: ["consumable-items-active"],

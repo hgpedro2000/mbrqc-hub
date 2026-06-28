@@ -19,6 +19,8 @@ interface ChangelogEntry {
   released_at: string;
 }
 
+const CHANGELOG_QUERY_KEY = ["app_changelog"] as const;
+
 const VersionBadge = () => {
   const { clientVersion, updateAvailable, deployedVersion, minRequiredVersion, lastCheckedAt, recheck } = useAppVersion();
   const { isAdmin } = useUserRole();
@@ -27,14 +29,13 @@ const VersionBadge = () => {
   const [rechecking, setRechecking] = useState(false);
   const [historyRealtime, setHistoryRealtime] = useState<"connecting" | "active" | "fallback">("connecting");
   const openRef = useRef(open);
-  const changelogQueryKey = ["app_changelog"] as const;
 
   useEffect(() => {
     openRef.current = open;
   }, [open]);
 
   const { data: entries = [], isLoading, refetch } = useQuery({
-    queryKey: changelogQueryKey,
+    queryKey: CHANGELOG_QUERY_KEY,
     queryFn: async () => {
       const { data } = await supabase
         .from("app_changelog" as any)
@@ -55,7 +56,7 @@ const VersionBadge = () => {
     let fallbackTimer: ReturnType<typeof setInterval> | null = null;
 
     const refreshHistory = () => {
-      queryClient.invalidateQueries({ queryKey: changelogQueryKey });
+      queryClient.invalidateQueries({ queryKey: CHANGELOG_QUERY_KEY });
       if (openRef.current) void refetch();
       void recheck();
     };

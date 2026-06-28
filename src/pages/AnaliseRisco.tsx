@@ -130,9 +130,11 @@ export default function AnaliseRisco() {
   const paretoXAxisAngle = chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
   const renderParetoAccLabel = (props: any) => {
-    const { x, y, value } = props;
+    const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    const labelY = Math.max(12, y - 12);
+    // Stagger odd indices a bit higher to avoid colliding with the NG bar label
+    const stagger = (index ?? 0) % 2 === 0 ? 12 : 26;
+    const labelY = Math.max(12, y - stagger);
     return (
       <text
         x={x}
@@ -146,6 +148,28 @@ export default function AnaliseRisco() {
       </text>
     );
   };
+
+  const renderParetoBarLabel = (props: any) => {
+    const { x, y, width, value, index } = props;
+    if (x == null || y == null || value == null) return null;
+    // Stagger even indices slightly higher than odd to separate from the % line label above
+    const stagger = (index ?? 0) % 2 === 0 ? 8 : 22;
+    const cx = x + (width ?? 0) / 2;
+    const labelY = Math.max(10, y - stagger);
+    return (
+      <text
+        x={cx}
+        y={labelY}
+        textAnchor="middle"
+        fontSize={paretoLabelFs}
+        fontWeight={700}
+        fill="hsl(var(--foreground))"
+      >
+        {fmt(Number(value))}
+      </text>
+    );
+  };
+
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -990,7 +1014,7 @@ export default function AnaliseRisco() {
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={chartIsDouble ? 52 : 70}>
-                        <LabelList dataKey="value" position="top" offset={8} fontSize={paretoLabelFs} fontWeight={700} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                        <LabelList dataKey="value" content={renderParetoBarLabel} />
                       </Bar>
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} dot={{ r: 3 }}>
                         <LabelList dataKey="acc" content={renderParetoAccLabel} />

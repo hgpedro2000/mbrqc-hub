@@ -1411,7 +1411,7 @@ export default function AnaliseRisco() {
                     {buildingPdf ? "Gerando..." : "Pré-visualizar"}
                   </Button>
                   <Button
-                    size="sm" className="h-8 text-xs gap-1"
+                    size="sm" className="h-9 text-xs gap-1 w-full sm:w-auto"
                     disabled={!filteredExcluded.length || buildingPdf}
                     onClick={handleSave}
                     aria-busy={buildingPdf}

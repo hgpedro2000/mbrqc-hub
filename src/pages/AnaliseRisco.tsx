@@ -26,6 +26,7 @@ import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
+import { computeAccLabelY, computeBarLabelY } from "@/lib/paretoLabels";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {

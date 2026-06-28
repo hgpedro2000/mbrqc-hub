@@ -1088,9 +1088,9 @@ export default function AnaliseRisco() {
             ) : (
               <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 <KPICard label="Peças NG (90d)" value={fmt(totalNG)} sub="▲ 12% vs período anterior" subTone="red" />
-                <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" />
+                <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" onClick={() => setInsight("modos")} />
                 <KPICard label="PPM médio (fornecedores)" value={fmt(ppmMedio)} sub="▲ 8% vs período anterior" subTone="red" />
-                <KPICard label="Fornecedores reincidentes" value={fmt(reincidentes)} sub="▲ 1 novo este mês" subTone="red" />
+                <KPICard label="Fornecedores reincidentes" value={fmt(reincidentes)} sub="▲ 1 novo este mês" subTone="red" onClick={() => setInsight("reincidentes")} />
 
               </div>
             )}

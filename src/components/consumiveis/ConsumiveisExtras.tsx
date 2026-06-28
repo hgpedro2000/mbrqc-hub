@@ -507,7 +507,19 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
       </div>
 
       <div className="form-section p-3 space-y-2">
-        <Label className="text-xs font-semibold">Selecionar membros do time (turno {profile?.turno || "—"})</Label>
+        <Label className="text-xs font-semibold">
+          {isManager
+            ? `Selecionar membros (todos funcionários MOBIS — ${teamMembers.length})`
+            : `Selecionar membros do time (turno ${profile?.turno || "—"})`}
+        </Label>
+        {isManager && (
+          <Input
+            value={teamSearch}
+            onChange={(e) => setTeamSearch(e.target.value)}
+            placeholder="Buscar por nome ou matrícula..."
+            className="h-8 text-xs"
+          />
+        )}
         {loadingTeam ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8" />)}
@@ -515,14 +527,25 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
         ) : errTeam ? (
           <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto">
-            {teamMembers.map((m: any) => (
-              <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
-                <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
-                <span className="truncate">{m.full_name}</span>
-              </label>
-            ))}
-            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado neste turno.</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
+            {teamMembers
+              .filter((m: any) => {
+                if (!teamSearch.trim()) return true;
+                const t = teamSearch.toLowerCase();
+                return (m.full_name || "").toLowerCase().includes(t)
+                  || String(m.employee_number || "").toLowerCase().includes(t);
+              })
+              .map((m: any) => (
+                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
+                  <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
+                  <span className="truncate flex-1">
+                    {m.full_name}
+                    {m.employee_number && <span className="text-[10px] text-muted-foreground ml-1 font-mono">({m.employee_number})</span>}
+                    {isManager && m.turno && <span className="text-[10px] text-muted-foreground ml-1">· {m.turno}</span>}
+                  </span>
+                </label>
+              ))}
+            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado.</p>}
           </div>
         )}
         <p className="text-xs text-muted-foreground">{totalPedidos} pedido(s) — {totalItens} item(ns) no total</p>

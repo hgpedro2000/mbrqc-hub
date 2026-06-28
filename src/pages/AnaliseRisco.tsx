@@ -725,10 +725,10 @@ export default function AnaliseRisco() {
                     />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={70}>
-                      <LabelList dataKey="value" position="top" fontSize={11} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      <LabelList dataKey="value" position="top" offset={6} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
                     </Bar>
                     <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2}>
-                      <LabelList dataKey="acc" position="top" fontSize={10} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
+                      <LabelList dataKey="acc" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
                     </Line>
                   </ComposedChart>
                 </ResponsiveContainer>

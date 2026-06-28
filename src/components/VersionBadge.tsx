@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppVersion } from "@/hooks/useAppVersion";
@@ -28,11 +28,6 @@ const VersionBadge = () => {
   const [open, setOpen] = useState(false);
   const [rechecking, setRechecking] = useState(false);
   const [historyRealtime, setHistoryRealtime] = useState<"connecting" | "active" | "fallback">("connecting");
-  const openRef = useRef(open);
-
-  useEffect(() => {
-    openRef.current = open;
-  }, [open]);
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: CHANGELOG_QUERY_KEY,

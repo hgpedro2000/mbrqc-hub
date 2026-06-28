@@ -1116,7 +1116,8 @@ export default function AnaliseRisco() {
           </div>
 
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+
             {(() => {
               const buildExcludedPdf = async () => {
                 const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });

@@ -657,6 +657,7 @@ export default function AnaliseRisco() {
     // Capture chart
     let chartImg: string | null = null;
     let chartRatio = 0;
+    if (drillChartRef.current) {
       try {
         const html2canvas = (await import("html2canvas")).default;
         const canvas = await html2canvas(drillChartRef.current, {

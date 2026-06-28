@@ -209,7 +209,10 @@ export default function AnaliseRisco() {
         fontSize={paretoLabelFs}
         fontWeight={700}
         fill="hsl(var(--foreground))"
+        style={{ cursor: "pointer" }}
+        onClick={() => bumpLabel("bar", key)}
       >
+        <title>Clique para afastar este rótulo (atual: +{bump}px)</title>
         {fmt(Number(value))}
       </text>
     );

@@ -26,7 +26,7 @@ import jsPDF from "jspdf";
 import logoMobis from "@/assets/hyundai-mobis-logo.png";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
-import { computeAccLabelY, computeBarLabelY } from "@/lib/paretoLabels";
+import { computeAccLabelY, computeBarLabelY, assignSlots } from "@/lib/paretoLabels";
 
 async function urlToBase64(url: string): Promise<string | null> {
   try {
@@ -130,12 +130,18 @@ export default function AnaliseRisco() {
   const paretoBottomMargin = chartIsDouble ? 130 : 100;
   const paretoXAxisAngle = chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
-  // % acumulado: sempre ACIMA do rótulo da barra, ciclando 3 alturas para
-  // evitar sobreposição quando os pontos da linha ficam muito próximos.
+  // Slot arrays are filled later (after paretoData is computed) so the
+  // anti-overlap rule only triggers for labels that are actually close.
+  const paretoBarSlotsRef = useRef<number[]>([]);
+  const paretoAccSlotsRef = useRef<number[]>([]);
+
+  // % acumulado: fica ACIMA do rótulo da barra, com stagger SOMENTE quando
+  // os pontos vizinhos estiverem visualmente próximos (ver assignSlots).
   const renderParetoAccLabel = (props: any) => {
     const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    const labelY = computeAccLabelY(y, index ?? 0);
+    const slot = paretoAccSlotsRef.current[index ?? 0] ?? 0;
+    const labelY = computeAccLabelY(y, index ?? 0, slot);
     return (
       <text
         x={x}
@@ -150,12 +156,13 @@ export default function AnaliseRisco() {
     );
   };
 
-  // NG (barra): pequeno stagger par/ímpar para barras vizinhas de altura similar.
+  // NG (barra): stagger apenas quando barras vizinhas têm altura similar.
   const renderParetoBarLabel = (props: any) => {
     const { x, y, width, value, index } = props;
     if (x == null || y == null || value == null) return null;
     const cx = x + (width ?? 0) / 2;
-    const labelY = computeBarLabelY(y, index ?? 0);
+    const slot = paretoBarSlotsRef.current[index ?? 0] ?? 0;
+    const labelY = computeBarLabelY(y, index ?? 0, slot);
     return (
       <text
         x={cx}
@@ -169,6 +176,8 @@ export default function AnaliseRisco() {
       </text>
     );
   };
+
+
 
 
   const dateFrom = useMemo(() => {
@@ -307,6 +316,19 @@ export default function AnaliseRisco() {
       return { name, value, acc: Math.round((acc / total) * 100) };
     });
   }, [modosFalha]);
+
+  // Recompute stagger slots whenever the Pareto dataset changes. Labels whose
+  // neighbour values aren't close get slot 0 (no lift) — the rule is applied
+  // only where it's actually needed.
+  paretoBarSlotsRef.current = useMemo(
+    () => assignSlots(paretoData.map((d) => d.value)),
+    [paretoData],
+  );
+  paretoAccSlotsRef.current = useMemo(
+    () => assignSlots(paretoData.map((d) => d.acc)),
+    [paretoData],
+  );
+
 
   // Tendência mensal
   const trendData = useMemo(() => {

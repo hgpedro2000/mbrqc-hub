@@ -1255,14 +1255,49 @@ export default function AnaliseRisco() {
                   doc.setPage(p);
                   drawFooter(p, pages);
                 }
-                doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
-              }}
-            >
+                return doc;
+              };
 
-              <FileText className="w-3.5 h-3.5" />
-              Exportar em PDF
-            </Button>
+              const handlePreview = async () => {
+                setBuildingPdf(true);
+                try {
+                  const doc = await buildExcludedPdf();
+                  const url = doc.output("bloburl") as unknown as string;
+                  if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+                  setPdfPreviewUrl(String(url));
+                } finally { setBuildingPdf(false); }
+              };
+              const handleSave = async () => {
+                setBuildingPdf(true);
+                try {
+                  const doc = await buildExcludedPdf();
+                  doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
+                } finally { setBuildingPdf(false); }
+              };
+
+              return (
+                <>
+                  <Button
+                    size="sm" variant="outline" className="h-8 text-xs gap-1"
+                    disabled={!excludedParts.length || buildingPdf}
+                    onClick={handlePreview}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Pré-visualizar
+                  </Button>
+                  <Button
+                    size="sm" className="h-8 text-xs gap-1"
+                    disabled={!excludedParts.length || buildingPdf}
+                    onClick={handleSave}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    Exportar em PDF
+                  </Button>
+                </>
+              );
+            })()}
           </div>
+
           <div className="max-h-[60vh] overflow-y-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs sticky top-0">

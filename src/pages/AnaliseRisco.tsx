@@ -1161,38 +1161,62 @@ export default function AnaliseRisco() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/40 text-xs">
-                    <tr>
-                      <th className="text-left px-3 py-2">Fornecedor</th>
-                      <th className="text-center px-3 py-2">NG</th>
-                      <th className="text-center px-3 py-2">PPM</th>
-                      <th className="text-left px-3 py-2">Modo principal</th>
-                      <th className="text-center px-3 py-2">Tendência</th>
-                      <th className="text-center px-3 py-2">Risco</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {supplierTable.map((s) => (
-                      <tr key={s.name} className="border-t">
-                        <td className="px-3 py-2">{s.name}</td>
-                        <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
-                        <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
-
-                        <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
-                        <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
-                        <td className="text-center px-3 py-2">
-                          {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
-                        </td>
+              {isMobile ? (
+                <div className="divide-y">
+                  {supplierTable.map((s) => (
+                    <div key={s.name} className="px-3 py-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold break-words" title={s.name}>{s.name}</div>
+                          <div className="text-xs text-muted-foreground break-words" title={s.mainModo}>{s.mainModo}</div>
+                        </div>
+                        <div className="shrink-0">{riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}</div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">NG</div><div className="font-semibold tabular-nums">{fmt(s.ng)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11"><div className="text-muted-foreground">PPM</div><div className="font-semibold tabular-nums">{fmt(s.ppm)}</div></div>
+                        <div className="rounded-md bg-muted/30 p-2 min-h-11 flex items-center justify-center">{trendBadge(s.trend)}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {!supplierTable.length && !isLoading && (
+                    <div className="text-center py-6 text-muted-foreground text-sm">Sem dados no período.</div>
+                  )}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/40 text-xs">
+                      <tr>
+                        <th className="text-left px-3 py-2">Fornecedor</th>
+                        <th className="text-center px-3 py-2">NG</th>
+                        <th className="text-center px-3 py-2">PPM</th>
+                        <th className="text-left px-3 py-2">Modo principal</th>
+                        <th className="text-center px-3 py-2">Tendência</th>
+                        <th className="text-center px-3 py-2">Risco</th>
                       </tr>
-                    ))}
-                    {!supplierTable.length && !isLoading && (
-                      <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Sem dados no período.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {supplierTable.map((s) => (
+                        <tr key={s.name} className="border-t">
+                          <td className="px-3 py-2">{s.name}</td>
+                          <td className="text-center px-3 py-2 font-semibold">{fmt(s.ng)}</td>
+                          <td className="text-center px-3 py-2">{fmt(s.ppm)}</td>
+
+                          <td className="px-3 py-2 text-muted-foreground">{s.mainModo}</td>
+                          <td className="text-center px-3 py-2">{trendBadge(s.trend)}</td>
+                          <td className="text-center px-3 py-2">
+                            {riskBadge(s.risk === "Alto" ? "alto" : s.risk === "Médio" ? "medio" : "baixo")}
+                          </td>
+                        </tr>
+                      ))}
+                      {!supplierTable.length && !isLoading && (
+                        <tr><td colSpan={6} className="text-center py-6 text-muted-foreground">Sem dados no período.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 

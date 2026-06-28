@@ -1018,23 +1018,23 @@ export default function AnaliseRisco() {
           </div>
         )}
 
-        <Tabs defaultValue="painel" className="space-y-4">
+        <Tabs defaultValue="painel" className="space-y-4 min-w-0">
           <div className="overflow-x-auto scrollbar-hide -mx-3 sm:mx-0 px-3 sm:px-0">
-            <TabsList className="w-max sm:w-auto">
-              <TabsTrigger value="painel" className="text-xs sm:text-sm">Painel de Falhas</TabsTrigger>
-              <TabsTrigger value="mapa" className="text-xs sm:text-sm">Mapa de Risco</TabsTrigger>
-              <TabsTrigger value="reco" className="text-xs sm:text-sm">Recomendações do Dia</TabsTrigger>
+            <TabsList className="w-max min-w-full sm:w-auto sm:min-w-0 justify-start h-auto min-h-11 gap-1 p-1">
+              <TabsTrigger value="painel" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Painel de Falhas</TabsTrigger>
+              <TabsTrigger value="mapa" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Mapa de Risco</TabsTrigger>
+              <TabsTrigger value="reco" className="min-h-11 px-3 text-[clamp(0.72rem,3.2vw,0.875rem)] leading-tight">Recomendações</TabsTrigger>
             </TabsList>
           </div>
 
           {/* ============ PAINEL ============ */}
-          <TabsContent value="painel" className="space-y-4">
+          <TabsContent value="painel" className="space-y-4 min-w-0">
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 min-[430px]:grid-cols-2 md:grid-cols-4 gap-3">
                 <KPICard label="Peças NG (90d)" value={fmt(totalNG)} sub="▲ 12% vs período anterior" subTone="red" />
                 <KPICard label="Modos de falha distintos" value={fmt(modosFalha.length)} sub="— estável" subTone="amber" />
                 <KPICard label="PPM médio (fornecedores)" value={fmt(ppmMedio)} sub="▲ 8% vs período anterior" subTone="red" />
@@ -1048,18 +1048,18 @@ export default function AnaliseRisco() {
                 <h3 className="text-sm font-semibold">Exibição dos gráficos</h3>
                 <p className="text-[11px] text-muted-foreground">Alterna entre visualização vertical ou lado a lado.</p>
               </div>
-              <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/30 p-1 sm:w-[260px]">
+              <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-1 rounded-md border bg-muted/30 p-1 w-full sm:w-[260px]">
                 <button
                   type="button"
                   onClick={() => setChartLayout("single")}
-                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                  className={`min-h-11 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
                 >
                   1 por linha
                 </button>
                 <button
                   type="button"
                   onClick={() => setChartLayout("double")}
-                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "double" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                  className={`min-h-11 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "double" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
                 >
                   2 por linha
                 </button>

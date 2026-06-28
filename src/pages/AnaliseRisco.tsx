@@ -94,6 +94,17 @@ export default function AnaliseRisco() {
   const [chartLayout, setChartLayout] = useState<"single" | "double">("single");
   const [paretoZoomOpen, setParetoZoomOpen] = useState(false);
   const [paretoZoom, setParetoZoom] = useState(150);
+  const PARETO_GAP_LS_KEY = "analise_risco_pareto_min_gap_px";
+  const [paretoMinGap, setParetoMinGap] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem(PARETO_GAP_LS_KEY);
+      const n = raw ? Number(raw) : NaN;
+      return Number.isFinite(n) && n >= 0 && n <= 60 ? n : 18;
+    } catch { return 18; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(PARETO_GAP_LS_KEY, String(paretoMinGap)); } catch { /* noop */ }
+  }, [paretoMinGap]);
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
@@ -322,7 +333,7 @@ export default function AnaliseRisco() {
   // gráfico e da fonte do rótulo, então o stagger só é aplicado quando há risco
   // real de sobreposição.
   const paretoChartH = chartIsDouble ? 280 : 360;
-  const paretoMinGap = paretoLabelFs + 6;
+  // paretoMinGap is now user-configurable (see state above).
   paretoBarSlotsRef.current = useMemo(
     () => assignSlotsAuto(paretoData.map((d) => d.value), { chartHeight: paretoChartH, minGapPx: paretoMinGap }),
     [paretoData, paretoChartH, paretoMinGap],
@@ -1025,6 +1036,19 @@ export default function AnaliseRisco() {
                   <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-muted-foreground hidden sm:inline">Top 10 · ordenado por ocorrências</span>
+                    <label className="flex items-center gap-1 text-[10px] text-muted-foreground" title="Limiar (px) para acionar o stagger automático dos rótulos. Maior = afasta mais.">
+                      <span className="hidden sm:inline">Stagger</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={60}
+                        step={1}
+                        value={paretoMinGap}
+                        onChange={(e) => setParetoMinGap(Math.max(0, Math.min(60, Number(e.target.value) || 0)))}
+                        className="h-7 w-14 rounded-md border border-input bg-background px-2 text-xs"
+                      />
+                      <span>px</span>
+                    </label>
                     <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
                       <Maximize2 className="h-3.5 w-3.5" /> Ampliar
                     </Button>

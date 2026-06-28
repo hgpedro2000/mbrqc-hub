@@ -22,6 +22,21 @@ import {
   LineChart, ResponsiveContainer, ReferenceLine, LabelList,
 } from "recharts";
 import jsPDF from "jspdf";
+import logoMobis from "@/assets/hyundai-mobis-logo.png";
+
+async function urlToBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  } catch { return null; }
+}
+
 
 type Apto = {
   id: string;
@@ -983,67 +998,203 @@ export default function AnaliseRisco() {
             <Button
               size="sm" variant="outline" className="h-8 text-xs gap-1"
               disabled={!excludedParts.length}
-              onClick={() => {
-                const doc = new jsPDF({ orientation: "landscape" });
+              onClick={async () => {
+                const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
                 const pageW = doc.internal.pageSize.getWidth();
+                const pageH = doc.internal.pageSize.getHeight();
+                const M = 12; // margin
                 const now = new Date();
-                doc.setFontSize(14);
-                doc.text("Peças desconsideradas da análise", 14, 14);
-                doc.setFontSize(9);
-                doc.text(
-                  `Período: ${periodo} dias · Modelo: ${modelFilter === "bc4b" ? "BC4B" : "Todos"} · Total: ${excludedParts.length} · Gerado em ${now.toLocaleString("pt-BR")}`,
-                  14, 20,
-                );
-                const cols = [
-                  { h: "Part Number", x: 14, w: 38 },
-                  { h: "Projeto",     x: 52, w: 24 },
-                  { h: "Fornecedor",  x: 76, w: 52 },
-                  { h: "NG",          x: 128, w: 12 },
-                  { h: "1º NG",       x: 140, w: 22 },
-                  { h: "Último NG",   x: 162, w: 22 },
-                  { h: "Motivo",      x: 184, w: pageW - 14 - 184 },
-                ];
-                let y = 30;
-                doc.setFontSize(9);
-                doc.setFont(undefined, "bold");
-                cols.forEach((c) => doc.text(c.h, c.x, y));
-                doc.setFont(undefined, "normal");
-                y += 2; doc.line(14, y, pageW - 14, y); y += 5;
 
-                const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
-                const fmtDate = (d: string | null) => (d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—");
+                // Palette (Mobis red + neutrals)
+                const RED: [number, number, number] = [196, 30, 58];
+                const NAVY: [number, number, number] = [31, 78, 121];
+                const SLATE: [number, number, number] = [71, 85, 105];
+                const MUTED: [number, number, number] = [148, 163, 184];
+                const SOFT: [number, number, number] = [241, 245, 249];
+                const ZEBRA: [number, number, number] = [249, 250, 251];
+                const AMBER: [number, number, number] = [180, 83, 9];
+                const GREY: [number, number, number] = [107, 114, 128];
 
-                excludedParts.forEach((e: any) => {
-                  if (y > 195) {
-                    doc.addPage();
-                    y = 14;
-                    doc.setFont(undefined, "bold");
-                    cols.forEach((c) => doc.text(c.h, c.x, y));
-                    doc.setFont(undefined, "normal");
-                    y += 2; doc.line(14, y, pageW - 14, y); y += 5;
+                const logoB64 = await urlToBase64(logoMobis);
+
+                const semLanc = excludedParts.filter((e: any) => e.reason === "sem lançamento").length;
+                const recorr = excludedParts.length - semLanc;
+                const totalNG = excludedParts.reduce((a: number, e: any) => a + (e.ng || 0), 0);
+
+                // ===== HEADER BAND =====
+                const drawHeader = () => {
+                  doc.setFillColor(...RED);
+                  doc.rect(0, 0, pageW, 22, "F");
+                  if (logoB64) {
+                    try { doc.addImage(logoB64, "PNG", M, 5, 38, 12); } catch {}
                   }
-                  doc.text(trunc(String(e.pn || "—"), 22), cols[0].x, y);
-                  doc.text(trunc(String(e.projeto || "—"), 14), cols[1].x, y);
-                  doc.text(trunc(String(e.fornecedor || "—"), 30), cols[2].x, y);
-                  doc.text(fmt(e.ng), cols[3].x, y);
-                  doc.text(fmtDate(e.firstNgDate), cols[4].x, y);
-                  doc.text(fmtDate(e.lastNgDate), cols[5].x, y);
-                  const motivo = e.reason === "sem lançamento"
-                    ? "Sem lançamento no período"
-                    : `Recorrente · ${e.modoRecorrente || ""}`;
-                  doc.text(trunc(motivo, 50), cols[6].x, y);
-                  y += 6;
+                  doc.setTextColor(255, 255, 255);
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(15);
+                  doc.text("Análise de Risco — Peças Desconsideradas", pageW - M, 11, { align: "right" });
+                  doc.setFont("helvetica", "normal");
+                  doc.setFontSize(9);
+                  doc.text(
+                    `${modelFilter === "bc4b" ? "Modelo BC4B" : "Todos os modelos"} · Últimos ${periodo} dias · Gerado em ${now.toLocaleString("pt-BR")}`,
+                    pageW - M, 17, { align: "right" }
+                  );
+                };
+
+                const drawFooter = (page: number, pages: number) => {
+                  doc.setDrawColor(...MUTED);
+                  doc.setLineWidth(0.2);
+                  doc.line(M, pageH - 10, pageW - M, pageH - 10);
+                  doc.setFont("helvetica", "normal");
+                  doc.setFontSize(8);
+                  doc.setTextColor(...GREY);
+                  doc.text("Hyundai Mobis — Quality Tools", M, pageH - 5);
+                  doc.text(`Página ${page} de ${pages}`, pageW - M, pageH - 5, { align: "right" });
+                };
+
+                drawHeader();
+
+                // ===== OVERVIEW / RESUMO =====
+                let y = 30;
+                doc.setTextColor(...NAVY);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Resumo", M, y);
+                doc.setDrawColor(...RED);
+                doc.setLineWidth(0.6);
+                doc.line(M, y + 1.5, M + 22, y + 1.5);
+                y += 6;
+
+                // KPI cards
+                const cardW = (pageW - M * 2 - 9) / 4;
+                const cardH = 20;
+                const kpis: Array<{ label: string; value: string; tone: [number, number, number] }> = [
+                  { label: "Total desconsideradas", value: fmt(excludedParts.length), tone: NAVY },
+                  { label: "Sem lançamento", value: fmt(semLanc), tone: SLATE },
+                  { label: "Recorrentes (3+ meses)", value: fmt(recorr), tone: AMBER },
+                  { label: "NG acumuladas", value: fmt(totalNG), tone: RED },
+                ];
+                kpis.forEach((k, i) => {
+                  const x = M + i * (cardW + 3);
+                  doc.setFillColor(...SOFT);
+                  doc.roundedRect(x, y, cardW, cardH, 2, 2, "F");
+                  doc.setFillColor(...k.tone);
+                  doc.rect(x, y, 1.6, cardH, "F");
+                  doc.setFont("helvetica", "normal");
+                  doc.setFontSize(8);
+                  doc.setTextColor(...SLATE);
+                  doc.text(k.label.toUpperCase(), x + 4, y + 6);
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(16);
+                  doc.setTextColor(...k.tone);
+                  doc.text(k.value, x + 4, y + 15);
                 });
+                y += cardH + 4;
+
+                // Context line
+                doc.setFont("helvetica", "italic");
+                doc.setFontSize(8.5);
+                doc.setTextColor(...GREY);
+                const ctx = doc.splitTextToSize(
+                  "Peças registradas no fornecedor sem nenhum apontamento no período, ou com apontamentos altamente recorrentes (mesmo modo de falha em 3 ou mais meses distintos). Estas peças são removidas das análises principais para evitar viés.",
+                  pageW - M * 2
+                );
+                doc.text(ctx, M, y + 3);
+                y += ctx.length * 4 + 4;
+
+                // ===== TABLE =====
+                doc.setTextColor(...NAVY);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(12);
+                doc.text("Lista completa", M, y);
+                doc.setDrawColor(...RED);
+                doc.setLineWidth(0.6);
+                doc.line(M, y + 1.5, M + 30, y + 1.5);
+                y += 5;
+
+                const cols = [
+                  { h: "Part Number", w: 42, align: "left" as const },
+                  { h: "Projeto",     w: 22, align: "left" as const },
+                  { h: "Fornecedor",  w: 58, align: "left" as const },
+                  { h: "NG",          w: 14, align: "right" as const },
+                  { h: "1º NG",       w: 24, align: "center" as const },
+                  { h: "Último NG",   w: 24, align: "center" as const },
+                  { h: "Motivo",      w: pageW - M * 2 - (42 + 22 + 58 + 14 + 24 + 24), align: "left" as const },
+                ];
+                const rowH = 7;
+                const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + "…" : s);
+                const fmtD = (d: string | null) => (d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR") : "—");
+
+                const drawTableHeader = () => {
+                  doc.setFillColor(...NAVY);
+                  doc.rect(M, y, pageW - M * 2, rowH, "F");
+                  doc.setTextColor(255, 255, 255);
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(9);
+                  let cx = M;
+                  cols.forEach((c) => {
+                    const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+                    doc.text(c.h, tx, y + 4.8, { align: c.align });
+                    cx += c.w;
+                  });
+                  y += rowH;
+                };
+
+                drawTableHeader();
+
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(8.5);
+                excludedParts.forEach((e: any, idx: number) => {
+                  if (y + rowH > pageH - 14) {
+                    drawFooter(doc.getNumberOfPages(), 0);
+                    doc.addPage();
+                    drawHeader();
+                    y = 30;
+                    drawTableHeader();
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8.5);
+                  }
+                  if (idx % 2 === 0) {
+                    doc.setFillColor(...ZEBRA);
+                    doc.rect(M, y, pageW - M * 2, rowH, "F");
+                  }
+                  const motivoSem = e.reason === "sem lançamento";
+                  const values = [
+                    trunc(String(e.pn || "—"), 28),
+                    trunc(String(e.projeto || "—"), 14),
+                    trunc(String(e.fornecedor || "—"), 36),
+                    fmt(e.ng),
+                    fmtD(e.firstNgDate),
+                    fmtD(e.lastNgDate),
+                    motivoSem ? "Sem lançamento no período" : `Recorrente · ${trunc(e.modoRecorrente || "", 28)}`,
+                  ];
+                  doc.setTextColor(...SLATE);
+                  let cx = M;
+                  values.forEach((v, ci) => {
+                    const c = cols[ci];
+                    if (ci === 3) { doc.setFont("helvetica", "bold"); doc.setTextColor(...(e.ng > 0 ? RED : SLATE)); }
+                    else if (ci === 6) { doc.setFont("helvetica", "bold"); doc.setTextColor(...(motivoSem ? GREY : AMBER)); }
+                    else { doc.setFont("helvetica", "normal"); doc.setTextColor(...SLATE); }
+                    const tx = c.align === "right" ? cx + c.w - 2 : c.align === "center" ? cx + c.w / 2 : cx + 2;
+                    doc.text(v, tx, y + 4.8, { align: c.align });
+                    cx += c.w;
+                  });
+                  y += rowH;
+                });
+
+                // Bottom border
+                doc.setDrawColor(...MUTED);
+                doc.setLineWidth(0.2);
+                doc.line(M, y, pageW - M, y);
 
                 const pages = doc.getNumberOfPages();
                 for (let p = 1; p <= pages; p++) {
                   doc.setPage(p);
-                  doc.setFontSize(8);
-                  doc.text(`Página ${p}/${pages}`, pageW - 14, doc.internal.pageSize.getHeight() - 6, { align: "right" });
+                  drawFooter(p, pages);
                 }
                 doc.save(`pecas-excluidas-${periodo}d-${modelFilter}.pdf`);
               }}
             >
+
               <FileText className="w-3.5 h-3.5" />
               Exportar em PDF
             </Button>

@@ -756,7 +756,7 @@ export default function AnaliseRisco() {
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
                     <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)">
-                      <LabelList dataKey="ng" position="top" fontSize={11} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      <LabelList dataKey="ng" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
                     </Line>
                   </LineChart>
                 </ResponsiveContainer>

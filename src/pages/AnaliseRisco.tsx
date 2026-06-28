@@ -1593,9 +1593,13 @@ export default function AnaliseRisco() {
                 setBuildingPdf(true);
                 try {
                   const doc = await buildExcludedPdf();
-                  const url = doc.output("bloburl") as unknown as string;
+                  const blob = doc.output("blob") as Blob;
+                  const url = URL.createObjectURL(blob);
                   if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-                  setPdfPreviewUrl(String(url));
+                  setPdfPreviewUrl(url);
+                } catch (e) {
+                  console.error("Erro ao gerar pré-visualização do PDF:", e);
+                  toast.error("Não foi possível gerar a pré-visualização do PDF");
                 } finally { setBuildingPdf(false); }
               };
               const handleSave = async () => {

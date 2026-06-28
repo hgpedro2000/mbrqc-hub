@@ -1311,7 +1311,7 @@ export default function AnaliseRisco() {
 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(8.5);
-                excludedParts.forEach((e: any, idx: number) => {
+                pdfData.forEach((e: any, idx: number) => {
                   if (y + rowH > pageH - 14) {
                     drawFooter(doc.getNumberOfPages(), 0);
                     doc.addPage();

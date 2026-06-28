@@ -1014,7 +1014,7 @@ export default function AnaliseRisco() {
                       />
                       <Legend wrapperStyle={{ fontSize: 11 }} />
                       <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={chartIsDouble ? 52 : 70}>
-                        <LabelList dataKey="value" position="top" offset={8} fontSize={paretoLabelFs} fontWeight={700} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                        <LabelList dataKey="value" content={renderParetoBarLabel} />
                       </Bar>
                       <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} dot={{ r: 3 }}>
                         <LabelList dataKey="acc" content={renderParetoAccLabel} />

@@ -1123,14 +1123,15 @@ export default function AnaliseRisco() {
 
                 const logoB64 = await urlToBase64(logoMobis);
 
-                const semLanc = excludedParts.filter((e: any) => e.reason === "sem lançamento").length;
-                const recorr = excludedParts.length - semLanc;
-                const totalNG = excludedParts.reduce((a: number, e: any) => a + (e.ng || 0), 0);
+                const pdfData = filteredExcluded;
+                const semLanc = pdfData.filter((e: any) => e.reason === "sem lançamento").length;
+                const recorr = pdfData.length - semLanc;
+                const totalNG = pdfData.reduce((a: number, e: any) => a + (e.ng || 0), 0);
 
                 // Breakdown by Modelo (projeto) and Módulo (fornecedor)
                 const groupCount = (key: "projeto" | "fornecedor") => {
                   const m = new Map<string, number>();
-                  excludedParts.forEach((e: any) => {
+                  pdfData.forEach((e: any) => {
                     const k = (e[key] || "—").toString().trim() || "—";
                     m.set(k, (m.get(k) || 0) + 1);
                   });

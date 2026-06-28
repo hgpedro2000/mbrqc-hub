@@ -1192,7 +1192,7 @@ export default function AnaliseRisco() {
                 const cardW = (pageW - M * 2 - 9) / 4;
                 const cardH = 20;
                 const kpis: Array<{ label: string; value: string; tone: [number, number, number] }> = [
-                  { label: "Total desconsideradas", value: fmt(excludedParts.length), tone: HYUNDAI_BLUE },
+                  { label: "Total desconsideradas", value: fmt(pdfData.length), tone: HYUNDAI_BLUE },
                   { label: "Sem lançamento", value: fmt(semLanc), tone: SLATE },
                   { label: "Recorrentes (3+ meses)", value: fmt(recorr), tone: AMBER },
                   { label: "NG acumuladas", value: fmt(totalNG), tone: RED },

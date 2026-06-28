@@ -964,7 +964,12 @@ export default function AnaliseRisco() {
               <Card className="p-4 min-w-0">
                 <div className="flex items-start justify-between mb-1 gap-2">
                   <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
-                  <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground hidden sm:inline">Top 10 · ordenado por ocorrências</span>
+                    <Button size="sm" variant="outline" className="h-7 px-2 gap-1" onClick={() => setParetoZoomOpen(true)}>
+                      <Maximize2 className="h-3.5 w-3.5" /> Ampliar
+                    </Button>
+                  </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">
                   Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).

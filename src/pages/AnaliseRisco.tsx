@@ -550,6 +550,38 @@ export default function AnaliseRisco() {
   // ---------- Drill-down ----------
   const [drill, setDrill] = useState<{ pn: string; fornecedor: string } | null>(null);
 
+  // ---------- Insight popup (KPI click) ----------
+  type InsightKind = "modos" | "reincidentes" | "alto" | "medio" | "baixo" | "hoje" | "liberacao";
+  const [insight, setInsight] = useState<InsightKind | null>(null);
+
+  const insightConfig: Record<InsightKind, { title: string; description: string }> = {
+    modos: { title: "Modos de falha distintos", description: "Todos os modos de falha registrados no período, ordenados por quantidade de peças NG." },
+    reincidentes: { title: "Fornecedores reincidentes", description: "Fornecedores com rejeições em 2 ou mais meses distintos do período." },
+    alto: { title: "Peças de alto risco", description: "Score ≥ 60 — exigem inspeção 100%." },
+    medio: { title: "Peças de médio risco", description: "Score 30–59 — inspeção amostral (10% ou 20%)." },
+    baixo: { title: "Peças de baixo risco", description: "Score < 30 — liberação direta autorizada." },
+    hoje: { title: "Peças para inspecionar hoje", description: "Alto e médio risco combinados — prioridade do dia." },
+    liberacao: { title: "Liberação direta disponível", description: "Peças com histórico limpo — podem ser liberadas sem inspeção manual." },
+  };
+
+  const insightParts = useMemo(() => {
+    if (!insight) return [] as PartRisk[];
+    if (insight === "alto") return partsForAnalysis.filter((p) => p.classification === "alto");
+    if (insight === "medio") return partsForAnalysis.filter((p) => p.classification === "medio");
+    if (insight === "baixo" || insight === "liberacao") return partsForAnalysis.filter((p) => p.classification === "baixo");
+    if (insight === "hoje") return partsForAnalysis.filter((p) => p.classification === "alto" || p.classification === "medio");
+    return [];
+  }, [insight, partsForAnalysis]);
+
+  const insightReincidentes = useMemo(() => {
+    if (insight !== "reincidentes") return [] as { name: string; ng: number; months: number; ppm: number }[];
+    return supplierStats
+      .filter((s) => s.months.size >= 2)
+      .map((s) => ({ name: s.name, ng: s.ng, months: s.months.size, ppm: s.ok + s.ng ? Math.round((s.ng / (s.ok + s.ng)) * 1_000_000) : 0 }))
+      .sort((a, b) => b.ng - a.ng);
+  }, [insight, supplierStats]);
+
+
   const drillData = useMemo(() => {
     if (!drill) return null;
     const rows = items

@@ -936,8 +936,8 @@ const ConsumiveisPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="gradient-header">
-        <div className="container mx-auto px-4 py-6 md:py-12">
+      <header className="gradient-header sticky top-0 z-40">
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -952,17 +952,17 @@ const ConsumiveisPage = () => {
               <ReportErrorButton moduleName="Consumíveis" />
             </div>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">Consumíveis</h1>
-          <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">Requisição e gestão de itens de consumo do setor da qualidade.</p>
+          <h1 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold mt-2 sm:mt-3">Consumíveis</h1>
+          <p className="mt-0.5 sm:mt-1 text-primary-foreground/70 max-w-xl text-xs sm:text-sm">Requisição e gestão de itens de consumo do setor da qualidade.</p>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl -mt-4">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="inline-flex w-auto min-w-full h-auto flex-nowrap">
+          <div className="sticky top-[132px] sm:top-[156px] z-30 w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 py-2 border-b border-border">
+            <TabsList className="inline-flex w-auto min-w-full h-auto flex-nowrap gap-1 p-1">
               {tabs.map((t) => (
-                <TabsTrigger key={t.value} value={t.value} className="gap-1.5 text-xs sm:text-sm py-2 whitespace-nowrap">
+                <TabsTrigger key={t.value} value={t.value} className="gap-1.5 text-xs sm:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0">
                   <t.icon className="w-4 h-4" /> {t.label}
                 </TabsTrigger>
               ))}

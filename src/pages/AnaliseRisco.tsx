@@ -89,6 +89,7 @@ export default function AnaliseRisco() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const labelFs = isMobile ? 12 : 13;
+  const [chartLayout, setChartLayout] = useState<"single" | "double">("single");
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);
@@ -119,6 +120,41 @@ export default function AnaliseRisco() {
       }));
     } catch { /* noop */ }
   }, [excFiltProjeto, excFiltModelo, excFiltFornecedor, excSearch, excSortKey, excSortDir]);
+
+  const chartIsDouble = chartLayout === "double" && !isMobile;
+  const paretoChartHeight = chartIsDouble ? "h-[500px]" : "h-[560px]";
+  const paretoBottomMargin = chartIsDouble ? 130 : 100;
+  const paretoXAxisAngle = chartIsDouble ? -45 : -25;
+  const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  const renderParetoCombinedLabel = (props: any) => {
+    const { x, y, value, payload, index } = props;
+    if (x == null || y == null || value == null || !payload) return null;
+    const labelY = Math.max(24, y - (index % 2 === 0 ? 30 : 48));
+    return (
+      <g>
+        <text
+          x={x}
+          y={labelY}
+          textAnchor="middle"
+          fontSize={paretoLabelFs}
+          fontWeight={700}
+          fill="hsl(var(--foreground))"
+        >
+          {fmt(Number(payload.value || 0))}
+        </text>
+        <text
+          x={x}
+          y={labelY + paretoLabelFs + 2}
+          textAnchor="middle"
+          fontSize={paretoLabelFs}
+          fontWeight={700}
+          fill="hsl(var(--primary))"
+        >
+          {value}%
+        </text>
+      </g>
+    );
+  };
 
   const dateFrom = useMemo(() => {
     const d = new Date();

@@ -129,12 +129,14 @@ export default function AnaliseRisco() {
   const paretoBottomMargin = chartIsDouble ? 130 : 100;
   const paretoXAxisAngle = chartIsDouble ? -45 : -25;
   const paretoLabelFs = Math.max(11, chartIsDouble ? labelFs - 1 : labelFs);
+  // % acumulado: sempre ACIMA do rótulo da barra, ciclando 3 alturas para
+  // evitar sobreposição quando os pontos da linha ficam muito próximos.
   const renderParetoAccLabel = (props: any) => {
     const { x, y, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    // Stagger odd indices a bit higher to avoid colliding with the NG bar label
-    const stagger = (index ?? 0) % 2 === 0 ? 12 : 26;
-    const labelY = Math.max(12, y - stagger);
+    const slot = (index ?? 0) % 3; // 0,1,2
+    const offset = 30 + slot * 16; // 30 / 46 / 62
+    const labelY = Math.max(14, y - offset);
     return (
       <text
         x={x}
@@ -149,11 +151,11 @@ export default function AnaliseRisco() {
     );
   };
 
+  // NG (barra): pequeno stagger par/ímpar para barras vizinhas de altura similar.
   const renderParetoBarLabel = (props: any) => {
     const { x, y, width, value, index } = props;
     if (x == null || y == null || value == null) return null;
-    // Stagger even indices slightly higher than odd to separate from the % line label above
-    const stagger = (index ?? 0) % 2 === 0 ? 8 : 22;
+    const stagger = (index ?? 0) % 2 === 0 ? 6 : 14;
     const cx = x + (width ?? 0) / 2;
     const labelY = Math.max(10, y - stagger);
     return (

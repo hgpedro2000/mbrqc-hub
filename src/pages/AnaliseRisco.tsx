@@ -90,6 +90,8 @@ export default function AnaliseRisco() {
   const isMobile = useIsMobile();
   const labelFs = isMobile ? 12 : 13;
   const [chartLayout, setChartLayout] = useState<"single" | "double">("single");
+  const [paretoZoomOpen, setParetoZoomOpen] = useState(false);
+  const [paretoZoom, setParetoZoom] = useState(150);
   const [periodo, setPeriodo] = useState<"30" | "90" | "100" | "180">("90");
   const [modelFilter, setModelFilter] = useState<"todos" | "bc4b">("todos");
   const [excludeNoise, setExcludeNoise] = useState(true);

@@ -544,7 +544,7 @@ const InventarioRequisicoes = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <h3 className="text-base font-heading font-semibold">Estoque de Consumíveis</h3>
-        <div className={`grid ${isAdmin ? "grid-cols-2" : "grid-cols-1"} sm:flex sm:flex-wrap gap-2 w-full sm:w-auto`}>
+        <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 w-full sm:w-auto">
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
             <Package className="w-4 h-4" /> <span className="truncate">Ver Estoque ({items.filter((i: any) => i.active).length})</span>
           </Button>

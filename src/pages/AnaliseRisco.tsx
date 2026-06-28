@@ -946,67 +946,90 @@ export default function AnaliseRisco() {
               </div>
             )}
 
-            <Card className="p-4">
-              <div className="flex items-start justify-between mb-1 gap-2">
-                <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
-                <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold">Exibição dos gráficos</h3>
+                <p className="text-[11px] text-muted-foreground">Alterna entre visualização vertical ou lado a lado.</p>
               </div>
-              <p className="text-[11px] text-muted-foreground mb-3">
-                Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
-              </p>
-              <div className="h-[560px]">
-                <ResponsiveContainer>
-                  <ComposedChart data={paretoData} margin={{ top: 20, right: 40, left: 10, bottom: 90 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="name" angle={-25} textAnchor="end" interval={0} fontSize={11} height={100} />
-                    <YAxis yAxisId="left" fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={11} />
-                    <Tooltip
-                      formatter={(v: any, n: any) => {
-                        if (typeof v !== "number") return [v, n];
-                        if (n === "% Acumulado") return [fmtPct(v, 0), n];
-                        return [`${fmt(v)} peças NG`, n];
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={70}>
-                      <LabelList dataKey="value" position="top" offset={6} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
-                    </Bar>
-                    <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2}>
-                      <LabelList dataKey="acc" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => `${v}%`} fill="hsl(var(--primary))" />
-                    </Line>
-                  </ComposedChart>
-                </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/30 p-1 sm:w-[260px]">
+                <button
+                  type="button"
+                  onClick={() => setChartLayout("single")}
+                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "single" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                >
+                  1 por linha
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartLayout("double")}
+                  className={`h-9 rounded-sm text-xs font-semibold transition-colors ${chartLayout === "double" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-background"}`}
+                >
+                  2 por linha
+                </button>
               </div>
-            </Card>
+            </div>
 
-            <Card className="p-4">
-              <div className="flex items-start justify-between mb-1 gap-2">
-                <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
-                <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground mb-3">
-                Soma mensal de peças NG. Linha pontilhada = meta máxima aceitável no período.
-              </p>
-              <div className="h-[440px]">
-                <ResponsiveContainer>
-                  <LineChart data={trendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="name" fontSize={11} />
-                    <YAxis fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                    <Tooltip
-                      labelFormatter={(l) => `Mês: ${l}`}
-                      formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} peças NG`, "Rejeições"] : [v, ""])}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                    <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
-                    <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)">
-                      <LabelList dataKey="ng" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
-                    </Line>
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+            <div className={chartLayout === "double" ? "grid gap-4 lg:grid-cols-2" : "space-y-4"}>
+              <Card className="p-4 min-w-0">
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Pareto dos modos de falha</h3>
+                  <span className="text-[10px] text-muted-foreground">Top 10 · ordenado por ocorrências</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Barras = quantidade de peças NG por modo. Linha = % acumulada (regra 80/20).
+                </p>
+                <div className={paretoChartHeight}>
+                  <ResponsiveContainer>
+                    <ComposedChart data={paretoData} margin={{ top: 64, right: 42, left: 10, bottom: paretoBottomMargin }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="name" angle={paretoXAxisAngle} textAnchor="end" interval={0} fontSize={11} height={paretoBottomMargin} />
+                      <YAxis yAxisId="left" fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis yAxisId="right" orientation="right" domain={[0, 100]} unit="%" fontSize={11} />
+                      <Tooltip
+                        formatter={(v: any, n: any) => {
+                          if (typeof v !== "number") return [v, n];
+                          if (n === "% Acumulado") return [fmtPct(v, 0), n];
+                          return [`${fmt(v)} peças NG`, n];
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Bar yAxisId="left" dataKey="value" fill="hsl(var(--destructive))" name="Ocorrências (NG)" maxBarSize={chartIsDouble ? 52 : 70} />
+                      <Line yAxisId="right" type="monotone" dataKey="acc" stroke="hsl(var(--primary))" name="% Acumulado" strokeWidth={2} dot={{ r: 3 }}>
+                        <LabelList dataKey="acc" content={renderParetoCombinedLabel} />
+                      </Line>
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              <Card className="p-4 min-w-0">
+                <div className="flex items-start justify-between mb-1 gap-2">
+                  <h3 className="text-sm font-semibold">Tendência mensal de rejeições</h3>
+                  <span className="text-[10px] text-muted-foreground">Agrupado por mês · meta {fmt(META_REJEICOES)}</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Soma mensal de peças NG. Linha pontilhada = meta máxima aceitável no período.
+                </p>
+                <div className={chartIsDouble ? "h-[500px]" : "h-[440px]"}>
+                  <ResponsiveContainer>
+                    <LineChart data={trendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis dataKey="name" fontSize={11} />
+                      <YAxis fontSize={11} label={{ value: "Peças NG", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip
+                        labelFormatter={(l) => `Mês: ${l}`}
+                        formatter={(v: any) => (typeof v === "number" ? [`${fmt(v)} peças NG`, "Rejeições"] : [v, ""])}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <ReferenceLine y={META_REJEICOES} stroke="hsl(var(--muted-foreground))" strokeDasharray="6 4" label={{ value: `Meta ${fmt(META_REJEICOES)}`, position: "right", fontSize: 10 }} />
+                      <Line type="monotone" dataKey="ng" stroke="hsl(var(--destructive))" strokeWidth={2} name="Rejeições (NG)">
+                        <LabelList dataKey="ng" position="top" offset={8} fontSize={labelFs} fontWeight={600} formatter={(v: any) => fmt(v)} fill="hsl(var(--foreground))" />
+                      </Line>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </div>
 
             <Card className="p-0 overflow-hidden">
               <div className="px-4 py-3 border-b flex items-center justify-between gap-2 flex-wrap">

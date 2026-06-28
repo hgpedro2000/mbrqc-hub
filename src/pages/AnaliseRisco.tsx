@@ -1374,8 +1374,8 @@ export default function AnaliseRisco() {
           {/* ============ RECOMENDAÇÕES ============ */}
           <TabsContent value="reco" className="space-y-4 min-w-0">
             <div className="grid grid-cols-1 min-[430px]:grid-cols-2 gap-3">
-              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" />
-              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" />
+              <KPICard label="Peças para inspecionar hoje" value={counts.a + counts.m} sub="prioridade alta" subTone="red" onClick={() => setInsight("hoje")} />
+              <KPICard label="Liberação direta disponível" value={counts.b} sub="histórico limpo ≥ 60 dias" subTone="green" onClick={() => setInsight("liberacao")} />
             </div>
 
             <Card className="border-destructive/30 bg-destructive/5">

@@ -43,7 +43,6 @@ const VersionBadge = () => {
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    refetchInterval: open && historyRealtime === "fallback" ? 30_000 : false,
   });
 
   useEffect(() => {

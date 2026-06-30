@@ -1,0 +1,1 @@
+INSERT INTO public.app_changelog (version, change_type, title, description) VALUES ('1.3.1.3','patch','Correções de UI','Popup de erro do Login não fica mais gigante em desktop (Dialog respeitando max-w do consumidor). Mensagem de erro real ao salvar TAG em TAGs Pendentes.');

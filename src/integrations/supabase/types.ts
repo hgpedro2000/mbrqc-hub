@@ -941,6 +941,13 @@ export type Database = {
             referencedRelation: "consumable_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "consumable_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "monitor_consumable_items"
+            referencedColumns: ["id"]
+          },
         ]
       }
       consumption_lists: {
@@ -1160,6 +1167,13 @@ export type Database = {
             columns: ["contencao_id"]
             isOneToOne: false
             referencedRelation: "contencao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contencao_registros_contencao_id_fkey"
+            columns: ["contencao_id"]
+            isOneToOne: false
+            referencedRelation: "monitor_contencao"
             referencedColumns: ["id"]
           },
         ]
@@ -2050,6 +2064,13 @@ export type Database = {
             referencedRelation: "consumable_items"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "stock_history_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "monitor_consumable_items"
+            referencedColumns: ["id"]
+          },
         ]
       }
       suppliers: {
@@ -2204,6 +2225,288 @@ export type Database = {
       }
     }
     Views: {
+      monitor_alertas_qualidade: {
+        Row: {
+          acao_corretiva: string | null
+          acao_imediata: string | null
+          created_at: string | null
+          data_emissao: string | null
+          data_validade: string | null
+          descricao_problema: string | null
+          fornecedor: string | null
+          id: string | null
+          linha: string | null
+          numero_alerta: string | null
+          part_name: string | null
+          part_number: string | null
+          setor: string | null
+          severidade: string | null
+          status: string | null
+          titulo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          acao_corretiva?: string | null
+          acao_imediata?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao_problema?: string | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          numero_alerta?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string | null
+          titulo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          acao_corretiva?: string | null
+          acao_imediata?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_validade?: string | null
+          descricao_problema?: string | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          numero_alerta?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string | null
+          titulo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      monitor_apontamentos: {
+        Row: {
+          created_at: string | null
+          data: string | null
+          descricao: string | null
+          fase: string | null
+          fornecedor: string | null
+          id: string | null
+          linha: string | null
+          local_deteccao: string | null
+          lote_inspecionado: string | null
+          modo_falha: string | null
+          numero: string | null
+          parada_linha: string | null
+          parada_linha_tempo: string | null
+          part_name: string | null
+          part_number: string | null
+          prazo: string | null
+          projeto: string | null
+          quantidade: number | null
+          quantidade_detectado: number | null
+          quantidade_inspecionada: number | null
+          quantidade_ng: number | null
+          quantidade_ok: number | null
+          responsabilidade_defeito: string | null
+          segundo_defeitos: Json | null
+          setor: string | null
+          severidade: string | null
+          status: string | null
+          tipo: string | null
+          titulo: string | null
+          turno: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: string | null
+          descricao?: string | null
+          fase?: string | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          local_deteccao?: string | null
+          lote_inspecionado?: string | null
+          modo_falha?: string | null
+          numero?: string | null
+          parada_linha?: string | null
+          parada_linha_tempo?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          prazo?: string | null
+          projeto?: string | null
+          quantidade?: number | null
+          quantidade_detectado?: number | null
+          quantidade_inspecionada?: number | null
+          quantidade_ng?: number | null
+          quantidade_ok?: number | null
+          responsabilidade_defeito?: string | null
+          segundo_defeitos?: Json | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string | null
+          tipo?: string | null
+          titulo?: string | null
+          turno?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: string | null
+          descricao?: string | null
+          fase?: string | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          local_deteccao?: string | null
+          lote_inspecionado?: string | null
+          modo_falha?: string | null
+          numero?: string | null
+          parada_linha?: string | null
+          parada_linha_tempo?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          prazo?: string | null
+          projeto?: string | null
+          quantidade?: number | null
+          quantidade_detectado?: number | null
+          quantidade_inspecionada?: number | null
+          quantidade_ng?: number | null
+          quantidade_ok?: number | null
+          responsabilidade_defeito?: string | null
+          segundo_defeitos?: Json | null
+          setor?: string | null
+          severidade?: string | null
+          status?: string | null
+          tipo?: string | null
+          titulo?: string | null
+          turno?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      monitor_consumable_items: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string | null
+          low_stock_alerted_at: string | null
+          min_qty: number | null
+          name: string | null
+          stock_qty: number | null
+          unit: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          low_stock_alerted_at?: string | null
+          min_qty?: number | null
+          name?: string | null
+          stock_qty?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          low_stock_alerted_at?: string | null
+          min_qty?: number | null
+          name?: string | null
+          stock_qty?: number | null
+          unit?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      monitor_contencao: {
+        Row: {
+          acao_contencao: string | null
+          created_at: string | null
+          data: string | null
+          data_conclusao: string | null
+          dias_andamento: number | null
+          estoque_indefinido: boolean | null
+          fornecedor: string | null
+          id: string | null
+          linha: string | null
+          local: string | null
+          mark_check: boolean | null
+          motivo: string | null
+          numero: string | null
+          part_name: string | null
+          part_number: string | null
+          quantidade_aprovada: number | null
+          quantidade_contida: number | null
+          quantidade_rejeitada: number | null
+          responsabilidade: string | null
+          setor: string | null
+          status: string | null
+          tipo: string | null
+          titulo: string | null
+          total_horas: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          acao_contencao?: string | null
+          created_at?: string | null
+          data?: string | null
+          data_conclusao?: string | null
+          dias_andamento?: number | null
+          estoque_indefinido?: boolean | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          local?: string | null
+          mark_check?: boolean | null
+          motivo?: string | null
+          numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          quantidade_aprovada?: number | null
+          quantidade_contida?: number | null
+          quantidade_rejeitada?: number | null
+          responsabilidade?: string | null
+          setor?: string | null
+          status?: string | null
+          tipo?: string | null
+          titulo?: string | null
+          total_horas?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          acao_contencao?: string | null
+          created_at?: string | null
+          data?: string | null
+          data_conclusao?: string | null
+          dias_andamento?: number | null
+          estoque_indefinido?: boolean | null
+          fornecedor?: string | null
+          id?: string | null
+          linha?: string | null
+          local?: string | null
+          mark_check?: boolean | null
+          motivo?: string | null
+          numero?: string | null
+          part_name?: string | null
+          part_number?: string | null
+          quantidade_aprovada?: number | null
+          quantidade_contida?: number | null
+          quantidade_rejeitada?: number | null
+          responsabilidade?: string | null
+          setor?: string | null
+          status?: string | null
+          tipo?: string | null
+          titulo?: string | null
+          total_horas?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       public_profiles: {
         Row: {
           cargo: string | null

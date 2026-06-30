@@ -229,7 +229,8 @@ export const PendingTagsAlert = ({
       setEditingId(null);
       await fetchPending();
     } catch (e: any) {
-      toast.error("Erro ao salvar TAG");
+      console.error("[PendingTags] save error", e);
+      toast.error("Erro ao salvar TAG: " + (e?.message || "desconhecido"));
     } finally {
       setSaving(false);
     }

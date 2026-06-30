@@ -705,18 +705,18 @@ const Monitor = () => {
     const startISO = range.start.toISOString();
     const endISO = range.end?.toISOString();
     if (table === "apontamentos") {
-      let q = supabase.from("apontamentos").select("*").gte("created_at", startISO).order("created_at", { ascending: false });
+      let q = supabase.from("monitor_apontamentos" as any).select("*").gte("created_at", startISO).order("created_at", { ascending: false });
       if (endISO) q = q.lte("created_at", endISO);
       const { data } = await q;
       if (data) setApontamentos(data);
     } else if (table === "alertas_qualidade") {
-      const { data } = await supabase.from("alertas_qualidade").select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(50);
+      const { data } = await supabase.from("monitor_alertas_qualidade" as any).select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(50);
       if (data) setAlertas(data);
     } else if (table === "contencao") {
-      const { data } = await supabase.from("contencao").select("*").order("created_at", { ascending: false }).limit(100);
+      const { data } = await supabase.from("monitor_contencao" as any).select("*").order("created_at", { ascending: false }).limit(100);
       if (data) setContencoes(data);
     } else if (table === "consumable_items") {
-      const { data } = await supabase.from("consumable_items").select("*").eq("active", true);
+      const { data } = await supabase.from("monitor_consumable_items" as any).select("*").eq("active", true);
       if (data) setConsumiveis(data);
     } else if (table === "monitor_slides_media") {
       const { data } = await supabase.from("monitor_slides_media").select("*").eq("ativo", true).order("ordem", { ascending: true });
@@ -737,7 +737,7 @@ const Monitor = () => {
     const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
     const end = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString();
     const { data } = await supabase
-      .from("apontamentos")
+      .from("monitor_apontamentos" as any)
       .select("created_at,fornecedor,turno,modo_falha,quantidade_ng,quantidade_inspecionada,quantidade")
       .gte("created_at", start).lt("created_at", end);
     if (data) setApontamentosMonth(data);

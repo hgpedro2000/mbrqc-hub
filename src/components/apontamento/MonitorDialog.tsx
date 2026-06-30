@@ -1304,10 +1304,10 @@ const usePreviewData = (open: boolean): PreviewData => {
 
     const startISO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     Promise.all([
-      monitorClient.from("apontamentos").select("*").gte("created_at", startISO).order("created_at", { ascending: false }).limit(100),
-      monitorClient.from("alertas_qualidade").select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(10),
-      monitorClient.from("contencao").select("*").order("created_at", { ascending: false }).limit(10),
-      monitorClient.from("consumable_items").select("*").eq("active", true),
+      monitorClient.from("monitor_apontamentos" as any).select("*").gte("created_at", startISO).order("created_at", { ascending: false }).limit(100),
+      monitorClient.from("monitor_alertas_qualidade" as any).select("*").neq("status", "rascunho").order("created_at", { ascending: false }).limit(10),
+      monitorClient.from("monitor_contencao" as any).select("*").order("created_at", { ascending: false }).limit(10),
+      monitorClient.from("monitor_consumable_items" as any).select("*").eq("active", true),
       monitorClient.from("monitor_slides_media").select("*").eq("ativo", true).order("ordem", { ascending: true }),
     ])
       .then(([ap, al, co, cs, sm]) => {

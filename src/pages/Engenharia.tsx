@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
+import { ArrowLeft, Settings2, UserCheck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,6 +32,7 @@ const Engenharia = () => {
   const isSpecialAdmin = profile?.employee_number === "3501165";
   const [impersonateOpen, setImpersonateOpen] = useState(false);
   const [impersonateSearch, setImpersonateSearch] = useState("");
+  const [securityOpen, setSecurityOpen] = useState(false);
   const { impersonating, setImpersonating, stopImpersonating } = useImpersonation();
   const initialTab = searchParams.get("tab") || "usuarios";
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -157,10 +158,18 @@ const Engenharia = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={securityOpen} onOpenChange={setSecurityOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5" /> Segurança</DialogTitle></DialogHeader>
+          <SecurityConfigTab />
+        </DialogContent>
+      </Dialog>
+
+
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-clip">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set("tab", v); return p; }, { replace: true }); }} className="space-y-4 sm:space-y-6 w-full min-w-0">
           <div className="sticky top-[112px] sm:top-[148px] z-30 w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 py-2 border-b border-border">
-            <TabsList className="inline-flex w-auto min-w-full xl:grid xl:grid-cols-12 h-auto gap-1 p-1">
+            <TabsList className="inline-flex w-auto min-w-full xl:grid xl:grid-cols-11 h-auto gap-1 p-1">
               <TabsTrigger value="usuarios" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.users")}</TabsTrigger>
               <TabsTrigger value="fornecedores" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.suppliers")}</TabsTrigger>
               <TabsTrigger value="partnumbers" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">{t("engenharia.tabs.partNumbers")}</TabsTrigger>
@@ -173,7 +182,6 @@ const Engenharia = () => {
                 {pendingErrors > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 text-[9px] bg-destructive text-destructive-foreground p-0.5">{pendingErrors}</Badge>}
               </TabsTrigger>
               <TabsTrigger value="emails" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">E-mails</TabsTrigger>
-              <TabsTrigger value="seguranca" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Segurança</TabsTrigger>
               <TabsTrigger value="privacidade" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Privacidade</TabsTrigger>
               <TabsTrigger value="auditoria" className="text-xs md:text-sm px-3 py-1.5 sm:py-2 whitespace-nowrap shrink-0 xl:w-full">Auditoria</TabsTrigger>
             </TabsList>
@@ -184,27 +192,37 @@ const Engenharia = () => {
               pendingRequests={userRequests}
               onRequestResolved={() => queryClient.invalidateQueries({ queryKey: ["user-requests"] })}
               toolbarExtras={
-                isSpecialAdmin ? (
-                  impersonating ? (
-                    <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
-                      <Badge className="bg-amber-500/20 text-amber-700 border-amber-400/40 text-[10px]">
-                        <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
-                      </Badge>
-                      <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="h-7 text-[10px] px-2">
-                        Sair
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSecurityOpen(true)}
+                    className="col-span-2 sm:col-span-1 border-slate-400 text-slate-700 bg-slate-50 hover:bg-slate-100"
+                  >
+                    <Shield className="w-4 h-4 mr-1" /> Segurança
+                  </Button>
+                  {isSpecialAdmin ? (
+                    impersonating ? (
+                      <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
+                        <Badge className="bg-amber-500/20 text-amber-700 border-amber-400/40 text-[10px]">
+                          <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
+                        </Badge>
+                        <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="h-7 text-[10px] px-2">
+                          Sair
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setImpersonateOpen(true)}
+                        className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
+                      >
+                        <UserCheck className="w-4 h-4 mr-1" /> Modo Usuário Padrão
                       </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setImpersonateOpen(true)}
-                      className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
-                    >
-                      <UserCheck className="w-4 h-4 mr-1" /> Modo Usuário Padrão
-                    </Button>
-                  )
-                ) : null
+                    )
+                  ) : null}
+                </>
               }
             />
           </TabsContent>
@@ -282,10 +300,6 @@ const Engenharia = () => {
 
           <TabsContent value="emails" className="form-section">
             <EmailAutomationTabs />
-          </TabsContent>
-
-          <TabsContent value="seguranca" className="form-section">
-            <SecurityConfigTab />
           </TabsContent>
 
           <TabsContent value="privacidade" className="form-section">

@@ -1123,7 +1123,7 @@ export const HistoricoIndividual = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.id,
+    enabled: !!profile,
   });
 
   // Unique users list from data

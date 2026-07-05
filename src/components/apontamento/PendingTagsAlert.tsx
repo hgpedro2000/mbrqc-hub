@@ -44,6 +44,7 @@ export const PendingTagsAlert = ({
   const [missingAlert, setMissingAlert] = useState<{ qty: number; missing: number } | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [search, setSearch] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeProfile = impersonating || profile;
 
@@ -97,7 +98,7 @@ export const PendingTagsAlert = ({
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, tag_inserted_at, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
       .neq("status", "draft")
       .gt("quantidade_ng", 0)
       .order("data", { ascending: false });
@@ -382,13 +383,32 @@ export const PendingTagsAlert = ({
 
 
 
+          <div className="pt-2">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por número, part number, fornecedor, responsável..."
+              className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
           <div className="space-y-3 pt-2 min-w-0 overflow-hidden">
-            {pendingItems.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6">
-                Nenhum apontamento pendente de TAG.
-              </p>
-            ) : (
-              pendingItems.map((item) => (
+            {(() => {
+              const norm = (s: any) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+              const q = norm(search.trim());
+              const filteredItems = q
+                ? pendingItems.filter((it: any) => [it.numero, it.part_number, it.part_name, it.fornecedor, it.responsavel]
+                    .filter(Boolean).some((v: string) => norm(v).includes(q)))
+                : pendingItems;
+              if (filteredItems.length === 0) {
+                return (
+                  <p className="text-center text-muted-foreground py-6">
+                    {pendingItems.length === 0 ? "Nenhum apontamento pendente de TAG." : "Nenhum resultado para a busca."}
+                  </p>
+                );
+              }
+              return filteredItems.map((item) => (
                 <div key={item.id} className="border rounded-lg p-3 space-y-2 w-full min-w-0 max-w-full overflow-hidden">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 min-w-0">
                     <div className="space-y-0.5 min-w-0 flex-1">
@@ -451,9 +471,21 @@ export const PendingTagsAlert = ({
 
                   {editingId === item.id && (() => {
                     const slots = getDefectSlots(item);
+                    const firstTagAt = item?.tag_inserted_at ? new Date(item.tag_inserted_at) : null;
+                    const isOverdue = !!firstTagAt && (Date.now() - firstTagAt.getTime()) > 7 * 24 * 60 * 60 * 1000;
                     return (
                     <div className="space-y-2">
-                      {slots.map((slot, idx) => (
+                      {slots.map((slot, idx) => {
+                        const val = (tagInputs[idx] || "").trim();
+                        const isSaved = !!slot.tag && val === slot.tag;
+                        const colorClass = isSaved
+                          ? "border-emerald-500 bg-emerald-50 focus-visible:ring-emerald-500"
+                          : val
+                          ? "border-blue-400 bg-blue-50/40 focus-visible:ring-blue-400"
+                          : isOverdue
+                          ? "border-red-500 bg-red-50 focus-visible:ring-red-500 animate-pulse"
+                          : "border-amber-400 bg-amber-50 focus-visible:ring-amber-400";
+                        return (
                         <div key={idx} className="flex items-center gap-2">
                           <div className="w-32 shrink-0 text-[10px] leading-tight">
                             <div className="font-semibold text-foreground truncate" title={slot.modo}>
@@ -471,12 +503,13 @@ export const PendingTagsAlert = ({
                               setTagInputs(next);
                             }}
                             placeholder={`Número da TAG`}
-                            className="h-8 text-sm flex-1"
+                            className={`h-8 text-sm flex-1 ${colorClass}`}
                             autoFocus={idx === 0}
                             onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item)}
                           />
                         </div>
-                      ))}
+                        );
+                      })}
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           size="icon"
@@ -495,6 +528,7 @@ export const PendingTagsAlert = ({
                           className="h-8 shrink-0"
                           onClick={() => handleSaveTag(item)}
                           disabled={saving}
+                          title="A INC só sai da lista quando TODOS os números de TAG estiverem preenchidos."
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
                           Salvar
@@ -506,8 +540,8 @@ export const PendingTagsAlert = ({
                   })()}
 
                 </div>
-              ))
-            )}
+              ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>

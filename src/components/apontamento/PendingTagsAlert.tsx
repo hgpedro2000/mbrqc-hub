@@ -526,8 +526,8 @@ export const PendingTagsAlert = ({
                   })()}
 
                 </div>
-              ))
-            )}
+              ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>

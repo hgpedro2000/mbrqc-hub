@@ -1371,6 +1371,9 @@ export const ConsumoTime = () => {
           </TableBody>
         </Table>
       </div>
+
+      <IndividualAnalysis rows={(data as any[]) || []} periodo={periodo} />
+
     </div>
   );
 };

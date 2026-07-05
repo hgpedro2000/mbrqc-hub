@@ -47,22 +47,57 @@ export const PendingTagsAlert = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeProfile = impersonating || profile;
 
-  const computeTagStatus = (item: any) => {
+  // Build a list of defect "slots" — one TAG per modo de falha.
+  const getDefectSlots = (item: any): Array<{ kind: "main" | "sd"; index: number; modo: string; descricao: string; qty: number; tag: string }> => {
     const sd = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos : [];
-    const hasMainModo = !!(item?.modo_falha && String(item.modo_falha).trim());
-    const mainTagRaw = String(item?.numero_tag || item?.tag_number || "").trim();
-    const mainTagsCount = mainTagRaw ? mainTagRaw.split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean).length : 0;
-    const sdTagsFilled = sd.filter((d: any) => d?.tag && String(d.tag).trim()).length;
-    const expected = Math.max((item?.quantidade_ng || 0) > 0 ? 1 : 0, (hasMainModo ? 1 : 0) + sd.length);
-    const filled = mainTagsCount + sdTagsFilled;
-    return { expected, filled, missing: Math.max(0, expected - filled) };
+    const slots: any[] = [];
+    const hasMain = !!(item?.modo_falha && String(item.modo_falha).trim());
+    const mainTags = String(item?.numero_tag || item?.tag_number || "")
+      .split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean);
+    if (hasMain) {
+      slots.push({
+        kind: "main", index: -1,
+        modo: String(item.modo_falha),
+        descricao: String(item?.descricao_defeito || ""),
+        qty: Number(item?.quantidade_ng) || 0,
+        tag: mainTags[0] || "",
+      });
+    }
+    sd.forEach((d: any, i: number) => {
+      slots.push({
+        kind: "sd", index: i,
+        modo: String(d?.modo_falha || ""),
+        descricao: String(d?.descricao || ""),
+        qty: Number(d?.qty) || 0,
+        tag: String(d?.tag || "").trim(),
+      });
+    });
+    // Fallback: no defect metadata but has NG → single slot mapped to numero_tag
+    if (slots.length === 0 && (item?.quantidade_ng || 0) > 0) {
+      slots.push({ kind: "main", index: -1, modo: "", descricao: "", qty: Number(item?.quantidade_ng) || 0, tag: mainTags[0] || "" });
+    }
+    // If main tag string has more entries than main slot (legacy), map extras onto sd slots that are empty
+    if (mainTags.length > 1) {
+      let mi = hasMain ? 1 : 0;
+      for (const s of slots) {
+        if (s.kind === "sd" && !s.tag && mainTags[mi]) { s.tag = mainTags[mi]; mi++; }
+      }
+    }
+    return slots;
+  };
+
+  const computeTagStatus = (item: any) => {
+    const slots = getDefectSlots(item);
+    const expected = slots.length;
+    const filled = slots.filter((s) => !!s.tag).length;
+    return { expected, filled, missing: Math.max(0, expected - filled), slots };
   };
 
   const fetchPending = async () => {
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, descricao_defeito, segundo_defeitos")
       .neq("status", "draft")
       .gt("quantidade_ng", 0)
       .order("data", { ascending: false });
@@ -75,14 +110,13 @@ export const PendingTagsAlert = ({
     }
 
     const data = (await query).data || [];
-    // Client-side: only items still missing at least one TAG
     const pending = data.filter((it: any) => computeTagStatus(it).missing > 0);
     setPendingItems(pending);
   };
 
   const getTagCount = (item: any) => {
-    const { missing, expected } = computeTagStatus(item);
-    return Math.max(1, missing || expected);
+    const { expected } = computeTagStatus(item);
+    return Math.max(1, expected);
   };
 
   useEffect(() => {
@@ -169,7 +203,8 @@ export const PendingTagsAlert = ({
         if (!item) { skipped++; continue; }
 
         const tags = tagsRaw.split(/[,;]+/).map((t) => t.trim()).filter(Boolean);
-        const expected = getTagCount(item);
+        const slots = getDefectSlots(item);
+        const expected = slots.length;
         if (tags.length < expected) {
           errors++;
           errorMsgs.push(`${numero}: ${tags.length}/${expected} TAGs`);
@@ -177,19 +212,33 @@ export const PendingTagsAlert = ({
         }
 
         try {
-          const { data, error } = await supabase.functions.invoke("insert-tag", {
-            body: {
-              id: item.id,
-              numero_tag: tags.slice(0, expected).join(", "),
-              impersonatedUserId: impersonating?.id || null,
-            },
+          const sd = Array.isArray(item?.segundo_defeitos) ? [...item.segundo_defeitos] : [];
+          const mainPieces: string[] = [];
+          slots.forEach((s, idx) => {
+            const val = tags[idx];
+            if (s.kind === "main") mainPieces[0] = val;
+            else sd[s.index] = { ...(sd[s.index] || {}), tag: val };
           });
-          if (error || data?.error) throw new Error(error?.message || data?.error);
+          const allTags = [
+            ...mainPieces.filter(Boolean),
+            ...sd.map((d: any) => (d?.tag || "").toString().trim()).filter(Boolean),
+          ];
+          const { error } = await supabase
+            .from("apontamentos")
+            .update({
+              numero_tag: allTags.join(", ") || null,
+              segundo_defeitos: sd,
+              tag_inserted_at: new Date().toISOString(),
+              tag_inserted_by: activeProfile?.full_name || "",
+            } as any)
+            .eq("id", item.id);
+          if (error) throw error;
           success++;
         } catch (err: any) {
           errors++;
           errorMsgs.push(`${numero}: ${err?.message || "erro"}`);
         }
+
       }
 
       await fetchPending();
@@ -205,7 +254,9 @@ export const PendingTagsAlert = ({
   };
 
 
-  const handleSaveTag = async (id: string, qty: number) => {
+  const handleSaveTag = async (item: any) => {
+    const slots = getDefectSlots(item);
+    const qty = slots.length;
     const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
     const missing = trimmed.filter(t => !t).length;
     if (missing > 0) {
@@ -214,16 +265,34 @@ export const PendingTagsAlert = ({
     }
     setSaving(true);
     try {
-      const joined = trimmed.join(", ");
-      const { data, error } = await supabase.functions.invoke("insert-tag", {
-        body: {
-          id,
-          numero_tag: joined,
-          impersonatedUserId: impersonating?.id || null,
-        },
+      // Apply each tag to its slot: main goes to first mainTag position, sd goes to segundo_defeitos[i].tag
+      const sd = Array.isArray(item?.segundo_defeitos) ? [...item.segundo_defeitos] : [];
+      const mainTagPieces: string[] = [];
+      slots.forEach((s, idx) => {
+        const val = trimmed[idx];
+        if (s.kind === "main") {
+          mainTagPieces[0] = val;
+        } else {
+          sd[s.index] = { ...(sd[s.index] || {}), tag: val };
+        }
       });
+      // Compose numero_tag from all tags (main + sd) so legacy consumers keep working
+      const allTags = [
+        ...(mainTagPieces.filter(Boolean)),
+        ...sd.map((d: any) => (d?.tag || "").toString().trim()).filter(Boolean),
+      ];
+      const joined = allTags.join(", ");
+
+      const { error } = await supabase
+        .from("apontamentos")
+        .update({
+          numero_tag: joined || null,
+          segundo_defeitos: sd,
+          tag_inserted_at: new Date().toISOString(),
+          tag_inserted_by: activeProfile?.full_name || "",
+        } as any)
+        .eq("id", item.id);
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
       toast.success("TAGs salvas!");
       setTagInputs([]);
       setEditingId(null);
@@ -353,13 +422,17 @@ export const PendingTagsAlert = ({
                       </div>
                     </div>
                     {editingId !== item.id && (() => {
-                      const tagCount = getTagCount(item);
+                      const slots = getDefectSlots(item);
+                      const tagCount = slots.length;
                       return (
                         <Button
                           size="sm"
                           variant="outline"
                           className="shrink-0 text-xs w-full sm:w-auto"
-                          onClick={() => { setEditingId(item.id); setTagInputs(Array(tagCount).fill("")); }}
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setTagInputs(slots.map((s) => s.tag || ""));
+                          }}
                         >
                           <Tag className="w-3 h-3 mr-1" />
                           Inserir TAG{tagCount > 1 ? `s (${tagCount})` : ""}
@@ -368,11 +441,20 @@ export const PendingTagsAlert = ({
                     })()}
                   </div>
 
-                  {editingId === item.id && (
+                  {editingId === item.id && (() => {
+                    const slots = getDefectSlots(item);
+                    return (
                     <div className="space-y-2">
-                      {Array.from({ length: getTagCount(item) }).map((_, idx) => (
+                      {slots.map((slot, idx) => (
                         <div key={idx} className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground w-10 shrink-0">#{idx + 1}</span>
+                          <div className="w-32 shrink-0 text-[10px] leading-tight">
+                            <div className="font-semibold text-foreground truncate" title={slot.modo}>
+                              {slot.modo ? slot.modo.replace(/^\d+\s*-\s*/, "") : `TAG ${idx + 1}`}
+                            </div>
+                            {slot.qty > 0 && (
+                              <div className="text-muted-foreground">Qty: {slot.qty}</div>
+                            )}
+                          </div>
                           <Input
                             value={tagInputs[idx] || ""}
                             onChange={(e) => {
@@ -380,10 +462,10 @@ export const PendingTagsAlert = ({
                               next[idx] = e.target.value;
                               setTagInputs(next);
                             }}
-                            placeholder={`Número da TAG ${idx + 1}`}
+                            placeholder={`Número da TAG`}
                             className="h-8 text-sm flex-1"
                             autoFocus={idx === 0}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, getTagCount(item))}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item)}
                           />
                         </div>
                       ))}
@@ -403,15 +485,18 @@ export const PendingTagsAlert = ({
                         <Button
                           size="sm"
                           className="h-8 shrink-0"
-                          onClick={() => handleSaveTag(item.id, getTagCount(item))}
+                          onClick={() => handleSaveTag(item)}
                           disabled={saving}
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
                           Salvar
                         </Button>
+
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
+
                 </div>
               ))
             )}

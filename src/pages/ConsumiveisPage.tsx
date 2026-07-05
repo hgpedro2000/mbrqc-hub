@@ -1432,6 +1432,8 @@ const ConsumiveisPage = () => {
 
   const [activeTab, setActiveTab] = useState<string>("meu_pedido");
   const [prefilledList, setPrefilledList] = useState<{ nome: string; itens: any[] } | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+
 
   const showTeam = role === "lider" || role === "manager";
   const showManager = role === "manager";

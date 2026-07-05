@@ -582,17 +582,42 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
               </div>
 
               {loadingTeam ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-14" />)}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-[11px] text-muted-foreground py-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Carregando membros...
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
+                  </div>
                 </div>
               ) : errTeam ? (
                 <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
+              ) : teamMembers.length === 0 ? (
+                <div className="text-center py-8 px-4 border border-dashed rounded-lg bg-muted/30">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
+                    <ListChecks className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs font-medium">Nenhum membro disponível</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {isManager
+                      ? "Nenhum funcionário MOBIS cadastrado ainda."
+                      : `Nenhum membro encontrado no turno ${profile?.turno || "—"}.`}
+                  </p>
+                </div>
               ) : filteredMembers.length === 0 ? (
-                <div className="text-center py-8 border border-dashed rounded-lg">
-                  <p className="text-xs text-muted-foreground">Nenhum membro encontrado.</p>
+                <div className="text-center py-8 px-4 border border-dashed rounded-lg bg-muted/30">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
+                    <Search className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs font-medium">Nenhum resultado para "{teamSearch}"</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Tente outro nome ou matrícula.</p>
+                  <Button variant="ghost" size="sm" className="h-7 text-[11px] mt-2" onClick={() => setTeamSearch("")}>
+                    Limpar busca
+                  </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1 -mr-1">
                   {filteredMembers.map((m: any) => {
                     const checked = !!memberOrders[m.id];
                     const initials = (m.full_name || "?")
@@ -606,7 +631,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
                         key={m.id}
                         type="button"
                         onClick={() => toggleMember(m.id)}
-                        className={`group flex items-center gap-2.5 text-left p-2 rounded-lg border transition-all ${
+                        className={`group flex items-center gap-2 text-left p-2 rounded-lg border transition-all min-w-0 ${
                           checked
                             ? "bg-primary/10 border-primary/60 shadow-sm"
                             : "bg-card border-border hover:border-primary/40 hover:bg-muted/50"
@@ -621,11 +646,11 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
                         >
                           {initials || "?"}
                         </div>
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1 overflow-hidden">
                           <p className="text-xs font-medium truncate leading-tight">{m.full_name}</p>
                           <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                             {m.employee_number && (
-                              <span className="text-[10px] text-muted-foreground font-mono">
+                              <span className="text-[10px] text-muted-foreground font-mono truncate">
                                 #{m.employee_number}
                               </span>
                             )}
@@ -645,6 +670,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
                   })}
                 </div>
               )}
+
             </>
           );
         })()}

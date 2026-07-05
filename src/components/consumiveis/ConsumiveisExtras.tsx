@@ -617,7 +617,7 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
                   </Button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1 -mr-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1 -mr-1">
                   {filteredMembers.map((m: any) => {
                     const checked = !!memberOrders[m.id];
                     const initials = (m.full_name || "?")

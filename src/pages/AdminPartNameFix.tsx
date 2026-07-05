@@ -296,7 +296,7 @@ const AdminPartNameFix = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b sticky top-0 z-30">
         <div className="container mx-auto px-3 sm:px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/apontamentos")}>
+          <Button className="header-btn header-btn-back" variant="ghost" onClick={() => navigate("/apontamentos")}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />

@@ -306,7 +306,7 @@ const AlertaQualidadeForm = () => {
       <header className="bg-[#c0392b] text-white">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/alerta-qualidade")} className="text-white/80 hover:text-white px-2">
+            <Button variant="ghost" onClick={() => navigate("/alerta-qualidade")} className="header-btn header-btn-back">
               <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
             </Button>
             <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
@@ -523,7 +523,7 @@ const AlertaQualidadeForm = () => {
             ) : linhaPecaStep === "fornecedor" ? (
               <div className="flex flex-col flex-1 min-h-0 gap-2">
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="ghost" size="sm" onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); }} className="px-2">
+                  <Button variant="ghost" onClick={() => { setLinhaPecaStep("menu"); setLinhaPecaSearch(""); }} className="header-btn header-btn-back">
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <span className="font-bold text-sm text-[#1a5276]">Selecione o Fornecedor</span>

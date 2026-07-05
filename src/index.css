@@ -177,6 +177,36 @@
   .gradient-header {
     @apply bg-gradient-to-r from-primary to-primary/80 text-primary-foreground;
   }
+
+  /* ============================================
+     Header action buttons — consistent, large,
+     touch-friendly. Distinct treatments for
+     "back" (navigation) and "danger" (logout).
+     ============================================ */
+  .header-btn {
+    @apply inline-flex items-center justify-center gap-1.5 shrink-0
+           h-10 w-10 md:h-9 md:w-auto md:px-3 rounded-lg
+           text-primary-foreground/80 hover:text-primary-foreground
+           hover:bg-primary-foreground/10 active:bg-primary-foreground/20
+           transition-colors text-sm font-medium
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/40;
+  }
+
+  .header-btn-back {
+    @apply text-primary-foreground bg-primary-foreground/10
+           md:bg-primary-foreground/15 md:border md:border-primary-foreground/20
+           md:hover:bg-primary-foreground/25;
+  }
+
+  .header-btn-danger {
+    @apply text-primary-foreground/90 hover:text-red-100 hover:bg-red-500/25
+           md:border md:border-transparent md:hover:border-red-400/40;
+  }
+
+  /* Visual divider between the back action and the rest of the header actions */
+  .header-actions-divider {
+    @apply hidden md:block h-6 w-px bg-primary-foreground/20 mx-0.5;
+  }
 }
 
 /* Mobile-specific touch improvements */

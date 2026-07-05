@@ -1020,6 +1020,47 @@ const InventarioRequisicoes = () => {
 
       <ConsumiveisAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />
 
+      <EntregaLoteDialog
+        open={entregaLoteOpen}
+        onOpenChange={setEntregaLoteOpen}
+        items={items}
+        allRequests={allRequests}
+        onDelivered={(loteId, inspetor, count) => {
+          setLoteQr({ loteId, inspetor, count });
+          qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+          qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+          qc.invalidateQueries({ queryKey: ["consumable-items"] });
+          qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+        }}
+      />
+
+      <Dialog open={!!loteQr} onOpenChange={(o) => !o && setLoteQr(null)}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><QrCode className="w-5 h-5 text-primary" /> QR do lote de entrega</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-lg">
+              {loteQr && (
+                <QRCodeSVG value={JSON.stringify({ type: "consumivel_lote", lote_id: loteQr.loteId })} size={240} />
+              )}
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold">{loteQr?.inspetor}</p>
+              <p className="text-xs text-muted-foreground">
+                {loteQr?.count} item{(loteQr?.count || 0) > 1 ? "s" : ""} — mostre este QR uma única vez ao inspetor.
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                O inspetor abre Consumíveis → <strong>Confirmar via QR</strong> e confirma tudo com uma só leitura.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setLoteQr(null)} className="w-full">Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
       {/* Stock list dialog */}
       <Dialog open={stockListOpen} onOpenChange={setStockListOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">

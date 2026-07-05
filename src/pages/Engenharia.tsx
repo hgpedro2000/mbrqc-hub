@@ -128,10 +128,11 @@ const Engenharia = () => {
           />
           <div className="space-y-1">
             {(() => {
-              const q = impersonateSearch.trim().toLowerCase();
+              const norm = (s: any) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+              const q = norm(impersonateSearch.trim());
               const filtered = q
                 ? allUsers.filter((u: any) => [u.full_name, u.employee_number, u.turno, u.cargo, u.empresa, u.empresa_terceira]
-                    .filter(Boolean).some((v: string) => String(v).toLowerCase().includes(q)))
+                    .filter(Boolean).some((v: string) => norm(v).includes(q)))
                 : allUsers;
               if (filtered.length === 0) {
                 return <p className="text-xs text-muted-foreground text-center py-4">Nenhum usuário encontrado.</p>;

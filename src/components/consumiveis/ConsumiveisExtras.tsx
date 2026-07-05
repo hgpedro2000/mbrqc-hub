@@ -971,9 +971,16 @@ export const ConsumoTime = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h2 className="text-base font-heading font-semibold">Consumo do Time — turno {profile?.turno || "—"}</h2>
+        <div>
+          <h2 className="text-base font-heading font-semibold">
+            Consumo do Time — {canSeeAllShifts ? (turnoView === "all" ? "Todos os turnos" : `Turno ${turnoView}`) : `turno ${profile?.turno || "—"}`}
+          </h2>
+          {canSeeAllShifts && (
+            <p className="text-[11px] text-muted-foreground">Visualização de gestor · alterne entre turnos</p>
+          )}
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <ExportButtons rows={exportData} fileBase={`consumo_time_${periodo}d`} />
+          <ExportButtons rows={exportData} fileBase={`consumo_time_${canSeeAllShifts ? turnoView : profile?.turno}_${periodo}d`} />
           <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>
             <SelectTrigger className="w-40 h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -985,6 +992,30 @@ export const ConsumoTime = () => {
           </Select>
         </div>
       </div>
+
+      {canSeeAllShifts && (
+        <div className="form-section p-2 flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-muted-foreground px-1.5">Turno:</span>
+          {[
+            { v: "all", label: "Todos" },
+            { v: "A", label: "Turno A" },
+            { v: "B", label: "Turno B" },
+            { v: "C", label: "Turno C" },
+            { v: "ADM", label: "ADM" },
+          ].map((t) => (
+            <Button
+              key={t.v}
+              size="sm"
+              variant={turnoView === t.v ? "default" : "outline"}
+              className="h-7 text-[11px] px-3"
+              onClick={() => setTurnoView(t.v)}
+            >
+              {t.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="form-section p-3 text-center"><p className="text-2xl font-bold">{stats.total}</p><p className="text-xs text-muted-foreground">Total requisições</p></div>

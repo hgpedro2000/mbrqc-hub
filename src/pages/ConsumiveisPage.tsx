@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine, HelpCircle, Info } from "lucide-react";
-import { Dialog as HelpDialog, DialogContent as HelpDialogContent, DialogHeader as HelpDialogHeader, DialogTitle as HelpDialogTitle, DialogDescription as HelpDialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine, HelpCircle } from "lucide-react";
+
 
 import QrScannerModal from "@/components/QrScannerModal";
 import { QRCodeSVG } from "qrcode.react";

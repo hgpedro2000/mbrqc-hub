@@ -114,26 +114,44 @@ const Engenharia = () => {
       </header>
 
       {/* Impersonate user dialog */}
-      <Dialog open={impersonateOpen} onOpenChange={setImpersonateOpen}>
+      <Dialog open={impersonateOpen} onOpenChange={(o) => { setImpersonateOpen(o); if (!o) setImpersonateSearch(""); }}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Selecionar Usuário Padrão</DialogTitle></DialogHeader>
-          <p className="text-xs text-muted-foreground mb-3">Escolha um usuário para simular sua visualização dos módulos.</p>
+          <p className="text-xs text-muted-foreground mb-2">Escolha um usuário para simular sua visualização dos módulos.</p>
+          <input
+            type="text"
+            value={impersonateSearch}
+            onChange={(e) => setImpersonateSearch(e.target.value)}
+            placeholder="Buscar por nome, matrícula, cargo, turno ou empresa..."
+            className="w-full h-9 px-3 mb-3 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            autoFocus
+          />
           <div className="space-y-1">
-            {allUsers.map((u: any) => (
-              <button
-                key={u.id}
-                onClick={() => handleImpersonate(u)}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent/10 text-left transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium">{u.full_name}</p>
-                  <p className="text-xs text-muted-foreground">{u.employee_number} {u.turno ? `• ${u.turno}` : ""}</p>
-                </div>
-                <Badge variant="outline" className="text-[9px]">
-                  {u.empresa === "empresa_terceira" ? (u.empresa_terceira || "Terceira") : "Mobis"}
-                </Badge>
-              </button>
-            ))}
+            {(() => {
+              const q = impersonateSearch.trim().toLowerCase();
+              const filtered = q
+                ? allUsers.filter((u: any) => [u.full_name, u.employee_number, u.turno, u.cargo, u.empresa, u.empresa_terceira]
+                    .filter(Boolean).some((v: string) => String(v).toLowerCase().includes(q)))
+                : allUsers;
+              if (filtered.length === 0) {
+                return <p className="text-xs text-muted-foreground text-center py-4">Nenhum usuário encontrado.</p>;
+              }
+              return filtered.map((u: any) => (
+                <button
+                  key={u.id}
+                  onClick={() => handleImpersonate(u)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-accent/10 text-left transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-medium">{u.full_name}</p>
+                    <p className="text-xs text-muted-foreground">{u.employee_number} {u.turno ? `• ${u.turno}` : ""}</p>
+                  </div>
+                  <Badge variant="outline" className="text-[9px]">
+                    {u.empresa === "empresa_terceira" ? (u.empresa_terceira || "Terceira") : "Mobis"}
+                  </Badge>
+                </button>
+              ));
+            })()}
           </div>
         </DialogContent>
       </Dialog>

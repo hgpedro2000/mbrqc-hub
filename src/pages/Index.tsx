@@ -318,9 +318,6 @@ const Index = () => {
                 <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.dashboard")}</span>
               </Button>
               <ReportErrorButton moduleName="Try-Out" />
-              <Button variant="ghost" onClick={signOut} className="header-btn header-btn-danger px-2 md:px-3">
-                <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
-              </Button>
             </div>
           </div>
           <h1 className="text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("tryout.headerTitle")}</h1>

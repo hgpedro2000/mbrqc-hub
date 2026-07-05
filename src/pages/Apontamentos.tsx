@@ -711,9 +711,6 @@ const Apontamentos = () => {
               <div className="hidden md:block"><PendingTagsAlert requireMobis /></div>
               <ReportErrorButton moduleName="Apontamentos" />
               <LanguageToggle />
-              <Button variant="ghost" onClick={signOut} className="header-btn header-btn-danger" title={t("common.logout")}>
-                <LogOut className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.logout")}</span>
-              </Button>
             </div>
           </div>
           <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("apontamentos.list.pageTitle")}</h1>

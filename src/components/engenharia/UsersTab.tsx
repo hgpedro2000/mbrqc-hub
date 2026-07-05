@@ -513,10 +513,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   };
 
   return (
-    <div className="space-y-4 min-w-0 w-full overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left">Usuários</h2>
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 w-full sm:w-auto">
+    <div className="space-y-4 min-w-0 w-full">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-between sm:items-center gap-3">
+        <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left shrink-0">Usuários</h2>
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
 
           {selectedIds.size > 0 && (

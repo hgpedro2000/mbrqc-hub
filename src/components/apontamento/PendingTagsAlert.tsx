@@ -407,13 +407,17 @@ export const PendingTagsAlert = ({
                       </div>
                     </div>
                     {editingId !== item.id && (() => {
-                      const tagCount = getTagCount(item);
+                      const slots = getDefectSlots(item);
+                      const tagCount = slots.length;
                       return (
                         <Button
                           size="sm"
                           variant="outline"
                           className="shrink-0 text-xs w-full sm:w-auto"
-                          onClick={() => { setEditingId(item.id); setTagInputs(Array(tagCount).fill("")); }}
+                          onClick={() => {
+                            setEditingId(item.id);
+                            setTagInputs(slots.map((s) => s.tag || ""));
+                          }}
                         >
                           <Tag className="w-3 h-3 mr-1" />
                           Inserir TAG{tagCount > 1 ? `s (${tagCount})` : ""}
@@ -422,11 +426,20 @@ export const PendingTagsAlert = ({
                     })()}
                   </div>
 
-                  {editingId === item.id && (
+                  {editingId === item.id && (() => {
+                    const slots = getDefectSlots(item);
+                    return (
                     <div className="space-y-2">
-                      {Array.from({ length: getTagCount(item) }).map((_, idx) => (
+                      {slots.map((slot, idx) => (
                         <div key={idx} className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground w-10 shrink-0">#{idx + 1}</span>
+                          <div className="w-32 shrink-0 text-[10px] leading-tight">
+                            <div className="font-semibold text-foreground truncate" title={slot.modo}>
+                              {slot.modo ? slot.modo.replace(/^\d+\s*-\s*/, "") : `TAG ${idx + 1}`}
+                            </div>
+                            {slot.qty > 0 && (
+                              <div className="text-muted-foreground">Qty: {slot.qty}</div>
+                            )}
+                          </div>
                           <Input
                             value={tagInputs[idx] || ""}
                             onChange={(e) => {
@@ -434,10 +447,10 @@ export const PendingTagsAlert = ({
                               next[idx] = e.target.value;
                               setTagInputs(next);
                             }}
-                            placeholder={`Número da TAG ${idx + 1}`}
+                            placeholder={`Número da TAG`}
                             className="h-8 text-sm flex-1"
                             autoFocus={idx === 0}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item.id, getTagCount(item))}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item)}
                           />
                         </div>
                       ))}
@@ -457,12 +470,13 @@ export const PendingTagsAlert = ({
                         <Button
                           size="sm"
                           className="h-8 shrink-0"
-                          onClick={() => handleSaveTag(item.id, getTagCount(item))}
+                          onClick={() => handleSaveTag(item)}
                           disabled={saving}
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
                           Salvar
                         </Button>
+
                       </div>
                     </div>
                   )}

@@ -93,13 +93,14 @@ const RequisitarItem = () => {
     if (!loteId || !UUID_RE.test(loteId)) { toast.error("Identificador de lote inválido"); return; }
     setConfirming(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("consumable_requests")
-        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any) as any)
         .eq("user_id", user?.id || "")
         .eq("status", "entregue_pendente_confirmacao")
-        .eq("lote_id" as any, loteId)
+        .eq("lote_id", loteId)
         .select("id");
+
       if (error) throw error;
       if (!data?.length) { toast.error("Nenhum item pendente neste lote para você"); return; }
       toast.success(`Lote confirmado — ${data.length} item${data.length > 1 ? "s" : ""} recebido${data.length > 1 ? "s" : ""}`);

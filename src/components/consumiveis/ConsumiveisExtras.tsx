@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
-import { Loader2, Plus, Trash2, Send, ListChecks, Search, Save, RefreshCw, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Loader2, Plus, Trash2, Send, ListChecks, Search, Save, RefreshCw, Download, Upload, FileSpreadsheet, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

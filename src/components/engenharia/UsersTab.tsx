@@ -927,9 +927,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block w-full overflow-hidden">
+          <div className="hidden sm:block w-full">
             <div className="overflow-x-auto -mx-3 px-3">
-            <Table className="min-w-[640px]">
+            <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10">

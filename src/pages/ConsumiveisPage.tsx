@@ -4,7 +4,7 @@ import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check
 import QrScannerModal from "@/components/QrScannerModal";
 import { QRCodeSVG } from "qrcode.react";
 import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
-import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
+import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, HistoricoIndividual, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1113,11 +1113,13 @@ const ConsumiveisPage = () => {
     if (showTeam) {
       t.push({ value: "pedido_time", label: "Pedido de Time", icon: Users });
       t.push({ value: "listas_salvas", label: "Listas Salvas", icon: ListChecks });
+      t.push({ value: "historico_individual", label: "Histórico", icon: History });
     }
     if (showManager) {
       t.push({ value: "gestao_estoque", label: "Gestão e Estoque", icon: BarChart3 });
       t.push({ value: "consumo_time", label: "Consumo do Time", icon: ClipboardList });
     }
+
     return t;
   }, [showTeam, showManager]);
 
@@ -1166,8 +1168,12 @@ const ConsumiveisPage = () => {
               <TabsContent value="listas_salvas" className="form-section">
                 <ListasSalvas onUseList={(l) => { setPrefilledList(l); setActiveTab("pedido_time"); }} />
               </TabsContent>
+              <TabsContent value="historico_individual" className="form-section">
+                <HistoricoIndividual />
+              </TabsContent>
             </>
           )}
+
           {showManager && (
             <>
               <TabsContent value="gestao_estoque" className="form-section"><InventarioRequisicoes /></TabsContent>

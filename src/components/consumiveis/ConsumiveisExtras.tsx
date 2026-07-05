@@ -1094,3 +1094,356 @@ export const ConsumoTime = () => {
     </div>
   );
 };
+
+/* ───────────────────  HISTÓRICO INDIVIDUAL POR USUÁRIO  ─────────────────── */
+export const HistoricoIndividual = () => {
+  const { profile } = useAuth();
+  const { isAdmin } = useUserRole();
+  const role = getConsumivelRole(profile?.cargo, isAdmin);
+  const isManager = role === "manager";
+
+  const [periodo, setPeriodo] = useState<"30" | "90" | "180" | "365">("90");
+  const [turnoFilter, setTurnoFilter] = useState<string>(isManager ? "all" : (profile?.turno || "all"));
+  const [userFilter, setUserFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const dateFrom = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - parseInt(periodo, 10));
+    return d.toISOString();
+  }, [periodo]);
+
+  const { data = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["historico-individual", periodo, isManager ? "all" : profile?.turno],
+    queryFn: async () => {
+      let q = supabase.from("consumable_requests").select("*").gte("created_at", dateFrom).order("created_at", { ascending: false });
+      if (!isManager && profile?.turno) q = q.eq("turno", profile.turno);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!profile,
+  });
+
+  // Unique users list from data
+  const usersInData = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; turno: string }>();
+    for (const r of data as any[]) {
+      const key = r.user_id || r.user_name;
+      if (!map.has(key)) map.set(key, { id: key, name: r.user_name || "—", turno: r.turno || "—" });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    let r = data as any[];
+    if (turnoFilter !== "all") r = r.filter((x) => (x.turno || "") === turnoFilter);
+    if (userFilter !== "all") r = r.filter((x) => (x.user_id || x.user_name) === userFilter);
+    if (statusFilter !== "all") r = r.filter((x) => x.status === statusFilter);
+    if (search.trim()) {
+      const t = search.toLowerCase();
+      r = r.filter((x) =>
+        x.item_name?.toLowerCase().includes(t) ||
+        x.user_name?.toLowerCase().includes(t) ||
+        x.numero?.toLowerCase().includes(t)
+      );
+    }
+    return r;
+  }, [data, turnoFilter, userFilter, statusFilter, search]);
+
+  const stats = useMemo(() => {
+    const delivered = filtered.filter((r) => r.status === "entregue");
+    const totalQtd = delivered.reduce((s, r) => s + (r.quantity || 0), 0);
+    // por turno
+    const turnoMap = new Map<string, number>();
+    for (const r of delivered) {
+      const k = r.turno || "—";
+      turnoMap.set(k, (turnoMap.get(k) || 0) + (r.quantity || 0));
+    }
+    const byTurno = Array.from(turnoMap.entries()).map(([turno, total]) => ({ turno, total })).sort((a, b) => a.turno.localeCompare(b.turno));
+    // por usuário
+    const userMap = new Map<string, { name: string; total: number; pedidos: number }>();
+    for (const r of delivered) {
+      const key = r.user_id || r.user_name;
+      const cur = userMap.get(key) || { name: r.user_name || "—", total: 0, pedidos: 0 };
+      cur.total += r.quantity || 0;
+      cur.pedidos += 1;
+      userMap.set(key, cur);
+    }
+    const byUser = Array.from(userMap.values()).sort((a, b) => b.total - a.total).slice(0, 12);
+    return {
+      totalPedidos: filtered.length,
+      totalQtd,
+      usuariosAtivos: userMap.size,
+      byTurno,
+      byUser,
+    };
+  }, [filtered]);
+
+  // Individual breakdown: top items per selected user (or per top users)
+  const perUserBreakdown = useMemo(() => {
+    const delivered = filtered.filter((r) => r.status === "entregue");
+    const byUserItems = new Map<string, { name: string; items: Map<string, number>; total: number }>();
+    for (const r of delivered) {
+      const key = r.user_id || r.user_name;
+      const bucket = byUserItems.get(key) || { name: r.user_name || "—", items: new Map(), total: 0 };
+      bucket.items.set(r.item_name, (bucket.items.get(r.item_name) || 0) + (r.quantity || 0));
+      bucket.total += r.quantity || 0;
+      byUserItems.set(key, bucket);
+    }
+    return Array.from(byUserItems.entries())
+      .map(([id, v]) => ({
+        id,
+        name: v.name,
+        total: v.total,
+        items: Array.from(v.items.entries()).map(([n, q]) => ({ name: n, qtd: q })).sort((a, b) => b.qtd - a.qtd),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filtered]);
+
+  const exportRowsData = useMemo(() => filtered.map((r: any) => ({
+    Numero: r.numero || "",
+    Usuario: r.user_name,
+    Turno: r.turno || "",
+    Item: r.item_name,
+    Quantidade: r.quantity,
+    Data: new Date(r.created_at).toLocaleDateString("pt-BR"),
+    Status: statusConfig[r.status]?.label || r.status,
+    Origem: r.origem === "pedido_coletivo" ? "Pedido coletivo" : "Individual",
+  })), [filtered]);
+
+  if (isLoading) return (
+    <div className="space-y-4">
+      <KpiSkeletons count={4} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <Skeleton className="h-56" />
+        <Skeleton className="h-56" />
+      </div>
+      <TableSkeleton rows={6} cols={5} />
+    </div>
+  );
+  if (isError) return <RetryBox msg="Erro ao carregar histórico" onRetry={refetch} />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-base font-heading font-semibold">Histórico Individual por Usuário</h2>
+          <p className="text-[11px] text-muted-foreground">
+            {isManager
+              ? "Visão coletiva, por turno e individual de todos os funcionários"
+              : `Time do turno ${profile?.turno || "—"}`}
+          </p>
+        </div>
+        <ExportButtons rows={exportRowsData} fileBase={`historico_consumo_${periodo}d`} />
+      </div>
+
+      {/* Filtros */}
+      <div className="form-section p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Período</Label>
+          <Select value={periodo} onValueChange={(v: any) => setPeriodo(v)}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value="90">Últimos 90 dias</SelectItem>
+              <SelectItem value="180">Últimos 6 meses</SelectItem>
+              <SelectItem value="365">Último ano</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Turno</Label>
+          <Select value={turnoFilter} onValueChange={setTurnoFilter} disabled={!isManager}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos turnos</SelectItem>
+              <SelectItem value="A">Turno A</SelectItem>
+              <SelectItem value="B">Turno B</SelectItem>
+              <SelectItem value="C">Turno C</SelectItem>
+              <SelectItem value="ADM">ADM</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Usuário</Label>
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent className="max-h-72">
+              <SelectItem value="all">Todos usuários ({usersInData.length})</SelectItem>
+              {usersInData.map((u) => (
+                <SelectItem key={u.id} value={u.id}>{u.name} · {u.turno}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Status</Label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="aguardando">Aguardando</SelectItem>
+              <SelectItem value="entregue">Entregue</SelectItem>
+              <SelectItem value="rejeitado">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Buscar</Label>
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Item, usuário ou nº" className="h-9 text-xs pl-8" />
+          </div>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold">{stats.totalPedidos}</p>
+          <p className="text-xs text-muted-foreground">Pedidos no período</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold text-emerald-600">{stats.totalQtd}</p>
+          <p className="text-xs text-muted-foreground">Itens entregues</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-2xl font-bold">{stats.usuariosAtivos}</p>
+          <p className="text-xs text-muted-foreground">Usuários ativos</p>
+        </div>
+        <div className="form-section p-3 text-center">
+          <p className="text-sm font-bold truncate" title={stats.byUser[0]?.name || "—"}>{stats.byUser[0]?.name || "—"}</p>
+          <p className="text-xs text-muted-foreground">Maior consumidor</p>
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="form-section p-3">
+          <h3 className="text-xs font-semibold mb-2">Consumo por turno (entregue)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byTurno}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis dataKey="turno" tick={{ fontSize: 11 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]}>
+                  {stats.byTurno.map((_, i) => <Cell key={i} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        <div className="form-section p-3">
+          <h3 className="text-xs font-semibold mb-2">Top 12 usuários (qtd entregue)</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byUser} layout="vertical" margin={{ left: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
+                <Tooltip />
+                <Bar dataKey="total" fill="hsl(var(--accent))" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Breakdown individual */}
+      <div className="form-section p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold">Consumo por usuário (top itens)</h3>
+          <Badge variant="outline" className="text-[10px]">{perUserBreakdown.length} usuário(s)</Badge>
+        </div>
+        {perUserBreakdown.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-6">Nenhum consumo entregue no período</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[420px] overflow-y-auto pr-1">
+            {perUserBreakdown.map((u) => (
+              <div key={u.id} className="border rounded-lg p-2.5 bg-card hover:bg-muted/40 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-xs font-semibold truncate">{u.name}</p>
+                  <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary text-[10px]">
+                    {u.total} itens
+                  </Badge>
+                </div>
+                <div className="space-y-0.5">
+                  {u.items.slice(0, 5).map((it) => (
+                    <div key={it.name} className="flex items-center justify-between text-[11px]">
+                      <span className="truncate text-muted-foreground">{it.name}</span>
+                      <span className="font-mono font-semibold ml-2">{it.qtd}</span>
+                    </div>
+                  ))}
+                  {u.items.length > 5 && (
+                    <p className="text-[10px] text-muted-foreground pt-1">+{u.items.length - 5} outro(s)</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Timeline / tabela */}
+      <div className="form-section p-3 space-y-2">
+        <h3 className="text-xs font-semibold">Timeline de pedidos ({filtered.length})</h3>
+        <div className="md:hidden space-y-2 max-h-[500px] overflow-y-auto">
+          {filtered.map((r: any) => {
+            const cfg = statusConfig[r.status] || statusConfig.aguardando;
+            return (
+              <div key={r.id} className="border rounded-lg p-2.5 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono text-muted-foreground">{r.numero || "—"}</span>
+                  <Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge>
+                </div>
+                <p className="text-xs font-medium">{r.item_name} <span className="text-muted-foreground">× {r.quantity}</span></p>
+                <p className="text-[11px]">{r.user_name} <span className="text-muted-foreground">· {r.turno || "—"}</span></p>
+                <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleString("pt-BR")}</p>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && <p className="text-center text-muted-foreground py-6 text-xs">Nenhum registro</p>}
+        </div>
+        <div className="hidden md:block overflow-x-auto max-h-[500px] overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              <TableRow>
+                <TableHead className="text-xs">Nº</TableHead>
+                <TableHead className="text-xs">Data</TableHead>
+                <TableHead className="text-xs">Usuário</TableHead>
+                <TableHead className="text-xs">Turno</TableHead>
+                <TableHead className="text-xs">Item</TableHead>
+                <TableHead className="text-xs text-center">Qtd</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r: any) => {
+                const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                return (
+                  <TableRow key={r.id}>
+                    <TableCell className="text-xs font-mono text-muted-foreground">{r.numero || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-xs font-medium">{r.user_name}</TableCell>
+                    <TableCell className="text-xs">{r.turno || "—"}</TableCell>
+                    <TableCell className="text-xs">{r.item_name}</TableCell>
+                    <TableCell className="text-center text-xs font-semibold">{r.quantity}</TableCell>
+                    <TableCell><Badge variant="outline" className={`${cfg.color} text-[10px]`}>{cfg.label}</Badge></TableCell>
+                  </TableRow>
+                );
+              })}
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6 text-sm">Nenhum registro no período</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </div>
+  );
+};
+

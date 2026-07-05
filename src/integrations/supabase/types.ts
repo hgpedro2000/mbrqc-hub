@@ -885,6 +885,7 @@ export type Database = {
           id: string
           item_id: string
           item_name: string
+          lote_id: string | null
           numero: string | null
           origem: string
           pedido_id: string | null
@@ -904,6 +905,7 @@ export type Database = {
           id?: string
           item_id: string
           item_name?: string
+          lote_id?: string | null
           numero?: string | null
           origem?: string
           pedido_id?: string | null
@@ -923,6 +925,7 @@ export type Database = {
           id?: string
           item_id?: string
           item_name?: string
+          lote_id?: string | null
           numero?: string | null
           origem?: string
           pedido_id?: string | null

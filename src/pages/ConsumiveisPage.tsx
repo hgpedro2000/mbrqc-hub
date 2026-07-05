@@ -1113,11 +1113,13 @@ const ConsumiveisPage = () => {
     if (showTeam) {
       t.push({ value: "pedido_time", label: "Pedido de Time", icon: Users });
       t.push({ value: "listas_salvas", label: "Listas Salvas", icon: ListChecks });
+      t.push({ value: "historico_individual", label: "Histórico", icon: History });
     }
     if (showManager) {
       t.push({ value: "gestao_estoque", label: "Gestão e Estoque", icon: BarChart3 });
       t.push({ value: "consumo_time", label: "Consumo do Time", icon: ClipboardList });
     }
+
     return t;
   }, [showTeam, showManager]);
 

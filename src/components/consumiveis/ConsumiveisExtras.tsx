@@ -1294,7 +1294,8 @@ export const ConsumoTime = () => {
         </div>
       </div>
 
-      <IndividualAnalysis rows={(data as any[]) || []} periodo={periodo} />
+
+
 
 
       <div className="flex flex-col sm:flex-row gap-2">
@@ -1370,6 +1371,9 @@ export const ConsumoTime = () => {
           </TableBody>
         </Table>
       </div>
+
+      <IndividualAnalysis rows={(data as any[]) || []} periodo={periodo} />
+
     </div>
   );
 };

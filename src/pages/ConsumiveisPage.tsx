@@ -89,24 +89,59 @@ const RequisitarItem = () => {
     } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
   };
 
+  const confirmLote = async (loteId: string) => {
+    if (!loteId || !UUID_RE.test(loteId)) { toast.error("Identificador de lote inválido"); return; }
+    setConfirming(true);
+    try {
+      const { data, error } = await supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao")
+        .eq("lote_id" as any, loteId)
+        .select("id");
+      if (error) throw error;
+      if (!data?.length) { toast.error("Nenhum item pendente neste lote para você"); return; }
+      toast.success(`Lote confirmado — ${data.length} item${data.length > 1 ? "s" : ""} recebido${data.length > 1 ? "s" : ""}`);
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
+  };
+
   const handleScan = async (value: string) => {
     setScanOpen(false);
     if (!value) { toast.error("QR vazio"); return; }
-    // STRICT validation: require JSON payload with the expected type
     let parsed: any;
     try { parsed = JSON.parse(value); } catch { toast.error("QR inválido — formato não reconhecido"); return; }
-    if (!parsed || parsed.type !== "consumivel_confirm" || !parsed.pedido_id) {
-      toast.error("QR inválido — não é um QR de confirmação de consumível"); return;
+    if (!parsed?.type) { toast.error("QR inválido"); return; }
+
+    // Lote de entrega (novo fluxo — 1 leitura confirma vários itens)
+    if (parsed.type === "consumivel_lote" && parsed.lote_id) {
+      const loteId = String(parsed.lote_id).trim();
+      if (!UUID_RE.test(loteId)) { toast.error("Lote malformado"); return; }
+      const hasPending = (myRequests as any[]).some(
+        (r: any) => r.lote_id === loteId && r.status === "entregue_pendente_confirmacao"
+      );
+      if (!hasPending) { toast.error("Nenhum item deste lote está pendente para você"); return; }
+      await confirmLote(loteId);
+      return;
     }
-    const pedidoId = String(parsed.pedido_id).trim();
-    if (!UUID_RE.test(pedidoId)) { toast.error("QR inválido — identificador malformado"); return; }
-    // Ensure the QR corresponds to one of MY pending orders before updating
-    const target = (myRequests as any[]).find(
-      (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
-    );
-    if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
-    await confirmPedido(pedidoId);
+
+    // Confirmação individual/legado por pedido
+    if (parsed.type === "consumivel_confirm" && parsed.pedido_id) {
+      const pedidoId = String(parsed.pedido_id).trim();
+      if (!UUID_RE.test(pedidoId)) { toast.error("QR malformado"); return; }
+      const target = (myRequests as any[]).find(
+        (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
+      );
+      if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
+      await confirmPedido(pedidoId);
+      return;
+    }
+
+    toast.error("QR inválido — não é um QR de confirmação de consumível");
   };
+
 
   const openEditReq = (r: any) => {
     setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);

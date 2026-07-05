@@ -203,7 +203,8 @@ export const PendingTagsAlert = ({
         if (!item) { skipped++; continue; }
 
         const tags = tagsRaw.split(/[,;]+/).map((t) => t.trim()).filter(Boolean);
-        const expected = getTagCount(item);
+        const slots = getDefectSlots(item);
+        const expected = slots.length;
         if (tags.length < expected) {
           errors++;
           errorMsgs.push(`${numero}: ${tags.length}/${expected} TAGs`);
@@ -211,19 +212,33 @@ export const PendingTagsAlert = ({
         }
 
         try {
-          const { data, error } = await supabase.functions.invoke("insert-tag", {
-            body: {
-              id: item.id,
-              numero_tag: tags.slice(0, expected).join(", "),
-              impersonatedUserId: impersonating?.id || null,
-            },
+          const sd = Array.isArray(item?.segundo_defeitos) ? [...item.segundo_defeitos] : [];
+          const mainPieces: string[] = [];
+          slots.forEach((s, idx) => {
+            const val = tags[idx];
+            if (s.kind === "main") mainPieces[0] = val;
+            else sd[s.index] = { ...(sd[s.index] || {}), tag: val };
           });
-          if (error || data?.error) throw new Error(error?.message || data?.error);
+          const allTags = [
+            ...mainPieces.filter(Boolean),
+            ...sd.map((d: any) => (d?.tag || "").toString().trim()).filter(Boolean),
+          ];
+          const { error } = await supabase
+            .from("apontamentos")
+            .update({
+              numero_tag: allTags.join(", ") || null,
+              segundo_defeitos: sd,
+              tag_inserted_at: new Date().toISOString(),
+              tag_inserted_by: activeProfile?.full_name || "",
+            } as any)
+            .eq("id", item.id);
+          if (error) throw error;
           success++;
         } catch (err: any) {
           errors++;
           errorMsgs.push(`${numero}: ${err?.message || "erro"}`);
         }
+
       }
 
       await fetchPending();

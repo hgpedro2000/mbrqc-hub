@@ -932,6 +932,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="sticky left-0 z-30 w-[132px] min-w-[132px] bg-background border-r text-left whitespace-nowrap">
+                    Ações
+                  </TableHead>
                   <TableHead className="w-10">
                     <Checkbox
                       checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
@@ -951,12 +954,50 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   <TableHead>Perfil</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Último Login</TableHead>
-                  <TableHead className="text-right w-[120px] whitespace-nowrap">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((p: any) => (
                   <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
+                    <TableCell className="sticky left-0 z-20 w-[132px] min-w-[132px] bg-background border-r whitespace-nowrap">
+                      <div className="flex items-center justify-start gap-1 flex-nowrap">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-8 w-8 shrink-0 p-0">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-8 w-8 shrink-0 p-0">
+                              {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent align="start" className="w-56 p-2">
+                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
+                              <KeyRound className="w-4 h-4" /> Senha provisória
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
+                              <ShieldCheck className="w-4 h-4" /> Gerar senha segura
+                            </Button>
+                          </PopoverContent>
+                        </Popover>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Excluir" className="h-8 w-8 shrink-0 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                              {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                              <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                     </TableCell>
@@ -976,45 +1017,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                       {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
-                    </TableCell>
-                    <TableCell className="text-right w-[120px] whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-0.5 flex-nowrap">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
-                              {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent align="end" className="w-56 p-2">
-                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
-                              <KeyRound className="w-4 h-4" /> Senha provisória
-                            </Button>
-                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
-                              <ShieldCheck className="w-4 h-4" /> Gerar senha segura
-                            </Button>
-                          </PopoverContent>
-                        </Popover>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
-                              {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
-                              <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -293,13 +293,21 @@ export const PendingTagsAlert = ({
         } as any)
         .eq("id", item.id);
       if (error) throw error;
-      toast.success("TAGs salvas!");
+      // Feedback por modo de falha
+      slots.forEach((s, idx) => {
+        const label = (s.modo || `TAG ${idx + 1}`).replace(/^\d+\s*-\s*/, "");
+        toast.success(`${label}: TAG ${trimmed[idx]} salva`);
+      });
       setTagInputs([]);
       setEditingId(null);
       await fetchPending();
     } catch (e: any) {
       console.error("[PendingTags] save error", e);
-      toast.error("Erro ao salvar TAG: " + (e?.message || "desconhecido"));
+      const msg = e?.message || "desconhecido";
+      slots.forEach((s, idx) => {
+        const label = (s.modo || `TAG ${idx + 1}`).replace(/^\d+\s*-\s*/, "");
+        toast.error(`${label}: falha ao salvar (${msg})`);
+      });
     } finally {
       setSaving(false);
     }

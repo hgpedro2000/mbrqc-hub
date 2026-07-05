@@ -47,22 +47,57 @@ export const PendingTagsAlert = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeProfile = impersonating || profile;
 
-  const computeTagStatus = (item: any) => {
+  // Build a list of defect "slots" — one TAG per modo de falha.
+  const getDefectSlots = (item: any): Array<{ kind: "main" | "sd"; index: number; modo: string; descricao: string; qty: number; tag: string }> => {
     const sd = Array.isArray(item?.segundo_defeitos) ? item.segundo_defeitos : [];
-    const hasMainModo = !!(item?.modo_falha && String(item.modo_falha).trim());
-    const mainTagRaw = String(item?.numero_tag || item?.tag_number || "").trim();
-    const mainTagsCount = mainTagRaw ? mainTagRaw.split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean).length : 0;
-    const sdTagsFilled = sd.filter((d: any) => d?.tag && String(d.tag).trim()).length;
-    const expected = Math.max((item?.quantidade_ng || 0) > 0 ? 1 : 0, (hasMainModo ? 1 : 0) + sd.length);
-    const filled = mainTagsCount + sdTagsFilled;
-    return { expected, filled, missing: Math.max(0, expected - filled) };
+    const slots: any[] = [];
+    const hasMain = !!(item?.modo_falha && String(item.modo_falha).trim());
+    const mainTags = String(item?.numero_tag || item?.tag_number || "")
+      .split(/[,;]+/).map((s: string) => s.trim()).filter(Boolean);
+    if (hasMain) {
+      slots.push({
+        kind: "main", index: -1,
+        modo: String(item.modo_falha),
+        descricao: String(item?.descricao_defeito || ""),
+        qty: Number(item?.quantidade_ng) || 0,
+        tag: mainTags[0] || "",
+      });
+    }
+    sd.forEach((d: any, i: number) => {
+      slots.push({
+        kind: "sd", index: i,
+        modo: String(d?.modo_falha || ""),
+        descricao: String(d?.descricao || ""),
+        qty: Number(d?.qty) || 0,
+        tag: String(d?.tag || "").trim(),
+      });
+    });
+    // Fallback: no defect metadata but has NG → single slot mapped to numero_tag
+    if (slots.length === 0 && (item?.quantidade_ng || 0) > 0) {
+      slots.push({ kind: "main", index: -1, modo: "", descricao: "", qty: Number(item?.quantidade_ng) || 0, tag: mainTags[0] || "" });
+    }
+    // If main tag string has more entries than main slot (legacy), map extras onto sd slots that are empty
+    if (mainTags.length > 1) {
+      let mi = hasMain ? 1 : 0;
+      for (const s of slots) {
+        if (s.kind === "sd" && !s.tag && mainTags[mi]) { s.tag = mainTags[mi]; mi++; }
+      }
+    }
+    return slots;
+  };
+
+  const computeTagStatus = (item: any) => {
+    const slots = getDefectSlots(item);
+    const expected = slots.length;
+    const filled = slots.filter((s) => !!s.tag).length;
+    return { expected, filled, missing: Math.max(0, expected - filled), slots };
   };
 
   const fetchPending = async () => {
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, descricao_defeito, segundo_defeitos")
       .neq("status", "draft")
       .gt("quantidade_ng", 0)
       .order("data", { ascending: false });
@@ -75,14 +110,13 @@ export const PendingTagsAlert = ({
     }
 
     const data = (await query).data || [];
-    // Client-side: only items still missing at least one TAG
     const pending = data.filter((it: any) => computeTagStatus(it).missing > 0);
     setPendingItems(pending);
   };
 
   const getTagCount = (item: any) => {
-    const { missing, expected } = computeTagStatus(item);
-    return Math.max(1, missing || expected);
+    const { expected } = computeTagStatus(item);
+    return Math.max(1, expected);
   };
 
   useEffect(() => {

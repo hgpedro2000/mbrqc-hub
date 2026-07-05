@@ -184,27 +184,37 @@ const Engenharia = () => {
               pendingRequests={userRequests}
               onRequestResolved={() => queryClient.invalidateQueries({ queryKey: ["user-requests"] })}
               toolbarExtras={
-                isSpecialAdmin ? (
-                  impersonating ? (
-                    <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
-                      <Badge className="bg-amber-500/20 text-amber-700 border-amber-400/40 text-[10px]">
-                        <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
-                      </Badge>
-                      <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="h-7 text-[10px] px-2">
-                        Sair
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSecurityOpen(true)}
+                    className="col-span-2 sm:col-span-1 border-slate-400 text-slate-700 bg-slate-50 hover:bg-slate-100"
+                  >
+                    <Shield className="w-4 h-4 mr-1" /> Segurança
+                  </Button>
+                  {isSpecialAdmin ? (
+                    impersonating ? (
+                      <div className="flex items-center gap-1.5 col-span-2 sm:col-span-1">
+                        <Badge className="bg-amber-500/20 text-amber-700 border-amber-400/40 text-[10px]">
+                          <UserCheck className="w-3 h-3 mr-1" /> {impersonating.full_name}
+                        </Badge>
+                        <Button variant="ghost" size="sm" onClick={handleStopImpersonating} className="h-7 text-[10px] px-2">
+                          Sair
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setImpersonateOpen(true)}
+                        className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
+                      >
+                        <UserCheck className="w-4 h-4 mr-1" /> Modo Usuário Padrão
                       </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setImpersonateOpen(true)}
-                      className="col-span-2 sm:col-span-1 border-purple-400 text-purple-700 bg-purple-50 hover:bg-purple-100"
-                    >
-                      <UserCheck className="w-4 h-4 mr-1" /> Modo Usuário Padrão
-                    </Button>
-                  )
-                ) : null
+                    )
+                  ) : null}
+                </>
               }
             />
           </TabsContent>

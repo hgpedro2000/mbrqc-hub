@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
-import { Loader2, Plus, Trash2, Send, ListChecks, Search, Save, RefreshCw, Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Loader2, Plus, Trash2, Send, ListChecks, Search, Save, RefreshCw, Download, Upload, FileSpreadsheet, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -880,7 +880,170 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
   );
 };
 
+/* ─────────────────  ANÁLISE INDIVIDUAL (dentro de Consumo do Time)  ───────────────── */
+const IndividualAnalysis = ({ rows, periodo }: { rows: any[]; periodo: string }) => {
+  const [selectedUser, setSelectedUser] = useState<string>("");
+
+  const users = useMemo(() => {
+    const m = new Map<string, { key: string; name: string; turno: string; total: number }>();
+    for (const r of rows) {
+      const key = r.user_id || r.user_name;
+      if (!key) continue;
+      const cur = m.get(key) || { key, name: r.user_name || "—", turno: r.turno || "—", total: 0 };
+      cur.total += 1;
+      m.set(key, cur);
+    }
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  }, [rows]);
+
+  const userRows = useMemo(
+    () => (selectedUser ? rows.filter((r) => (r.user_id || r.user_name) === selectedUser) : []),
+    [rows, selectedUser]
+  );
+
+  const userStats = useMemo(() => {
+    const delivered = userRows.filter((r) => r.status === "entregue");
+    const aguardando = userRows.filter((r) => r.status === "aguardando").length;
+    const rejeitado = userRows.filter((r) => r.status === "rejeitado").length;
+    const totalQtd = delivered.reduce((s, r) => s + (r.quantity || 0), 0);
+    const itemMap = new Map<string, number>();
+    for (const r of delivered) itemMap.set(r.item_name, (itemMap.get(r.item_name) || 0) + (r.quantity || 0));
+    const byItem = Array.from(itemMap.entries())
+      .map(([name, total]) => ({ name, total }))
+      .sort((a, b) => b.total - a.total);
+    const last = userRows[0]?.created_at;
+    return { totalPedidos: userRows.length, delivered: delivered.length, aguardando, rejeitado, totalQtd, byItem, last };
+  }, [userRows]);
+
+  const exportData = useMemo(() => userRows.map((r: any) => ({
+    Numero: r.numero || "",
+    Data: new Date(r.created_at).toLocaleDateString("pt-BR"),
+    Item: r.item_name,
+    Quantidade: r.quantity,
+    Status: statusConfig[r.status]?.label || r.status,
+    Origem: r.origem === "pedido_coletivo" ? "Pedido coletivo" : "Individual",
+  })), [userRows]);
+
+  const currentUser = users.find((u) => u.key === selectedUser);
+
+  return (
+    <div className="form-section p-3 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <UserCheck className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-tight">Análise individual</p>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              Selecione um usuário para inspecionar o consumo pessoal no período
+            </p>
+          </div>
+        </div>
+        {selectedUser && (
+          <div className="flex items-center gap-2">
+            <ExportButtons rows={exportData} fileBase={`consumo_${(currentUser?.name || "usuario").replace(/\s+/g, "_")}_${periodo}d`} />
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedUser("")}>Limpar</Button>
+          </div>
+        )}
+      </div>
+
+      <Select value={selectedUser} onValueChange={setSelectedUser}>
+        <SelectTrigger className="h-9 text-xs">
+          <SelectValue placeholder={`Escolha um usuário (${users.length} com atividade)`} />
+        </SelectTrigger>
+        <SelectContent className="max-h-72">
+          {users.length === 0 && <div className="px-2 py-3 text-xs text-muted-foreground text-center">Sem atividade no período</div>}
+          {users.map((u) => (
+            <SelectItem key={u.key} value={u.key}>
+              {u.name} · {u.turno} · {u.total} pedido(s)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {!selectedUser ? (
+        <div className="text-center py-6 border border-dashed rounded-lg bg-muted/30">
+          <UserCheck className="w-6 h-6 mx-auto text-muted-foreground mb-1" />
+          <p className="text-xs text-muted-foreground">Selecione um usuário acima para ver a análise individual</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <p className="text-sm font-semibold">{currentUser?.name}</p>
+              <p className="text-[11px] text-muted-foreground">
+                Turno {currentUser?.turno} · última atividade: {userStats.last ? new Date(userStats.last).toLocaleDateString("pt-BR") : "—"}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="border rounded-lg p-2.5 text-center">
+              <p className="text-xl font-bold">{userStats.totalPedidos}</p>
+              <p className="text-[10px] text-muted-foreground">Pedidos</p>
+            </div>
+            <div className="border rounded-lg p-2.5 text-center">
+              <p className="text-xl font-bold text-emerald-600">{userStats.totalQtd}</p>
+              <p className="text-[10px] text-muted-foreground">Itens entregues</p>
+            </div>
+            <div className="border rounded-lg p-2.5 text-center">
+              <p className="text-xl font-bold text-yellow-600">{userStats.aguardando}</p>
+              <p className="text-[10px] text-muted-foreground">Aguardando</p>
+            </div>
+            <div className="border rounded-lg p-2.5 text-center">
+              <p className="text-xl font-bold text-red-500">{userStats.rejeitado}</p>
+              <p className="text-[10px] text-muted-foreground">Rejeitados</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <div className="border rounded-lg p-3">
+              <h4 className="text-xs font-semibold mb-2">Itens mais consumidos</h4>
+              {userStats.byItem.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">Sem itens entregues</p>
+              ) : (
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={userStats.byItem.slice(0, 8)} layout="vertical" margin={{ left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
+                      <Tooltip />
+                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            <div className="border rounded-lg p-3">
+              <h4 className="text-xs font-semibold mb-2">Timeline ({userRows.length})</h4>
+              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                {userRows.map((r: any) => {
+                  const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                  return (
+                    <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] border-l-2 border-primary/40 pl-2 py-1">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{r.item_name} <span className="text-muted-foreground">× {r.quantity}</span></p>
+                        <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")} · {r.numero || "—"}</p>
+                      </div>
+                      <Badge variant="outline" className={`${cfg.color} text-[10px] shrink-0`}>{cfg.label}</Badge>
+                    </div>
+                  );
+                })}
+                {userRows.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem registros</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 /* ───────────────────────────  CONSUMO DO TIME  ─────────────────────────── */
+
 export const ConsumoTime = () => {
   const { profile } = useAuth();
   const { isAdmin } = useUserRole();
@@ -1056,6 +1219,9 @@ export const ConsumoTime = () => {
           </div>
         </div>
       </div>
+
+      <IndividualAnalysis rows={(data as any[]) || []} periodo={periodo} />
+
 
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">

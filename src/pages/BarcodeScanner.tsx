@@ -16,7 +16,7 @@ const BarcodeScanner = () => {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-10 flex items-center gap-2 px-4 py-3 border-b border-border bg-background">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <Button className="header-btn header-btn-back" variant="ghost" size="icon" onClick={() => navigate("/")}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-lg font-heading font-bold">Barcode Scanner H/KMC</h1>

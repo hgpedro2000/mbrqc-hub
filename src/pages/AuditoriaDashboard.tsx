@@ -56,7 +56,7 @@ const AuditoriaDashboard = () => {
       <header className="gradient-header">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/auditorias")} className="text-primary-foreground/70 hover:text-primary-foreground"><ArrowLeft className="w-4 h-4 mr-1" /> {t("common.back")}</Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/auditorias")} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 mr-1" /> {t("common.back")}</Button>
             <img src={logo} alt="Hyundai Mobis" className="h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
           <div className="flex items-center gap-3 mt-4"><ShieldCheck className="w-8 h-8" /><h1 className="text-2xl font-heading font-bold">{t("auditorias.dashboard.title")}</h1></div>

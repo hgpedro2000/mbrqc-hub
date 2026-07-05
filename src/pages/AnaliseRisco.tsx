@@ -1003,7 +1003,7 @@ export default function AnaliseRisco() {
       <header className="border-b bg-card/50 backdrop-blur sticky top-0 z-10 overflow-x-clip">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-3 space-y-2 min-w-0">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="h-11 w-11 shrink-0" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
+            <Button variant="ghost" size="icon" className="header-btn header-btn-back" onClick={() => navigate("/")}><ArrowLeft className="w-5 h-5" /></Button>
             <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6 text-primary shrink-0" />
             <div className="flex-1 min-w-0">
               <h1 className="text-[clamp(0.95rem,4vw,1.125rem)] font-heading font-bold leading-tight truncate" title="Análise de Risco">Análise de Risco</h1>

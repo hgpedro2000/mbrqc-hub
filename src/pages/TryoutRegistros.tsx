@@ -99,7 +99,7 @@ const TryoutRegistros = () => {
         <div className="container mx-auto px-3 md:px-4 py-4 md:py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="text-primary-foreground/70 hover:text-primary-foreground px-2"><ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">{t("common.back")}</span></Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout")} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline">{t("common.back")}</span></Button>
               <img src={logo} alt="Hyundai Mobis" className="h-6 md:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
           </div>

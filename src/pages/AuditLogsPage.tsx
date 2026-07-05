@@ -99,7 +99,7 @@ const AuditLogsPage = () => {
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-4">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground px-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="header-btn header-btn-back">
               <ArrowLeft className="w-4 h-4 mr-1" /> Hub
             </Button>
             <Button onClick={handleExport} size="sm" className="gap-1.5">

@@ -926,118 +926,192 @@ const IndividualAnalysis = ({ rows, periodo }: { rows: any[]; periodo: string })
 
   const currentUser = users.find((u) => u.key === selectedUser);
 
+  const initials = (currentUser?.name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("");
+  const rank = selectedUser ? users.findIndex((u) => u.key === selectedUser) + 1 : 0;
+  const deliveredRate = userStats.totalPedidos
+    ? Math.round((userStats.delivered / userStats.totalPedidos) * 100)
+    : 0;
+
   return (
-    <div className="form-section p-3 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <UserCheck className="w-4 h-4" />
+    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 bg-background/40 px-4 py-3 backdrop-blur">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+            <UserCheck className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold leading-tight">Análise individual</p>
             <p className="text-[11px] text-muted-foreground leading-tight">
-              Selecione um usuário para inspecionar o consumo pessoal no período
+              {users.length} usuário{users.length === 1 ? "" : "s"} com atividade nos últimos {periodo} dias
             </p>
           </div>
         </div>
         {selectedUser && (
           <div className="flex items-center gap-2">
-            <ExportButtons rows={exportData} fileBase={`consumo_${(currentUser?.name || "usuario").replace(/\s+/g, "_")}_${periodo}d`} />
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedUser("")}>Limpar</Button>
+            <ExportButtons
+              rows={exportData}
+              fileBase={`consumo_${(currentUser?.name || "usuario").replace(/\s+/g, "_")}_${periodo}d`}
+            />
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setSelectedUser("")}>
+              Limpar
+            </Button>
           </div>
         )}
       </div>
 
-      <Select value={selectedUser} onValueChange={setSelectedUser}>
-        <SelectTrigger className="h-9 text-xs">
-          <SelectValue placeholder={`Escolha um usuário (${users.length} com atividade)`} />
-        </SelectTrigger>
-        <SelectContent className="max-h-72">
-          {users.length === 0 && <div className="px-2 py-3 text-xs text-muted-foreground text-center">Sem atividade no período</div>}
-          {users.map((u) => (
-            <SelectItem key={u.key} value={u.key}>
-              {u.name} · {u.turno} · {u.total} pedido(s)
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="p-4 space-y-4">
+        {/* Picker */}
+        <Select value={selectedUser} onValueChange={setSelectedUser}>
+          <SelectTrigger className="h-11 text-sm bg-background">
+            <SelectValue placeholder="🔍  Escolha um usuário para investigar…" />
+          </SelectTrigger>
+          <SelectContent className="max-h-80">
+            {users.length === 0 && (
+              <div className="px-3 py-4 text-xs text-muted-foreground text-center">Sem atividade no período</div>
+            )}
+            {users.map((u, i) => (
+              <SelectItem key={u.key} value={u.key}>
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                    {i + 1}
+                  </span>
+                  <span className="font-medium">{u.name}</span>
+                  <span className="text-muted-foreground text-xs">· T{u.turno} · {u.total} pedido(s)</span>
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      {!selectedUser ? (
-        <div className="text-center py-6 border border-dashed rounded-lg bg-muted/30">
-          <UserCheck className="w-6 h-6 mx-auto text-muted-foreground mb-1" />
-          <p className="text-xs text-muted-foreground">Selecione um usuário acima para ver a análise individual</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div>
-              <p className="text-sm font-semibold">{currentUser?.name}</p>
-              <p className="text-[11px] text-muted-foreground">
-                Turno {currentUser?.turno} · última atividade: {userStats.last ? new Date(userStats.last).toLocaleDateString("pt-BR") : "—"}
-              </p>
+        {!selectedUser ? (
+          <div className="rounded-xl border border-dashed border-primary/30 bg-primary/[0.03] py-10 text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <UserCheck className="h-6 w-6" />
             </div>
+            <p className="text-sm font-medium">Nenhum usuário selecionado</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Escolha alguém no seletor acima para ver KPIs, itens preferidos e histórico completo.
+            </p>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="border rounded-lg p-2.5 text-center">
-              <p className="text-xl font-bold">{userStats.totalPedidos}</p>
-              <p className="text-[10px] text-muted-foreground">Pedidos</p>
-            </div>
-            <div className="border rounded-lg p-2.5 text-center">
-              <p className="text-xl font-bold text-emerald-600">{userStats.totalQtd}</p>
-              <p className="text-[10px] text-muted-foreground">Itens entregues</p>
-            </div>
-            <div className="border rounded-lg p-2.5 text-center">
-              <p className="text-xl font-bold text-yellow-600">{userStats.aguardando}</p>
-              <p className="text-[10px] text-muted-foreground">Aguardando</p>
-            </div>
-            <div className="border rounded-lg p-2.5 text-center">
-              <p className="text-xl font-bold text-red-500">{userStats.rejeitado}</p>
-              <p className="text-[10px] text-muted-foreground">Rejeitados</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <div className="border rounded-lg p-3">
-              <h4 className="text-xs font-semibold mb-2">Itens mais consumidos</h4>
-              {userStats.byItem.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6">Sem itens entregues</p>
-              ) : (
-                <div className="h-56">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={userStats.byItem.slice(0, 8)} layout="vertical" margin={{ left: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
-                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+        ) : (
+          <div className="space-y-4">
+            {/* Perfil hero */}
+            <div className="flex items-center gap-3 rounded-xl border bg-background/60 p-3">
+              <div className="relative">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-lg font-bold text-primary-foreground shadow">
+                  {initials || "?"}
                 </div>
-              )}
+                {rank > 0 && rank <= 3 && (
+                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-yellow-500 text-[10px] font-bold text-white shadow">
+                    #{rank}
+                  </span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-semibold leading-tight truncate">{currentUser?.name}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 font-medium">
+                    Turno {currentUser?.turno}
+                  </span>
+                  <span>Ranking #{rank} de {users.length}</span>
+                  <span>·</span>
+                  <span>
+                    Última atividade:{" "}
+                    {userStats.last ? new Date(userStats.last).toLocaleDateString("pt-BR") : "—"}
+                  </span>
+                </div>
+              </div>
+              <div className="hidden sm:flex flex-col items-end">
+                <p className="text-2xl font-bold leading-none text-primary">{deliveredRate}%</p>
+                <p className="text-[10px] text-muted-foreground">taxa entregue</p>
+              </div>
             </div>
 
-            <div className="border rounded-lg p-3">
-              <h4 className="text-xs font-semibold mb-2">Timeline ({userRows.length})</h4>
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                {userRows.map((r: any) => {
-                  const cfg = statusConfig[r.status] || statusConfig.aguardando;
-                  return (
-                    <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] border-l-2 border-primary/40 pl-2 py-1">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{r.item_name} <span className="text-muted-foreground">× {r.quantity}</span></p>
-                        <p className="text-[10px] text-muted-foreground">{new Date(r.created_at).toLocaleDateString("pt-BR")} · {r.numero || "—"}</p>
+            {/* KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[
+                { label: "Pedidos", value: userStats.totalPedidos, tone: "from-slate-500/10 to-slate-500/5 text-foreground" },
+                { label: "Itens entregues", value: userStats.totalQtd, tone: "from-emerald-500/15 to-emerald-500/5 text-emerald-600" },
+                { label: "Aguardando", value: userStats.aguardando, tone: "from-yellow-500/15 to-yellow-500/5 text-yellow-600" },
+                { label: "Rejeitados", value: userStats.rejeitado, tone: "from-red-500/15 to-red-500/5 text-red-500" },
+              ].map((k) => (
+                <div key={k.label} className={`rounded-xl border bg-gradient-to-br ${k.tone} p-3`}>
+                  <p className="text-2xl font-bold leading-none">{k.value}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-wide text-muted-foreground">{k.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Charts + timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+              <div className="lg:col-span-3 rounded-xl border bg-background/60 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-xs font-semibold">Top itens consumidos</h4>
+                  <span className="text-[10px] text-muted-foreground">{userStats.byItem.length} item(ns)</span>
+                </div>
+                {userStats.byItem.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-10">Sem itens entregues</p>
+                ) : (
+                  <div className="h-60">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={userStats.byItem.slice(0, 8)} layout="vertical" margin={{ left: 8, right: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} horizontal={false} />
+                        <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                        <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 10 }} />
+                        <Tooltip
+                          cursor={{ fill: "hsl(var(--primary) / 0.08)" }}
+                          contentStyle={{ fontSize: 11, borderRadius: 8 }}
+                        />
+                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+
+              <div className="lg:col-span-2 rounded-xl border bg-background/60 p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <h4 className="text-xs font-semibold">Histórico</h4>
+                  <span className="text-[10px] text-muted-foreground">{userRows.length} registro(s)</span>
+                </div>
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                  {userRows.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-6">Sem registros</p>
+                  )}
+                  {userRows.map((r: any) => {
+                    const cfg = statusConfig[r.status] || statusConfig.aguardando;
+                    return (
+                      <div
+                        key={r.id}
+                        className="group flex items-center justify-between gap-2 rounded-lg border border-transparent bg-muted/30 px-2 py-1.5 text-[11px] transition hover:border-primary/30 hover:bg-primary/[0.04]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">
+                            {r.item_name}{" "}
+                            <span className="text-muted-foreground">× {r.quantity}</span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {new Date(r.created_at).toLocaleDateString("pt-BR")} · {r.numero || "—"}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className={`${cfg.color} text-[10px] shrink-0`}>
+                          {cfg.label}
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className={`${cfg.color} text-[10px] shrink-0`}>{cfg.label}</Badge>
-                    </div>
-                  );
-                })}
-                {userRows.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Sem registros</p>}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

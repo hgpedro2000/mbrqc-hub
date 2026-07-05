@@ -951,7 +951,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   <TableHead>Perfil</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden lg:table-cell">Último Login</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right w-[120px] whitespace-nowrap">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

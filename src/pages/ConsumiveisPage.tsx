@@ -4,7 +4,7 @@ import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check
 import QrScannerModal from "@/components/QrScannerModal";
 import { QRCodeSVG } from "qrcode.react";
 import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
-import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
+import { MeuHistorico, PedidoTime, ListasSalvas, ConsumoTime, HistoricoIndividual, getConsumivelRole } from "@/components/consumiveis/ConsumiveisExtras";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

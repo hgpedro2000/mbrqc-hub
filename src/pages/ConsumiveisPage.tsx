@@ -1168,8 +1168,12 @@ const ConsumiveisPage = () => {
               <TabsContent value="listas_salvas" className="form-section">
                 <ListasSalvas onUseList={(l) => { setPrefilledList(l); setActiveTab("pedido_time"); }} />
               </TabsContent>
+              <TabsContent value="historico_individual" className="form-section">
+                <HistoricoIndividual />
+              </TabsContent>
             </>
           )}
+
           {showManager && (
             <>
               <TabsContent value="gestao_estoque" className="form-section"><InventarioRequisicoes /></TabsContent>

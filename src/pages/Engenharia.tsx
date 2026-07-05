@@ -158,6 +158,14 @@ const Engenharia = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={securityOpen} onOpenChange={setSecurityOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Shield className="w-5 h-5" /> Segurança</DialogTitle></DialogHeader>
+          <SecurityConfigTab />
+        </DialogContent>
+      </Dialog>
+
+
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full overflow-x-clip">
         <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set("tab", v); return p; }, { replace: true }); }} className="space-y-4 sm:space-y-6 w-full min-w-0">
           <div className="sticky top-[112px] sm:top-[148px] z-30 w-full overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 py-2 border-b border-border">

@@ -471,9 +471,21 @@ export const PendingTagsAlert = ({
 
                   {editingId === item.id && (() => {
                     const slots = getDefectSlots(item);
+                    const firstTagAt = item?.tag_inserted_at ? new Date(item.tag_inserted_at) : null;
+                    const isOverdue = !!firstTagAt && (Date.now() - firstTagAt.getTime()) > 7 * 24 * 60 * 60 * 1000;
                     return (
                     <div className="space-y-2">
-                      {slots.map((slot, idx) => (
+                      {slots.map((slot, idx) => {
+                        const val = (tagInputs[idx] || "").trim();
+                        const isSaved = !!slot.tag && val === slot.tag;
+                        const colorClass = isSaved
+                          ? "border-emerald-500 bg-emerald-50 focus-visible:ring-emerald-500"
+                          : val
+                          ? "border-blue-400 bg-blue-50/40 focus-visible:ring-blue-400"
+                          : isOverdue
+                          ? "border-red-500 bg-red-50 focus-visible:ring-red-500 animate-pulse"
+                          : "border-amber-400 bg-amber-50 focus-visible:ring-amber-400";
+                        return (
                         <div key={idx} className="flex items-center gap-2">
                           <div className="w-32 shrink-0 text-[10px] leading-tight">
                             <div className="font-semibold text-foreground truncate" title={slot.modo}>
@@ -491,12 +503,13 @@ export const PendingTagsAlert = ({
                               setTagInputs(next);
                             }}
                             placeholder={`Número da TAG`}
-                            className="h-8 text-sm flex-1"
+                            className={`h-8 text-sm flex-1 ${colorClass}`}
                             autoFocus={idx === 0}
                             onKeyDown={(e) => e.key === "Enter" && handleSaveTag(item)}
                           />
                         </div>
-                      ))}
+                        );
+                      })}
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           size="icon"
@@ -515,6 +528,7 @@ export const PendingTagsAlert = ({
                           className="h-8 shrink-0"
                           onClick={() => handleSaveTag(item)}
                           disabled={saving}
+                          title="A INC só sai da lista quando TODOS os números de TAG estiverem preenchidos."
                         >
                           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle className="w-3.5 h-3.5 mr-1" />}
                           Salvar

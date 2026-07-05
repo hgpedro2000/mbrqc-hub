@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
-import { ArrowLeft, Settings2, UserCheck } from "lucide-react";
+import { ArrowLeft, Settings2, UserCheck, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

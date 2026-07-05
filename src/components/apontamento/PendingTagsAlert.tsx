@@ -97,7 +97,7 @@ export const PendingTagsAlert = ({
     if (!user) return;
     let query = supabase
       .from("apontamentos")
-      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
+      .select("id, numero, part_number, part_name, fornecedor, quantidade_ng, turno, data, responsavel, numero_tag, tag_number, tag_inserted_at, responsabilidade_defeito, local_deteccao, fase, modo_falha, segundo_defeitos")
       .neq("status", "draft")
       .gt("quantidade_ng", 0)
       .order("data", { ascending: false });

@@ -479,7 +479,9 @@ export const PendingTagsAlert = ({
 
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
+
                 </div>
               ))
             )}

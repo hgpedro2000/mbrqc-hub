@@ -449,95 +449,93 @@ const ConsultaPecas = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Spec / ALC Dialog */}
+      {/* Spec / ALC Dialog — Cinematic reveal */}
       <Dialog open={specDialogOpen} onOpenChange={setSpecDialogOpen}>
-        <DialogContent className="max-w-[96vw] sm:max-w-lg md:max-w-xl p-0 overflow-hidden border-0 w-[96vw] sm:w-auto">
+        <DialogContent
+          className="max-w-[96vw] sm:max-w-lg md:max-w-2xl p-0 overflow-hidden border-0 w-[96vw] sm:w-auto bg-transparent shadow-none"
+        >
           {specPart && (
-            <div className="flex flex-col max-h-[92vh]">
+            <div className="relative rounded-2xl overflow-hidden animate-scale-in max-h-[92vh] flex flex-col shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/10">
+              {/* Ambient background */}
+              <div className="absolute inset-0 -z-10 bg-slate-950" />
+              <div className="absolute inset-0 -z-10 opacity-70 bg-[radial-gradient(circle_at_20%_-10%,rgba(251,191,36,0.35),transparent_55%),radial-gradient(circle_at_120%_110%,rgba(56,189,248,0.30),transparent_55%),radial-gradient(circle_at_50%_130%,rgba(168,85,247,0.25),transparent_60%)]" />
+              <div className="absolute inset-0 -z-10 opacity-[0.08] mix-blend-overlay [background-image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] [background-size:28px_28px]" />
+
               {/* Header */}
-              <div className="bg-gradient-to-br from-slate-800 via-slate-900 to-black px-3 sm:px-5 py-3 sm:py-4 text-white relative">
-                <div className="flex items-center gap-2 mb-1 opacity-90">
-                  <ScanSearch className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="text-[10px] sm:text-xs font-medium tracking-wider uppercase">{t("consultaPecas.spec.headerLabel")}</span>
+              <div className="relative px-4 sm:px-6 pt-5 sm:pt-6 pb-4 sm:pb-5 text-white">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] sm:text-xs font-medium tracking-[0.18em] uppercase">
+                    <ScanSearch className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    {t("consultaPecas.spec.headerLabel")}
+                  </div>
+                  <div className="animate-fade-in">{origemBadge(specPart.origem)}</div>
                 </div>
-                <h2 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold leading-tight font-mono break-all">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-widest text-white/50 mb-1">Part Number</p>
+                <h2 className="font-mono font-bold leading-none text-2xl sm:text-4xl md:text-5xl break-all bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/60 drop-shadow-[0_2px_20px_rgba(255,255,255,0.15)]">
                   {specPart.part_number}
                 </h2>
-                <p className="text-xs sm:text-sm md:text-base opacity-90 mt-1 break-words">{specPart.part_name || "—"}</p>
-                <div className="mt-2">{origemBadge(specPart.origem)}</div>
+                <p className="text-sm sm:text-base text-white/70 mt-2 break-words">{specPart.part_name || "—"}</p>
               </div>
 
               {/* Body */}
-              <div className="px-3 sm:px-5 py-3 sm:py-4 space-y-3 sm:space-y-4 overflow-y-auto">
-                {/* ALC Highlight */}
-                <div className={`rounded-xl p-3 sm:p-4 border-2 ${
-                  specPart.alc_code
-                    ? "bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40 border-amber-500 dark:border-amber-600 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30"
-                    : "bg-muted/40 border-dashed border-muted-foreground/30"
-                }`}>
-                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                    <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
-                    <span className={`text-[11px] sm:text-sm font-bold uppercase tracking-wider ${
-                      specPart.alc_code ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground"
-                    }`}>
-                      {t("consultaPecas.spec.alcCode")}
-                    </span>
+              <div className="relative px-4 sm:px-6 pb-4 sm:pb-5 space-y-4 overflow-y-auto">
+                {/* ALC — spotlight */}
+                <div className="relative">
+                  <div className={`absolute inset-0 rounded-2xl blur-2xl opacity-70 ${specPart.alc_code ? "bg-gradient-to-r from-amber-500/40 via-orange-500/40 to-amber-400/40" : "bg-white/5"}`} />
+                  <div className={`relative rounded-2xl border backdrop-blur-xl px-4 sm:px-6 py-4 sm:py-5 ${
+                    specPart.alc_code
+                      ? "bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-400/15 border-amber-300/40"
+                      : "bg-white/[0.03] border-white/10 border-dashed"
+                  }`}>
+                    <div className="flex items-center justify-center gap-2 mb-2 sm:mb-3">
+                      <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-amber-300 animate-pulse" : "text-white/40"}`} />
+                      <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-[0.22em] ${specPart.alc_code ? "text-amber-200" : "text-white/50"}`}>
+                        {t("consultaPecas.spec.alcCode")}
+                      </span>
+                      <Sparkles className={`w-4 h-4 sm:w-5 sm:h-5 ${specPart.alc_code ? "text-amber-300 animate-pulse" : "text-white/40"}`} />
+                    </div>
+                    {specPart.alc_code ? (
+                      <p className="font-mono font-black text-center text-4xl sm:text-5xl md:text-6xl leading-none tracking-tight break-all text-white [text-shadow:0_0_30px_rgba(251,191,36,0.55)] animate-fade-in">
+                        {specPart.alc_code}
+                      </p>
+                    ) : (
+                      <p className="text-sm sm:text-base text-white/60 text-center py-1 sm:py-2 italic">
+                        {t("consultaPecas.spec.noAlcRegistered")}
+                      </p>
+                    )}
                   </div>
-                  {specPart.alc_code ? (
-                    <p className="font-mono font-bold text-2xl sm:text-3xl md:text-4xl text-slate-900 dark:text-amber-100 break-all text-center py-1 sm:py-2">
-                      {specPart.alc_code}
-                    </p>
-                  ) : (
-                    <p className="text-sm sm:text-base text-muted-foreground text-center py-1 sm:py-2 italic">
-                      {t("consultaPecas.spec.noAlcRegistered")}
-                    </p>
-                  )}
                 </div>
 
-                {/* Info grid */}
+                {/* Info chips */}
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Factory className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.supplier")}</span>
+                  {[
+                    { icon: Factory, label: t("consultaPecas.spec.supplier"), value: specPart.suppliers?.name || "—", accent: "text-sky-200" },
+                    { icon: Hash, label: t("consultaPecas.spec.codeVendor"), value: specPart.suppliers?.code || "—", accent: "text-amber-200", mono: true },
+                    { icon: Layers, label: t("consultaPecas.spec.project"), value: specPart.project || "—", accent: "text-emerald-200" },
+                    { icon: Package, label: t("consultaPecas.spec.lineModule"), value: specPart.line_module || "—", accent: "text-fuchsia-200" },
+                  ].map((c, i) => (
+                    <div
+                      key={i}
+                      className="group relative rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-2.5 sm:p-3 min-w-0 transition-all hover:bg-white/[0.08] hover:border-white/20 hover:-translate-y-0.5"
+                    >
+                      <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] uppercase tracking-wider text-white/50 mb-1">
+                        <c.icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                        <span className="truncate">{c.label}</span>
+                      </div>
+                      <p className={`text-sm sm:text-base font-semibold break-words ${c.accent} ${c.mono ? "font-mono" : ""}`}>
+                        {c.value}
+                      </p>
                     </div>
-                    <p className="text-xs sm:text-base font-semibold text-foreground break-words">
-                      {specPart.suppliers?.name || "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Hash className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.codeVendor")}</span>
-                    </div>
-                    <p className="text-xs sm:text-base font-mono font-semibold text-amber-700 dark:text-amber-400 break-all">
-                      {specPart.suppliers?.code || "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.project")}</span>
-                    </div>
-                    <p className="text-xs sm:text-base font-semibold text-emerald-700 dark:text-emerald-400 break-words">
-                      {specPart.project || "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border bg-card p-2 sm:p-3 min-w-0">
-                    <div className="flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground mb-1">
-                      <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">{t("consultaPecas.spec.lineModule")}</span>
-                    </div>
-                    <p className="text-xs sm:text-base font-semibold text-cyan-700 dark:text-cyan-400 break-words">
-                      {specPart.line_module || "—"}
-                    </p>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-
               {/* Footer */}
-              <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
+              <div className="relative px-4 sm:px-6 py-3 sm:py-3.5 border-t border-white/10 bg-black/40 backdrop-blur-xl flex flex-col sm:flex-row gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm"
+                  className="flex-1 min-h-[42px] text-xs sm:text-sm bg-white/5 border-white/15 text-white hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     setSearchTerm(specPart.part_number);
                     setSpecDialogOpen(false);
@@ -547,7 +545,7 @@ const ConsultaPecas = () => {
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm bg-gradient-to-br from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black text-white"
+                  className="flex-1 min-h-[42px] text-xs sm:text-sm bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:via-orange-400 hover:to-amber-400 text-slate-950 font-semibold shadow-lg shadow-amber-500/30"
                   onClick={() => {
                     setSpecDialogOpen(false);
                     setTimeout(() => openSpecScanner(), 150);
@@ -556,11 +554,11 @@ const ConsultaPecas = () => {
                   <ScanSearch className="w-4 h-4 mr-2" /> {t("consultaPecas.spec.readAnother")}
                 </Button>
               </div>
-
             </div>
           )}
         </DialogContent>
       </Dialog>
+
 
       {/* HKMC Barcode Scanner Dialog */}
       <Dialog open={hkmcOpen} onOpenChange={setHkmcOpen}>

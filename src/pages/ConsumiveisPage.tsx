@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine } from "lucide-react";
+import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine, HelpCircle } from "lucide-react";
+
+
 import QrScannerModal from "@/components/QrScannerModal";
 import { QRCodeSVG } from "qrcode.react";
 import ConsumiveisAccessDialog from "@/components/consumiveis/ConsumiveisAccessDialog";
@@ -10,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -1430,6 +1432,8 @@ const ConsumiveisPage = () => {
 
   const [activeTab, setActiveTab] = useState<string>("meu_pedido");
   const [prefilledList, setPrefilledList] = useState<{ nome: string; itens: any[] } | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+
 
   const showTeam = role === "lider" || role === "manager";
   const showManager = role === "manager";
@@ -1464,11 +1468,15 @@ const ConsumiveisPage = () => {
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Consumíveis</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setShowHelp(true)} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3 gap-1">
+                <HelpCircle className="w-4 h-4" /> <span className="hidden md:inline">Entenda esse Módulo</span>
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
               </Button>
               <ReportErrorButton moduleName="Consumíveis" />
             </div>
+
           </div>
           <h1 className="text-lg sm:text-2xl md:text-3xl font-heading font-bold mt-2 sm:mt-3">Consumíveis</h1>
           <p className="mt-0.5 sm:mt-1 text-primary-foreground/70 max-w-xl text-xs sm:text-sm">Requisição e gestão de itens de consumo do setor da qualidade.</p>
@@ -1511,8 +1519,104 @@ const ConsumiveisPage = () => {
           )}
         </Tabs>
       </main>
+
+      {/* Ajuda: Como funciona o módulo Consumíveis */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-primary" /> Entenda esse Módulo — Consumíveis
+            </DialogTitle>
+            <DialogDescription>
+              Fluxo completo de requisição, aprovação, entrega e análise de consumo dos itens da qualidade.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2 text-sm">
+            <section className="space-y-1.5">
+              <div className="flex items-center gap-2"><ShoppingCart className="w-4 h-4 text-primary" /><h3 className="font-semibold">Meu Pedido</h3></div>
+              <p className="text-muted-foreground leading-relaxed">
+                Sua tela pessoal para requisitar itens ao estoque. Você escolhe o consumível, a quantidade e envia. O pedido fica "Aguardando" até o líder/gestor aprovar. Também é aqui que você confirma o recebimento — via botão "Confirmar via App" ou lendo o QR mostrado pelo líder.
+              </p>
+            </section>
+
+            <div className="border-t" />
+
+            <section className="space-y-1.5">
+              <div className="flex items-center gap-2"><LineChart className="w-4 h-4 text-primary" /><h3 className="font-semibold">Meu Histórico</h3></div>
+              <p className="text-muted-foreground leading-relaxed">
+                Todos os seus pedidos passados, com status (Aguardando, Aguardando confirmação, Entregue, Rejeitado), data, número (REQ-####) e quantidade. Use para conferir o que você já consumiu e o que está pendente.
+              </p>
+            </section>
+
+            {showTeam && (
+              <>
+                <div className="border-t" />
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /><h3 className="font-semibold">Pedido de Time</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Uso do líder para pedir consumíveis em nome de vários inspetores do seu turno de uma só vez. Selecione os membros, monte a lista de itens e envie — o sistema cria um pedido para cada inspetor, agrupados sob o mesmo número.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><ListChecks className="w-4 h-4 text-primary" /><h3 className="font-semibold">Listas Salvas</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Modelos reutilizáveis para pedidos recorrentes (ex.: "kit início de turno"). Salve uma combinação de itens uma vez e reutilize em novos pedidos do time sem remontar item a item.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><History className="w-4 h-4 text-primary" /><h3 className="font-semibold">Histórico (individual e coletivo)</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Painel analítico para o líder acompanhar o consumo do seu turno: KPIs, timeline de pedidos, filtros por período/usuário/status, ranking de itens mais consumidos e exportação Excel/PDF. Líderes veem apenas o próprio turno; gestores veem todos.
+                  </p>
+                </section>
+              </>
+            )}
+
+            {showManager && (
+              <>
+                <div className="border-t" />
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /><h3 className="font-semibold">Gestão e Estoque</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Central do gestor. Cadastra e edita consumíveis, define estoque mínimo, faz reposição/baixa manual, aprova ou rejeita requisições e controla os acessos ao módulo. Alerta visual quando um item entra em estoque baixo.
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">Entrega em lote:</strong> escaneia o crachá do inspetor (INSP-xxxxx) ou seleciona da lista, marca no checklist tudo que está sendo entregue agora e gera <strong>um único QR</strong>. O inspetor confirma vários itens com uma leitura só, evitando escanear um QR por item.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><ClipboardList className="w-4 h-4 text-primary" /><h3 className="font-semibold">Consumo do Time</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Dashboards de consumo por turno e por membro. Gestores podem alternar entre turnos (A/B/C/ADM) e usar a Análise Individual para inspecionar um inspetor específico — KPIs, taxa de entrega, top itens consumidos e histórico completo do usuário no período.
+                  </p>
+                </section>
+              </>
+            )}
+
+            <div className="border-t" />
+            <p className="text-xs text-muted-foreground">
+              Status dos pedidos: <strong>Aguardando</strong> (aprovação do gestor) → <strong>Aguardando confirmação</strong> (entregue pelo líder, falta o inspetor confirmar) → <strong>Entregue</strong> (baixa efetivada no estoque).
+            </p>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setShowHelp(false)}>Entendi</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 export default ConsumiveisPage;

@@ -708,6 +708,7 @@ const Apontamentos = () => {
                   <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnFixPN")}</span>
                 </Button>
               )}
+              <div className="hidden md:block"><PendingTagsAlert requireMobis /></div>
               <ReportErrorButton moduleName="Apontamentos" />
               <LanguageToggle />
               <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.logout")}>

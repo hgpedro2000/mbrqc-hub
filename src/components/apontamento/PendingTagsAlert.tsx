@@ -239,7 +239,9 @@ export const PendingTagsAlert = ({
   };
 
 
-  const handleSaveTag = async (id: string, qty: number) => {
+  const handleSaveTag = async (item: any) => {
+    const slots = getDefectSlots(item);
+    const qty = slots.length;
     const trimmed = tagInputs.slice(0, qty).map(t => (t || "").trim());
     const missing = trimmed.filter(t => !t).length;
     if (missing > 0) {
@@ -248,16 +250,34 @@ export const PendingTagsAlert = ({
     }
     setSaving(true);
     try {
-      const joined = trimmed.join(", ");
-      const { data, error } = await supabase.functions.invoke("insert-tag", {
-        body: {
-          id,
-          numero_tag: joined,
-          impersonatedUserId: impersonating?.id || null,
-        },
+      // Apply each tag to its slot: main goes to first mainTag position, sd goes to segundo_defeitos[i].tag
+      const sd = Array.isArray(item?.segundo_defeitos) ? [...item.segundo_defeitos] : [];
+      const mainTagPieces: string[] = [];
+      slots.forEach((s, idx) => {
+        const val = trimmed[idx];
+        if (s.kind === "main") {
+          mainTagPieces[0] = val;
+        } else {
+          sd[s.index] = { ...(sd[s.index] || {}), tag: val };
+        }
       });
+      // Compose numero_tag from all tags (main + sd) so legacy consumers keep working
+      const allTags = [
+        ...(mainTagPieces.filter(Boolean)),
+        ...sd.map((d: any) => (d?.tag || "").toString().trim()).filter(Boolean),
+      ];
+      const joined = allTags.join(", ");
+
+      const { error } = await supabase
+        .from("apontamentos")
+        .update({
+          numero_tag: joined || null,
+          segundo_defeitos: sd,
+          tag_inserted_at: new Date().toISOString(),
+          tag_inserted_by: activeProfile?.full_name || "",
+        } as any)
+        .eq("id", item.id);
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
       toast.success("TAGs salvas!");
       setTagInputs([]);
       setEditingId(null);

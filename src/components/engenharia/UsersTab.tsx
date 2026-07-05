@@ -927,15 +927,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block w-full">
-            <div className="overflow-x-auto -mx-3 px-3">
-            <Table className="min-w-[900px]">
+          <div className="hidden sm:block w-full overflow-visible">
+            <div className="w-full overflow-visible">
+            <Table className="w-full table-fixed [&_th]:px-2 [&_td]:px-2">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="sticky left-0 z-30 w-[132px] min-w-[132px] bg-background border-r text-left whitespace-nowrap">
+                  <TableHead className="w-[104px] min-w-[104px] text-left whitespace-nowrap">
                     Ações
                   </TableHead>
-                  <TableHead className="w-10">
+                  <TableHead className="w-9">
                     <Checkbox
                       checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
                       onCheckedChange={() => {
@@ -945,28 +945,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                       }}
                     />
                   </TableHead>
-                  <TableHead>Número</TableHead>
+                  <TableHead className="w-[76px]">Número</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell">Empresa</TableHead>
-                  <TableHead className="hidden md:table-cell">Turno</TableHead>
-                  <TableHead className="hidden lg:table-cell">E-mail</TableHead>
-                  <TableHead className="hidden md:table-cell">Cargo</TableHead>
-                  <TableHead>Perfil</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Último Login</TableHead>
+                  <TableHead className="hidden md:table-cell w-[112px]">Empresa</TableHead>
+                  <TableHead className="hidden md:table-cell w-[48px]">Turno</TableHead>
+                  <TableHead className="hidden lg:table-cell w-[150px]">E-mail</TableHead>
+                  <TableHead className="hidden md:table-cell w-[112px]">Cargo</TableHead>
+                  <TableHead className="w-[64px]">Perfil</TableHead>
+                  <TableHead className="w-[64px]">Status</TableHead>
+                  <TableHead className="hidden lg:table-cell w-[96px]">Último Login</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((p: any) => (
                   <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
-                    <TableCell className="sticky left-0 z-20 w-[132px] min-w-[132px] bg-background border-r whitespace-nowrap">
-                      <div className="flex items-center justify-start gap-1 flex-nowrap">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-8 w-8 shrink-0 p-0">
+                    <TableCell className="w-[104px] min-w-[104px] whitespace-nowrap">
+                      <div className="flex items-center justify-start gap-0.5 flex-nowrap overflow-visible">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 shrink-0 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-8 w-8 shrink-0 p-0">
+                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 shrink-0 p-0">
                               {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                             </Button>
                           </PopoverTrigger>
@@ -981,7 +981,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                         </Popover>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Excluir" className="h-8 w-8 shrink-0 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                            <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 shrink-0 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
                               {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                             </Button>
                           </AlertDialogTrigger>
@@ -1001,17 +1001,17 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{p.employee_number}</TableCell>
-                    <TableCell className="text-xs">{p.full_name}</TableCell>
+                    <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
+                    <TableCell className="text-xs break-words leading-tight">{p.full_name}</TableCell>
                     <TableCell className="hidden md:table-cell text-xs">
-                      <Badge variant="outline" className={p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}>
+                      <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
                         {getEmpresaLabel(p)}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs">{p.email || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{p.cargo || "—"}</TableCell>
-                    <TableCell className="capitalize text-xs">{getRoleForUser(p.id)}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs break-all leading-tight">{p.email || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs break-words leading-tight">{p.cargo || "—"}</TableCell>
+                    <TableCell className="capitalize text-xs break-words leading-tight">{getRoleForUser(p.id)}</TableCell>
                     <TableCell>
                       <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
                     </TableCell>

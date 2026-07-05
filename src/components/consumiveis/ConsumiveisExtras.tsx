@@ -506,50 +506,159 @@ export const PedidoTime = ({ initialList }: { initialList?: { nome: string; iten
         </p>
       </div>
 
-      <div className="form-section p-3 space-y-2">
-        <Label className="text-xs font-semibold">
-          {isManager
-            ? `Selecionar membros (todos funcionários MOBIS — ${teamMembers.length})`
-            : `Selecionar membros do time (turno ${profile?.turno || "—"})`}
-        </Label>
-        {isManager && (
+      <div className="form-section p-3 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ListChecks className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-tight truncate">
+                {isManager ? "Selecionar membros" : "Selecionar membros do time"}
+              </p>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                {isManager
+                  ? `Todos funcionários MOBIS · ${teamMembers.length}`
+                  : `Turno ${profile?.turno || "—"} · ${teamMembers.length} pessoa(s)`}
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary font-semibold">
+            {selectedIds.length} selecionado(s)
+          </Badge>
+        </div>
+
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <Input
             value={teamSearch}
             onChange={(e) => setTeamSearch(e.target.value)}
             placeholder="Buscar por nome ou matrícula..."
-            className="h-8 text-xs"
+            className="h-9 text-xs pl-8"
           />
-        )}
-        {loadingTeam ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-            {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8" />)}
-          </div>
-        ) : errTeam ? (
-          <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-72 overflow-y-auto">
-            {teamMembers
-              .filter((m: any) => {
-                if (!teamSearch.trim()) return true;
-                const t = teamSearch.toLowerCase();
-                return (m.full_name || "").toLowerCase().includes(t)
-                  || String(m.employee_number || "").toLowerCase().includes(t);
-              })
-              .map((m: any) => (
-                <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1.5 rounded hover:bg-muted">
-                  <Checkbox checked={!!memberOrders[m.id]} onCheckedChange={() => toggleMember(m.id)} />
-                  <span className="truncate flex-1">
-                    {m.full_name}
-                    {m.employee_number && <span className="text-[10px] text-muted-foreground ml-1 font-mono">({m.employee_number})</span>}
-                    {isManager && m.turno && <span className="text-[10px] text-muted-foreground ml-1">· {m.turno}</span>}
-                  </span>
-                </label>
-              ))}
-            {teamMembers.length === 0 && <p className="text-xs text-muted-foreground col-span-full">Nenhum membro encontrado.</p>}
-          </div>
-        )}
-        <p className="text-xs text-muted-foreground">{totalPedidos} pedido(s) — {totalItens} item(ns) no total</p>
+        </div>
+
+        {(() => {
+          const filteredMembers = teamMembers.filter((m: any) => {
+            if (!teamSearch.trim()) return true;
+            const t = teamSearch.toLowerCase();
+            return (m.full_name || "").toLowerCase().includes(t)
+              || String(m.employee_number || "").toLowerCase().includes(t);
+          });
+          const allFilteredSelected = filteredMembers.length > 0 && filteredMembers.every((m: any) => memberOrders[m.id]);
+          return (
+            <>
+              <div className="flex items-center justify-between gap-2 text-[11px]">
+                <span className="text-muted-foreground">
+                  {filteredMembers.length} resultado(s)
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-[11px] px-2"
+                    disabled={filteredMembers.length === 0}
+                    onClick={() => {
+                      if (allFilteredSelected) {
+                        filteredMembers.forEach((m: any) => memberOrders[m.id] && removeMember(m.id));
+                      } else {
+                        filteredMembers.forEach((m: any) => !memberOrders[m.id] && addMember(m.id));
+                      }
+                    }}
+                  >
+                    {allFilteredSelected ? "Desmarcar todos" : "Selecionar todos"}
+                  </Button>
+                  {selectedIds.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[11px] px-2 text-destructive hover:text-destructive"
+                      onClick={() => setMemberOrders({})}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {loadingTeam ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-14" />)}
+                </div>
+              ) : errTeam ? (
+                <RetryBox msg="Erro ao carregar membros" onRetry={refetchTeam} />
+              ) : filteredMembers.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <p className="text-xs text-muted-foreground">Nenhum membro encontrado.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto pr-1">
+                  {filteredMembers.map((m: any) => {
+                    const checked = !!memberOrders[m.id];
+                    const initials = (m.full_name || "?")
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((s: string) => s[0]?.toUpperCase())
+                      .join("");
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => toggleMember(m.id)}
+                        className={`group flex items-center gap-2.5 text-left p-2 rounded-lg border transition-all ${
+                          checked
+                            ? "bg-primary/10 border-primary/60 shadow-sm"
+                            : "bg-card border-border hover:border-primary/40 hover:bg-muted/50"
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 transition-colors ${
+                            checked
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                          }`}
+                        >
+                          {initials || "?"}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium truncate leading-tight">{m.full_name}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            {m.employee_number && (
+                              <span className="text-[10px] text-muted-foreground font-mono">
+                                #{m.employee_number}
+                              </span>
+                            )}
+                            {isManager && m.turno && (
+                              <span className="text-[10px] text-muted-foreground">· {m.turno}</span>
+                            )}
+                          </div>
+                        </div>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleMember(m.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+        <div className="flex items-center justify-between pt-2 border-t text-[11px]">
+          <span className="text-muted-foreground">
+            <span className="font-semibold text-foreground">{totalPedidos}</span> pedido(s)
+          </span>
+          <span className="text-muted-foreground">
+            <span className="font-semibold text-foreground">{totalItens}</span> item(ns) no total
+          </span>
+        </div>
       </div>
+
 
       {selectedIds.length > 0 && (
         <div className="space-y-3">

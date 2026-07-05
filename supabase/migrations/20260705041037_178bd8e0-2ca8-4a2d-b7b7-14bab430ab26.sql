@@ -1,0 +1,2 @@
+ALTER TABLE public.consumable_requests ADD COLUMN IF NOT EXISTS lote_id uuid;
+CREATE INDEX IF NOT EXISTS idx_consumable_requests_lote_id ON public.consumable_requests(lote_id) WHERE lote_id IS NOT NULL;

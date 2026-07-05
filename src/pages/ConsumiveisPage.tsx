@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, ShoppingCart, BarChart3, Plus, Loader2, Send, Check, X as XIcon, Clock, Trash2, Pencil, Search, RotateCcw, History, UserCog, ListChecks, Users, LineChart, ClipboardList, QrCode, ScanLine } from "lucide-react";
 import QrScannerModal from "@/components/QrScannerModal";
@@ -89,24 +89,60 @@ const RequisitarItem = () => {
     } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
   };
 
+  const confirmLote = async (loteId: string) => {
+    if (!loteId || !UUID_RE.test(loteId)) { toast.error("Identificador de lote inválido"); return; }
+    setConfirming(true);
+    try {
+      const { data, error } = await (supabase
+        .from("consumable_requests")
+        .update({ status: "entregue", confirmado_em: new Date().toISOString() } as any) as any)
+        .eq("user_id", user?.id || "")
+        .eq("status", "entregue_pendente_confirmacao")
+        .eq("lote_id", loteId)
+        .select("id");
+
+      if (error) throw error;
+      if (!data?.length) { toast.error("Nenhum item pendente neste lote para você"); return; }
+      toast.success(`Lote confirmado — ${data.length} item${data.length > 1 ? "s" : ""} recebido${data.length > 1 ? "s" : ""}`);
+      qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+      qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+    } catch (e: any) { toast.error(e.message); } finally { setConfirming(false); }
+  };
+
   const handleScan = async (value: string) => {
     setScanOpen(false);
     if (!value) { toast.error("QR vazio"); return; }
-    // STRICT validation: require JSON payload with the expected type
     let parsed: any;
     try { parsed = JSON.parse(value); } catch { toast.error("QR inválido — formato não reconhecido"); return; }
-    if (!parsed || parsed.type !== "consumivel_confirm" || !parsed.pedido_id) {
-      toast.error("QR inválido — não é um QR de confirmação de consumível"); return;
+    if (!parsed?.type) { toast.error("QR inválido"); return; }
+
+    // Lote de entrega (novo fluxo — 1 leitura confirma vários itens)
+    if (parsed.type === "consumivel_lote" && parsed.lote_id) {
+      const loteId = String(parsed.lote_id).trim();
+      if (!UUID_RE.test(loteId)) { toast.error("Lote malformado"); return; }
+      const hasPending = (myRequests as any[]).some(
+        (r: any) => r.lote_id === loteId && r.status === "entregue_pendente_confirmacao"
+      );
+      if (!hasPending) { toast.error("Nenhum item deste lote está pendente para você"); return; }
+      await confirmLote(loteId);
+      return;
     }
-    const pedidoId = String(parsed.pedido_id).trim();
-    if (!UUID_RE.test(pedidoId)) { toast.error("QR inválido — identificador malformado"); return; }
-    // Ensure the QR corresponds to one of MY pending orders before updating
-    const target = (myRequests as any[]).find(
-      (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
-    );
-    if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
-    await confirmPedido(pedidoId);
+
+    // Confirmação individual/legado por pedido
+    if (parsed.type === "consumivel_confirm" && parsed.pedido_id) {
+      const pedidoId = String(parsed.pedido_id).trim();
+      if (!UUID_RE.test(pedidoId)) { toast.error("QR malformado"); return; }
+      const target = (myRequests as any[]).find(
+        (r: any) => (r.pedido_id === pedidoId || r.id === pedidoId) && r.status === "entregue_pendente_confirmacao"
+      );
+      if (!target) { toast.error("QR não corresponde a nenhum pedido pendente seu"); return; }
+      await confirmPedido(pedidoId);
+      return;
+    }
+
+    toast.error("QR inválido — não é um QR de confirmação de consumível");
   };
+
 
   const openEditReq = (r: any) => {
     setEditReq(r); setEditItemId(r.item_id || ""); setEditQty(r.quantity || 1);
@@ -459,7 +495,250 @@ const RequisitarItem = () => {
 };
 
 /* ─── Inventário e Requisições sub-module ─── */
+/* ─── Entrega em Lote (uma leitura de crachá do inspetor entrega vários itens) ─── */
+const EntregaLoteDialog = ({
+  open, onOpenChange, items, allRequests, onDelivered,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  items: any[];
+  allRequests: any[];
+  onDelivered: (loteId: string, inspectorName: string, count: number) => void;
+}) => {
+  const [scanOpen, setScanOpen] = useState(false);
+  const [inspector, setInspector] = useState<{ id: string; full_name: string; turno: string | null; qr_code_id?: string } | null>(null);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const { data: inspectors = [] } = useQuery({
+    queryKey: ["consumiveis-inspectors"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_co_inspection_profiles");
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+    enabled: open,
+  });
+
+  // Reset when closing
+  const resetAll = () => { setInspector(null); setSelected({}); setSearch(""); };
+  const close = () => { resetAll(); onOpenChange(false); };
+
+  const pendingForUser = useMemo(() => {
+    if (!inspector) return [];
+    return (allRequests || [])
+      .filter((r: any) => r.user_id === inspector.id && r.status === "aguardando")
+      .sort((a: any, b: any) => (a.created_at < b.created_at ? -1 : 1));
+  }, [allRequests, inspector]);
+
+  // Pré-marca todos os itens quando trocar de inspetor
+  useEffect(() => {
+    if (!inspector) { setSelected({}); return; }
+    const next: Record<string, boolean> = {};
+    for (const r of pendingForUser) next[r.id] = true;
+    setSelected(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspector?.id]);
+
+
+  const filteredInspectors = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = (inspectors as any[]).filter((p) => p.full_name !== "TESTER");
+    if (!q) return list.slice(0, 30);
+    return list.filter((p) =>
+      p.full_name?.toLowerCase().includes(q) ||
+      (p.turno || "").toLowerCase().includes(q)
+    ).slice(0, 30);
+  }, [inspectors, search]);
+
+  const handleInspectorScan = async (value: string) => {
+    setScanOpen(false);
+    if (!value) return;
+    // Aceita JSON { qr_code_id: "INSP-xxxxx" } ou string crua "INSP-xxxxx"
+    let code = value.trim();
+    try { const parsed = JSON.parse(value); if (parsed?.qr_code_id) code = String(parsed.qr_code_id).trim(); } catch { /* raw */ }
+    if (!/^INSP-\d+$/i.test(code)) { toast.error("QR não é um crachá de inspetor válido"); return; }
+    const { data, error } = await supabase.from("profiles").select("id, full_name, turno, qr_code_id").eq("qr_code_id", code.toUpperCase()).maybeSingle();
+    if (error) { toast.error(error.message); return; }
+    if (!data) { toast.error("Inspetor não encontrado"); return; }
+    setInspector(data as any);
+  };
+
+  const selectedRows = useMemo(() => pendingForUser.filter((r: any) => selected[r.id]), [pendingForUser, selected]);
+  const selectedTotal = selectedRows.length;
+
+  // Valida se tem estoque para todos os selecionados
+  const stockIssue = useMemo(() => {
+    for (const r of selectedRows) {
+      const item = items.find((i: any) => i.id === r.item_id);
+      if (item && item.stock_qty < r.quantity) return { name: item.name, stock: item.stock_qty, req: r.quantity };
+    }
+    return null;
+  }, [selectedRows, items]);
+
+  const handleDeliverBatch = async () => {
+    if (!inspector || selectedRows.length === 0) return;
+    if (stockIssue) { toast.error(`Estoque insuficiente para ${stockIssue.name}`); return; }
+    setSaving(true);
+    try {
+      const loteId = (globalThis.crypto?.randomUUID?.() as string) || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const nowIso = new Date().toISOString();
+
+      // Agrega baixa de estoque por item
+      const stockDelta = new Map<string, number>();
+      for (const r of selectedRows) stockDelta.set(r.item_id, (stockDelta.get(r.item_id) || 0) + (r.quantity || 0));
+
+      // 1) Baixa de estoque item a item
+      for (const [itemId, qty] of stockDelta) {
+        const item = items.find((i: any) => i.id === itemId);
+        if (!item) continue;
+        const newQty = Math.max(0, item.stock_qty - qty);
+        const { error: sErr } = await supabase.from("consumable_items").update({ stock_qty: newQty } as any).eq("id", itemId);
+        if (sErr) throw sErr;
+      }
+
+      // 2) Atualiza requisições em lote com o mesmo lote_id
+      const ids = selectedRows.map((r: any) => r.id);
+      const { error: uErr } = await (supabase
+        .from("consumable_requests")
+        .update({ status: "entregue_pendente_confirmacao", entregue_em: nowIso, lote_id: loteId } as any) as any)
+        .in("id", ids);
+      if (uErr) throw uErr;
+
+      onDelivered(loteId, inspector.full_name, ids.length);
+      close();
+    } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : close())}>
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ScanLine className="w-5 h-5 text-primary" /> Entrega em lote
+            </DialogTitle>
+          </DialogHeader>
+
+          {!inspector ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Escaneie o crachá do inspetor <strong>uma vez</strong> ou selecione da lista. Depois marque os itens que estão sendo entregues agora.
+              </p>
+              <Button className="w-full h-11 gap-2" onClick={() => setScanOpen(true)}>
+                <ScanLine className="w-4 h-4" /> Escanear crachá do inspetor
+              </Button>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="…ou buscar por nome" className="pl-9 h-9 text-xs" />
+              </div>
+              <div className="border rounded-lg divide-y max-h-72 overflow-y-auto">
+                {filteredInspectors.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-6">Nenhum inspetor</p>
+                )}
+                {filteredInspectors.map((p: any) => {
+                  const pend = (allRequests || []).filter((r: any) => r.user_id === p.id && r.status === "aguardando").length;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setInspector(p)}
+                      className="w-full flex items-center justify-between px-3 py-2 hover:bg-primary/5 text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{p.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground">Turno {p.turno || "—"}</p>
+                      </div>
+                      {pend > 0 ? (
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-500/10 text-[10px]">
+                          {pend} pend.
+                        </Badge>
+                      ) : (
+                        <span className="text-[10px] text-muted-foreground">sem pendências</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-2 rounded-lg border bg-primary/5 p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{inspector.full_name}</p>
+                  <p className="text-[11px] text-muted-foreground">Turno {inspector.turno || "—"} · {inspector.qr_code_id || "—"}</p>
+                </div>
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetAll}>Trocar</Button>
+              </div>
+
+              {pendingForUser.length === 0 ? (
+                <div className="text-center py-8 border border-dashed rounded-lg">
+                  <p className="text-sm text-muted-foreground">Nenhuma requisição aguardando para este inspetor.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{pendingForUser.length} pendente(s) · {selectedTotal} selecionado(s)</span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                        const n: Record<string, boolean> = {}; pendingForUser.forEach((r: any) => n[r.id] = true); setSelected(n);
+                      }}>Marcar tudo</Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelected({})}>Limpar</Button>
+                    </div>
+                  </div>
+                  <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+                    {pendingForUser.map((r: any) => {
+                      const item = items.find((i: any) => i.id === r.item_id);
+                      const shortage = item && item.stock_qty < r.quantity;
+                      return (
+                        <label key={r.id} className={`flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/40 ${selected[r.id] ? "bg-primary/[0.04]" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={!!selected[r.id]}
+                            onChange={(e) => setSelected((s) => ({ ...s, [r.id]: e.target.checked }))}
+                            className="h-4 w-4 accent-primary"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{r.item_name} <span className="text-muted-foreground">× {r.quantity}</span></p>
+                            <p className="text-[10px] text-muted-foreground">{r.numero || "—"} · {new Date(r.created_at).toLocaleDateString("pt-BR")}</p>
+                          </div>
+                          {shortage && (
+                            <Badge variant="outline" className="border-destructive text-destructive text-[10px]">
+                              estoque {item.stock_qty}
+                            </Badge>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {stockIssue && (
+                    <p className="text-xs text-destructive">
+                      Estoque insuficiente de <strong>{stockIssue.name}</strong> ({stockIssue.stock} disp. para {stockIssue.req} solicitado).
+                    </p>
+                  )}
+                  <Button
+                    className="w-full h-11 gap-2"
+                    disabled={selectedTotal === 0 || saving || !!stockIssue}
+                    onClick={handleDeliverBatch}
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Entregar {selectedTotal} item{selectedTotal === 1 ? "" : "s"} e gerar QR de lote
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <QrScannerModal open={scanOpen} onClose={() => setScanOpen(false)} onScan={handleInspectorScan} title="Escanear crachá do inspetor" />
+    </>
+  );
+};
+
+/* ─── Inventário e Requisições sub-module ─── */
 const InventarioRequisicoes = () => {
+
   const { isAdmin } = useUserRole();
   const { enabledModules } = useEnabledModules();
   const hasInventarioPermission = isAdmin || enabledModules.includes("consumiveis_inventario" as any);
@@ -491,6 +770,9 @@ const InventarioRequisicoes = () => {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyItemId, setHistoryItemId] = useState("");
   const [qrPedidoId, setQrPedidoId] = useState<string | null>(null);
+  const [entregaLoteOpen, setEntregaLoteOpen] = useState(false);
+  const [loteQr, setLoteQr] = useState<{ loteId: string; inspetor: string; count: number } | null>(null);
+
 
   const { data: items = [], isLoading: loadingItems } = useQuery({
     queryKey: ["consumable-items"],
@@ -715,6 +997,12 @@ const InventarioRequisicoes = () => {
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
             <Package className="w-4 h-4" /> <span className="truncate">Ver Estoque ({items.filter((i: any) => i.active).length})</span>
           </Button>
+          {canApprove && (
+            <Button size="sm" onClick={() => setEntregaLoteOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center bg-primary">
+              <ScanLine className="w-4 h-4" /> <span className="truncate">Entrega em lote</span>
+            </Button>
+          )}
+
           {isAdmin && (
             <>
               <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
@@ -732,6 +1020,47 @@ const InventarioRequisicoes = () => {
       </div>
 
       <ConsumiveisAccessDialog open={accessOpen} onOpenChange={setAccessOpen} />
+
+      <EntregaLoteDialog
+        open={entregaLoteOpen}
+        onOpenChange={setEntregaLoteOpen}
+        items={items}
+        allRequests={allRequests}
+        onDelivered={(loteId, inspetor, count) => {
+          setLoteQr({ loteId, inspetor, count });
+          qc.invalidateQueries({ queryKey: ["all-consumable-requests"] });
+          qc.invalidateQueries({ queryKey: ["my-consumable-requests"] });
+          qc.invalidateQueries({ queryKey: ["consumable-items"] });
+          qc.invalidateQueries({ queryKey: ["consumable-items-active"] });
+        }}
+      />
+
+      <Dialog open={!!loteQr} onOpenChange={(o) => !o && setLoteQr(null)}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><QrCode className="w-5 h-5 text-primary" /> QR do lote de entrega</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-3 py-2">
+            <div className="bg-white p-3 rounded-lg">
+              {loteQr && (
+                <QRCodeSVG value={JSON.stringify({ type: "consumivel_lote", lote_id: loteQr.loteId })} size={240} />
+              )}
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold">{loteQr?.inspetor}</p>
+              <p className="text-xs text-muted-foreground">
+                {loteQr?.count} item{(loteQr?.count || 0) > 1 ? "s" : ""} — mostre este QR uma única vez ao inspetor.
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                O inspetor abre Consumíveis → <strong>Confirmar via QR</strong> e confirma tudo com uma só leitura.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setLoteQr(null)} className="w-full">Fechar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Stock list dialog */}
       <Dialog open={stockListOpen} onOpenChange={setStockListOpen}>

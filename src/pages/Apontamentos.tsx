@@ -24,6 +24,7 @@ import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
 import { DefectTagBadge } from "@/components/apontamento/DefectTagBadge";
+import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Input } from "@/components/ui/input";

@@ -294,7 +294,7 @@ const Hub = () => {
   });
 
   const badgeByModule: Record<string, number> = {
-    "apontamentos": apontamentosBadge,
+    // "apontamentos" badge removed — now shown as external TAGs Pendentes button inside the Apontamentos page.
     "alerta-qualidade": alertaBadge,
     "consumiveis": consumiveisBadge,
     "matriz-versatilidade": matrizBadge,

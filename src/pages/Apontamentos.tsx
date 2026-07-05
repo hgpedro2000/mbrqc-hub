@@ -24,6 +24,7 @@ import { stripCode } from "@/lib/stripCode";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { TagBadge } from "@/components/apontamento/TagBadge";
 import { DefectTagBadge } from "@/components/apontamento/DefectTagBadge";
+import { PendingTagsAlert } from "@/components/apontamento/PendingTagsAlert";
 import { useEnabledModules } from "@/hooks/useModulePermissions";
 import { useImpersonation } from "@/contexts/ImpersonationContext";
 import { Input } from "@/components/ui/input";
@@ -707,6 +708,7 @@ const Apontamentos = () => {
                   <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnFixPN")}</span>
                 </Button>
               )}
+              <div className="hidden md:block"><PendingTagsAlert requireMobis /></div>
               <ReportErrorButton moduleName="Apontamentos" />
               <LanguageToggle />
               <Button variant="ghost" size="icon" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 h-8 w-8 md:h-9 md:w-auto md:px-3" title={t("common.logout")}>
@@ -716,6 +718,7 @@ const Apontamentos = () => {
           </div>
           <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("apontamentos.list.pageTitle")}</h1>
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">{t("apontamentos.list.pageSubtitle")}</p>
+          <div className="mt-3 md:hidden"><PendingTagsAlert requireMobis /></div>
         </div>
       </header>
 

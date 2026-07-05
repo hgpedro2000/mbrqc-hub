@@ -977,8 +977,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
                       {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-0.5">
+                    <TableCell className="text-right w-[120px] whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-0.5 flex-nowrap">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>

@@ -532,14 +532,15 @@ const EntregaLoteDialog = ({
       .sort((a: any, b: any) => (a.created_at < b.created_at ? -1 : 1));
   }, [allRequests, inspector]);
 
-  // Pré-marca todos os itens quando carregar
-  const initializedForRef = useMemo(() => ({ current: "" }), []);
-  if (inspector && initializedForRef.current !== inspector.id) {
-    initializedForRef.current = inspector.id;
+  // Pré-marca todos os itens quando trocar de inspetor
+  useEffect(() => {
+    if (!inspector) { setSelected({}); return; }
     const next: Record<string, boolean> = {};
     for (const r of pendingForUser) next[r.id] = true;
     setSelected(next);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspector?.id]);
+
 
   const filteredInspectors = useMemo(() => {
     const q = search.trim().toLowerCase();

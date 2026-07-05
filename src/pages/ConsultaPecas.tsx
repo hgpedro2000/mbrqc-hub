@@ -229,7 +229,7 @@ const ConsultaPecas = () => {
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="header-btn px-2 md:px-3">
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("consultaPecas.hub")}</span>
               </Button>
               <ReportErrorButton moduleName={t("consultaPecas.moduleName")} />

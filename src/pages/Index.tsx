@@ -311,14 +311,14 @@ const Index = () => {
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Try-Out Control</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="header-btn px-2 md:px-3">
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.hub")}</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/tryout/dashboard")} className="header-btn px-2 md:px-3">
                 <BarChart3 className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.dashboard")}</span>
               </Button>
               <ReportErrorButton moduleName="Try-Out" />
-              <Button variant="ghost" size="sm" onClick={signOut} className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 px-2 md:px-3">
+              <Button variant="ghost" size="sm" onClick={signOut} className="header-btn header-btn-danger px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t("common.logout")}</span>
               </Button>
             </div>

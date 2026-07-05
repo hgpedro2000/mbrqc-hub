@@ -718,6 +718,7 @@ const Apontamentos = () => {
           </div>
           <h1 className="text-xl sm:text-2xl md:text-4xl font-heading font-bold mt-3 md:mt-4">{t("apontamentos.list.pageTitle")}</h1>
           <p className="mt-1 md:mt-2 text-primary-foreground/70 max-w-xl text-xs sm:text-sm md:text-lg">{t("apontamentos.list.pageSubtitle")}</p>
+          <div className="mt-3 md:hidden"><PendingTagsAlert requireMobis /></div>
         </div>
       </header>
 

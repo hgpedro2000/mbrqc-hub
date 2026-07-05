@@ -996,6 +996,12 @@ const InventarioRequisicoes = () => {
           <Button variant="outline" size="sm" onClick={() => setStockListOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">
             <Package className="w-4 h-4" /> <span className="truncate">Ver Estoque ({items.filter((i: any) => i.active).length})</span>
           </Button>
+          {canApprove && (
+            <Button size="sm" onClick={() => setEntregaLoteOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center bg-primary">
+              <ScanLine className="w-4 h-4" /> <span className="truncate">Entrega em lote</span>
+            </Button>
+          )}
+
           {isAdmin && (
             <>
               <Button variant="outline" size="sm" onClick={() => setAccessOpen(true)} className="gap-1 min-h-[36px] w-full sm:w-auto justify-center">

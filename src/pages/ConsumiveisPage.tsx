@@ -1519,8 +1519,104 @@ const ConsumiveisPage = () => {
           )}
         </Tabs>
       </main>
+
+      {/* Ajuda: Como funciona o módulo Consumíveis */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-[600px] max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-primary" /> Entenda esse Módulo — Consumíveis
+            </DialogTitle>
+            <DialogDescription>
+              Fluxo completo de requisição, aprovação, entrega e análise de consumo dos itens da qualidade.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2 text-sm">
+            <section className="space-y-1.5">
+              <div className="flex items-center gap-2"><ShoppingCart className="w-4 h-4 text-primary" /><h3 className="font-semibold">Meu Pedido</h3></div>
+              <p className="text-muted-foreground leading-relaxed">
+                Sua tela pessoal para requisitar itens ao estoque. Você escolhe o consumível, a quantidade e envia. O pedido fica "Aguardando" até o líder/gestor aprovar. Também é aqui que você confirma o recebimento — via botão "Confirmar via App" ou lendo o QR mostrado pelo líder.
+              </p>
+            </section>
+
+            <div className="border-t" />
+
+            <section className="space-y-1.5">
+              <div className="flex items-center gap-2"><LineChart className="w-4 h-4 text-primary" /><h3 className="font-semibold">Meu Histórico</h3></div>
+              <p className="text-muted-foreground leading-relaxed">
+                Todos os seus pedidos passados, com status (Aguardando, Aguardando confirmação, Entregue, Rejeitado), data, número (REQ-####) e quantidade. Use para conferir o que você já consumiu e o que está pendente.
+              </p>
+            </section>
+
+            {showTeam && (
+              <>
+                <div className="border-t" />
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><Users className="w-4 h-4 text-primary" /><h3 className="font-semibold">Pedido de Time</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Uso do líder para pedir consumíveis em nome de vários inspetores do seu turno de uma só vez. Selecione os membros, monte a lista de itens e envie — o sistema cria um pedido para cada inspetor, agrupados sob o mesmo número.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><ListChecks className="w-4 h-4 text-primary" /><h3 className="font-semibold">Listas Salvas</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Modelos reutilizáveis para pedidos recorrentes (ex.: "kit início de turno"). Salve uma combinação de itens uma vez e reutilize em novos pedidos do time sem remontar item a item.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><History className="w-4 h-4 text-primary" /><h3 className="font-semibold">Histórico (individual e coletivo)</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Painel analítico para o líder acompanhar o consumo do seu turno: KPIs, timeline de pedidos, filtros por período/usuário/status, ranking de itens mais consumidos e exportação Excel/PDF. Líderes veem apenas o próprio turno; gestores veem todos.
+                  </p>
+                </section>
+              </>
+            )}
+
+            {showManager && (
+              <>
+                <div className="border-t" />
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><BarChart3 className="w-4 h-4 text-primary" /><h3 className="font-semibold">Gestão e Estoque</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Central do gestor. Cadastra e edita consumíveis, define estoque mínimo, faz reposição/baixa manual, aprova ou rejeita requisições e controla os acessos ao módulo. Alerta visual quando um item entra em estoque baixo.
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    <strong className="text-foreground">Entrega em lote:</strong> escaneia o crachá do inspetor (INSP-xxxxx) ou seleciona da lista, marca no checklist tudo que está sendo entregue agora e gera <strong>um único QR</strong>. O inspetor confirma vários itens com uma leitura só, evitando escanear um QR por item.
+                  </p>
+                </section>
+
+                <div className="border-t" />
+
+                <section className="space-y-1.5">
+                  <div className="flex items-center gap-2"><ClipboardList className="w-4 h-4 text-primary" /><h3 className="font-semibold">Consumo do Time</h3></div>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Dashboards de consumo por turno e por membro. Gestores podem alternar entre turnos (A/B/C/ADM) e usar a Análise Individual para inspecionar um inspetor específico — KPIs, taxa de entrega, top itens consumidos e histórico completo do usuário no período.
+                  </p>
+                </section>
+              </>
+            )}
+
+            <div className="border-t" />
+            <p className="text-xs text-muted-foreground">
+              Status dos pedidos: <strong>Aguardando</strong> (aprovação do gestor) → <strong>Aguardando confirmação</strong> (entregue pelo líder, falta o inspetor confirmar) → <strong>Entregue</strong> (baixa efetivada no estoque).
+            </p>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setShowHelp(false)}>Entendi</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 export default ConsumiveisPage;

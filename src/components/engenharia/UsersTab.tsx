@@ -932,9 +932,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             <Table className="w-full table-fixed [&_th]:px-2 [&_td]:px-2">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[104px] min-w-[104px] text-left whitespace-nowrap">
-                    Ações
-                  </TableHead>
                   <TableHead className="w-9">
                     <Checkbox
                       checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
@@ -954,7 +951,11 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   <TableHead className="w-[64px]">Perfil</TableHead>
                   <TableHead className="w-[64px]">Status</TableHead>
                   <TableHead className="hidden lg:table-cell w-[96px]">Último Login</TableHead>
+                  <TableHead className="w-[104px] min-w-[104px] text-right whitespace-nowrap">
+                    Ações
+                  </TableHead>
                 </TableRow>
+
               </TableHeader>
               <TableBody>
                 {filtered.map((p: any) => (

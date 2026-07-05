@@ -32,6 +32,7 @@ const Engenharia = () => {
   const isSpecialAdmin = profile?.employee_number === "3501165";
   const [impersonateOpen, setImpersonateOpen] = useState(false);
   const [impersonateSearch, setImpersonateSearch] = useState("");
+  const [securityOpen, setSecurityOpen] = useState(false);
   const { impersonating, setImpersonating, stopImpersonating } = useImpersonation();
   const initialTab = searchParams.get("tab") || "usuarios";
   const [activeTab, setActiveTab] = useState(initialTab);

@@ -883,9 +883,13 @@ export const ListasSalvas = ({ onUseList }: { onUseList: (l: { nome: string; ite
 /* ───────────────────────────  CONSUMO DO TIME  ─────────────────────────── */
 export const ConsumoTime = () => {
   const { profile } = useAuth();
+  const { isAdmin } = useUserRole();
+  const role = getConsumivelRole(profile?.cargo, isAdmin);
+  const canSeeAllShifts = role === "manager"; // gestores e admins
   const [periodo, setPeriodo] = useState<"30" | "90" | "180" | "365">("30");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [turnoView, setTurnoView] = useState<string>(canSeeAllShifts ? "all" : (profile?.turno || ""));
 
   const dateFrom = useMemo(() => {
     const d = new Date();
@@ -894,15 +898,19 @@ export const ConsumoTime = () => {
   }, [periodo]);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["team-consumable-requests", profile?.turno, dateFrom],
+    queryKey: ["team-consumable-requests", canSeeAllShifts ? turnoView : profile?.turno, dateFrom],
     queryFn: async () => {
-      if (!profile?.turno) return [];
-      const { data, error } = await supabase.from("consumable_requests").select("*").eq("turno", profile.turno).gte("created_at", dateFrom).order("created_at", { ascending: false });
+      const effectiveTurno = canSeeAllShifts ? turnoView : profile?.turno;
+      if (!canSeeAllShifts && !profile?.turno) return [];
+      let q = supabase.from("consumable_requests").select("*").gte("created_at", dateFrom).order("created_at", { ascending: false });
+      if (effectiveTurno && effectiveTurno !== "all") q = q.eq("turno", effectiveTurno);
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
-    enabled: !!profile?.turno,
+    enabled: canSeeAllShifts || !!profile?.turno,
   });
+
 
   const stats = useMemo(() => {
     const all = data || [];

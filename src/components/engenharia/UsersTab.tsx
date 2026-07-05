@@ -960,8 +960,28 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
               <TableBody>
                 {filtered.map((p: any) => (
                   <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
+                    <TableCell className="text-xs break-words leading-tight">{p.full_name}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">
+                      <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
+                        {getEmpresaLabel(p)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs break-all leading-tight">{p.email || "—"}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs break-words leading-tight">{p.cargo || "—"}</TableCell>
+                    <TableCell className="capitalize text-xs break-words leading-tight">{getRoleForUser(p.id)}</TableCell>
+                    <TableCell>
+                      <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
+                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
+                    </TableCell>
                     <TableCell className="w-[104px] min-w-[104px] whitespace-nowrap">
-                      <div className="flex items-center justify-start gap-0.5 flex-nowrap overflow-visible">
+                      <div className="flex items-center justify-end gap-0.5 flex-nowrap overflow-visible">
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 shrink-0 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -971,7 +991,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                               {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent align="start" className="w-56 p-2">
+                          <PopoverContent align="end" className="w-56 p-2">
                             <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
                               <KeyRound className="w-4 h-4" /> Senha provisória
                             </Button>
@@ -999,27 +1019,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                         </AlertDialog>
                       </div>
                     </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
-                    </TableCell>
-                    <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
-                    <TableCell className="text-xs break-words leading-tight">{p.full_name}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">
-                      <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
-                        {getEmpresaLabel(p)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs break-all leading-tight">{p.email || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs break-words leading-tight">{p.cargo || "—"}</TableCell>
-                    <TableCell className="capitalize text-xs break-words leading-tight">{getRoleForUser(p.id)}</TableCell>
-                    <TableCell>
-                      <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
-                    </TableCell>
                   </TableRow>
+
                 ))}
                 {filtered.length === 0 && (
                   <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>

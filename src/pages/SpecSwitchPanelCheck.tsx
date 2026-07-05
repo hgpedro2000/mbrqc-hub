@@ -518,7 +518,7 @@ export default function SpecSwitchPanelCheck() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="header-btn header-btn-back">
+          <Button variant="ghost" onClick={() => navigate(-1)} className="header-btn header-btn-back">
             <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
           </Button>
           <h1 className="text-xl md:text-2xl font-bold tracking-wide">VALIDAÇÃO SPEC — PAINEL × SWITCH</h1>

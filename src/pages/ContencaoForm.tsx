@@ -185,7 +185,7 @@ const ContencaoForm = () => {
       <header className="gradient-header">
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/contencao")} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.back")}</span></Button>
+            <Button variant="ghost" onClick={() => navigate("/contencao")} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 sm:mr-1" /> <span className="hidden sm:inline">{t("common.back")}</span></Button>
             <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
           </div>
           <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4"><ShieldAlert className="w-6 h-6 sm:w-8 sm:h-8" /><h1 className="text-xl sm:text-2xl font-heading font-bold">{isEdit ? t("contencao.editContencao") : t("contencao.newContencao")}</h1></div>

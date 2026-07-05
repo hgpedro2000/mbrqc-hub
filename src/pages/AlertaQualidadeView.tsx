@@ -138,7 +138,7 @@ const AlertaQualidadeView = () => {
       <header className="bg-[#c0392b] text-white">
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/alerta-qualidade")} className="header-btn header-btn-back">
+            <Button variant="ghost" onClick={() => navigate("/alerta-qualidade")} className="header-btn header-btn-back">
               <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
             </Button>
             <div className="flex items-center gap-2">

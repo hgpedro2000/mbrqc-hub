@@ -688,30 +688,30 @@ const Apontamentos = () => {
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">{t("apontamentos.list.headerEyebrow")}</span>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="header-btn header-btn-back" title={t("common.hub")}>
+              <Button variant="ghost" onClick={() => navigate("/")} className="header-btn header-btn-back" title={t("common.hub")}>
                 <ArrowLeft className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.hub")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/dashboard")} className="header-btn" title={t("apontamentos.list.btnDashboard")}>
+              <Button variant="ghost" onClick={() => navigate("/apontamentos/dashboard")} className="header-btn" title={t("apontamentos.list.btnDashboard")}>
                 <BarChart3 className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnDashboard")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleMonitorClick} className="header-btn" title={t("apontamentos.list.btnMonitor")}>
+              <Button variant="ghost" onClick={handleMonitorClick} className="header-btn" title={t("apontamentos.list.btnMonitor")}>
                 <MonitorPlay className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnMonitor")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setDailyReportOpen(true)} className="header-btn" title={t("apontamentos.list.btnReport")}>
+              <Button variant="ghost" onClick={() => setDailyReportOpen(true)} className="header-btn" title={t("apontamentos.list.btnReport")}>
                 <Calendar className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnReport")}</span>
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setShowNgLocationDialog(true)} className="header-btn" title={t("apontamentos.list.btnNG")}>
+              <Button variant="ghost" onClick={() => setShowNgLocationDialog(true)} className="header-btn" title={t("apontamentos.list.btnNG")}>
                 <AlertTriangle className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnNG")}</span>
               </Button>
               {isAdmin && profile?.employee_number === "3501165" && (
-                <Button variant="ghost" size="icon" onClick={() => navigate("/apontamentos/admin/part-name")} className="header-btn" title={t("apontamentos.list.btnFixPN")}>
+                <Button variant="ghost" onClick={() => navigate("/apontamentos/admin/part-name")} className="header-btn" title={t("apontamentos.list.btnFixPN")}>
                   <Wrench className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("apontamentos.list.btnFixPN")}</span>
                 </Button>
               )}
               <div className="hidden md:block"><PendingTagsAlert requireMobis /></div>
               <ReportErrorButton moduleName="Apontamentos" />
               <LanguageToggle />
-              <Button variant="ghost" size="icon" onClick={signOut} className="header-btn header-btn-danger" title={t("common.logout")}>
+              <Button variant="ghost" onClick={signOut} className="header-btn header-btn-danger" title={t("common.logout")}>
                 <LogOut className="w-4 h-4 md:mr-1" /> <span className="hidden md:inline text-sm">{t("common.logout")}</span>
               </Button>
             </div>

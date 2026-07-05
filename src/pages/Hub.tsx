@@ -420,18 +420,18 @@ const Hub = () => {
               <LanguageToggle />
               <ReportErrorButton moduleName="Hub" showNewUserRequest={canRequestNewUser} showAdminHelpDeskTickets={showEngineering} />
               {isMobisBrasil && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/meu-qr")} className="header-btn text-xs md:text-sm px-2 md:px-3">
+                <Button variant="ghost" onClick={() => navigate("/meu-qr")} className="header-btn text-xs md:text-sm px-2 md:px-3">
                   <QrCode className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">Meu QR Code</span>
                 </Button>
               )}
               {showEngineering && (
-                <Button variant="ghost" size="sm" onClick={() => navigate("/engenharia")} className="header-btn text-xs md:text-sm px-2 md:px-3">
+                <Button variant="ghost" onClick={() => navigate("/engenharia")} className="header-btn text-xs md:text-sm px-2 md:px-3">
                   <Settings2 className="w-4 h-4 md:mr-2" />
                   <span className="hidden md:inline">{t("common.engineering")}</span>
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={signOut} className="header-btn header-btn-danger text-xs md:text-sm px-2 md:px-3">
+              <Button variant="ghost" onClick={signOut} className="header-btn header-btn-danger text-xs md:text-sm px-2 md:px-3">
                 <LogOut className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">{t("common.logout")}</span>
               </Button>

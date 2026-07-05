@@ -1200,7 +1200,7 @@ const ApontamentoForm = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-6">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={requestExit} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">{t("common.back")}</span></Button>
+              <Button variant="ghost" onClick={requestExit} className="header-btn header-btn-back"><ArrowLeft className="w-4 h-4 sm:mr-1" /><span className="hidden sm:inline">{t("common.back")}</span></Button>
               <img src={logo} alt="Hyundai Mobis" className="h-5 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             {formTipo === "incoming" && (

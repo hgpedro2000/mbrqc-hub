@@ -1468,10 +1468,10 @@ const ConsumiveisPage = () => {
               <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Consumíveis</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setShowHelp(true)} className="header-btn px-2 md:px-3 gap-1">
+              <Button variant="ghost" onClick={() => setShowHelp(true)} className="header-btn px-2 md:px-3 gap-1">
                 <HelpCircle className="w-4 h-4" /> <span className="hidden md:inline">Entenda esse Módulo</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="header-btn px-2 md:px-3">
+              <Button variant="ghost" onClick={() => navigate("/")} className="header-btn px-2 md:px-3">
                 <ArrowLeft className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Hub</span>
               </Button>
               <ReportErrorButton moduleName="Consumíveis" />

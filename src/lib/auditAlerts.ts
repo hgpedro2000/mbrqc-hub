@@ -38,7 +38,7 @@ export async function refreshAuditAlerts(): Promise<void> {
     if (a.status === "planejada" && diff >= 0 && diff <= 3) {
       upserts.push({
         audit_id: a.id,
-        type: "upcoming",
+        type: "auditoria_proxima",
         trigger_date: todayISO(),
         message:
           diff === 0
@@ -66,7 +66,7 @@ export async function refreshAuditAlerts(): Promise<void> {
       const overdue = daysBetween(today, new Date(n.due_date + "T12:00:00"));
       upserts.push({
         audit_id: n.audit_id,
-        type: "supplier_overdue",
+        type: "fornecedor_atrasado",
         trigger_date: todayISO(),
         message: `NC #${n.seq_number} atrasada ${overdue}d — ${sup.get(n.audit_id) ?? ""}`,
       });

@@ -25,6 +25,7 @@ import AuditoriaForm from "./pages/AuditoriaForm";
 import AuditoriaWizard from "./pages/AuditoriaWizard";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";
 import AuditoriaDetalhe from "./pages/AuditoriaDetalhe";
+import AuditoriaAgenda from "./pages/AuditoriaAgenda";
 import Contencao from "./pages/Contencao";
 import ContencaoForm from "./pages/ContencaoForm";
 import ContencaoDashboard from "./pages/ContencaoDashboard";

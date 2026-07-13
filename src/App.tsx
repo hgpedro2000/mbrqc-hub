@@ -22,6 +22,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Engenharia from "./pages/Engenharia";
 import Auditorias from "./pages/Auditorias";
 import AuditoriaForm from "./pages/AuditoriaForm";
+import AuditoriaWizard from "./pages/AuditoriaWizard";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";
 import Contencao from "./pages/Contencao";
 import ContencaoForm from "./pages/ContencaoForm";

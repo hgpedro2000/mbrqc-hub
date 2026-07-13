@@ -381,9 +381,29 @@ export default function AuditoriaDetalhe() {
           }}
         />
       )}
+
+      {detailNc && (
+        <Dialog open onOpenChange={(o) => !o && setDetailNc(null)}>
+          <DialogContent className="max-w-6xl max-h-[92vh] overflow-auto bg-slate-200 dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle>Improvement Case — NC #{detailNc.seq_number}</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center">
+              <ImprovementCaseView nc={detailNc} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDetailNc(null)}>Fechar</Button>
+              <Button onClick={() => { const nc = detailNc; setDetailNc(null); setRespondNc(nc); }}>
+                <Upload className="w-4 h-4 mr-1" /> Registrar / Editar resposta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
 
 function InfoRow({ k, v }: { k: string; v: any }) {
   return (

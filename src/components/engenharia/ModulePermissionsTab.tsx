@@ -11,6 +11,11 @@ import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const MODULE_ABBREVIATIONS: Record<string, string> = {
+  "Sub-Hub: Qualidade": "Qualidade",
+  "Sub-Hub: G.A.": "G.A.",
+  "Sub-Hub: Produção": "Produção",
+  "Sub-Hub: Vendas": "Vendas",
+  "Sub-Hub: SESMT": "SESMT",
   "Try-Out": "Try-Out",
   "Auditorias": "Audit.",
   "Contenção": "Conten.",
@@ -25,6 +30,7 @@ const MODULE_ABBREVIATIONS: Record<string, string> = {
   "  ↳ Inventário e Requisições": "Inv. Req.",
   "Consulta de Peças": "Cons. Peças",
   "Matriz de Versatilidade": "Matr. Vers.",
+  "Análise de Risco": "Análise R.",
 };
 
 const ModulePermissionsTab = () => {

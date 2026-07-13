@@ -374,67 +374,119 @@ async function addIssuesSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData:
   return total;
 }
 
-/** One "Improvement Case" per NC (Before/After) */
-async function addImprovementSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string | null, pageStart: number) {
-  let p = pageStart;
+/** One "Improvement Case" attachment per NC — replica pixel-a-pixel do template */
+async function addImprovementSlides(pptx: pptxgen, _audit: Audit, ncs: NC[], _logoData: string | null, _pageStart: number) {
+  const px = (v: number) => v / 100;
+  const BORDER = "111111";
+  const W = 1084;
+  const H = 760;
+  const HEAD_H = 80;
+  const NUM_W = 110;
+  const TITLE_W = 490;
+  const DATE_LBL_W = 220;
+  const DATE_VAL_W = W - NUM_W - TITLE_W - DATE_LBL_W;
+  const BA_Y = HEAD_H;
+  const BA_H = 44;
+  const COL_W = W / 2;
+  const BODY_Y = BA_Y + BA_H;
+  const BODY_H = 470;
+  const FOOT_Y = BODY_Y + BODY_H;
+  const FOOT_H = H - FOOT_Y;
+  const OBS_LBL_W = 90;
+  const CM_LBL_W = 90;
+
+  const box = (
+    slide: pptxgen.Slide,
+    x: number, y: number, w: number, h: number,
+    label: string,
+    opts: { bold?: boolean; center?: boolean; fontSize?: number; valign?: any; color?: string; fill?: string } = {},
+  ) => {
+    slide.addShape("rect", {
+      x: px(x), y: px(y), w: px(w), h: px(h),
+      fill: { color: opts.fill || "FFFFFF" },
+      line: { color: BORDER, pt: 1.25 },
+    });
+    if (label !== "") {
+      slide.addText(label, {
+        x: px(x) + (opts.center ? 0 : 0.08), y: px(y),
+        w: px(w) - (opts.center ? 0 : 0.16), h: px(h),
+        fontSize: opts.fontSize ?? 12, bold: opts.bold, color: opts.color || "111111",
+        align: opts.center ? "center" : "left",
+        valign: opts.valign ?? "middle",
+        fontFace: "Calibri", margin: 0.03,
+      });
+    }
+  };
+
   for (const nc of ncs) {
     const slide = pptx.addSlide();
     slide.background = { color: "FFFFFF" };
-    addChrome(slide, audit, logoData, `${p++}`);
 
-    slide.addText("IMPROVEMENT CASE", { x: 0.4, y: 0.75, w: 8, h: 0.5, fontSize: 22, bold: true, color: MOBIS_COLORS.primary, fontFace: "Calibri" });
-    slide.addText(`NC #${nc.seq_number} — ${nc.issue_category || ""}`, {
-      x: 0.4, y: 1.25, w: 10.0, h: 0.4, fontSize: 14, bold: true, color: MOBIS_COLORS.dark, fontFace: "Calibri",
-    });
+    const seq = String(nc?.seq_number ?? 1);
+    const issue = nc?.issue_category || "";
+    const details = nc?.problem_description || "";
+    const cm = nc?.counter_measure || nc?.responses?.[0]?.corrective_measure_text || "";
+    const targetDate = fmtDate(nc?.due_date).replace(/\//g, ".");
+    const completionDate = fmtDate(nc?.responses?.[0]?.completion_date).replace(/\//g, ".");
+    const obs = nc?.responses?.[0]?.obs || "";
 
-    // Two panels
-    const y0 = 1.85;
-    // Before
-    slide.addShape("rect", { x: 0.35, y: y0, w: 4.95, h: 0.5, fill: { color: MOBIS_COLORS.ng }, line: { color: MOBIS_COLORS.ng } });
-    slide.addText("BEFORE", { x: 0.35, y: y0, w: 4.95, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
+    // Header
+    box(slide, 0, 0, NUM_W, HEAD_H, seq, { bold: true, center: true, fontSize: 32 });
+    box(slide, NUM_W, 0, TITLE_W, HEAD_H, "IMPROVEMENT CASE", { bold: true, center: true, fontSize: 24 });
+    box(slide, NUM_W + TITLE_W, 0, DATE_LBL_W, HEAD_H / 2, "TARGET DATE", { bold: true, center: true, fontSize: 12 });
+    box(slide, NUM_W + TITLE_W + DATE_LBL_W, 0, DATE_VAL_W, HEAD_H / 2, targetDate === "-" ? "" : targetDate, { center: true, fontSize: 14 });
+    box(slide, NUM_W + TITLE_W, HEAD_H / 2, DATE_LBL_W, HEAD_H / 2, "COMPLETION DATE", { bold: true, center: true, fontSize: 12 });
+    box(slide, NUM_W + TITLE_W + DATE_LBL_W, HEAD_H / 2, DATE_VAL_W, HEAD_H / 2, completionDate === "-" ? "" : completionDate, { center: true, fontSize: 14 });
+
+    // BEFORE / AFTER labels
+    box(slide, 0, BA_Y, COL_W, BA_H, "BEFORE", { bold: true, center: true, fontSize: 16 });
+    box(slide, COL_W, BA_Y, COL_W, BA_H, "AFTER", { bold: true, center: true, fontSize: 16 });
+
+    // BEFORE body
+    box(slide, 0, BODY_Y, COL_W, BODY_H, "");
+    slide.addText(
+      [
+        { text: "Issue: ", options: { bold: true } },
+        { text: (issue || "") + "\n", options: {} },
+        { text: "Details: ", options: { bold: true } },
+        { text: details || "", options: {} },
+      ] as any,
+      {
+        x: px(12), y: px(BODY_Y + 10), w: px(COL_W - 24), h: px(90),
+        fontSize: 11, fontFace: "Calibri", valign: "top", margin: 0,
+      },
+    );
     const beforeData = await storagePathToData(nc.before_photo_url);
     if (beforeData) {
-      slide.addImage({ data: beforeData, x: 0.35, y: y0 + 0.5, w: 4.95, h: 3.2, sizing: { type: "contain", w: 4.95, h: 3.2 } });
-    } else {
-      slide.addShape("rect", { x: 0.35, y: y0 + 0.5, w: 4.95, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
-      slide.addText("No before photo", { x: 0.35, y: y0 + 2.0, w: 4.95, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
+      const imgY = BODY_Y + 115;
+      const imgH = BODY_H - 125;
+      slide.addImage({
+        data: beforeData,
+        x: px(20), y: px(imgY), w: px(COL_W - 40), h: px(imgH),
+        sizing: { type: "contain", w: px(COL_W - 40), h: px(imgH) },
+      });
     }
 
-    // After
-    slide.addShape("rect", { x: 5.55, y: y0, w: 4.95, h: 0.5, fill: { color: MOBIS_COLORS.ok }, line: { color: MOBIS_COLORS.ok } });
-    slide.addText("AFTER", { x: 5.55, y: y0, w: 4.95, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
-    const afterUrl = nc.responses?.[0]?.after_photo_url;
-    const afterData = await storagePathToData(afterUrl);
+    // AFTER body (image only, centered)
+    box(slide, COL_W, BODY_Y, COL_W, BODY_H, "");
+    const afterData = await storagePathToData(nc.responses?.[0]?.after_photo_url);
     if (afterData) {
-      slide.addImage({ data: afterData, x: 5.55, y: y0 + 0.5, w: 4.95, h: 3.2, sizing: { type: "contain", w: 4.95, h: 3.2 } });
-    } else {
-      slide.addShape("rect", { x: 5.55, y: y0 + 0.5, w: 4.95, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
-      slide.addText("Awaiting supplier evidence", { x: 5.55, y: y0 + 2.0, w: 4.95, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
+      slide.addImage({
+        data: afterData,
+        x: px(COL_W + 20), y: px(BODY_Y + 15), w: px(COL_W - 40), h: px(BODY_H - 30),
+        sizing: { type: "contain", w: px(COL_W - 40), h: px(BODY_H - 30) },
+      });
     }
 
-    // Text boxes below
-    const y1 = y0 + 3.9;
-    slide.addText("Problem", { x: 0.35, y: y1, w: 4.95, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
-    slide.addText(nc.problem_description || "-", {
-      x: 0.35, y: y1 + 0.3, w: 4.95, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
-      fill: { color: MOBIS_COLORS.light },
-    });
-
-    slide.addText("Counter measure", { x: 5.55, y: y1, w: 4.95, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
-    const cm = nc.responses?.[0]?.corrective_measure_text || nc.counter_measure || "-";
-    slide.addText(cm, {
-      x: 5.55, y: y1 + 0.3, w: 4.95, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
-      fill: { color: MOBIS_COLORS.light },
-    });
-
-    // Footer info line
-    slide.addText(
-      `In charge: ${nc.in_charge || "-"}   |   Due: ${fmtDate(nc.due_date)}   |   Status: ${nc.status || "open"}`,
-      { x: 0.4, y: 6.7, w: 10.0, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, fontFace: "Calibri", align: "center" }
-    );
+    // Footer OBS + C/M
+    box(slide, 0, FOOT_Y, OBS_LBL_W, FOOT_H, "O\nB\nS", { bold: true, center: true, fontSize: 14 });
+    box(slide, OBS_LBL_W, FOOT_Y, COL_W - OBS_LBL_W, FOOT_H, obs, { fontSize: 10, valign: "top" });
+    box(slide, COL_W, FOOT_Y, CM_LBL_W, FOOT_H, "C/M", { bold: true, center: true, fontSize: 16 });
+    box(slide, COL_W + CM_LBL_W, FOOT_Y, COL_W - CM_LBL_W, FOOT_H, cm, { fontSize: 10, valign: "top" });
   }
-  return p - pageStart;
+  return ncs.length;
 }
+
 
 export async function exportAuditoriaPPTX(audit: Audit, ncs: NC[]) {
   const pptx = new pptxgen();

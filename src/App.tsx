@@ -24,6 +24,7 @@ import Auditorias from "./pages/Auditorias";
 import AuditoriaForm from "./pages/AuditoriaForm";
 import AuditoriaWizard from "./pages/AuditoriaWizard";
 import AuditoriaDashboard from "./pages/AuditoriaDashboard";
+import AuditoriaDetalhe from "./pages/AuditoriaDetalhe";
 import Contencao from "./pages/Contencao";
 import ContencaoForm from "./pages/ContencaoForm";
 import ContencaoDashboard from "./pages/ContencaoDashboard";
@@ -177,6 +178,7 @@ const App = () => (
             <Route path="/auditorias/legado/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
             <Route path="/auditorias/legado/editar/:id" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
             <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
+            <Route path="/auditorias/:id" element={<ProtectedRoute><AuditoriaDetalhe /></ProtectedRoute>} />
             
             {/* Contenção */}
             <Route path="/contencao" element={<ProtectedRoute><Contencao /></ProtectedRoute>} />

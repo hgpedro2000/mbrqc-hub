@@ -247,56 +247,129 @@ function addCoverSlide(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string 
   cell(audit.conclusion || "-", 503, 628, 581, 130, { fontSize: 12, valign: "top" });
 }
 
-/** Slides 2..N: General Issues list, max 4 NCs per slide */
-function addIssuesSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string | null, pageStart: number) {
+/** Slides 2..N: General Issues & Improvement — replica pixel-a-pixel do template Mobis */
+async function addIssuesSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string | null, pageStart: number) {
   const perSlide = 4;
   const total = Math.ceil(ncs.length / perSlide) || 1;
+  const px = (v: number) => v / 100;
+  const HEAD = "1F4E79";
+  const HEAD_LIGHT = "2F5F8F";
+  const BORDER = "B7B7B7";
+  const HBG = "F3F6F8";
+  const COLS = [
+    { key: "no", label: "NO", w: 55 },
+    { key: "issue", label: "Issue", w: 90 },
+    { key: "problem", label: "Problem Description", w: 230 },
+    { key: "picture", label: "Picture", w: 200 },
+    { key: "counter", label: "Counter Measure", w: 230 },
+    { key: "due", label: "Due Date", w: 90 },
+    { key: "charge", label: "In Charge", w: 90 },
+    { key: "status", label: "Status", w: 65 },
+    { key: "file", label: "File", w: 34 },
+  ];
+  const colX = (i: number) => COLS.slice(0, i).reduce((s, c) => s + c.w, 0);
+  const HEAD_H = 68;
+  const ROW_HEAD_H = 40;
+  const ROW_H = 145;
+
   for (let p = 0; p < total; p++) {
     const slide = pptx.addSlide();
     slide.background = { color: "FFFFFF" };
-    addChrome(slide, audit, logoData, `${pageStart + p}`);
 
-    slide.addText("GENERAL ISSUES", {
-      x: 0.4, y: 0.75, w: 8, h: 0.5, fontSize: 22, bold: true, color: MOBIS_COLORS.primary, fontFace: "Calibri",
+    // Header bar (blue gradient) + white patch + title + logo
+    slide.addShape("rect", { x: 0, y: 0, w: px(958), h: px(HEAD_H), fill: { color: HEAD }, line: { color: HEAD } });
+    slide.addShape("rect", { x: px(700), y: 0, w: px(258), h: px(HEAD_H), fill: { color: HEAD_LIGHT }, line: { color: HEAD_LIGHT } });
+    slide.addShape("rect", { x: px(958), y: 0, w: px(126), h: px(HEAD_H), fill: { color: "FFFFFF" }, line: { color: "FFFFFF" } });
+    slide.addText("□", { x: px(14), y: px(13), w: px(40), h: px(42), fontSize: 24, color: "FFFFFF", margin: 0 });
+    slide.addText("General Issues & Improvement", {
+      x: px(58), y: px(12), w: px(640), h: px(46), fontSize: 24, color: "FFFFFF",
+      bold: false, fontFace: "Calibri", valign: "middle", margin: 0,
     });
-    slide.addText(`Page ${p + 1}/${total}`, {
-      x: 8.2, y: 0.85, w: 2.2, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, align: "right", fontFace: "Calibri",
+    if (logoData) slide.addImage({ data: logoData, x: px(962), y: px(10), w: px(112), h: px(48), sizing: { type: "contain", w: px(112), h: px(48) } });
+
+    // Table header row
+    COLS.forEach((c, i) => {
+      slide.addShape("rect", {
+        x: px(colX(i)), y: px(HEAD_H), w: px(c.w), h: px(ROW_HEAD_H),
+        fill: { color: HBG }, line: { color: BORDER, pt: 0.75 },
+      });
+      slide.addText(c.label, {
+        x: px(colX(i)), y: px(HEAD_H), w: px(c.w), h: px(ROW_HEAD_H),
+        fontSize: 11, bold: true, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
     });
 
-    // Table header
-    const cols = [
-      { text: "No", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "Category", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "Issue description", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "Counter measure", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "In charge", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "Due date", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-      { text: "Status", opts: { bold: true, color: "FFFFFF", fill: { color: MOBIS_COLORS.primary }, fontSize: 10, align: "center" as const, valign: "middle" as const } },
-    ];
-
-    const rows: any[] = [cols];
+    // Rows
     const chunk = ncs.slice(p * perSlide, p * perSlide + perSlide);
-    for (const nc of chunk) {
-      const statusColor = nc.status === "done" ? MOBIS_COLORS.ok : nc.status === "overdue" ? MOBIS_COLORS.ng : MOBIS_COLORS.gray;
-      const statusLabel = nc.status === "done" ? "Done" : nc.status === "overdue" ? "Overdue" : "Open";
-      rows.push([
-        { text: String(nc.seq_number ?? "-"), options: { fontSize: 11, align: "center", valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: nc.issue_category || "-", options: { fontSize: 10, valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: nc.problem_description || "-", options: { fontSize: 10, valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: nc.counter_measure || "-", options: { fontSize: 10, valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: nc.in_charge || "-", options: { fontSize: 10, align: "center", valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: fmtDate(nc.due_date), options: { fontSize: 10, align: "center", valign: "middle", color: MOBIS_COLORS.dark } },
-        { text: statusLabel, options: { fontSize: 10, align: "center", valign: "middle", bold: true, color: statusColor } },
-      ]);
-    }
+    for (let r = 0; r < perSlide; r++) {
+      const nc = chunk[r];
+      const y = HEAD_H + ROW_HEAD_H + r * ROW_H;
 
-    slide.addTable(rows, {
-      x: 0.3, y: 1.4, w: 10.25,
-      colW: [0.5, 1.3, 2.75, 2.55, 1.15, 1.0, 1.0],
-      rowH: 0.6,
-      border: { pt: 1, color: MOBIS_COLORS.border },
-      fontFace: "Calibri",
-    });
+      // Grid cells (always draw the frame)
+      COLS.forEach((c, i) => {
+        slide.addShape("rect", {
+          x: px(colX(i)), y: px(y), w: px(c.w), h: px(ROW_H),
+          fill: { color: "FFFFFF" }, line: { color: BORDER, pt: 0.75 },
+        });
+      });
+      if (!nc) continue;
+
+      slide.addText(String(nc.seq_number ?? r + 1).padStart(2, "0"), {
+        x: px(colX(0)), y: px(y), w: px(COLS[0].w), h: px(ROW_H),
+        fontSize: 12, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+      slide.addText(nc.issue_category || "-", {
+        x: px(colX(1)), y: px(y), w: px(COLS[1].w), h: px(ROW_H),
+        fontSize: 11, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+      slide.addText(nc.problem_description || "-", {
+        x: px(colX(2)) + 0.05, y: px(y), w: px(COLS[2].w) - 0.1, h: px(ROW_H),
+        fontSize: 10, align: "left", valign: "middle", fontFace: "Calibri", margin: 0.05,
+      });
+
+      const pic = await storagePathToData(nc.before_photo_url);
+      if (pic) {
+        slide.addImage({
+          data: pic,
+          x: px(colX(3)) + 0.05, y: px(y) + 0.05,
+          w: px(COLS[3].w) - 0.1, h: px(ROW_H) - 0.1,
+          sizing: { type: "contain", w: px(COLS[3].w) - 0.1, h: px(ROW_H) - 0.1 },
+        });
+      }
+
+      const cm = nc.counter_measure || nc.responses?.[0]?.corrective_measure_text || "-";
+      slide.addText(cm, {
+        x: px(colX(4)) + 0.05, y: px(y), w: px(COLS[4].w) - 0.1, h: px(ROW_H),
+        fontSize: 10, align: "left", valign: "middle", fontFace: "Calibri", margin: 0.05,
+      });
+      slide.addText(fmtDate(nc.due_date).replace(/\//g, "."), {
+        x: px(colX(5)), y: px(y), w: px(COLS[5].w), h: px(ROW_H),
+        fontSize: 11, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+      slide.addText(nc.in_charge || "-", {
+        x: px(colX(6)), y: px(y), w: px(COLS[6].w), h: px(ROW_H),
+        fontSize: 11, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+
+      // Status pill
+      const s = (nc.status || "open").toLowerCase();
+      const stColor = s === "done" ? "00A84F" : ["partial", "in_progress"].includes(s) ? "F28C18" : "D93636";
+      const stLabel = s === "done" ? "Done" : ["partial", "in_progress"].includes(s) ? "Partial" : "Open";
+      const pillW = 0.55, pillH = 0.22;
+      const pillX = px(colX(7)) + (px(COLS[7].w) - pillW) / 2;
+      const pillY = px(y) + (px(ROW_H) - pillH) / 2;
+      slide.addShape("rect", { x: pillX, y: pillY, w: pillW, h: pillH, fill: { color: stColor }, line: { color: stColor } });
+      slide.addText(stLabel, {
+        x: pillX, y: pillY, w: pillW, h: pillH,
+        fontSize: 10, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+
+      // File icon
+      slide.addText(nc.responses?.[0]?.after_photo_url ? "▶" : "▷", {
+        x: px(colX(8)), y: px(y), w: px(COLS[8].w), h: px(ROW_H),
+        fontSize: 14, color: HEAD, align: "center", valign: "middle", fontFace: "Calibri", margin: 0,
+      });
+    }
   }
   return total;
 }
@@ -374,7 +447,7 @@ export async function exportAuditoriaPPTX(audit: Audit, ncs: NC[]) {
   const productImg = await storagePathToData(audit.product_image_url);
 
   addCoverSlide(pptx, audit, ncs, logoData, productImg);
-  const issuePages = addIssuesSlides(pptx, audit, ncs, logoData, 2);
+  const issuePages = await addIssuesSlides(pptx, audit, ncs, logoData, 2);
   await addImprovementSlides(pptx, audit, ncs, logoData, 2 + issuePages);
 
   const dt = new Date(audit.audit_date_start ? audit.audit_date_start + "T12:00:00" : Date.now());

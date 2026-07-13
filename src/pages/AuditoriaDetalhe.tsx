@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { compressImage } from "@/lib/compressImage";
 import { exportAuditoriaPPTX } from "@/lib/exportAuditoriaPPTX";
 import SupplierVisitReportView from "@/components/auditoria/SupplierVisitReportView";
+import GeneralIssuesReportView from "@/components/auditoria/GeneralIssuesReportView";
 
 const STATUS_COLORS: Record<string, string> = {
   planejada: "bg-slate-500/15 text-slate-300 border border-slate-500/30",
@@ -186,6 +187,13 @@ export default function AuditoriaDetalhe() {
             <div className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
               <SupplierVisitReportView audit={audit} ncs={ncs} />
             </div>
+
+            {ncs.length > 0 && Array.from({ length: Math.ceil(ncs.length / 4) }).map((_, i) => (
+              <div key={i} className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
+                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} />
+              </div>
+            ))}
+
 
             <div className="grid md:grid-cols-3 gap-3">
               <KpiCard label="NCs Abertas" value={openCount} icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} />

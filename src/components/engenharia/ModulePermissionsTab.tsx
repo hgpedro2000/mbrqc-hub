@@ -100,6 +100,17 @@ const ModulePermissionsTab = () => {
           await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingIncoming.id);
         }
       }
+      // Auto-enable parent Sub-Hub when enabling a child module
+      const moduleDef = ALL_MODULES.find((m) => m.id === moduleId) as any;
+      const parentSubHub = moduleDef?.subHub;
+      if (parentSubHub && newEnabled) {
+        const existingSub = permissions.find((p: any) => p.user_id === userId && p.module === parentSubHub);
+        if (!existingSub) {
+          await supabase.from("user_module_permissions").insert({ user_id: userId, module: parentSubHub, enabled: true });
+        } else if (!existingSub.enabled) {
+          await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingSub.id);
+        }
+      }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
       toast.success("Permissão atualizada");
     } catch (e: any) {

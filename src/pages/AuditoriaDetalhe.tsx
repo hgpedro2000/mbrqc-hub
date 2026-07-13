@@ -20,8 +20,10 @@ import { compressImage } from "@/lib/compressImage";
 import { exportAuditoriaPPTX } from "@/lib/exportAuditoriaPPTX";
 import SupplierVisitReportView from "@/components/auditoria/SupplierVisitReportView";
 import GeneralIssuesReportView from "@/components/auditoria/GeneralIssuesReportView";
+import ImprovementCaseView from "@/components/auditoria/ImprovementCaseView";
 import { SignedAuditImg } from "@/components/auditoria/SignedAuditImg";
 import { getAuditPhotoUrl, useAuditPhotoUrl } from "@/lib/auditPhoto";
+
 
 
 const STATUS_COLORS: Record<string, string> = {

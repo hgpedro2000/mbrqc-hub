@@ -9,6 +9,7 @@ import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
 
 import Hub from "./pages/Hub";
+import QualidadeHub from "./pages/QualidadeHub";
 import Index from "./pages/Index";
 import InjectionForm from "./pages/InjectionForm";
 import { PaintingPage, AssemblyPage } from "./pages/EditableChecklist";
@@ -160,6 +161,8 @@ const App = () => (
             <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
             <Route path="/engenharia" element={<ProtectedRoute><AdminRoute><Engenharia /></AdminRoute></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
+            <Route path="/qualidade" element={<ProtectedRoute><QualidadeHub /></ProtectedRoute>} />
+            
             
             {/* Tryout */}
             <Route path="/tryout" element={<ProtectedRoute><Index /></ProtectedRoute>} />

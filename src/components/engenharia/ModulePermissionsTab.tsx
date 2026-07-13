@@ -11,6 +11,11 @@ import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const MODULE_ABBREVIATIONS: Record<string, string> = {
+  "Sub-Hub: Qualidade": "Qualidade",
+  "Sub-Hub: G.A.": "G.A.",
+  "Sub-Hub: Produção": "Produção",
+  "Sub-Hub: Vendas": "Vendas",
+  "Sub-Hub: SESMT": "SESMT",
   "Try-Out": "Try-Out",
   "Auditorias": "Audit.",
   "Contenção": "Conten.",
@@ -25,6 +30,7 @@ const MODULE_ABBREVIATIONS: Record<string, string> = {
   "  ↳ Inventário e Requisições": "Inv. Req.",
   "Consulta de Peças": "Cons. Peças",
   "Matriz de Versatilidade": "Matr. Vers.",
+  "Análise de Risco": "Análise R.",
 };
 
 const ModulePermissionsTab = () => {
@@ -92,6 +98,17 @@ const ModulePermissionsTab = () => {
           await supabase.from("user_module_permissions").insert({ user_id: userId, module: "apontamentos_incoming", enabled: true });
         } else if (!existingIncoming.enabled) {
           await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingIncoming.id);
+        }
+      }
+      // Auto-enable parent Sub-Hub when enabling a child module
+      const moduleDef = ALL_MODULES.find((m) => m.id === moduleId) as any;
+      const parentSubHub = moduleDef?.subHub;
+      if (parentSubHub && newEnabled) {
+        const existingSub = permissions.find((p: any) => p.user_id === userId && p.module === parentSubHub);
+        if (!existingSub) {
+          await supabase.from("user_module_permissions").insert({ user_id: userId, module: parentSubHub, enabled: true });
+        } else if (!existingSub.enabled) {
+          await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingSub.id);
         }
       }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
@@ -199,11 +216,14 @@ const ModulePermissionsTab = () => {
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                       {ALL_MODULES.map((m) => {
                         const parentMod = (m as any).parent;
+                        const subHub = (m as any).subHub;
                         if (parentMod && !isModuleEnabled(p.id, parentMod)) return null;
+                        if (subHub && !isModuleEnabled(p.id, subHub)) return null;
                         const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
+                        const isSubHub = (m as any).isSubHub;
                         return (
-                          <div key={m.id} className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] text-muted-foreground truncate">{abbr}</span>
+                          <div key={m.id} className={`flex items-center justify-between gap-1 ${isSubHub ? "col-span-2 border-t pt-1 mt-1" : ""}`}>
+                            <span className={`text-[10px] truncate ${isSubHub ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{abbr}</span>
                             <Switch
                               checked={isModuleEnabled(p.id, m.id)}
                               onCheckedChange={() => toggleModule(p.id, m.id)}
@@ -230,8 +250,9 @@ const ModulePermissionsTab = () => {
                     <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[100px] sticky left-0 bg-background z-10">Usuário</th>
                     {ALL_MODULES.map((m) => {
                       const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
+                      const isSubHub = (m as any).isSubHub;
                       return (
-                        <th key={m.id} className="text-center py-2 px-0.5 font-semibold text-muted-foreground">
+                        <th key={m.id} className={`text-center py-2 px-0.5 font-semibold ${isSubHub ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-[8px] leading-tight block cursor-help whitespace-nowrap">{abbr}</span>
@@ -258,11 +279,16 @@ const ModulePermissionsTab = () => {
                         </td>
                         {ALL_MODULES.map((m) => {
                           const parentMod = (m as any).parent;
+                          const subHub = (m as any).subHub;
+                          const isSubHub = (m as any).isSubHub;
                           if (parentMod && !isModuleEnabled(p.id, parentMod)) {
                             return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
                           }
+                          if (subHub && !isModuleEnabled(p.id, subHub)) {
+                            return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
+                          }
                           return (
-                            <td key={m.id} className="text-center py-1 px-0.5">
+                            <td key={m.id} className={`text-center py-1 px-0.5 ${isSubHub ? "bg-primary/5" : ""}`}>
                               <Switch
                                 checked={isModuleEnabled(p.id, m.id)}
                                 onCheckedChange={() => toggleModule(p.id, m.id)}

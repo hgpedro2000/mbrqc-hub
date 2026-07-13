@@ -92,9 +92,10 @@ function StatusPill({ status }: { status?: string }) {
   );
 }
 
-export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: Props) {
+export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4, onOpenDetail }: Props) {
   const chunk = ncs.slice(page * perPage, page * perPage + perPage);
   const H = HEAD_H + ROW_HEAD_H + ROW_H * perPage;
+
 
   return (
     <div style={{ width: "100%", overflowX: "auto", paddingBottom: 8 }}>

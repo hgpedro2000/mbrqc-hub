@@ -83,9 +83,19 @@ export const useEnabledModules = (overrideUserId?: string) => {
       return ALL_MODULES.map((m) => m.id);
     }
 
-    return (permissions || [])
-      .filter((p) => p.enabled)
-      .map((p) => p.module as ModuleId);
+    const enabledSet = new Set(
+      (permissions || []).filter((p) => p.enabled).map((p) => p.module)
+    );
+
+    // Filter out modules whose Sub-Hub is not enabled for this user
+    return ALL_MODULES
+      .filter((m) => {
+        if (!enabledSet.has(m.id)) return false;
+        const subHub = (m as any).subHub;
+        if (subHub && !enabledSet.has(subHub)) return false;
+        return true;
+      })
+      .map((m) => m.id as ModuleId);
   }, [isAdmin, overrideUserId, permissions]);
 
   return { enabledModules, isLoading: isLoading || rolesLoading };

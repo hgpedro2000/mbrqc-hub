@@ -401,14 +401,21 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
   );
 }
 
-function PhotoCell({ label, url }: { label: string; url: string | null }) {
+function PhotoCell({ label, path }: { label: string; path?: string | null }) {
+  const url = useAuditPhotoUrl(path);
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      {url ? (
-        <a href={url} target="_blank" rel="noreferrer">
-          <img src={url} alt={label} className="w-full h-32 object-cover rounded border" />
-        </a>
+      {path ? (
+        url ? (
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt={label} className="w-full h-32 object-cover rounded border" />
+          </a>
+        ) : (
+          <div className="w-full h-32 rounded border border-dashed flex items-center justify-center text-muted-foreground text-xs">
+            carregando…
+          </div>
+        )
       ) : (
         <div className="w-full h-32 rounded border border-dashed flex items-center justify-center text-muted-foreground text-xs">
           <ImageIcon className="w-4 h-4 mr-1" /> sem foto
@@ -417,6 +424,7 @@ function PhotoCell({ label, url }: { label: string; url: string | null }) {
     </div>
   );
 }
+
 
 function TimelineItem({ when, label }: { when?: string | null; label: string }) {
   if (!when) return null;

@@ -58,10 +58,12 @@ function fmtDate(d?: string | null) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR");
 }
 
-function storageUrl(path?: string | null) {
-  if (!path) return null;
-  return supabase.storage.from("audit-photos").getPublicUrl(path).data.publicUrl;
+function storageUrl(_path?: string | null) {
+  // Deprecated: audit-photos bucket is private. Use SignedAuditImg / useAuditPhotoUrl.
+  return null;
 }
+
+
 
 export default function AuditoriaDetalhe() {
   const { id } = useParams<{ id: string }>();

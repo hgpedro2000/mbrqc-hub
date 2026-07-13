@@ -6,7 +6,9 @@ interface Props {
   ncs: any[];
   page?: number;
   perPage?: number;
+  onOpenDetail?: (nc: any) => void;
 }
+
 
 function fmtDate(d?: string | null) {
   if (!d) return "-";

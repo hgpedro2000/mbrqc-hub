@@ -299,9 +299,10 @@ export default function AuditoriaDetalhe() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <PhotoCell label="Before" url={storageUrl(nc.before_photo_url)} />
-                  <PhotoCell label="After" url={storageUrl(nc.responses?.[0]?.after_photo_url)} />
+                  <PhotoCell label="Before" path={nc.before_photo_url} />
+                  <PhotoCell label="After" path={nc.responses?.[0]?.after_photo_url} />
                 </div>
+
                 {nc.responses?.[0]?.corrective_measure_text && (
                   <div className="mt-2 text-xs p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
                     <b>Resposta:</b> {nc.responses[0].corrective_measure_text}

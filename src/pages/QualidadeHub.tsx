@@ -116,7 +116,7 @@ const SortableModuleCard = ({ mod, index, t, navigate, badgeCount, onBadgeClick 
   );
 };
 
-const Hub = () => {
+const QualidadeHub = () => {
   const { signOut, profile, user, isAdmin: realIsAdmin } = useAuth();
   const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin, loading: roleLoading } = useUserRole();
@@ -413,8 +413,11 @@ const Hub = () => {
         <div className="container mx-auto px-4 py-6 md:py-12">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 md:gap-3">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="header-btn px-2">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
               <img src={logo} alt="Hyundai Mobis" className="h-8 md:h-10 object-contain bg-white rounded-md px-2 py-1" />
-              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Quality Tools</span>
+              <span className="text-xs md:text-sm font-medium tracking-wider uppercase opacity-80">Qualidade</span>
             </div>
             <div className="flex items-center gap-1 md:gap-2">
               <LanguageToggle />
@@ -520,4 +523,4 @@ const Hub = () => {
   );
 };
 
-export default Hub;
+export default QualidadeHub;

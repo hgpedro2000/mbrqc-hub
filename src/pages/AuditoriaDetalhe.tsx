@@ -223,12 +223,22 @@ export default function AuditoriaDetalhe() {
               <div className="form-section">
                 <h3 className="font-heading font-semibold mb-2">Foto do produto</h3>
                 {audit.product_image_url ? (
-                  <img src={storageUrl(audit.product_image_url) || ""} alt="Produto" className="w-full rounded-lg border object-contain max-h-72" />
+                  <SignedAuditImg
+                    path={audit.product_image_url}
+                    alt="Produto"
+                    className="w-full rounded-lg border object-contain max-h-72"
+                    fallback={
+                      <div className="border border-dashed rounded-lg h-48 flex items-center justify-center text-muted-foreground">
+                        <ImageIcon className="w-6 h-6 mr-2" /> Carregando…
+                      </div>
+                    }
+                  />
                 ) : (
                   <div className="border border-dashed rounded-lg h-48 flex items-center justify-center text-muted-foreground">
                     <ImageIcon className="w-6 h-6 mr-2" /> Sem imagem
                   </div>
                 )}
+
               </div>
             </div>
 

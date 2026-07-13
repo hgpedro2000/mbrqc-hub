@@ -199,9 +199,10 @@ export default function AuditoriaDetalhe() {
 
             {ncs.length > 0 && Array.from({ length: Math.ceil(ncs.length / 4) }).map((_, i) => (
               <div key={i} className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
-                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} />
+                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} onOpenDetail={setDetailNc} />
               </div>
             ))}
+
 
 
             <div className="grid md:grid-cols-3 gap-3">

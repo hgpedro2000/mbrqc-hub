@@ -1943,6 +1943,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          apontamentos_view_scope: string[] | null
           cargo: string | null
           created_at: string
           email: string | null
@@ -1961,6 +1962,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          apontamentos_view_scope?: string[] | null
           cargo?: string | null
           created_at?: string
           email?: string | null
@@ -1979,6 +1981,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          apontamentos_view_scope?: string[] | null
           cargo?: string | null
           created_at?: string
           email?: string | null

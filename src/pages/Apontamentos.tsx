@@ -233,10 +233,23 @@ const Apontamentos = () => {
   const effEmpresaTerceira = impersonating ? impersonating.empresa_terceira : profile?.empresa_terceira;
   const isTerceira = effEmpresa === "empresa_terceira";
   const terceiraName = effEmpresaTerceira || null;
+  // Additional view scope granted per user (e.g. owner sees whole company group, or '*' = all)
+  const viewScope = (impersonating ? null : profile?.apontamentos_view_scope) || [];
+  const viewsAll = viewScope.includes("*");
+  const allowedEmpresas = useMemo(() => {
+    const s = new Set<string>();
+    if (terceiraName) s.add(terceiraName);
+    viewScope.filter((v) => v && v !== "*").forEach((v) => s.add(v));
+    return s;
+  }, [terceiraName, viewScope]);
   const scopedItems = useMemo(() => {
-    if (!isTerceira || !terceiraName) return items;
-    return items.filter((i: any) => i.created_by && empresaByUserId[i.created_by] === terceiraName);
-  }, [items, isTerceira, terceiraName, empresaByUserId]);
+    if (!isTerceira) return items;
+    if (viewsAll) return items;
+    return items.filter((i: any) => {
+      const emp = i.created_by ? empresaByUserId[i.created_by] : undefined;
+      return emp && allowedEmpresas.has(emp);
+    });
+  }, [items, isTerceira, viewsAll, allowedEmpresas, empresaByUserId]);
 
   const photosByItem = useMemo(() => {
     const map: Record<string, string[]> = {};

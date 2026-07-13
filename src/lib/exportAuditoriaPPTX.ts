@@ -118,7 +118,7 @@ function addCoverSlide(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string 
       fontSize: opts.fontSize ?? 11,
       bold: opts.bold,
       align: opts.center ? "center" : "left",
-      valign: "mid",
+      valign: opts.valign ?? "mid",
       color: opts.color,
       margin: 0.01,
     });
@@ -260,7 +260,7 @@ function addIssuesSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: strin
       x: 0.4, y: 0.75, w: 8, h: 0.5, fontSize: 22, bold: true, color: MOBIS_COLORS.primary, fontFace: "Calibri",
     });
     slide.addText(`Page ${p + 1}/${total}`, {
-      x: 10.5, y: 0.85, w: 2.5, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, align: "right", fontFace: "Calibri",
+      x: 8.2, y: 0.85, w: 2.2, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, align: "right", fontFace: "Calibri",
     });
 
     // Table header
@@ -291,8 +291,8 @@ function addIssuesSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: strin
     }
 
     slide.addTable(rows, {
-      x: 0.4, y: 1.4, w: 12.5,
-      colW: [0.6, 1.7, 3.6, 3.2, 1.4, 1.1, 0.9],
+      x: 0.3, y: 1.4, w: 10.25,
+      colW: [0.5, 1.3, 2.75, 2.55, 1.15, 1.0, 1.0],
       rowH: 0.6,
       border: { pt: 1, color: MOBIS_COLORS.border },
       fontFace: "Calibri",
@@ -311,53 +311,53 @@ async function addImprovementSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logo
 
     slide.addText("IMPROVEMENT CASE", { x: 0.4, y: 0.75, w: 8, h: 0.5, fontSize: 22, bold: true, color: MOBIS_COLORS.primary, fontFace: "Calibri" });
     slide.addText(`NC #${nc.seq_number} — ${nc.issue_category || ""}`, {
-      x: 0.4, y: 1.25, w: 12.5, h: 0.4, fontSize: 14, bold: true, color: MOBIS_COLORS.dark, fontFace: "Calibri",
+      x: 0.4, y: 1.25, w: 10.0, h: 0.4, fontSize: 14, bold: true, color: MOBIS_COLORS.dark, fontFace: "Calibri",
     });
 
     // Two panels
     const y0 = 1.85;
     // Before
-    slide.addShape("rect", { x: 0.4, y: y0, w: 6.15, h: 0.5, fill: { color: MOBIS_COLORS.ng }, line: { color: MOBIS_COLORS.ng } });
-    slide.addText("BEFORE", { x: 0.4, y: y0, w: 6.15, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
+    slide.addShape("rect", { x: 0.35, y: y0, w: 4.95, h: 0.5, fill: { color: MOBIS_COLORS.ng }, line: { color: MOBIS_COLORS.ng } });
+    slide.addText("BEFORE", { x: 0.35, y: y0, w: 4.95, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
     const beforeData = await storagePathToData(nc.before_photo_url);
     if (beforeData) {
-      slide.addImage({ data: beforeData, x: 0.4, y: y0 + 0.5, w: 6.15, h: 3.2, sizing: { type: "contain", w: 6.15, h: 3.2 } });
+      slide.addImage({ data: beforeData, x: 0.35, y: y0 + 0.5, w: 4.95, h: 3.2, sizing: { type: "contain", w: 4.95, h: 3.2 } });
     } else {
-      slide.addShape("rect", { x: 0.4, y: y0 + 0.5, w: 6.15, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
-      slide.addText("No before photo", { x: 0.4, y: y0 + 2.0, w: 6.15, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
+      slide.addShape("rect", { x: 0.35, y: y0 + 0.5, w: 4.95, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
+      slide.addText("No before photo", { x: 0.35, y: y0 + 2.0, w: 4.95, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
     }
 
     // After
-    slide.addShape("rect", { x: 6.75, y: y0, w: 6.15, h: 0.5, fill: { color: MOBIS_COLORS.ok }, line: { color: MOBIS_COLORS.ok } });
-    slide.addText("AFTER", { x: 6.75, y: y0, w: 6.15, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
+    slide.addShape("rect", { x: 5.55, y: y0, w: 4.95, h: 0.5, fill: { color: MOBIS_COLORS.ok }, line: { color: MOBIS_COLORS.ok } });
+    slide.addText("AFTER", { x: 5.55, y: y0, w: 4.95, h: 0.5, fontSize: 14, bold: true, color: "FFFFFF", align: "center", valign: "middle", fontFace: "Calibri" });
     const afterUrl = nc.responses?.[0]?.after_photo_url;
     const afterData = await storagePathToData(afterUrl);
     if (afterData) {
-      slide.addImage({ data: afterData, x: 6.75, y: y0 + 0.5, w: 6.15, h: 3.2, sizing: { type: "contain", w: 6.15, h: 3.2 } });
+      slide.addImage({ data: afterData, x: 5.55, y: y0 + 0.5, w: 4.95, h: 3.2, sizing: { type: "contain", w: 4.95, h: 3.2 } });
     } else {
-      slide.addShape("rect", { x: 6.75, y: y0 + 0.5, w: 6.15, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
-      slide.addText("Awaiting supplier evidence", { x: 6.75, y: y0 + 2.0, w: 6.15, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
+      slide.addShape("rect", { x: 5.55, y: y0 + 0.5, w: 4.95, h: 3.2, fill: { color: MOBIS_COLORS.light }, line: { color: MOBIS_COLORS.border } });
+      slide.addText("Awaiting supplier evidence", { x: 5.55, y: y0 + 2.0, w: 4.95, h: 0.4, align: "center", fontSize: 12, color: MOBIS_COLORS.gray });
     }
 
     // Text boxes below
     const y1 = y0 + 3.9;
-    slide.addText("Problem", { x: 0.4, y: y1, w: 6.15, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
+    slide.addText("Problem", { x: 0.35, y: y1, w: 4.95, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
     slide.addText(nc.problem_description || "-", {
-      x: 0.4, y: y1 + 0.3, w: 6.15, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
+      x: 0.35, y: y1 + 0.3, w: 4.95, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
       fill: { color: MOBIS_COLORS.light },
     });
 
-    slide.addText("Counter measure", { x: 6.75, y: y1, w: 6.15, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
+    slide.addText("Counter measure", { x: 5.55, y: y1, w: 4.95, h: 0.3, fontSize: 10, bold: true, color: MOBIS_COLORS.gray, fontFace: "Calibri" });
     const cm = nc.responses?.[0]?.corrective_measure_text || nc.counter_measure || "-";
     slide.addText(cm, {
-      x: 6.75, y: y1 + 0.3, w: 6.15, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
+      x: 5.55, y: y1 + 0.3, w: 4.95, h: 1.1, fontSize: 11, color: MOBIS_COLORS.dark, fontFace: "Calibri", valign: "top",
       fill: { color: MOBIS_COLORS.light },
     });
 
     // Footer info line
     slide.addText(
       `In charge: ${nc.in_charge || "-"}   |   Due: ${fmtDate(nc.due_date)}   |   Status: ${nc.status || "open"}`,
-      { x: 0.4, y: 6.7, w: 12.5, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, fontFace: "Calibri", align: "center" }
+      { x: 0.4, y: 6.7, w: 10.0, h: 0.3, fontSize: 10, color: MOBIS_COLORS.gray, fontFace: "Calibri", align: "center" }
     );
   }
   return p - pageStart;
@@ -365,7 +365,8 @@ async function addImprovementSlides(pptx: pptxgen, audit: Audit, ncs: NC[], logo
 
 export async function exportAuditoriaPPTX(audit: Audit, ncs: NC[]) {
   const pptx = new pptxgen();
-  pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
+  pptx.defineLayout({ name: "MOBIS_REPORT", width: MOBIS_REPORT_W, height: MOBIS_REPORT_H });
+  pptx.layout = "MOBIS_REPORT";
   pptx.title = `${audit.code || "Audit"} — ${audit.supplier_name || ""}`;
   pptx.company = "Hyundai Mobis Brasil";
 

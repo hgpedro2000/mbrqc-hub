@@ -482,6 +482,47 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_alerts: {
+        Row: {
+          audit_id: string
+          created_at: string
+          dismissed: boolean
+          id: string
+          message: string | null
+          trigger_date: string
+          type: Database["public"]["Enums"]["audit_alert_type"]
+          updated_at: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          message?: string | null
+          trigger_date?: string
+          type: Database["public"]["Enums"]["audit_alert_type"]
+          updated_at?: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          message?: string | null
+          trigger_date?: string
+          type?: Database["public"]["Enums"]["audit_alert_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_alerts_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_items: {
         Row: {
           active: boolean | null
@@ -544,6 +585,115 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      audit_nc_responses: {
+        Row: {
+          after_photo_url: string | null
+          audit_nc_id: string
+          completion_date: string | null
+          corrective_measure_text: string | null
+          created_at: string
+          id: string
+          obs: string | null
+          responded: boolean
+          responded_at: string | null
+          target_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          after_photo_url?: string | null
+          audit_nc_id: string
+          completion_date?: string | null
+          corrective_measure_text?: string | null
+          created_at?: string
+          id?: string
+          obs?: string | null
+          responded?: boolean
+          responded_at?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          after_photo_url?: string | null
+          audit_nc_id?: string
+          completion_date?: string | null
+          corrective_measure_text?: string | null
+          created_at?: string
+          id?: string
+          obs?: string | null
+          responded?: boolean
+          responded_at?: string | null
+          target_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_nc_responses_audit_nc_id_fkey"
+            columns: ["audit_nc_id"]
+            isOneToOne: true
+            referencedRelation: "audit_ncs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_ncs: {
+        Row: {
+          attachment_url: string | null
+          audit_id: string
+          before_photo_url: string | null
+          counter_measure: string | null
+          created_at: string
+          due_date: string | null
+          has_file_attachment: boolean
+          id: string
+          in_charge: string | null
+          issue_category: string | null
+          problem_description: string | null
+          seq_number: number
+          status: Database["public"]["Enums"]["audit_nc_status"]
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          audit_id: string
+          before_photo_url?: string | null
+          counter_measure?: string | null
+          created_at?: string
+          due_date?: string | null
+          has_file_attachment?: boolean
+          id?: string
+          in_charge?: string | null
+          issue_category?: string | null
+          problem_description?: string | null
+          seq_number?: number
+          status?: Database["public"]["Enums"]["audit_nc_status"]
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          audit_id?: string
+          before_photo_url?: string | null
+          counter_measure?: string | null
+          created_at?: string
+          due_date?: string | null
+          has_file_attachment?: boolean
+          id?: string
+          in_charge?: string | null
+          issue_category?: string | null
+          problem_description?: string | null
+          seq_number?: number
+          status?: Database["public"]["Enums"]["audit_nc_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_ncs_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_responses: {
         Row: {
@@ -640,6 +790,108 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audits: {
+        Row: {
+          audit_date_end: string | null
+          audit_date_start: string | null
+          auditor_id: string | null
+          auditor_name: string | null
+          code: string | null
+          conclusion: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          major_requests: string[]
+          mbr_aql_ng: number | null
+          mbr_aql_ok: number | null
+          mbr_aql_total: number | null
+          paint_inspection_ng: number | null
+          paint_inspection_ok: number | null
+          paint_inspection_total: number | null
+          participants: Json
+          pic_name: string | null
+          place: string | null
+          pptx_sent_at: string | null
+          process: string[]
+          product_image_url: string | null
+          product_name: string | null
+          purpose: string[]
+          schedule_notes: string | null
+          score: number | null
+          status: Database["public"]["Enums"]["audit_status_v2"]
+          supplier_name: string
+          title: string
+          type: Database["public"]["Enums"]["audit_type_v2"]
+          updated_at: string
+        }
+        Insert: {
+          audit_date_end?: string | null
+          audit_date_start?: string | null
+          auditor_id?: string | null
+          auditor_name?: string | null
+          code?: string | null
+          conclusion?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          major_requests?: string[]
+          mbr_aql_ng?: number | null
+          mbr_aql_ok?: number | null
+          mbr_aql_total?: number | null
+          paint_inspection_ng?: number | null
+          paint_inspection_ok?: number | null
+          paint_inspection_total?: number | null
+          participants?: Json
+          pic_name?: string | null
+          place?: string | null
+          pptx_sent_at?: string | null
+          process?: string[]
+          product_image_url?: string | null
+          product_name?: string | null
+          purpose?: string[]
+          schedule_notes?: string | null
+          score?: number | null
+          status?: Database["public"]["Enums"]["audit_status_v2"]
+          supplier_name?: string
+          title: string
+          type?: Database["public"]["Enums"]["audit_type_v2"]
+          updated_at?: string
+        }
+        Update: {
+          audit_date_end?: string | null
+          audit_date_start?: string | null
+          auditor_id?: string | null
+          auditor_name?: string | null
+          code?: string | null
+          conclusion?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          major_requests?: string[]
+          mbr_aql_ng?: number | null
+          mbr_aql_ok?: number | null
+          mbr_aql_total?: number | null
+          paint_inspection_ng?: number | null
+          paint_inspection_ok?: number | null
+          paint_inspection_total?: number | null
+          participants?: Json
+          pic_name?: string | null
+          place?: string | null
+          pptx_sent_at?: string | null
+          process?: string[]
+          product_image_url?: string | null
+          product_name?: string | null
+          purpose?: string[]
+          schedule_notes?: string | null
+          score?: number | null
+          status?: Database["public"]["Enums"]["audit_status_v2"]
+          supplier_name?: string
+          title?: string
+          type?: Database["public"]["Enums"]["audit_type_v2"]
           updated_at?: string
         }
         Relationships: []
@@ -2618,6 +2870,16 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "engenharia" | "lider" | "inspetor"
+      audit_alert_type: "auditoria_proxima" | "fornecedor_atrasado"
+      audit_nc_status: "open" | "partial" | "done"
+      audit_status_v2:
+        | "planejada"
+        | "em_andamento"
+        | "aguardando_fornecedor"
+        | "respondida"
+        | "concluida"
+        | "atrasada"
+      audit_type_v2: "processo" | "produto" | "fornecedor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2746,6 +3008,17 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "engenharia", "lider", "inspetor"],
+      audit_alert_type: ["auditoria_proxima", "fornecedor_atrasado"],
+      audit_nc_status: ["open", "partial", "done"],
+      audit_status_v2: [
+        "planejada",
+        "em_andamento",
+        "aguardando_fornecedor",
+        "respondida",
+        "concluida",
+        "atrasada",
+      ],
+      audit_type_v2: ["processo", "produto", "fornecedor"],
     },
   },
 } as const

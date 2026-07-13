@@ -134,7 +134,7 @@ export default function SupplierVisitReportView({ audit, ncs }: Props) {
   const dateStr = `${fmtDate(audit.audit_date_start)}${
     audit.audit_date_end && audit.audit_date_end !== audit.audit_date_start ? " & " + fmtDate(audit.audit_date_end) : ""
   }`;
-  const productSrc = storageUrl(audit.product_image_url);
+  const productSrc = useAuditPhotoUrl(audit.product_image_url);
   const inspectionLabel = audit.paint_inspection_label || audit.supplier_code || audit.supplier_name || "Supplier";
 
   return (

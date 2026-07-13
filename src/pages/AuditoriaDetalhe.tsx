@@ -188,6 +188,13 @@ export default function AuditoriaDetalhe() {
               <SupplierVisitReportView audit={audit} ncs={ncs} />
             </div>
 
+            {ncs.length > 0 && Array.from({ length: Math.ceil(ncs.length / 4) }).map((_, i) => (
+              <div key={i} className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
+                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} />
+              </div>
+            ))}
+
+
             <div className="grid md:grid-cols-3 gap-3">
               <KpiCard label="NCs Abertas" value={openCount} icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} />
               <KpiCard label="NCs Respondidas" value={doneCount} icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />} />

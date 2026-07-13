@@ -13,6 +13,9 @@ export const MOBIS_COLORS = {
   border: "D1D5DB",
 };
 
+const MOBIS_REPORT_W = 10.84;
+const MOBIS_REPORT_H = 7.7;
+
 async function fileToBase64(url: string): Promise<string | null> {
   try {
     const res = await fetch(url);
@@ -55,25 +58,25 @@ type NC = any;
 /** Shared header/footer chrome for every slide */
 function addChrome(slide: pptxgen.Slide, audit: Audit, logoData: string | null, pageLabel: string) {
   // Top red bar
-  slide.addShape("rect", { x: 0, y: 0, w: 13.33, h: 0.05, fill: { color: MOBIS_COLORS.accent }, line: { color: MOBIS_COLORS.accent } });
+  slide.addShape("rect", { x: 0, y: 0, w: MOBIS_REPORT_W, h: 0.05, fill: { color: MOBIS_COLORS.accent }, line: { color: MOBIS_COLORS.accent } });
   // Header band
-  slide.addShape("rect", { x: 0, y: 0.05, w: 13.33, h: 0.55, fill: { color: MOBIS_COLORS.primary }, line: { color: MOBIS_COLORS.primary } });
+  slide.addShape("rect", { x: 0, y: 0.05, w: MOBIS_REPORT_W, h: 0.55, fill: { color: MOBIS_COLORS.primary }, line: { color: MOBIS_COLORS.primary } });
   if (logoData) {
     slide.addImage({ data: logoData, x: 0.25, y: 0.12, w: 1.0, h: 0.4 });
   }
   slide.addText(`HYUNDAI MOBIS — Supplier Quality Audit`, {
-    x: 1.4, y: 0.1, w: 8, h: 0.45, fontSize: 12, bold: true, color: "FFFFFF", fontFace: "Calibri", valign: "middle",
+    x: 1.4, y: 0.1, w: 5.8, h: 0.45, fontSize: 12, bold: true, color: "FFFFFF", fontFace: "Calibri", valign: "middle",
   });
   slide.addText(`${audit.code || ""}  |  ${audit.supplier_name || ""}`, {
-    x: 9.5, y: 0.1, w: 3.7, h: 0.45, fontSize: 10, color: "FFFFFF", align: "right", valign: "middle", fontFace: "Calibri",
+    x: 7.3, y: 0.1, w: 3.3, h: 0.45, fontSize: 10, color: "FFFFFF", align: "right", valign: "middle", fontFace: "Calibri",
   });
   // Footer
-  slide.addShape("rect", { x: 0, y: 7.4, w: 13.33, h: 0.1, fill: { color: MOBIS_COLORS.primary }, line: { color: MOBIS_COLORS.primary } });
+  slide.addShape("rect", { x: 0, y: MOBIS_REPORT_H - 0.1, w: MOBIS_REPORT_W, h: 0.1, fill: { color: MOBIS_COLORS.primary }, line: { color: MOBIS_COLORS.primary } });
   slide.addText(pageLabel, {
-    x: 11, y: 7.05, w: 2.1, h: 0.3, fontSize: 9, color: MOBIS_COLORS.gray, align: "right", fontFace: "Calibri",
+    x: 8.7, y: MOBIS_REPORT_H - 0.45, w: 1.9, h: 0.3, fontSize: 9, color: MOBIS_COLORS.gray, align: "right", fontFace: "Calibri",
   });
   slide.addText("Confidential — Hyundai Mobis Brasil", {
-    x: 0.25, y: 7.05, w: 8, h: 0.3, fontSize: 9, color: MOBIS_COLORS.gray, fontFace: "Calibri",
+    x: 0.25, y: MOBIS_REPORT_H - 0.45, w: 6.5, h: 0.3, fontSize: 9, color: MOBIS_COLORS.gray, fontFace: "Calibri",
   });
 }
 
@@ -82,209 +85,166 @@ function addCoverSlide(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string 
   const slide = pptx.addSlide();
   slide.background = { color: "FFFFFF" };
 
-  const HEAD = "1F3864";     // azul cabeçalho de tabela
-  const LBL = "D9E2F3";      // azul claro rótulos
-  const BORDER = "8FAADC";
+  const HEAD = "1F4E79";
+  const LBL = "DCE6F1";
+  const BORDER = "B7B7B7";
   const TXT = "1F1F1F";
+  const px = (value: number) => value / 100;
+  const rect = (x: number, y: number, w: number, h: number, fill?: string, dash = false) => {
+    slide.addShape("rect", {
+      x: px(x), y: px(y), w: px(w), h: px(h),
+      fill: fill ? { color: fill } : undefined,
+      line: { color: BORDER, pt: 0.55, dashType: dash ? "dash" : undefined as any },
+    });
+  };
+  const text = (value: string, x: number, y: number, w: number, h: number, opts: any = {}) => {
+    slide.addText(value, {
+      x: px(x), y: px(y), w: px(w), h: px(h),
+      margin: opts.margin ?? 0.03,
+      fontFace: "Calibri",
+      fontSize: opts.fontSize ?? 12,
+      color: opts.color ?? TXT,
+      bold: opts.bold ?? false,
+      align: opts.align ?? "left",
+      valign: opts.valign ?? "mid",
+      breakLine: false,
+      fit: "shrink",
+      ...opts,
+    });
+  };
+  const cell = (value: string, x: number, y: number, w: number, h: number, opts: any = {}) => {
+    rect(x, y, w, h, opts.fill);
+    text(value, x + (opts.center ? 0 : 8), y, w - (opts.center ? 0 : 12), h, {
+      fontSize: opts.fontSize ?? 11,
+      bold: opts.bold,
+      align: opts.center ? "center" : "left",
+      valign: "mid",
+      color: opts.color,
+      margin: 0.01,
+    });
+  };
+  const checkbox = (on: boolean) => (on ? "■" : "□");
+  const norm = (s: string) => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\s/]/g, "");
+  const has = (arr: string[], value: string) => arr.some((v) => norm(v) === norm(value));
 
   // ===== Título + logo =====
-  slide.addText([
-    { text: "❑  ", options: { fontSize: 28, color: TXT } },
-    { text: "Supplier Visit Report", options: { fontSize: 28, bold: true, color: TXT } },
-  ], { x: 0.2, y: 0.1, w: 9, h: 0.6, fontFace: "Calibri", valign: "middle" });
-  if (logoData) slide.addImage({ data: logoData, x: 11.6, y: 0.1, w: 1.55, h: 0.55, sizing: { type: "contain", w: 1.55, h: 0.55 } });
+  slide.addShape("rect", { x: 0, y: 0, w: px(958), h: px(68), fill: { color: HEAD }, line: { color: HEAD } });
+  slide.addShape("rect", { x: px(958), y: 0, w: px(126), h: px(68), fill: { color: "FFFFFF" }, line: { color: "FFFFFF" } });
+  text("□", 12, 13, 32, 42, { fontSize: 25, color: "FFFFFF", margin: 0 });
+  text("Supplier Visit Report", 56, 10, 540, 50, { fontSize: 26, color: "FFFFFF", margin: 0 });
+  if (logoData) slide.addImage({ data: logoData, x: px(957), y: px(8), w: px(118), h: px(50), sizing: { type: "contain", w: px(118), h: px(50) } });
 
   // ===== Bloco superior de dados (linhas 1-3) =====
-  const y0 = 0.75, rowH = 0.38;
-  const purposeX = 9.6, purposeW = 3.6;
-
-  // Purpose header (span 3 rows)
-  slide.addShape("rect", { x: purposeX, y: y0, w: purposeW, h: rowH, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Purpose", { x: purposeX, y: y0, w: purposeW, h: rowH, align: "center", valign: "middle", bold: true, fontSize: 11, fontFace: "Calibri", color: TXT });
-
-  // Linha 1: Description | Process Audit
-  slide.addShape("rect", { x: 0.15, y: y0, w: 1.2, h: rowH, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Description", { x: 0.15, y: y0, w: 1.2, h: rowH, valign: "middle", align: "center", fontSize: 11, bold: true, fontFace: "Calibri", color: TXT });
-  slide.addShape("rect", { x: 1.35, y: y0, w: purposeX - 1.35, h: rowH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText((audit.title || "-"), { x: 1.45, y: y0, w: purposeX - 1.55, h: rowH, valign: "middle", fontSize: 11, fontFace: "Calibri", color: TXT });
-
-  // Linha 2: Supplier | Place | Date | (purpose row1)
-  const y1 = y0 + rowH;
-  const purpose: string[] = (audit.purpose || []).map((s: string) => String(s).toLowerCase());
-  const chk = (on: boolean) => (on ? "■" : "☐");
-
-  const c1 = (x: number, w: number, label: string, isLabel: boolean) => {
-    slide.addShape("rect", { x, y: y1, w, h: rowH, fill: isLabel ? { color: LBL } : undefined, line: { color: BORDER, pt: 0.75 } });
-    slide.addText(label, { x: x + 0.05, y: y1, w: w - 0.1, h: rowH, valign: "middle", align: isLabel ? "center" : "left", fontSize: 11, bold: isLabel, fontFace: "Calibri", color: TXT });
-  };
-  c1(0.15, 1.2, "Supplier", true);
-  c1(1.35, 2.2, audit.supplier_name || "-", false);
-  c1(3.55, 0.9, "Place", true);
-  c1(4.45, 2.0, audit.place || "-", false);
-  c1(6.45, 0.7, "Date", true);
+  const purpose: string[] = audit.purpose || [];
+  const proc: string[] = audit.process || [];
+  cell("Description", 0, 75, 125, 36, { fill: LBL, bold: true, center: true, fontSize: 14 });
+  cell(audit.title || "-", 125, 75, 657, 36, { fontSize: 12 });
+  cell("Purpose", 782, 75, 302, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell("Supplier", 0, 111, 125, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell(audit.supplier_name || "-", 125, 111, 179, 36, { fontSize: 12 });
+  cell("Place", 304, 111, 76, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell(audit.place || "-", 380, 111, 167, 36, { fontSize: 12 });
+  cell("Date", 547, 111, 73, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
   const dateStr = `${fmtDate(audit.audit_date_start)}${audit.audit_date_end && audit.audit_date_end !== audit.audit_date_start ? " & " + fmtDate(audit.audit_date_end) : ""}`;
-  c1(7.15, purposeX - 7.15, dateStr, false);
-  // Purpose linha 1: T/Out, TFT, New Car
-  slide.addShape("rect", { x: purposeX, y: y1, w: purposeW, h: rowH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText(`${chk(purpose.includes("t/out") || purpose.includes("tout"))} T/Out    ${chk(purpose.includes("tft"))} TFT    ${chk(purpose.includes("new car"))} New Car`,
-    { x: purposeX + 0.1, y: y1, w: purposeW - 0.2, h: rowH, valign: "middle", fontSize: 10, fontFace: "Calibri", color: TXT });
-
-  // Linha 3: Process | (checkbox) | PIC | value | (purpose row2)
-  const y2 = y0 + rowH * 2;
-  const proc: string[] = (audit.process || []).map((s: string) => String(s).toLowerCase());
-  slide.addShape("rect", { x: 0.15, y: y2, w: 1.2, h: rowH, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Process", { x: 0.15, y: y2, w: 1.2, h: rowH, valign: "middle", align: "center", fontSize: 11, bold: true, fontFace: "Calibri", color: TXT });
-  slide.addShape("rect", { x: 1.35, y: y2, w: 5.1, h: rowH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText(`${chk(proc.includes("injection") || proc.includes("injeção"))} Injection    ${chk(proc.includes("assembly") || proc.includes("montagem"))} Assembly    ${chk(proc.includes("paint") || proc.includes("pintura"))} Paint    ${chk(proc.includes("other") || proc.includes("outro"))} Other`,
-    { x: 1.45, y: y2, w: 5.0, h: rowH, valign: "middle", fontSize: 10, fontFace: "Calibri", color: TXT });
-  c1 && (() => {
-    slide.addShape("rect", { x: 6.45, y: y2, w: 0.7, h: rowH, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-    slide.addText("PIC", { x: 6.45, y: y2, w: 0.7, h: rowH, valign: "middle", align: "center", fontSize: 11, bold: true, fontFace: "Calibri", color: TXT });
-    slide.addShape("rect", { x: 7.15, y: y2, w: purposeX - 7.15, h: rowH, line: { color: BORDER, pt: 0.75 } });
-    slide.addText(audit.pic_name || "-", { x: 7.25, y: y2, w: purposeX - 7.35, h: rowH, valign: "middle", fontSize: 11, fontFace: "Calibri", color: TXT });
-  })();
-  slide.addShape("rect", { x: purposeX, y: y2, w: purposeW, h: rowH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText(`${chk(purpose.includes("cm validation"))} CM Validation    ${chk(purpose.includes("process check"))} Process Check`,
-    { x: purposeX + 0.1, y: y2, w: purposeW - 0.2, h: rowH, valign: "middle", fontSize: 10, fontFace: "Calibri", color: TXT });
+  cell(dateStr, 620, 111, 162, 36, { fontSize: 12 });
+  cell(`${checkbox(has(purpose, "T/Out"))}  T/Out     ${checkbox(has(purpose, "TFT"))}  TFT     ${checkbox(has(purpose, "New Car"))}  New Car`, 782, 111, 302, 36, { fontSize: 12 });
+  cell("Process", 0, 147, 125, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell(`${checkbox(has(proc, "Injection"))}  Injection     ${checkbox(has(proc, "Assembly"))}  Assembly     ${checkbox(has(proc, "Paint"))}  Paint     ${checkbox(has(proc, "Other"))}  Other`, 125, 147, 422, 36, { fontSize: 12 });
+  cell("PIC", 547, 147, 73, 36, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell(audit.pic_name || "-", 620, 147, 162, 36, { fontSize: 12 });
+  cell(`${checkbox(has(purpose, "CM Validation"))}  CM Validation     ${checkbox(has(purpose, "Process Check"))}  Process Check`, 782, 147, 302, 36, { fontSize: 12 });
 
   // ===== Faixa média: Schedule | Participants | Main Product =====
-  const yM = y0 + rowH * 3 + 0.05;
-  const midH = 2.35;
+  cell("Schedule", 0, 188, 418, 35, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell(audit.schedule_notes || "-", 0, 223, 418, 144, { fontSize: 8, valign: "top" });
 
-  // Schedule
-  slide.addShape("rect", { x: 0.15, y: yM, w: 4.35, h: 0.4, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Schedule", { x: 0.15, y: yM, w: 4.35, h: 0.4, align: "center", valign: "middle", bold: true, fontSize: 13, fontFace: "Calibri", color: TXT });
-  slide.addShape("rect", { x: 0.15, y: yM + 0.4, w: 4.35, h: midH - 0.4, line: { color: BORDER, pt: 0.75 } });
-  slide.addText(audit.schedule_notes || "-", {
-    x: 0.25, y: yM + 0.5, w: 4.15, h: midH - 0.6, fontSize: 9, fontFace: "Calibri", color: TXT, valign: "top",
-  });
-
-  // Participants
-  const px = 4.6, pw = 4.85;
-  slide.addShape("rect", { x: px, y: yM, w: pw, h: 0.4, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Participants", { x: px, y: yM, w: pw, h: 0.4, align: "center", valign: "middle", bold: true, fontSize: 13, fontFace: "Calibri", color: TXT });
-  const partRows: any[] = [[
-    { text: "Name", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-    { text: "Area", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-    { text: "Position", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-  ]];
+  cell("Participants", 418, 188, 365, 35, { fill: LBL, bold: true, center: true, fontSize: 15 });
+  cell("Name", 418, 223, 153, 29, { bold: true, center: true, fontSize: 12 });
+  cell("Area", 571, 223, 113, 29, { bold: true, center: true, fontSize: 12 });
+  cell("Position", 684, 223, 99, 29, { bold: true, center: true, fontSize: 12 });
   const parts = Array.isArray(audit.participants) ? audit.participants : [];
-  const maxRows = 4;
-  for (let i = 0; i < maxRows; i++) {
+  for (let i = 0; i < 4; i++) {
     const p = parts[i] || {};
-    partRows.push([
-      { text: p.name || "", options: { align: "center", fontSize: 10 } },
-      { text: p.area || "", options: { align: "center", fontSize: 10 } },
-      { text: p.position || p.role || "", options: { align: "center", fontSize: 10 } },
-    ]);
+    const y = 252 + i * 29;
+    cell(p.name || "", 418, y, 153, 29, { center: true, fontSize: 10 });
+    cell(p.area || "", 571, y, 113, 29, { center: true, fontSize: 10 });
+    cell(p.position || p.role || "", 684, y, 99, 29, { center: true, fontSize: 10 });
   }
-  slide.addTable(partRows, { x: px, y: yM + 0.4, w: pw, colW: [2.15, 1.4, 1.3], rowH: (midH - 0.4) / (maxRows + 1), border: { pt: 0.75, color: BORDER }, fontFace: "Calibri" });
 
   // Main Product
-  const mx = 9.55, mw = 3.65;
-  slide.addShape("rect", { x: mx, y: yM, w: mw, h: midH, line: { color: BORDER, pt: 0.75, dashType: "dash" } });
-  slide.addText("Main Product", { x: mx, y: yM + 0.05, w: mw, h: 0.35, align: "center", bold: true, fontSize: 12, fontFace: "Calibri", color: TXT, underline: { style: "sng" } as any });
+  rect(793, 188, 291, 179, undefined, true);
+  text("Main Product", 793, 194, 291, 26, { align: "center", bold: true, fontSize: 12, underline: { style: "sng" } as any });
   if (productImg) {
-    slide.addImage({ data: productImg, x: mx + 0.2, y: yM + 0.45, w: mw - 0.4, h: midH - 0.9, sizing: { type: "contain", w: mw - 0.4, h: midH - 0.9 } });
+    slide.addImage({ data: productImg, x: px(811), y: px(225), w: px(255), h: px(92), sizing: { type: "contain", w: px(255), h: px(92) } });
   }
-  slide.addText(audit.product_name || audit.title || "", { x: mx, y: yM + midH - 0.4, w: mw, h: 0.35, align: "center", fontSize: 11, fontFace: "Calibri", color: TXT });
+  text(audit.product_name || audit.title || "", 805, 320, 267, 26, { align: "center", fontSize: 11 });
 
   // ===== Main Contents header =====
-  const yC = yM + midH + 0.1;
-  slide.addShape("rect", { x: 0.15, y: yC, w: 2.4, h: 0.35, fill: { color: HEAD }, line: { color: HEAD } });
-  slide.addText("Main Contents", { x: 0.15, y: yC, w: 2.4, h: 0.35, align: "center", valign: "middle", bold: true, fontSize: 12, color: "FFFFFF", fontFace: "Calibri" });
+  slide.addShape("roundRect", { x: 0, y: px(367), w: px(218), h: px(39), rectRadius: 0.03, fill: { color: HEAD }, line: { color: BORDER, pt: 0.55 } } as any);
+  text("Main Contents", 0, 370, 218, 28, { align: "center", bold: true, fontSize: 13, color: "FFFFFF" });
 
   // ===== GeneralOpinion | Paint approval rate | Major Request =====
-  const yG = yC + 0.4, gH = 1.5;
-  // Label
-  slide.addShape("rect", { x: 0.15, y: yG, w: 1.6, h: gH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("GeneralOpinion\n(Special Notes)", { x: 0.15, y: yG, w: 1.6, h: gH, align: "center", valign: "middle", bold: true, fontSize: 12, fontFace: "Calibri", color: TXT });
-
-  // Paint approval rate table
+  cell("GeneralOpinion\n(Special Notes)", 0, 406, 158, 164, { fill: LBL, bold: true, center: true, fontSize: 12 });
+  rect(158, 406, 340, 164);
+  text(`${checkbox(false)} Paint approval rate:`, 170, 416, 230, 20, { bold: true, fontSize: 11 });
+  const inspectionTotal = Number(audit.paint_inspection_total ?? audit.mbr_aql_total ?? 0);
+  const inspectionOk = Number(audit.paint_inspection_ok ?? audit.mbr_aql_ok ?? 0);
+  const inspectionNg = Number(audit.paint_inspection_ng ?? Math.max(inspectionTotal - inspectionOk, 0));
+  const inspectionRate = inspectionTotal > 0 ? Math.round((inspectionOk / inspectionTotal) * 100) : 0;
   const ok = Number(audit.mbr_aql_ok ?? 0);
   const ng = Number(audit.mbr_aql_ng ?? 0);
   const total = Number(audit.mbr_aql_total ?? (ok + ng));
   const rate = total > 0 ? Math.round((ok / total) * 100) : 0;
-  const paintRows: any[] = [
-    [
-      { text: "Paint approval rate:", options: { colspan: 5, bold: true, align: "left", fontSize: 10, fill: { color: LBL } } },
-    ],
-    [
-      { text: "Inspection", options: { bold: true, align: "center", fontSize: 9, fill: { color: LBL } } },
-      { text: "Total Paint", options: { bold: true, align: "center", fontSize: 9, fill: { color: LBL } } },
-      { text: "OK", options: { bold: true, align: "center", fontSize: 9, fill: { color: LBL } } },
-      { text: "NG", options: { bold: true, align: "center", fontSize: 9, fill: { color: LBL } } },
-      { text: "% Rate", options: { bold: true, align: "center", fontSize: 9, fill: { color: LBL } } },
-    ],
-    [
-      { text: "MBR AQL", options: { bold: true, align: "center", fontSize: 10 } },
-      { text: String(total || "-"), options: { align: "center", fontSize: 10 } },
-      { text: String(ok || "-"), options: { align: "center", fontSize: 10 } },
-      { text: String(ng || "-"), options: { align: "center", fontSize: 10, color: MOBIS_COLORS.ng, bold: true } },
-      { text: total > 0 ? `${rate}%` : "-", options: { align: "center", fontSize: 10, color: HEAD, bold: true } },
-    ],
-  ];
-  slide.addTable(paintRows, { x: 1.8, y: yG, w: 4.45, colW: [1.1, 0.95, 0.75, 0.75, 0.9], border: { pt: 0.75, color: BORDER }, fontFace: "Calibri" });
+  const supplierLabel = String(audit.paint_inspection_label || audit.supplier_code || audit.supplier_name || "Supplier").slice(0, 12);
+  const cols = [183, 256, 314, 370, 426];
+  [256, 314, 370, 426].forEach((x) => slide.addShape("line", { x: px(x), y: px(440), w: 0, h: px(113), line: { color: BORDER, pt: 0.55 } }));
+  [480, 516].forEach((y) => slide.addShape("line", { x: px(163), y: px(y), w: px(325), h: 0, line: { color: BORDER, pt: 1 } }));
+  text("Inspection", 178, 454, 70, 18, { align: "center", bold: true, fontSize: 8 });
+  text("Total\nPaint", 257, 445, 55, 30, { align: "center", bold: true, fontSize: 8 });
+  text("OK", 316, 454, 50, 18, { align: "center", bold: true, fontSize: 8 });
+  text("NG", 372, 454, 50, 18, { align: "center", bold: true, fontSize: 8 });
+  text("% Rate", 428, 454, 55, 18, { align: "center", bold: true, fontSize: 8 });
+  text(supplierLabel, 180, 488, 64, 18, { align: "center", bold: true, fontSize: 9 });
+  text(String(inspectionTotal || "-"), 262, 488, 42, 18, { align: "center", fontSize: 10 });
+  text(String(inspectionOk || "-"), 318, 488, 42, 18, { align: "center", fontSize: 10 });
+  text(String(inspectionNg || "-"), 374, 488, 42, 18, { align: "center", fontSize: 10, bold: true, color: MOBIS_COLORS.ng });
+  text(inspectionTotal ? `${inspectionRate}%` : "-", 430, 488, 48, 18, { align: "center", fontSize: 10, bold: true, color: "003399" });
+  text("MBR AQL", 180, 525, 64, 18, { align: "center", bold: true, fontSize: 9 });
+  text(String(total || "-"), 262, 525, 42, 18, { align: "center", fontSize: 10 });
+  text(String(ok || "-"), 318, 525, 42, 18, { align: "center", fontSize: 10 });
+  text(String(ng || "-"), 374, 525, 42, 18, { align: "center", fontSize: 10, bold: true, color: MOBIS_COLORS.ng });
+  text(total > 0 ? `${rate}%` : "-", 430, 525, 48, 18, { align: "center", fontSize: 10, bold: true, color: "003399" });
 
   // Major Request
-  slide.addShape("rect", { x: 6.3, y: yG, w: 1.55, h: gH, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Major\nRequest of\nImprovement", { x: 6.3, y: yG, w: 1.55, h: gH, align: "center", valign: "middle", bold: true, fontSize: 12, fontFace: "Calibri", color: TXT });
+  cell("Major\nRequest of\nImprovement", 498, 406, 137, 164, { fill: LBL, bold: true, center: true, fontSize: 12 });
   const reqs: string[] = Array.isArray(audit.major_requests) ? audit.major_requests.filter(Boolean) : [];
-  const reqRows: any[] = [];
-  const maxReqs = 4;
-  for (let i = 0; i < maxReqs; i++) {
-    reqRows.push([{ text: reqs[i] ? `${i + 1}. ${reqs[i]}` : "", options: { fontSize: 10, valign: "middle", color: TXT } }]);
+  for (let i = 0; i < 4; i++) {
+    cell(reqs[i] ? `${i + 1}.  ${reqs[i]}` : "", 635, 406 + i * 41, 449, 41, { fontSize: 12 });
   }
-  slide.addTable(reqRows, { x: 7.9, y: yG, w: 5.28, colW: [5.28], rowH: gH / maxReqs, border: { pt: 0.75, color: BORDER }, fontFace: "Calibri" });
 
   // ===== Classification / Problem Status / Conclusion =====
-  const yB = yG + gH + 0.05;
-  const bH = 6.9 - yB; // fit até y~6.9
-  // Classification block
-  const cW = 5.5;
   const openN = ncs.filter((n) => (n.status || "open") === "open").length;
   const partialN = ncs.filter((n) => ["in_progress", "partial"].includes(n.status)).length;
   const doneN = ncs.filter((n) => n.status === "done").length;
   const totN = ncs.length;
   const pct = (n: number) => totN > 0 ? `${((n / totN) * 100).toFixed(2)}%` : "0%";
+  cell("Classificat\nion", 0, 590, 91, 83, { fill: "F3F6F8", center: true, fontSize: 12 });
+  cell("Problem Status", 91, 590, 407, 41, { fill: "F3F6F8", center: true, fontSize: 13 });
+  cell("Total", 91, 631, 84, 42, { fill: "F3F6F8", center: true, fontSize: 12 });
+  cell("Status", 175, 631, 323, 42, { fill: "F3F6F8", center: true, fontSize: 12 });
+  cell("Qty", 0, 673, 91, 31, { center: true, fontSize: 12 });
+  cell(String(totN), 91, 673, 84, 31, { center: true, fontSize: 12 });
+  cell("Open", 175, 673, 103, 31, { fill: "D00000", center: true, fontSize: 12, color: "FFFFFF" });
+  cell("Partial", 278, 673, 115, 31, { fill: "F28C18", center: true, fontSize: 12, color: "FFFFFF" });
+  cell("Done", 393, 673, 105, 31, { fill: "00A84F", center: true, fontSize: 12, color: "FFFFFF" });
+  cell("%", 0, 704, 91, 54, { center: true, fontSize: 12 });
+  cell(totN > 0 ? "100%" : "0%", 91, 704, 84, 54, { center: true, fontSize: 12 });
+  cell(pct(openN), 175, 704, 103, 54, { center: true, fontSize: 12 });
+  cell(pct(partialN), 278, 704, 115, 54, { center: true, fontSize: 12 });
+  cell(pct(doneN), 393, 704, 105, 54, { center: true, fontSize: 12 });
 
-  const clsRows: any[] = [
-    [
-      { text: "Classification", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, rowspan: 2 } },
-      { text: "Total", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, rowspan: 2 } },
-      { text: "Problem Status", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, colspan: 3 } },
-    ],
-    [
-      { text: "Open", options: { bold: true, align: "center", fill: { color: "C00000" }, color: "FFFFFF", fontSize: 10 } },
-      { text: "Partial", options: { bold: true, align: "center", fill: { color: "ED7D31" }, color: "FFFFFF", fontSize: 10 } },
-      { text: "Done", options: { bold: true, align: "center", fill: { color: "70AD47" }, color: "FFFFFF", fontSize: 10 } },
-    ],
-    [
-      { text: "Qty", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-      { text: String(totN), options: { align: "center", fontSize: 10 } },
-      { text: String(openN), options: { align: "center", fontSize: 10 } },
-      { text: String(partialN), options: { align: "center", fontSize: 10 } },
-      { text: String(doneN), options: { align: "center", fontSize: 10 } },
-    ],
-    [
-      { text: "%", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-      { text: totN > 0 ? "100%" : "0%", options: { align: "center", fontSize: 10 } },
-      { text: pct(openN), options: { align: "center", fontSize: 10 } },
-      { text: pct(partialN), options: { align: "center", fontSize: 10 } },
-      { text: pct(doneN), options: { align: "center", fontSize: 10 } },
-    ],
-  ];
-  slide.addTable(clsRows, { x: 0.15, y: yB, w: cW, colW: [1.1, 1.0, 1.13, 1.13, 1.14], rowH: bH / 4, border: { pt: 0.75, color: BORDER }, fontFace: "Calibri" });
-
-  // Conclusion
-  const conclX = 0.15 + cW + 0.1;
-  const conclW = 13.18 - conclX;
-  slide.addShape("rect", { x: conclX, y: yB, w: conclW, h: 0.35, fill: { color: LBL }, line: { color: BORDER, pt: 0.75 } });
-  slide.addText("Conclusion", { x: conclX, y: yB, w: conclW, h: 0.35, align: "center", valign: "middle", bold: true, fontSize: 12, fontFace: "Calibri", color: TXT });
-  slide.addShape("rect", { x: conclX, y: yB + 0.35, w: conclW, h: bH - 0.35, line: { color: BORDER, pt: 0.75 } });
-  slide.addText(audit.conclusion || "-", {
-    x: conclX + 0.1, y: yB + 0.45, w: conclW - 0.2, h: bH - 0.55, fontSize: 10, fontFace: "Calibri", color: TXT, valign: "top",
-  });
+  cell("Conclusion", 503, 590, 581, 38, { fill: "F3F6F8", center: true, fontSize: 13 });
+  cell(audit.conclusion || "-", 503, 628, 581, 130, { fontSize: 12, valign: "top" });
 }
 
 /** Slides 2..N: General Issues list, max 4 NCs per slide */

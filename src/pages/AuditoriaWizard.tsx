@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import InAppCamera from "@/components/InAppCamera";
 import { compressImage } from "@/lib/compressImage";
+import { getAuditPhotoUrl, useAuditPhotoUrl } from "@/lib/auditPhoto";
+import { SignedAuditImg } from "@/components/auditoria/SignedAuditImg";
+
 
 type Participant = { name: string; role?: string; company?: string };
 type NcDraft = {

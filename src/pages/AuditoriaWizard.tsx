@@ -398,16 +398,17 @@ const AuditoriaWizard = () => {
                 </div>
                 {(productImagePreview || productImageUrl) && (
                   <div className="mt-2 relative inline-block">
-                    <img
-                      src={productImagePreview || (productImageUrl ? supabase.storage.from("audit-photos").getPublicUrl(productImageUrl).data.publicUrl : "")}
-                      alt="Produto"
-                      className="max-h-40 rounded border"
-                    />
+                    {productImagePreview ? (
+                      <img src={productImagePreview} alt="Produto" className="max-h-40 rounded border" />
+                    ) : (
+                      <SignedAuditImg path={productImageUrl} alt="Produto" className="max-h-40 rounded border" />
+                    )}
                     <Button size="icon" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6"
                       onClick={() => { setProductImage(null); setProductImagePreview(null); setProductImageUrl(null); }}>
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
+
                 )}
               </div>
             </Card>

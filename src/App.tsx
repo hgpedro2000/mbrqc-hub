@@ -172,8 +172,10 @@ const App = () => (
             
             {/* Auditorias */}
             <Route path="/auditorias" element={<ProtectedRoute><Auditorias /></ProtectedRoute>} />
-            <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
-            <Route path="/auditorias/editar/:id" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
+            <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaWizard /></ProtectedRoute>} />
+            <Route path="/auditorias/editar/:id" element={<ProtectedRoute><AuditoriaWizard /></ProtectedRoute>} />
+            <Route path="/auditorias/legado/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
+            <Route path="/auditorias/legado/editar/:id" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
             <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
             
             {/* Contenção */}

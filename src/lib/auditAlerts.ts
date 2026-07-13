@@ -29,7 +29,7 @@ export async function refreshAuditAlerts(): Promise<void> {
     .in("status", ["planejada", "em_andamento"])
     .not("audit_date_start", "is", null);
 
-  const upserts: Array<{ audit_id: string; type: string; trigger_date: string; message: string }> = [];
+  const upserts: Array<{ audit_id: string; type: "auditoria_proxima" | "fornecedor_atrasado"; trigger_date: string; message: string }> = [];
 
   for (const a of audits ?? []) {
     if (!a.audit_date_start) continue;

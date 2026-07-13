@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldCheck, BarChart3, Pencil, Trash2, CalendarClock, AlertTriangle } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
+import AuditoriaAlertsBell from "@/components/AuditoriaAlertsBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";
@@ -111,6 +112,7 @@ const Auditorias = () => {
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             <div className="flex items-center gap-1">
+              <AuditoriaAlertsBell />
               <ReportErrorButton moduleName="Auditorias" />
               {isAdmin && <EngineeringMode module="Auditorias" />}
             </div>
@@ -134,7 +136,7 @@ const Auditorias = () => {
           </Button>
           <Button
             variant="outline"
-            onClick={() => toast.info("Agenda chega na Fase 4 do módulo.")}
+            onClick={() => navigate("/auditorias/agenda")}
             className="gap-2"
           >
             <CalendarClock className="w-4 h-4" /> Agenda

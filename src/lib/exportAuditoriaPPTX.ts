@@ -106,7 +106,7 @@ function addCoverSlide(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string 
       color: opts.color ?? TXT,
       bold: opts.bold ?? false,
       align: opts.align ?? "left",
-      valign: opts.valign ?? "mid",
+      valign: opts.valign ?? "middle",
       breakLine: false,
       fit: "shrink",
       ...opts,

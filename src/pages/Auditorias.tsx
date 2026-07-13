@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, ShieldCheck, BarChart3, Pencil, Trash2, CalendarClock, AlertTriangle } from "lucide-react";
 import ReportErrorButton from "@/components/ReportErrorButton";
+import AuditoriaAlertsBell from "@/components/AuditoriaAlertsBell";
 import { useUserRole } from "@/hooks/useUserRole";
 import EngineeringMode from "@/components/EngineeringMode";
 import MasterListFilter, { useListFilters, FilterConfig } from "@/components/MasterListFilter";

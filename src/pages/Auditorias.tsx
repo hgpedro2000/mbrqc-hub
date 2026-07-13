@@ -136,7 +136,7 @@ const Auditorias = () => {
           </Button>
           <Button
             variant="outline"
-            onClick={() => toast.info("Agenda chega na Fase 4 do módulo.")}
+            onClick={() => navigate("/auditorias/agenda")}
             className="gap-2"
           >
             <CalendarClock className="w-4 h-4" /> Agenda

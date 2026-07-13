@@ -102,7 +102,7 @@ function Cell({
         fontSize: size,
         fontWeight: bold ? 700 : 400,
         display: "flex",
-        alignItems: "center",
+        alignItems: style?.alignItems ?? "center",
         justifyContent: center ? "center" : "flex-start",
         textAlign: center ? "center" : "left",
         padding: center ? "0 4px" : "0 10px",

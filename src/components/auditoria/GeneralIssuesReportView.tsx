@@ -6,7 +6,9 @@ interface Props {
   ncs: any[];
   page?: number;
   perPage?: number;
+  onOpenDetail?: (nc: any) => void;
 }
+
 
 function fmtDate(d?: string | null) {
   if (!d) return "-";
@@ -90,9 +92,10 @@ function StatusPill({ status }: { status?: string }) {
   );
 }
 
-export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: Props) {
+export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4, onOpenDetail }: Props) {
   const chunk = ncs.slice(page * perPage, page * perPage + perPage);
   const H = HEAD_H + ROW_HEAD_H + ROW_H * perPage;
+
 
   return (
     <div style={{ width: "100%", overflowX: "auto", paddingBottom: 8 }}>
@@ -154,16 +157,23 @@ export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: 
               <Cell x={colX(7)} y={y} w={COLS[7].w} h={ROW_H} center size={13}>
                 {nc ? <StatusPill status={nc.status} /> : null}
               </Cell>
-              <Cell x={colX(8)} y={y} w={COLS[8].w} h={ROW_H} center size={13}>
-                {nc?.responses?.[0]?.after_photo_url ? (
-                  <SignedAuditLink
-                    path={nc.responses[0].after_photo_url}
-                    style={{ color: COLORS.headerDark, textDecoration: "none" }}
-                  >▶</SignedAuditLink>
-                ) : (
-                  <span style={{ color: "#9CA3AF" }}>▷</span>
-                )}
+              <Cell x={colX(8)} y={y} w={COLS[8].w} h={ROW_H} center size={18}>
+                {nc ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenDetail?.(nc)}
+                    title="Abrir Improvement Case"
+                    style={{
+                      background: "transparent", border: "none", cursor: "pointer",
+                      color: nc?.responses?.[0]?.after_photo_url ? COLORS.done : COLORS.headerDark,
+                      fontSize: 22, lineHeight: 1, padding: 0,
+                    }}
+                  >
+                    {nc?.responses?.[0]?.after_photo_url ? "▶" : "▷"}
+                  </button>
+                ) : null}
               </Cell>
+
             </div>
           );
 

@@ -20,8 +20,10 @@ import { compressImage } from "@/lib/compressImage";
 import { exportAuditoriaPPTX } from "@/lib/exportAuditoriaPPTX";
 import SupplierVisitReportView from "@/components/auditoria/SupplierVisitReportView";
 import GeneralIssuesReportView from "@/components/auditoria/GeneralIssuesReportView";
+import ImprovementCaseView from "@/components/auditoria/ImprovementCaseView";
 import { SignedAuditImg } from "@/components/auditoria/SignedAuditImg";
 import { getAuditPhotoUrl, useAuditPhotoUrl } from "@/lib/auditPhoto";
+
 
 
 const STATUS_COLORS: Record<string, string> = {
@@ -72,6 +74,8 @@ export default function AuditoriaDetalhe() {
   const qc = useQueryClient();
   const [exporting, setExporting] = useState(false);
   const [respondNc, setRespondNc] = useState<any | null>(null);
+  const [detailNc, setDetailNc] = useState<any | null>(null);
+
 
   const { data: audit, isLoading } = useQuery({
     queryKey: ["audit-detail", id],
@@ -195,9 +199,10 @@ export default function AuditoriaDetalhe() {
 
             {ncs.length > 0 && Array.from({ length: Math.ceil(ncs.length / 4) }).map((_, i) => (
               <div key={i} className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
-                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} />
+                <GeneralIssuesReportView ncs={ncs} page={i} perPage={4} onOpenDetail={setDetailNc} />
               </div>
             ))}
+
 
 
             <div className="grid md:grid-cols-3 gap-3">
@@ -376,9 +381,29 @@ export default function AuditoriaDetalhe() {
           }}
         />
       )}
+
+      {detailNc && (
+        <Dialog open onOpenChange={(o) => !o && setDetailNc(null)}>
+          <DialogContent className="max-w-6xl max-h-[92vh] overflow-auto bg-slate-200 dark:bg-slate-900">
+            <DialogHeader>
+              <DialogTitle>Improvement Case — NC #{detailNc.seq_number}</DialogTitle>
+            </DialogHeader>
+            <div className="flex justify-center">
+              <ImprovementCaseView nc={detailNc} />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDetailNc(null)}>Fechar</Button>
+              <Button onClick={() => { const nc = detailNc; setDetailNc(null); setRespondNc(nc); }}>
+                <Upload className="w-4 h-4 mr-1" /> Registrar / Editar resposta
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
 
 function InfoRow({ k, v }: { k: string; v: any }) {
   return (

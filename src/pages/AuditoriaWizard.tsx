@@ -122,11 +122,22 @@ const AuditoriaWizard = () => {
           in_charge: n.in_charge || "",
           due_date: n.due_date || "",
           before_photo_url: n.before_photo_url,
-          before_preview: n.before_photo_url
-            ? supabase.storage.from("audit-photos").getPublicUrl(n.before_photo_url).data.publicUrl
-            : null,
+          before_preview: null as string | null,
         })));
+        // Load signed previews lazily
+        ncData.forEach((n, idx) => {
+          if (n.before_photo_url) {
+            getAuditPhotoUrl(n.before_photo_url).then((u) => {
+              setNcs((prev) => {
+                const next = [...prev];
+                if (next[idx]) next[idx] = { ...next[idx], before_preview: u };
+                return next;
+              });
+            });
+          }
+        });
       }
+
     })();
   }, [editId, isEdit]);
 

@@ -28,8 +28,8 @@ type NcDraft = {
   before_preview?: string | null;
 };
 
-const PURPOSE_OPTIONS = ["Quality Audit", "New Model", "Improvement Follow-up", "Complaint", "Routine Visit"];
-const PROCESS_OPTIONS = ["Injection", "Painting", "Assembly", "Packing", "Warehouse", "Incoming"];
+const PURPOSE_OPTIONS = ["T/Out", "TFT", "New Car", "CM Validation", "Process Check"];
+const PROCESS_OPTIONS = ["Injection", "Assembly", "Paint", "Other"];
 
 const uploadPhotoToBucket = async (file: File, folder: string): Promise<string> => {
   const compressed = await compressImage(file);

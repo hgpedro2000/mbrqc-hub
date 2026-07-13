@@ -447,7 +447,7 @@ export async function exportAuditoriaPPTX(audit: Audit, ncs: NC[]) {
   const productImg = await storagePathToData(audit.product_image_url);
 
   addCoverSlide(pptx, audit, ncs, logoData, productImg);
-  const issuePages = addIssuesSlides(pptx, audit, ncs, logoData, 2);
+  const issuePages = await addIssuesSlides(pptx, audit, ncs, logoData, 2);
   await addImprovementSlides(pptx, audit, ncs, logoData, 2 + issuePages);
 
   const dt = new Date(audit.audit_date_start ? audit.audit_date_start + "T12:00:00" : Date.now());

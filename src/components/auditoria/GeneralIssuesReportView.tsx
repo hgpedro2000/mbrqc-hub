@@ -126,7 +126,6 @@ export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: 
         {Array.from({ length: perPage }).map((_, r) => {
           const nc = chunk[r];
           const y = HEAD_H + ROW_HEAD_H + r * ROW_H;
-          const picture = nc ? storageUrl(nc.before_photo_url) : null;
           return (
             <div key={r}>
               <Cell x={colX(0)} y={y} w={COLS[0].w} h={ROW_H} center size={14}>
@@ -139,8 +138,8 @@ export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: 
                 {nc?.problem_description || ""}
               </Cell>
               <Cell x={colX(3)} y={y} w={COLS[3].w} h={ROW_H} center size={12} style={{ padding: 4 }}>
-                {picture
-                  ? <img src={picture} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                {nc?.before_photo_url
+                  ? <SignedAuditImg path={nc.before_photo_url} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} fallback={<span style={{ color: "#9CA3AF" }}>…</span>} />
                   : <span style={{ color: "#9CA3AF" }}>—</span>}
               </Cell>
               <Cell x={colX(4)} y={y} w={COLS[4].w} h={ROW_H} size={13} style={{ alignItems: "center" }}>
@@ -157,17 +156,17 @@ export default function GeneralIssuesReportView({ ncs, page = 0, perPage = 4 }: 
               </Cell>
               <Cell x={colX(8)} y={y} w={COLS[8].w} h={ROW_H} center size={13}>
                 {nc?.responses?.[0]?.after_photo_url ? (
-                  <a
-                    href={storageUrl(nc.responses[0].after_photo_url) || "#"}
-                    target="_blank" rel="noreferrer"
+                  <SignedAuditLink
+                    path={nc.responses[0].after_photo_url}
                     style={{ color: COLORS.headerDark, textDecoration: "none" }}
-                  >▶</a>
+                  >▶</SignedAuditLink>
                 ) : (
                   <span style={{ color: "#9CA3AF" }}>▷</span>
                 )}
               </Cell>
             </div>
           );
+
         })}
       </div>
     </div>

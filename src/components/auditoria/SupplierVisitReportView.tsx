@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuditPhotoUrl } from "@/lib/auditPhoto";
 
 interface Props {
   audit: any;
@@ -12,10 +12,6 @@ function fmtDate(d?: string | null) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-GB");
 }
 
-function storageUrl(path?: string | null) {
-  if (!path) return null;
-  return supabase.storage.from("audit-photos").getPublicUrl(path).data.publicUrl;
-}
 
 const W = 1084;
 const H = 770;

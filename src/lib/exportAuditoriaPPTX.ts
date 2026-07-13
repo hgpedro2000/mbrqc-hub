@@ -250,15 +250,11 @@ function addCoverSlide(pptx: pptxgen, audit: Audit, ncs: NC[], logoData: string 
 
   const clsRows: any[] = [
     [
-      { text: "Classification", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10, rowspan: 1 } },
-      { text: "Total", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10 } },
-      { text: "Problem Status", options: { bold: true, align: "center", fill: { color: LBL }, fontSize: 10, colspan: 3 } },
-      { text: "", options: {} },
-      { text: "", options: {} },
+      { text: "Classification", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, rowspan: 2 } },
+      { text: "Total", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, rowspan: 2 } },
+      { text: "Problem Status", options: { bold: true, align: "center", valign: "middle", fill: { color: LBL }, fontSize: 10, colspan: 3 } },
     ],
     [
-      { text: "", options: { fill: { color: LBL } } },
-      { text: "", options: { fill: { color: LBL } } },
       { text: "Open", options: { bold: true, align: "center", fill: { color: "C00000" }, color: "FFFFFF", fontSize: 10 } },
       { text: "Partial", options: { bold: true, align: "center", fill: { color: "ED7D31" }, color: "FFFFFF", fontSize: 10 } },
       { text: "Done", options: { bold: true, align: "center", fill: { color: "70AD47" }, color: "FFFFFF", fontSize: 10 } },

@@ -74,6 +74,8 @@ export default function AuditoriaDetalhe() {
   const qc = useQueryClient();
   const [exporting, setExporting] = useState(false);
   const [respondNc, setRespondNc] = useState<any | null>(null);
+  const [detailNc, setDetailNc] = useState<any | null>(null);
+
 
   const { data: audit, isLoading } = useQuery({
     queryKey: ["audit-detail", id],

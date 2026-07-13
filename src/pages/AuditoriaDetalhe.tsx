@@ -300,11 +300,11 @@ export default function AuditoriaDetalhe() {
                   <p className="text-sm whitespace-pre-wrap">{audit.schedule_notes}</p>
                 </div>
               )}
-              {(audit.participants || []).length > 0 && (
+              {Array.isArray(audit.participants) && audit.participants.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Participantes</p>
                   <ul className="text-sm space-y-1">
-                    {audit.participants.map((p: any, i: number) => (
+                    {(audit.participants as any[]).map((p: any, i: number) => (
                       <li key={i} className="flex justify-between border-b border-border/30 pb-1">
                         <span>{p.name}</span>
                         <span className="text-muted-foreground">{p.role || ""}</span>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import { compressImage } from "@/lib/compressImage";
 import { exportAuditoriaPPTX } from "@/lib/exportAuditoriaPPTX";
 import SupplierVisitReportView from "@/components/auditoria/SupplierVisitReportView";
 import GeneralIssuesReportView from "@/components/auditoria/GeneralIssuesReportView";
+import { SignedAuditImg } from "@/components/auditoria/SignedAuditImg";
+import { getAuditPhotoUrl, useAuditPhotoUrl } from "@/lib/auditPhoto";
+
 
 const STATUS_COLORS: Record<string, string> = {
   planejada: "bg-slate-500/15 text-slate-300 border border-slate-500/30",
@@ -55,10 +58,12 @@ function fmtDate(d?: string | null) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR");
 }
 
-function storageUrl(path?: string | null) {
-  if (!path) return null;
-  return supabase.storage.from("audit-photos").getPublicUrl(path).data.publicUrl;
+function storageUrl(_path?: string | null) {
+  // Deprecated: audit-photos bucket is private. Use SignedAuditImg / useAuditPhotoUrl.
+  return null;
 }
+
+
 
 export default function AuditoriaDetalhe() {
   const { id } = useParams<{ id: string }>();
@@ -218,12 +223,22 @@ export default function AuditoriaDetalhe() {
               <div className="form-section">
                 <h3 className="font-heading font-semibold mb-2">Foto do produto</h3>
                 {audit.product_image_url ? (
-                  <img src={storageUrl(audit.product_image_url) || ""} alt="Produto" className="w-full rounded-lg border object-contain max-h-72" />
+                  <SignedAuditImg
+                    path={audit.product_image_url}
+                    alt="Produto"
+                    className="w-full rounded-lg border object-contain max-h-72"
+                    fallback={
+                      <div className="border border-dashed rounded-lg h-48 flex items-center justify-center text-muted-foreground">
+                        <ImageIcon className="w-6 h-6 mr-2" /> Carregando…
+                      </div>
+                    }
+                  />
                 ) : (
                   <div className="border border-dashed rounded-lg h-48 flex items-center justify-center text-muted-foreground">
                     <ImageIcon className="w-6 h-6 mr-2" /> Sem imagem
                   </div>
                 )}
+
               </div>
             </div>
 
@@ -284,9 +299,10 @@ export default function AuditoriaDetalhe() {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <PhotoCell label="Before" url={storageUrl(nc.before_photo_url)} />
-                  <PhotoCell label="After" url={storageUrl(nc.responses?.[0]?.after_photo_url)} />
+                  <PhotoCell label="Before" path={nc.before_photo_url} />
+                  <PhotoCell label="After" path={nc.responses?.[0]?.after_photo_url} />
                 </div>
+
                 {nc.responses?.[0]?.corrective_measure_text && (
                   <div className="mt-2 text-xs p-2 rounded bg-emerald-500/10 border border-emerald-500/20">
                     <b>Resposta:</b> {nc.responses[0].corrective_measure_text}
@@ -385,14 +401,21 @@ function KpiCard({ label, value, icon }: { label: string; value: number; icon: R
   );
 }
 
-function PhotoCell({ label, url }: { label: string; url: string | null }) {
+function PhotoCell({ label, path }: { label: string; path?: string | null }) {
+  const url = useAuditPhotoUrl(path);
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
-      {url ? (
-        <a href={url} target="_blank" rel="noreferrer">
-          <img src={url} alt={label} className="w-full h-32 object-cover rounded border" />
-        </a>
+      {path ? (
+        url ? (
+          <a href={url} target="_blank" rel="noreferrer">
+            <img src={url} alt={label} className="w-full h-32 object-cover rounded border" />
+          </a>
+        ) : (
+          <div className="w-full h-32 rounded border border-dashed flex items-center justify-center text-muted-foreground text-xs">
+            carregando…
+          </div>
+        )
       ) : (
         <div className="w-full h-32 rounded border border-dashed flex items-center justify-center text-muted-foreground text-xs">
           <ImageIcon className="w-4 h-4 mr-1" /> sem foto
@@ -401,6 +424,7 @@ function PhotoCell({ label, url }: { label: string; url: string | null }) {
     </div>
   );
 }
+
 
 function TimelineItem({ when, label }: { when?: string | null; label: string }) {
   if (!when) return null;
@@ -418,7 +442,13 @@ function TimelineItem({ when, label }: { when?: string | null; label: string }) 
 function NcResponseDialog({ nc, onClose, onSaved }: { nc: any; onClose: () => void; onSaved: () => void }) {
   const existing = nc.responses?.[0];
   const [afterFile, setAfterFile] = useState<File | null>(null);
-  const [afterPreview, setAfterPreview] = useState<string | null>(existing?.after_photo_url ? storageUrl(existing.after_photo_url) : null);
+  const [afterPreview, setAfterPreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (existing?.after_photo_url) {
+      getAuditPhotoUrl(existing.after_photo_url).then((u) => setAfterPreview(u));
+    }
+  }, [existing?.after_photo_url]);
+
   const [text, setText] = useState<string>(existing?.corrective_measure_text || nc.counter_measure || "");
   const [completion, setCompletion] = useState<string>(existing?.completion_date || new Date().toISOString().slice(0, 10));
   const [obs, setObs] = useState<string>(existing?.obs || "");

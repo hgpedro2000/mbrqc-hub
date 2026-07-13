@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuditPhotoUrl } from "@/lib/auditPhoto";
 
 interface Props {
   audit: any;
@@ -12,10 +12,6 @@ function fmtDate(d?: string | null) {
   return new Date(d + "T12:00:00").toLocaleDateString("en-GB");
 }
 
-function storageUrl(path?: string | null) {
-  if (!path) return null;
-  return supabase.storage.from("audit-photos").getPublicUrl(path).data.publicUrl;
-}
 
 const W = 1084;
 const H = 770;
@@ -138,7 +134,7 @@ export default function SupplierVisitReportView({ audit, ncs }: Props) {
   const dateStr = `${fmtDate(audit.audit_date_start)}${
     audit.audit_date_end && audit.audit_date_end !== audit.audit_date_start ? " & " + fmtDate(audit.audit_date_end) : ""
   }`;
-  const productSrc = storageUrl(audit.product_image_url);
+  const productSrc = useAuditPhotoUrl(audit.product_image_url);
   const inspectionLabel = audit.paint_inspection_label || audit.supplier_code || audit.supplier_name || "Supplier";
 
   return (

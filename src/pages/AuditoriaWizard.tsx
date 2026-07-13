@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import logo from "@/assets/hyundai-mobis-logo.png";
 import InAppCamera from "@/components/InAppCamera";
 import { compressImage } from "@/lib/compressImage";
+import { getAuditPhotoUrl, useAuditPhotoUrl } from "@/lib/auditPhoto";
+import { SignedAuditImg } from "@/components/auditoria/SignedAuditImg";
+
 
 type Participant = { name: string; role?: string; company?: string };
 type NcDraft = {
@@ -119,11 +122,22 @@ const AuditoriaWizard = () => {
           in_charge: n.in_charge || "",
           due_date: n.due_date || "",
           before_photo_url: n.before_photo_url,
-          before_preview: n.before_photo_url
-            ? supabase.storage.from("audit-photos").getPublicUrl(n.before_photo_url).data.publicUrl
-            : null,
+          before_preview: null as string | null,
         })));
+        // Load signed previews lazily
+        ncData.forEach((n, idx) => {
+          if (n.before_photo_url) {
+            getAuditPhotoUrl(n.before_photo_url).then((u) => {
+              setNcs((prev) => {
+                const next = [...prev];
+                if (next[idx]) next[idx] = { ...next[idx], before_preview: u };
+                return next;
+              });
+            });
+          }
+        });
       }
+
     })();
   }, [editId, isEdit]);
 
@@ -384,16 +398,17 @@ const AuditoriaWizard = () => {
                 </div>
                 {(productImagePreview || productImageUrl) && (
                   <div className="mt-2 relative inline-block">
-                    <img
-                      src={productImagePreview || (productImageUrl ? supabase.storage.from("audit-photos").getPublicUrl(productImageUrl).data.publicUrl : "")}
-                      alt="Produto"
-                      className="max-h-40 rounded border"
-                    />
+                    {productImagePreview ? (
+                      <img src={productImagePreview} alt="Produto" className="max-h-40 rounded border" />
+                    ) : (
+                      <SignedAuditImg path={productImageUrl} alt="Produto" className="max-h-40 rounded border" />
+                    )}
                     <Button size="icon" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6"
                       onClick={() => { setProductImage(null); setProductImagePreview(null); setProductImageUrl(null); }}>
                       <X className="w-3 h-3" />
                     </Button>
                   </div>
+
                 )}
               </div>
             </Card>

@@ -205,11 +205,14 @@ const ModulePermissionsTab = () => {
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                       {ALL_MODULES.map((m) => {
                         const parentMod = (m as any).parent;
+                        const subHub = (m as any).subHub;
                         if (parentMod && !isModuleEnabled(p.id, parentMod)) return null;
+                        if (subHub && !isModuleEnabled(p.id, subHub)) return null;
                         const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
+                        const isSubHub = (m as any).isSubHub;
                         return (
-                          <div key={m.id} className="flex items-center justify-between gap-1">
-                            <span className="text-[10px] text-muted-foreground truncate">{abbr}</span>
+                          <div key={m.id} className={`flex items-center justify-between gap-1 ${isSubHub ? "col-span-2 border-t pt-1 mt-1" : ""}`}>
+                            <span className={`text-[10px] truncate ${isSubHub ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{abbr}</span>
                             <Switch
                               checked={isModuleEnabled(p.id, m.id)}
                               onCheckedChange={() => toggleModule(p.id, m.id)}

@@ -183,6 +183,10 @@ export default function AuditoriaDetalhe() {
 
           {/* Overview */}
           <TabsContent value="overview" className="space-y-4 mt-4">
+            <div className="bg-slate-900/40 p-3 rounded-lg overflow-x-auto">
+              <SupplierVisitReportView audit={audit} ncs={ncs} />
+            </div>
+
             <div className="grid md:grid-cols-3 gap-3">
               <KpiCard label="NCs Abertas" value={openCount} icon={<AlertTriangle className="w-5 h-5 text-amber-400" />} />
               <KpiCard label="NCs Respondidas" value={doneCount} icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />} />

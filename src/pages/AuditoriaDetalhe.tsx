@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { compressImage } from "@/lib/imageCompression";
+import { compressImage } from "@/lib/compressImage";
 import { exportAuditoriaPPTX } from "@/lib/exportAuditoriaPPTX";
 
 const STATUS_COLORS: Record<string, string> = {

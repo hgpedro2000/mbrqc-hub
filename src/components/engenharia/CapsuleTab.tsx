@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { compressImage } from "@/lib/compressImage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,21 +7,41 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Loader2, Upload, Download, Trash2, FileIcon, Search, X, FileText,
   FileSpreadsheet, Presentation, Image as ImageIcon, Package,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import * as XLSX from "xlsx";
 import CapsuleNotepad from "./CapsuleNotepad";
 
-type PreviewItem = { file: File; url: string; kind: "image" | "pdf" | "excel" | "ppt" | "other"; excelPreview?: string };
+type Kind = "image" | "pdf" | "excel" | "ppt" | "other";
+type SheetData = { name: string; rows: string[][] };
+type PreviewItem = {
+  file: File;
+  url: string;
+  kind: Kind;
+  sheets?: SheetData[];
+  activeSheet?: number;
+  page?: number;
+};
 
-function detectKind(file: File): PreviewItem["kind"] {
+const MAX_SIZE = 25 * 1024 * 1024; // 25MB
+const IMG_MAX = 15 * 1024 * 1024;
+const ROWS_PER_PAGE = 50;
+
+const ALLOWED_EXT = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".xlsx", ".xls", ".csv", ".pptx", ".ppt"];
+
+function detectKind(file: File): Kind {
   const n = file.name.toLowerCase();
   if (file.type.startsWith("image/")) return "image";
   if (file.type === "application/pdf" || n.endsWith(".pdf")) return "pdf";
@@ -30,7 +50,17 @@ function detectKind(file: File): PreviewItem["kind"] {
   return "other";
 }
 
-function KindIcon({ kind, className = "w-5 h-5" }: { kind: PreviewItem["kind"]; className?: string }) {
+function validateFile(file: File): string | null {
+  const n = file.name.toLowerCase();
+  const okExt = ALLOWED_EXT.some((e) => n.endsWith(e));
+  const isImg = file.type.startsWith("image/");
+  if (!okExt && !isImg) return `Tipo não suportado: ${file.name}`;
+  const limit = isImg ? IMG_MAX : MAX_SIZE;
+  if (file.size > limit) return `${file.name} excede ${(limit / 1024 / 1024).toFixed(0)}MB`;
+  return null;
+}
+
+function KindIcon({ kind, className = "w-5 h-5" }: { kind: Kind; className?: string }) {
   if (kind === "image") return <ImageIcon className={className} />;
   if (kind === "pdf") return <FileText className={`${className} text-red-500`} />;
   if (kind === "excel") return <FileSpreadsheet className={`${className} text-emerald-600`} />;
@@ -42,10 +72,15 @@ const CapsuleTab = () => {
   const qc = useQueryClient();
   const { profile } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [downloadingBatch, setDownloadingBatch] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [downloadStatus, setDownloadStatus] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: files = [], isLoading } = useQuery({
@@ -78,28 +113,48 @@ const CapsuleTab = () => {
     });
   };
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = Array.from(e.target.files || []);
-    if (fileList.length === 0) return;
+  const buildPreviewItems = async (fileList: File[]) => {
+    const valid: File[] = [];
+    for (const f of fileList) {
+      const err = validateFile(f);
+      if (err) toast.error(err);
+      else valid.push(f);
+    }
+    if (valid.length === 0) return;
 
-    const items: PreviewItem[] = await Promise.all(fileList.map(async (f) => {
+    const items: PreviewItem[] = await Promise.all(valid.map(async (f) => {
       const kind = detectKind(f);
       const url = URL.createObjectURL(f);
-      let excelPreview: string | undefined;
+      let sheets: SheetData[] | undefined;
       if (kind === "excel") {
         try {
           const buf = await f.arrayBuffer();
           const wb = XLSX.read(buf, { type: "array" });
-          const sheet = wb.Sheets[wb.SheetNames[0]];
-          excelPreview = XLSX.utils.sheet_to_html(sheet);
+          sheets = wb.SheetNames.map((name) => ({
+            name,
+            rows: XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, blankrows: false }) as string[][],
+          }));
         } catch { /* ignore */ }
       }
-      return { file: f, url, kind, excelPreview };
+      return { file: f, url, kind, sheets, activeSheet: 0, page: 0 };
     }));
 
-    setPreviewItems(items);
+    setPreviewItems((prev) => [...prev, ...items]);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = Array.from(e.target.files || []);
+    if (fileList.length === 0) return;
+    await buildPreviewItems(fileList);
     if (fileRef.current) fileRef.current.value = "";
   };
+
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files || []);
+    if (files.length > 0) await buildPreviewItems(files);
+  }, []);
 
   const removePreview = (idx: number) => {
     setPreviewItems((prev) => {
@@ -108,16 +163,26 @@ const CapsuleTab = () => {
     });
   };
 
+  const updatePreview = (idx: number, patch: Partial<PreviewItem>) => {
+    setPreviewItems((prev) => prev.map((it, i) => i === idx ? { ...it, ...patch } : it));
+  };
+
   const cancelPreview = () => {
     previewItems.forEach((p) => URL.revokeObjectURL(p.url));
     setPreviewItems([]);
+    setUploadProgress(0);
+    setUploadStatus("");
   };
 
   const confirmUpload = async () => {
     if (previewItems.length === 0) return;
     setUploading(true);
+    setUploadProgress(0);
     try {
-      for (const item of previewItems) {
+      const total = previewItems.length;
+      for (let i = 0; i < total; i++) {
+        const item = previewItems[i];
+        setUploadStatus(`Enviando ${i + 1} de ${total}: ${item.file.name}`);
         const file = item.kind === "image" ? await compressImage(item.file) : item.file;
         const filePath = `${Date.now()}_${file.name}`;
         const { error: uploadError } = await supabase.storage
@@ -133,6 +198,7 @@ const CapsuleTab = () => {
           uploaded_by_name: profile?.full_name || "",
         } as any);
         if (dbError) throw dbError;
+        setUploadProgress(Math.round(((i + 1) / total) * 100));
       }
       toast.success(`${previewItems.length} arquivo(s) enviado(s)`);
       qc.invalidateQueries({ queryKey: ["capsule-files"] });
@@ -141,6 +207,7 @@ const CapsuleTab = () => {
       toast.error(err.message || "Erro ao enviar arquivo");
     } finally {
       setUploading(false);
+      setUploadStatus("");
     }
   };
 
@@ -159,14 +226,22 @@ const CapsuleTab = () => {
     const selected = filtered.filter((f: any) => selectedIds.has(f.id));
     if (selected.length === 0) return;
     setDownloadingBatch(true);
+    setDownloadProgress(0);
     try {
       const zip = new JSZip();
-      for (const f of selected) {
+      const total = selected.length;
+      for (let i = 0; i < total; i++) {
+        const f = selected[i];
+        setDownloadStatus(`Baixando ${i + 1} de ${total}: ${f.file_name}`);
         const { data, error } = await supabase.storage.from("capsule-files").download(f.file_path);
         if (error || !data) throw error || new Error("download falhou");
         zip.file(f.file_name, data);
+        setDownloadProgress(Math.round(((i + 1) / total) * 90));
       }
-      const blob = await zip.generateAsync({ type: "blob" });
+      setDownloadStatus("Gerando arquivo ZIP...");
+      const blob = await zip.generateAsync({ type: "blob" }, (meta) => {
+        setDownloadProgress(90 + Math.round(meta.percent * 0.1));
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -181,6 +256,8 @@ const CapsuleTab = () => {
       toast.error(err.message || "Erro ao baixar arquivos");
     } finally {
       setDownloadingBatch(false);
+      setDownloadStatus("");
+      setDownloadProgress(0);
     }
   };
 
@@ -217,12 +294,35 @@ const CapsuleTab = () => {
               Baixar ({selectionCount})
             </Button>
           )}
-          <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFileSelect} />
+          <input ref={fileRef} type="file" multiple accept={ALLOWED_EXT.join(",") + ",image/*"} className="hidden" onChange={handleFileSelect} />
           <Button onClick={() => fileRef.current?.click()} disabled={uploading} size="sm" className="gap-1">
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             Upload
           </Button>
         </div>
+      </div>
+
+      {downloadingBatch && (
+        <div className="space-y-1 border rounded-md p-3 bg-muted/30">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>{downloadStatus}</span>
+            <span>{downloadProgress}%</span>
+          </div>
+          <Progress value={downloadProgress} className="h-2" />
+        </div>
+      )}
+
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
+        className={`border-2 border-dashed rounded-lg p-4 text-center text-sm transition-colors ${
+          isDragging ? "border-primary bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground"
+        }`}
+      >
+        <Upload className="w-5 h-5 mx-auto mb-1" />
+        Arraste e solte arquivos aqui para pré-visualizar
       </div>
 
       <div className="relative">
@@ -327,58 +427,124 @@ const CapsuleTab = () => {
       )}
 
       {/* Preview dialog before upload */}
-      <Dialog open={previewItems.length > 0} onOpenChange={(open) => { if (!open) cancelPreview(); }}>
+      <Dialog open={previewItems.length > 0} onOpenChange={(open) => { if (!open && !uploading) cancelPreview(); }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Pré-visualização ({previewItems.length} arquivo{previewItems.length > 1 ? "s" : ""})</DialogTitle>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-            {previewItems.map((item, idx) => (
-              <div key={idx} className="border rounded-lg overflow-hidden bg-muted/30">
-                <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 border-b">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <KindIcon kind={item.kind} />
-                    <span className="text-sm font-medium truncate">{item.file.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatSize(item.file.size)}</span>
+            {previewItems.map((item, idx) => {
+              const sheet = item.sheets?.[item.activeSheet ?? 0];
+              const totalRows = sheet?.rows.length ?? 0;
+              const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
+              const page = item.page ?? 0;
+              const pageRows = sheet?.rows.slice(page * ROWS_PER_PAGE, (page + 1) * ROWS_PER_PAGE) ?? [];
+              const maxCols = pageRows.reduce((m, r) => Math.max(m, r.length), 0);
+
+              return (
+                <div key={idx} className="border rounded-lg overflow-hidden bg-muted/30">
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 border-b">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <KindIcon kind={item.kind} />
+                      <span className="text-sm font-medium truncate">{item.file.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatSize(item.file.size)}</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePreview(idx)} disabled={uploading}>
+                      <X className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removePreview(idx)}>
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="p-3">
+                    {item.kind === "image" && (
+                      <img src={item.url} alt={item.file.name} className="max-h-[400px] mx-auto rounded" />
+                    )}
+                    {item.kind === "pdf" && (
+                      <iframe src={item.url} title={item.file.name} className="w-full h-[500px] rounded border bg-white" />
+                    )}
+                    {item.kind === "excel" && sheet && (
+                      <div className="space-y-2">
+                        {(item.sheets?.length ?? 0) > 1 && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Aba:</span>
+                            <Select
+                              value={String(item.activeSheet ?? 0)}
+                              onValueChange={(v) => updatePreview(idx, { activeSheet: Number(v), page: 0 })}
+                            >
+                              <SelectTrigger className="h-8 w-[200px]"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {item.sheets!.map((s, i) => (
+                                  <SelectItem key={i} value={String(i)}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <div className="max-h-[400px] overflow-auto bg-white text-black text-xs rounded border">
+                          <table className="border-collapse w-full">
+                            <tbody>
+                              {pageRows.map((row, r) => (
+                                <tr key={r}>
+                                  {Array.from({ length: maxCols }).map((_, c) => (
+                                    <td key={c} className="border border-gray-300 px-2 py-1 whitespace-nowrap">
+                                      {row[c] ?? ""}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {totalPages > 1 && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">
+                              Linhas {page * ROWS_PER_PAGE + 1}–{Math.min((page + 1) * ROWS_PER_PAGE, totalRows)} de {totalRows}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page === 0}
+                                onClick={() => updatePreview(idx, { page: page - 1 })}>
+                                <ChevronLeft className="w-4 h-4" />
+                              </Button>
+                              <span>{page + 1} / {totalPages}</span>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" disabled={page >= totalPages - 1}
+                                onClick={() => updatePreview(idx, { page: page + 1 })}>
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {item.kind === "excel" && !sheet && (
+                      <p className="text-sm text-muted-foreground text-center py-6">Não foi possível pré-visualizar a planilha.</p>
+                    )}
+                    {item.kind === "ppt" && (
+                      <div className="text-center py-8 space-y-2">
+                        <Presentation className="w-16 h-16 mx-auto text-orange-500" />
+                        <p className="text-sm text-muted-foreground">Pré-visualização de PowerPoint não é suportada no navegador.</p>
+                        <p className="text-xs text-muted-foreground">O arquivo será enviado como está.</p>
+                      </div>
+                    )}
+                    {item.kind === "other" && (
+                      <div className="text-center py-8 space-y-2">
+                        <FileIcon className="w-16 h-16 mx-auto text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Formato sem pré-visualização.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="p-3">
-                  {item.kind === "image" && (
-                    <img src={item.url} alt={item.file.name} className="max-h-[400px] mx-auto rounded" />
-                  )}
-                  {item.kind === "pdf" && (
-                    <iframe src={item.url} title={item.file.name} className="w-full h-[500px] rounded border bg-white" />
-                  )}
-                  {item.kind === "excel" && item.excelPreview && (
-                    <div
-                      className="max-h-[400px] overflow-auto bg-white text-black text-xs rounded border p-2 [&_table]:border-collapse [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1"
-                      dangerouslySetInnerHTML={{ __html: item.excelPreview }}
-                    />
-                  )}
-                  {item.kind === "excel" && !item.excelPreview && (
-                    <p className="text-sm text-muted-foreground text-center py-6">Não foi possível pré-visualizar a planilha.</p>
-                  )}
-                  {item.kind === "ppt" && (
-                    <div className="text-center py-8 space-y-2">
-                      <Presentation className="w-16 h-16 mx-auto text-orange-500" />
-                      <p className="text-sm text-muted-foreground">Pré-visualização de PowerPoint não é suportada no navegador.</p>
-                      <p className="text-xs text-muted-foreground">O arquivo será enviado como está.</p>
-                    </div>
-                  )}
-                  {item.kind === "other" && (
-                    <div className="text-center py-8 space-y-2">
-                      <FileIcon className="w-16 h-16 mx-auto text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">Formato sem pré-visualização.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
+          {uploading && (
+            <div className="space-y-1 border-t pt-3">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span className="truncate">{uploadStatus}</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <Progress value={uploadProgress} className="h-2" />
+            </div>
+          )}
 
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={cancelPreview} disabled={uploading}>Cancelar</Button>

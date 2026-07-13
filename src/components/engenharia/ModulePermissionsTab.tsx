@@ -239,8 +239,9 @@ const ModulePermissionsTab = () => {
                     <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[100px] sticky left-0 bg-background z-10">Usuário</th>
                     {ALL_MODULES.map((m) => {
                       const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
+                      const isSubHub = (m as any).isSubHub;
                       return (
-                        <th key={m.id} className="text-center py-2 px-0.5 font-semibold text-muted-foreground">
+                        <th key={m.id} className={`text-center py-2 px-0.5 font-semibold ${isSubHub ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <span className="text-[8px] leading-tight block cursor-help whitespace-nowrap">{abbr}</span>

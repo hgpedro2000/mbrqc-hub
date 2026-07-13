@@ -87,9 +87,9 @@ const Auditorias = () => {
     const auditores = [...new Set(audits.map((a: any) => a.auditor_name).filter(Boolean))] as string[];
     const statuses = [...new Set(audits.map((a: any) => a.status).filter(Boolean))] as string[];
     return [
-      { key: "type", label: "Tipo", options: tipos.map(x => ({ value: x, label: TYPE_LABELS[x] || x })) },
+      { key: "type", label: "Tipo", options: tipos },
       { key: "auditor_name", label: "Auditor", options: auditores },
-      { key: "status", label: "Status", options: statuses.map(x => ({ value: x, label: STATUS_LABELS[x] || x })) },
+      { key: "status", label: "Status", options: statuses },
     ];
   }, [audits]);
 

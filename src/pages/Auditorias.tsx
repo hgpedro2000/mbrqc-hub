@@ -112,6 +112,7 @@ const Auditorias = () => {
               <img src={logo} alt="Hyundai Mobis" className="h-6 sm:h-8 object-contain bg-white rounded-md px-2 py-0.5" />
             </div>
             <div className="flex items-center gap-1">
+              <AuditoriaAlertsBell />
               <ReportErrorButton moduleName="Auditorias" />
               {isAdmin && <EngineeringMode module="Auditorias" />}
             </div>

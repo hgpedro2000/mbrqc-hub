@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export type AuditAlertRow = {
   id: string;
   audit_id: string;
-  type: "upcoming" | "supplier_overdue" | string;
+  type: "auditoria_proxima" | "fornecedor_atrasado" | string;
   trigger_date: string;
   message: string;
   dismissed: boolean;

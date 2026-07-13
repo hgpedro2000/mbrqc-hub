@@ -268,11 +268,16 @@ const ModulePermissionsTab = () => {
                         </td>
                         {ALL_MODULES.map((m) => {
                           const parentMod = (m as any).parent;
+                          const subHub = (m as any).subHub;
+                          const isSubHub = (m as any).isSubHub;
                           if (parentMod && !isModuleEnabled(p.id, parentMod)) {
                             return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
                           }
+                          if (subHub && !isModuleEnabled(p.id, subHub)) {
+                            return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
+                          }
                           return (
-                            <td key={m.id} className="text-center py-1 px-0.5">
+                            <td key={m.id} className={`text-center py-1 px-0.5 ${isSubHub ? "bg-primary/5" : ""}`}>
                               <Switch
                                 checked={isModuleEnabled(p.id, m.id)}
                                 onCheckedChange={() => toggleModule(p.id, m.id)}

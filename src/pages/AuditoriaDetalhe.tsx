@@ -442,7 +442,13 @@ function TimelineItem({ when, label }: { when?: string | null; label: string }) 
 function NcResponseDialog({ nc, onClose, onSaved }: { nc: any; onClose: () => void; onSaved: () => void }) {
   const existing = nc.responses?.[0];
   const [afterFile, setAfterFile] = useState<File | null>(null);
-  const [afterPreview, setAfterPreview] = useState<string | null>(existing?.after_photo_url ? storageUrl(existing.after_photo_url) : null);
+  const [afterPreview, setAfterPreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (existing?.after_photo_url) {
+      getAuditPhotoUrl(existing.after_photo_url).then((u) => setAfterPreview(u));
+    }
+  }, [existing?.after_photo_url]);
+
   const [text, setText] = useState<string>(existing?.corrective_measure_text || nc.counter_measure || "");
   const [completion, setCompletion] = useState<string>(existing?.completion_date || new Date().toISOString().slice(0, 10));
   const [obs, setObs] = useState<string>(existing?.obs || "");

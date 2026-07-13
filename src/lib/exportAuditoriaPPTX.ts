@@ -416,7 +416,7 @@ export async function exportAuditoriaPPTX(audit: Audit, ncs: NC[]) {
   const logoData = await assetToData(logoUrl);
   const productImg = await storagePathToData(audit.product_image_url);
 
-  addCoverSlide(pptx, audit, logoData, productImg);
+  addCoverSlide(pptx, audit, ncs, logoData, productImg);
   const issuePages = addIssuesSlides(pptx, audit, ncs, logoData, 2);
   await addImprovementSlides(pptx, audit, ncs, logoData, 2 + issuePages);
 

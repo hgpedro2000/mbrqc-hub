@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logo from "@/assets/hyundai-mobis-logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { SignedAuditImg, SignedAuditLink } from "./SignedAuditImg";
 
 interface Props {
   ncs: any[];
@@ -16,10 +16,6 @@ function fmtDate(d?: string | null) {
   return `${mm}.${dd}`;
 }
 
-function storageUrl(path?: string | null) {
-  if (!path) return null;
-  return supabase.storage.from("audit-photos").getPublicUrl(path).data.publicUrl;
-}
 
 const W = 1084;
 const HEAD_H = 68;

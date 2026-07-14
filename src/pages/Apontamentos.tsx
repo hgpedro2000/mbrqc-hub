@@ -172,6 +172,14 @@ const Apontamentos = () => {
   }, [isAdmin, enabledModules]);
 
   const { data: items = [], isLoading } = useQuery({
+    queryKey: ["apontamentos-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false }).range(0, 49999);
+      if (error) throw error;
+      return data;
+    },
+  });
+
     queryKey: ["apontamentos"],
     queryFn: async () => {
       const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });

@@ -1490,6 +1490,33 @@ export type Database = {
         }
         Relationships: []
       }
+      direct_messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_user_id: string
+          id: string
+          read_at: string | null
+          to_user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          read_at?: string | null
+          to_user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          read_at?: string | null
+          to_user_id?: string
+        }
+        Relationships: []
+      }
       dropdown_options: {
         Row: {
           active: boolean | null

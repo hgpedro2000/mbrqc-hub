@@ -137,6 +137,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [editSetor, setEditSetor] = useState("");
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+
+  // Setores dinâmicos (dropdown_options.category='setor') mesclados com fallback estático
+  const { data: setoresDb = [] } = useDropdownOptions("setor");
+  const SETORES_OPTIONS = useMemo(() => {
+    const dyn = (setoresDb as any[]).map((o) => o.value || o.label).filter(Boolean);
+    const merged = Array.from(new Set([...(dyn.length ? dyn : []), ...SETORES]));
+    return merged;
+  }, [setoresDb]);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["eng-profiles"],

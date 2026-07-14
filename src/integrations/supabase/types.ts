@@ -2313,6 +2313,89 @@ export type Database = {
         }
         Relationships: []
       }
+      sesmt_training_categories: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sesmt_training_records: {
+        Row: {
+          category_id: string
+          created_at: string
+          habilitado: boolean
+          id: string
+          last_training_date: string | null
+          next_training_date: string | null
+          notes: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          habilitado?: boolean
+          id?: string
+          last_training_date?: string | null
+          next_training_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          habilitado?: boolean
+          id?: string
+          last_training_date?: string | null
+          next_training_date?: string | null
+          notes?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sesmt_training_records_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "sesmt_training_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_history: {
         Row: {
           created_at: string

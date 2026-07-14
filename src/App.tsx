@@ -55,6 +55,8 @@ import AdminPartNameFix from "./pages/AdminPartNameFix";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import SplitFlapHarness from "./pages/SplitFlapHarness";
+import SesmtHub from "./pages/SesmtHub";
+import SesmtMatrizTreinamentos from "./pages/SesmtMatrizTreinamentos";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -226,6 +228,10 @@ const App = () => (
             
             {/* Matriz de Versatilidade */}
             <Route path="/matriz-versatilidade" element={<ProtectedRoute><ModuleGuard module="matriz-versatilidade"><MatrizVersatilidade /></ModuleGuard></ProtectedRoute>} />
+
+            {/* SESMT */}
+            <Route path="/sesmt" element={<ProtectedRoute><ModuleGuard module="subhub_sesmt"><SesmtHub /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/sesmt/matriz-treinamentos" element={<ProtectedRoute><ModuleGuard module="sesmt-matriz-treinamentos"><SesmtMatrizTreinamentos /></ModuleGuard></ProtectedRoute>} />
 
 
             {/* Barcode Scanner H/KMC */}

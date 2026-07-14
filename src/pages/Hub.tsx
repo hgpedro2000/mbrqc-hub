@@ -120,13 +120,14 @@ const Hub = () => {
   // Show quick-notice popups when entering the Hub for any unread direct messages.
   const shownMsgIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (!user?.id) return;
+    const targetId = impersonating?.id || user?.id;
+    if (!targetId) return;
     let cancelled = false;
     (async () => {
       const { data: msgs } = await supabase
         .from("direct_messages" as any)
         .select("id, body, from_user_id, created_at")
-        .eq("to_user_id", user.id)
+        .eq("to_user_id", targetId)
         .is("read_at", null)
         .order("created_at", { ascending: true });
       if (cancelled || !msgs || msgs.length === 0) return;
@@ -157,7 +158,7 @@ const Hub = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, impersonating?.id]);
 
   return (
     <div className="min-h-screen bg-background">

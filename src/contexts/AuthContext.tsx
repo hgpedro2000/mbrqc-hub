@@ -16,6 +16,7 @@ interface Profile {
   is_admin: boolean | null;
   password_changed_at: string | null;
   apontamentos_view_scope: string[] | null;
+  social_enabled: boolean | null;
 }
 
 export type MFAStatus =
@@ -83,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchProfile = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email, is_admin, password_changed_at, apontamentos_view_scope")
+      .select("full_name, employee_number, must_change_password, status, turno, empresa, empresa_terceira, cargo, qr_code_id, email, is_admin, password_changed_at, apontamentos_view_scope, social_enabled")
       .eq("id", userId)
       .maybeSingle();
     setProfile(data as Profile | null);

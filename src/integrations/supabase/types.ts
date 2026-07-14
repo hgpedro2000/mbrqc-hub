@@ -2237,6 +2237,7 @@ export type Database = {
           password_changed_at: string | null
           qr_code_id: string | null
           setor: string | null
+          social_enabled: boolean
           status: string
           turno: string | null
           updated_at: string
@@ -2257,6 +2258,7 @@ export type Database = {
           password_changed_at?: string | null
           qr_code_id?: string | null
           setor?: string | null
+          social_enabled?: boolean
           status?: string
           turno?: string | null
           updated_at?: string
@@ -2277,6 +2279,7 @@ export type Database = {
           password_changed_at?: string | null
           qr_code_id?: string | null
           setor?: string | null
+          social_enabled?: boolean
           status?: string
           turno?: string | null
           updated_at?: string

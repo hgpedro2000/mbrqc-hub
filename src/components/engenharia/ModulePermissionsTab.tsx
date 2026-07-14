@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal } from "lucide-react";
+import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
+type SortKey = "name-asc" | "name-desc" | "role" | "progress-desc" | "progress-asc";
 
 const stripPrefix = (label: string) => label.replace(/^\s*↳\s*/, "").replace(/^Sub-Hub:\s*/, "");
 
@@ -31,6 +33,9 @@ const ModulePermissionsTab = () => {
   const [roleFilter, setRoleFilter] = useState<string>("all"); // all | admin | user
   const [accessFilter, setAccessFilter] = useState<string>("all"); // all | none | some | full
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortKey>("name-asc");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRunning, setBulkRunning] = useState(false);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["eng-profiles"],
@@ -167,7 +172,7 @@ const ModulePermissionsTab = () => {
 
   const filteredProfiles = useMemo(() => {
     const q = normalize(search);
-    return profiles.filter((p: any) => {
+    const list = profiles.filter((p: any) => {
       if (q && !normalize(p.full_name).includes(q) && !(p.employee_number || "").toLowerCase().includes(q)) return false;
       if (empresaFilter !== "all" && p.empresa !== empresaFilter) return false;
       if (turnoFilter !== "all" && p.turno !== turnoFilter) return false;
@@ -181,10 +186,24 @@ const ModulePermissionsTab = () => {
       }
       return true;
     });
-  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions]);
+    const sorted = [...list].sort((a: any, b: any) => {
+      switch (sortBy) {
+        case "name-desc": return normalize(b.full_name).localeCompare(normalize(a.full_name));
+        case "role": {
+          const ra = isAdmin(a.id) ? 0 : 1;
+          const rb = isAdmin(b.id) ? 0 : 1;
+          return ra - rb || normalize(a.full_name).localeCompare(normalize(b.full_name));
+        }
+        case "progress-desc": return enabledCountFor(b.id) - enabledCountFor(a.id);
+        case "progress-asc": return enabledCountFor(a.id) - enabledCountFor(b.id);
+        default: return normalize(a.full_name).localeCompare(normalize(b.full_name));
+      }
+    });
+    return sorted;
+  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / PAGE_SIZE));
-  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter]);
+  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter, sortBy]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
   const pagedProfiles = useMemo(
     () => filteredProfiles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
@@ -200,6 +219,58 @@ const ModulePermissionsTab = () => {
   const clearAdvancedFilters = () => {
     setEmpresaFilter("all"); setTurnoFilter("all"); setRoleFilter("all"); setAccessFilter("all");
   };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectablePageIds = useMemo(
+    () => pagedProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
+    [pagedProfiles, roles]
+  );
+  const allPageSelected = selectablePageIds.length > 0 && selectablePageIds.every((id) => selectedIds.has(id));
+  const togglePageSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) selectablePageIds.forEach((id) => next.delete(id));
+      else selectablePageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkApply = async (mode: "enable" | "disable") => {
+    const ids = Array.from(selectedIds).filter((id) => !isAdmin(id));
+    if (ids.length === 0) return;
+    setBulkRunning(true);
+    try {
+      for (const uid of ids) {
+        for (const m of ALL_MODULES) {
+          const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
+          if (mode === "enable") {
+            if (existing) {
+              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+            } else {
+              await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
+            }
+          } else if (existing && existing.enabled) {
+            await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
+          }
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      toast.success(`${ids.length} usuário(s) atualizado(s)`);
+      clearSelection();
+    } catch {
+      toast.error("Erro na ação em lote");
+    } finally {
+      setBulkRunning(false);
+    }
+  };
+
 
 
   const selectedUser = useMemo(
@@ -313,40 +384,98 @@ const ModulePermissionsTab = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
-                {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
-              </p>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+                  <SelectTrigger className="h-8 text-xs flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <ArrowUpDown className="w-3 h-3 shrink-0" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
+                    <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
+                    <SelectItem value="role">Perfil (Admin primeiro)</SelectItem>
+                    <SelectItem value="progress-desc">Mais módulos ativos</SelectItem>
+                    <SelectItem value="progress-asc">Menos módulos ativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
+                  {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
+                </p>
+                {selectablePageIds.length > 0 && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                    <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
+                    Selecionar página
+                  </label>
+                )}
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 flex-1 text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
+                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+                      Ativar
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
+                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
               {pagedProfiles.map((p: any) => {
                 const active = p.id === selectedId;
                 const admin = isAdmin(p.id);
                 const count = enabledCount(p.id);
+                const checked = selectedIds.has(p.id);
                 return (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={() => setSelectedId(p.id)}
                     className={cn(
                       "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors hover:bg-muted/50",
                       active && "bg-primary/10 hover:bg-primary/10"
                     )}
                   >
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                      admin ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                    )}>
-                      {admin ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.full_name}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono truncate">
-                        {p.employee_number}
-                        {admin ? " • Admin" : ` • ${count} módulo${count !== 1 ? "s" : ""}`}
-                      </p>
-                    </div>
-                    <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 transition-transform", active && "text-primary rotate-90")} />
-                  </button>
+                    {!admin ? (
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleSelect(p.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-4 shrink-0" />
+                    )}
+                    <button
+                      onClick={() => setSelectedId(p.id)}
+                      className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                    >
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                        admin ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                      )}>
+                        {admin ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{p.full_name}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate">
+                          {p.employee_number}
+                          {admin ? " • Admin" : ` • ${count} módulo${count !== 1 ? "s" : ""}`}
+                        </p>
+                      </div>
+                      <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 transition-transform", active && "text-primary rotate-90")} />
+                    </button>
+                  </div>
                 );
               })}
               {filteredProfiles.length === 0 && (

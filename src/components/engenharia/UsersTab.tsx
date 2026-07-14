@@ -286,13 +286,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         body: {
           employee_number: employeeNumber,
           full_name: fullName,
-          password,
           role,
           turno,
           email: email || null,
           empresa,
           empresa_terceira: empresa === "empresa_terceira" ? empresaTerceira : null,
           cargo: cargo || null,
+          setor: setor || null,
         },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);

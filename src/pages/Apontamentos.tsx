@@ -183,11 +183,16 @@ const Apontamentos = () => {
   const { data: allPhotos = [] } = useQuery({
     queryKey: ["apontamento-list-photos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("checklist_photos").select("checklist_id, file_path, file_name").eq("checklist_type", "apontamento");
+      const { data, error } = await supabase
+        .from("checklist_photos")
+        .select("checklist_id, file_path, file_name")
+        .eq("checklist_type", "apontamento")
+        .range(0, 49999);
       if (error) throw error;
       return data;
     },
   });
+
 
   // Fetch suppliers for origem info
   const { data: suppliersList = [] } = useQuery({

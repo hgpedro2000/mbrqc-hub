@@ -133,6 +133,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [editTurno, setEditTurno] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCargo, setEditCargo] = useState("");
+  const [editSetor, setEditSetor] = useState("");
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
 

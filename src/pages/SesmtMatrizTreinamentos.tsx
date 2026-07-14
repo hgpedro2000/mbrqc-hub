@@ -648,12 +648,25 @@ const SesmtMatrizTreinamentos = () => {
               Colaboradores com treinamentos vencidos ou vencendo nos próximos 30 dias.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
-            <Button size="sm" onClick={exportAgendaPdf} disabled={exportingAgenda || totalAlerts === 0} className="gap-2">
-              {exportingAgenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Exportar PDF
-            </Button>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 justify-between">
+            <Select value={agendaCategoryFilter || "all"} onValueChange={(v) => setAgendaCategoryFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-full md:w-64"><SelectValue placeholder="Todas as abas / NR" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as abas / NR</SelectItem>
+                {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportAgendaCsv} disabled={totalAlerts === 0} className="gap-2">
+                <Download className="w-4 h-4" /> CSV
+              </Button>
+              <Button size="sm" onClick={exportAgendaPdf} disabled={exportingAgenda || totalAlerts === 0} className="gap-2">
+                {exportingAgenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                PDF
+              </Button>
+            </div>
           </div>
+
           <div ref={agendaRef} className="bg-white text-black p-4 rounded-lg space-y-4">
             <div className="text-center border-b pb-2">
               <h2 className="text-lg font-bold">Agenda de Treinamentos — SESMT</h2>

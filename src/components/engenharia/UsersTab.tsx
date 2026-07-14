@@ -349,6 +349,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           empresa: editEmpresa,
           empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
           cargo: editCargo || null,
+          setor: editSetor || null,
         } as any)
         .eq("id", editId);
       if (profileError) throw profileError;

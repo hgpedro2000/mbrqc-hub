@@ -16,6 +16,7 @@ interface Profile {
   is_admin: boolean | null;
   password_changed_at: string | null;
   apontamentos_view_scope: string[] | null;
+  social_enabled: boolean | null;
 }
 
 export type MFAStatus =

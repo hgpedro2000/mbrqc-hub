@@ -150,7 +150,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ImpersonationProvider>
+          <PresenceProvider>
           <UpdateBanner />
+
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/dev/splitflap" element={<SplitFlapHarness />} />

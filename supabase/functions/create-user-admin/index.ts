@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
       await admin.from("user_roles").insert({ user_id: userId, role });
     }
 
-    const defaultModules = ["apontamentos", "consulta_pecas"];
+    const defaultModules = ["subhub_qualidade", "apontamentos", "apontamentos_incoming", "consulta-pecas"];
     for (const mod of defaultModules) {
       await admin.from("user_module_permissions").insert({
         user_id: userId,

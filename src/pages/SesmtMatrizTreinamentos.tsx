@@ -540,7 +540,7 @@ const SesmtMatrizTreinamentos = () => {
                   <th className="text-left py-2 px-2 sticky left-0 bg-muted/40 z-10 min-w-[180px]">Colaborador</th>
                   <th className="text-center py-2 px-2 min-w-[80px]">Turno</th>
                   <th className="text-center py-2 px-2 min-w-[90px]">Status</th>
-                  {categories.map((cat) => (
+                  {visibleCategories.map((cat) => (
                     <th key={cat.id} className="text-center py-2 px-2 min-w-[130px]">
                       <div className="flex flex-col items-center gap-1">
                         <div className={`${cat.color} text-white rounded px-2 py-1 text-[10px] md:text-xs font-semibold w-full truncate`} title={cat.description || cat.name}>
@@ -577,7 +577,7 @@ const SesmtMatrizTreinamentos = () => {
                         {st === "atencao" && <Badge className="bg-red-600 hover:bg-red-600 animate-pulse">Atenção</Badge>}
                         {st === "na" && <Badge variant="secondary">—</Badge>}
                       </td>
-                      {categories.map((cat) => {
+                      {visibleCategories.map((cat) => {
                         const rec = recordMap.get(`${p.id}:${cat.id}`);
                         const s = statusOf(rec);
                         return (
@@ -603,7 +603,7 @@ const SesmtMatrizTreinamentos = () => {
                   );
                 })}
                 {filteredProfiles.length === 0 && (
-                  <tr><td colSpan={categories.length + 4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</td></tr>
+                  <tr><td colSpan={visibleCategories.length + 4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</td></tr>
                 )}
               </tbody>
             </table>

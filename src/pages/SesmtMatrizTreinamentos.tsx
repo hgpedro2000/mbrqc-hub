@@ -819,6 +819,13 @@ const SesmtMatrizTreinamentos = () => {
             <DialogDescription>Registros de treinamentos anteriores por aba.</DialogDescription>
           </DialogHeader>
 
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={exportHistoryCsv} disabled={userHistory.length === 0} className="gap-2">
+              <Download className="w-4 h-4" /> Exportar CSV
+            </Button>
+          </div>
+
+
           {isAdmin && (
             <div className="border rounded-lg p-3 bg-muted/20 space-y-2">
               <div className="text-sm font-semibold">Adicionar entrada</div>

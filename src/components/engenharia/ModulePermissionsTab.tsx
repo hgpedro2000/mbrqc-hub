@@ -172,7 +172,7 @@ const ModulePermissionsTab = () => {
 
   const filteredProfiles = useMemo(() => {
     const q = normalize(search);
-    return profiles.filter((p: any) => {
+    const list = profiles.filter((p: any) => {
       if (q && !normalize(p.full_name).includes(q) && !(p.employee_number || "").toLowerCase().includes(q)) return false;
       if (empresaFilter !== "all" && p.empresa !== empresaFilter) return false;
       if (turnoFilter !== "all" && p.turno !== turnoFilter) return false;
@@ -186,10 +186,24 @@ const ModulePermissionsTab = () => {
       }
       return true;
     });
-  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions]);
+    const sorted = [...list].sort((a: any, b: any) => {
+      switch (sortBy) {
+        case "name-desc": return normalize(b.full_name).localeCompare(normalize(a.full_name));
+        case "role": {
+          const ra = isAdmin(a.id) ? 0 : 1;
+          const rb = isAdmin(b.id) ? 0 : 1;
+          return ra - rb || normalize(a.full_name).localeCompare(normalize(b.full_name));
+        }
+        case "progress-desc": return enabledCountFor(b.id) - enabledCountFor(a.id);
+        case "progress-asc": return enabledCountFor(a.id) - enabledCountFor(b.id);
+        default: return normalize(a.full_name).localeCompare(normalize(b.full_name));
+      }
+    });
+    return sorted;
+  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / PAGE_SIZE));
-  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter]);
+  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter, sortBy]);
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
   const pagedProfiles = useMemo(
     () => filteredProfiles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),

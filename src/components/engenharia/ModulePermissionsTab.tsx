@@ -26,6 +26,11 @@ const ModulePermissionsTab = () => {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [empresaFilter, setEmpresaFilter] = useState<string>("all");
+  const [turnoFilter, setTurnoFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all"); // all | admin | user
+  const [accessFilter, setAccessFilter] = useState<string>("all"); // all | none | some | full
+  const [page, setPage] = useState(1);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["eng-profiles"],

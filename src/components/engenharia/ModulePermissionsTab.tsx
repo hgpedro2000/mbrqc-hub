@@ -148,14 +148,59 @@ const ModulePermissionsTab = () => {
     }
   };
 
+  const empresaOptions = useMemo(() => {
+    const set = new Set<string>();
+    profiles.forEach((p: any) => p.empresa && set.add(p.empresa));
+    return Array.from(set).sort();
+  }, [profiles]);
+
+  const turnoOptions = useMemo(() => {
+    const set = new Set<string>();
+    profiles.forEach((p: any) => p.turno && set.add(p.turno));
+    return Array.from(set).sort();
+  }, [profiles]);
+
+  const enabledCountFor = (userId: string) =>
+    isAdmin(userId)
+      ? ALL_MODULES.length
+      : permissions.filter((p: any) => p.user_id === userId && p.enabled).length;
+
   const filteredProfiles = useMemo(() => {
     const q = normalize(search);
-    return profiles.filter((p: any) =>
-      !q ||
-      normalize(p.full_name).includes(q) ||
-      (p.employee_number || "").toLowerCase().includes(q)
-    );
-  }, [profiles, search]);
+    return profiles.filter((p: any) => {
+      if (q && !normalize(p.full_name).includes(q) && !(p.employee_number || "").toLowerCase().includes(q)) return false;
+      if (empresaFilter !== "all" && p.empresa !== empresaFilter) return false;
+      if (turnoFilter !== "all" && p.turno !== turnoFilter) return false;
+      if (roleFilter === "admin" && !isAdmin(p.id)) return false;
+      if (roleFilter === "user" && isAdmin(p.id)) return false;
+      if (accessFilter !== "all") {
+        const c = enabledCountFor(p.id);
+        if (accessFilter === "none" && c !== 0) return false;
+        if (accessFilter === "full" && c < ALL_MODULES.length) return false;
+        if (accessFilter === "some" && (c === 0 || c >= ALL_MODULES.length)) return false;
+      }
+      return true;
+    });
+  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / PAGE_SIZE));
+  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
+  const pagedProfiles = useMemo(
+    () => filteredProfiles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredProfiles, page]
+  );
+
+  const activeFilterCount =
+    (empresaFilter !== "all" ? 1 : 0) +
+    (turnoFilter !== "all" ? 1 : 0) +
+    (roleFilter !== "all" ? 1 : 0) +
+    (accessFilter !== "all" ? 1 : 0);
+
+  const clearAdvancedFilters = () => {
+    setEmpresaFilter("all"); setTurnoFilter("all"); setRoleFilter("all"); setAccessFilter("all");
+  };
+
 
   const selectedUser = useMemo(
     () => profiles.find((p: any) => p.id === selectedId) || null,

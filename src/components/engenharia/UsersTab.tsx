@@ -339,12 +339,33 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     setEditSetor((profile as any).setor || "");
     setEditEmpresa((profile as any).empresa || "mobis_brasil");
     setEditEmpresaTerceira((profile as any).empresa_terceira || "");
+    setEditErrors({});
     setEditOpen(true);
   };
 
+  const validateEdit = () => {
+    const errs: Record<string, string> = {};
+    if (!editFullName.trim()) errs.fullName = "Nome completo é obrigatório.";
+    if (!editEmployeeNumber.trim()) errs.employeeNumber = "Matrícula/Identificação é obrigatória.";
+    if (!editEmpresa) errs.empresa = "Selecione a empresa.";
+    if (editEmpresa === "empresa_terceira" && !editEmpresaTerceira) {
+      errs.empresaTerceira = "Selecione a empresa terceira.";
+    }
+    if (!editTurno) errs.turno = "Selecione o turno.";
+    if (!editCargo) errs.cargo = "Selecione o cargo.";
+    if (!editSetor) errs.setor = "Selecione o setor.";
+    if (!editRole) errs.role = "Selecione o perfil de acesso.";
+    if (editEmail && !/^\S+@\S+\.\S+$/.test(editEmail.trim())) {
+      errs.email = "E-mail inválido.";
+    }
+    return errs;
+  };
+
   const handleSaveEdit = async () => {
-    if (!editFullName || !editEmployeeNumber) {
-      toast.error("Preencha todos os campos obrigatórios");
+    const errs = validateEdit();
+    setEditErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Corrija os campos destacados antes de salvar.");
       return;
     }
     setSaving(true);
@@ -352,10 +373,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          full_name: editFullName,
-          employee_number: editEmployeeNumber,
+          full_name: editFullName.trim(),
+          employee_number: editEmployeeNumber.trim(),
           turno: editTurno || null,
-          email: editEmail || null,
+          email: editEmail.trim() || null,
           empresa: editEmpresa,
           empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
           cargo: editCargo || null,
@@ -373,6 +394,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
       toast.success("Perfil atualizado com sucesso!");
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
       qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+      setEditErrors({});
       setEditOpen(false);
     } catch (e: any) {
       toast.error(e.message);

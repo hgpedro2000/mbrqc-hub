@@ -229,6 +229,10 @@ const App = () => (
             {/* Matriz de Versatilidade */}
             <Route path="/matriz-versatilidade" element={<ProtectedRoute><ModuleGuard module="matriz-versatilidade"><MatrizVersatilidade /></ModuleGuard></ProtectedRoute>} />
 
+            {/* SESMT */}
+            <Route path="/sesmt" element={<ProtectedRoute><ModuleGuard module="subhub_sesmt"><SesmtHub /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/sesmt/matriz-treinamentos" element={<ProtectedRoute><ModuleGuard module="sesmt-matriz-treinamentos"><SesmtMatrizTreinamentos /></ModuleGuard></ProtectedRoute>} />
+
 
             {/* Barcode Scanner H/KMC */}
             <Route path="/barcode-scanner" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />

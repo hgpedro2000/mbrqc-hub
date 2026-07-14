@@ -180,13 +180,7 @@ const Apontamentos = () => {
     },
   });
 
-    queryKey: ["apontamentos"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("apontamentos").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data;
-    },
-  });
+
 
   const { data: allPhotos = [] } = useQuery({
     queryKey: ["apontamento-list-photos"],

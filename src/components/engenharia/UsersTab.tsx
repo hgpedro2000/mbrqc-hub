@@ -1227,11 +1227,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                             {p.last_login_at ? new Date(p.last_login_at).toLocaleDateString("pt-BR") : "Nunca acessou"}
                           </span>
                           <div className="flex items-center gap-0.5">
-                            {socialEnabled && (
-                              <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 p-0 text-emerald-600">
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 p-0 text-emerald-600">
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>

@@ -44,11 +44,18 @@ const AREA_DISPLAY_LABELS: Record<string, string> = {
 const getAreaLabel = (key: string, label: string) => AREA_DISPLAY_LABELS[key] || label;
 
 const CARGOS_QUALIDADE = [
+  "Auxiliar",
+  "Inspetor",
+  "Assistente",
+  "Lider",
+  "Analista",
+  // Legado (registros antigos ainda no banco)
   "Auxiliar de Qualidade",
   "Inspetor de Qualidade",
   "Assistente de Qualidade",
   "Lider de Qualidade",
 ];
+
 
 const MatrizVersatilidade = () => {
   const navigate = useNavigate();

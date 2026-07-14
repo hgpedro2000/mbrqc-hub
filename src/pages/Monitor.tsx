@@ -1536,9 +1536,9 @@ const Monitor = () => {
             </div>
 
             {/* Trend chart */}
-            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-3 sm:px-5 py-3 sm:py-4 flex-shrink-0 h-[200px] sm:h-[240px] lg:h-[280px]">
-              <p className="text-[11px] sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-1 sm:mb-2 truncate">Tendência de NG por dia — {activeShift.label}</p>
-              <ResponsiveContainer width="100%" height="88%">
+            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-3 sm:px-5 py-3 flex-shrink-0 h-[210px]">
+              <p className="text-[11px] sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-1 truncate">Tendência de NG por dia — {activeShift.label}</p>
+              <ResponsiveContainer width="100%" height="86%">
                 <AreaChart data={trend} margin={{ top: 22, right: 14, left: 0, bottom: 8 }}>
                   <defs>
                     <linearGradient id="ngFill" x1="0" y1="0" x2="0" y2="1">
@@ -1565,23 +1565,24 @@ const Monitor = () => {
             </div>
 
 
-            {/* Best vs Worst — stacks on mobile, 2 cols on desktop */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 min-h-0">
-              <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
-                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-emerald-400 flex items-center gap-2"><Trophy className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Melhores Fornecedores</span></h3>
-                <div className="flex flex-col gap-2 sm:gap-3">
+            {/* Best vs Worst — 2 columns, fills remaining height so 3 cards fit above ticker */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
+              <div className="flex flex-col gap-2 min-w-0 min-h-0">
+                <h3 className="text-lg font-bold text-emerald-400 flex items-center gap-2 shrink-0"><Trophy className="w-5 h-5 shrink-0" /> <span className="truncate">Melhores Fornecedores</span></h3>
+                <div className="flex flex-col gap-2 flex-1 min-h-0">
                   {best.length === 0 ? <div className="flex items-center justify-center text-muted-foreground text-sm py-6">Sem dados</div>
                     : best.map((s) => <SupCard key={s.fornecedor} s={s} kind="best" />)}
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
-                <h3 className="text-base sm:text-lg lg:text-xl font-bold text-red-400 flex items-center gap-2"><AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" /> <span className="truncate">Piores Fornecedores</span></h3>
-                <div className="flex flex-col gap-2 sm:gap-3">
+              <div className="flex flex-col gap-2 min-w-0 min-h-0">
+                <h3 className="text-lg font-bold text-red-400 flex items-center gap-2 shrink-0"><AlertTriangle className="w-5 h-5 shrink-0" /> <span className="truncate">Piores Fornecedores</span></h3>
+                <div className="flex flex-col gap-2 flex-1 min-h-0">
                   {worst.length === 0 ? <div className="flex items-center justify-center text-muted-foreground text-sm py-6">Sem defeitos no mês ✓</div>
                     : worst.map((s) => <SupCard key={s.fornecedor} s={s} kind="worst" />)}
                 </div>
               </div>
             </div>
+
           </div>
 
         );

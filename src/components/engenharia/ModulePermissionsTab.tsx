@@ -220,6 +220,58 @@ const ModulePermissionsTab = () => {
     setEmpresaFilter("all"); setTurnoFilter("all"); setRoleFilter("all"); setAccessFilter("all");
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selectablePageIds = useMemo(
+    () => pagedProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
+    [pagedProfiles, roles]
+  );
+  const allPageSelected = selectablePageIds.length > 0 && selectablePageIds.every((id) => selectedIds.has(id));
+  const togglePageSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) selectablePageIds.forEach((id) => next.delete(id));
+      else selectablePageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const bulkApply = async (mode: "enable" | "disable") => {
+    const ids = Array.from(selectedIds).filter((id) => !isAdmin(id));
+    if (ids.length === 0) return;
+    setBulkRunning(true);
+    try {
+      for (const uid of ids) {
+        for (const m of ALL_MODULES) {
+          const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
+          if (mode === "enable") {
+            if (existing) {
+              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+            } else {
+              await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
+            }
+          } else if (existing && existing.enabled) {
+            await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
+          }
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      toast.success(`${ids.length} usuário(s) atualizado(s)`);
+      clearSelection();
+    } catch {
+      toast.error("Erro na ação em lote");
+    } finally {
+      setBulkRunning(false);
+    }
+  };
+
+
 
   const selectedUser = useMemo(
     () => profiles.find((p: any) => p.id === selectedId) || null,

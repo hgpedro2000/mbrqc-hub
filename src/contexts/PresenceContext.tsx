@@ -39,7 +39,7 @@ export const PresenceProvider = ({ children }: { children: ReactNode }) => {
       setSocialEnabledState(dbVal);
       try { localStorage.setItem(STORAGE_KEY, dbVal ? "1" : "0"); } catch {}
     }
-  }, [profile?.id, (profile as any)?.social_enabled]);
+  }, [user?.id, (profile as any)?.social_enabled]);
 
   const setSocialEnabled = useCallback((v: boolean) => {
     setSocialEnabledState(v);

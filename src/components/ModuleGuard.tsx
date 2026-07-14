@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ShieldOff, ArrowLeft } from "lucide-react";
 import { useEnabledModules, ALL_MODULES, ModuleId } from "@/hooks/useModulePermissions";
+import { useImpersonation } from "@/contexts/ImpersonationContext";
 
 interface ModuleGuardProps {
   module: ModuleId;
@@ -13,7 +14,8 @@ interface ModuleGuardProps {
  * doesn't have the module OR its parent Sub-Hub enabled.
  */
 const ModuleGuard = ({ module, children }: ModuleGuardProps) => {
-  const { enabledModules, isLoading } = useEnabledModules();
+  const { impersonating } = useImpersonation();
+  const { enabledModules, isLoading } = useEnabledModules(impersonating?.id);
 
   if (isLoading) {
     return (

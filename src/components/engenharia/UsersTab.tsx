@@ -1206,7 +1206,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate leading-tight">{p.full_name}</p>
+                            <p className="font-medium text-sm truncate leading-tight flex items-center gap-1.5">
+                              {isOnline(p.id) && <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Online" />}
+                              <span className="truncate">{p.full_name}</span>
+                            </p>
                             <p className="text-[11px] text-muted-foreground font-mono">{p.employee_number}</p>
                           </div>
                           <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />

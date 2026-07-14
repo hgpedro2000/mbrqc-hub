@@ -18,6 +18,7 @@ import ModulePermissionsTab from "./ModulePermissionsTab";
 import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
+import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 
 const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
@@ -136,6 +137,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [editSetor, setEditSetor] = useState("");
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+
+  // Setores dinâmicos (dropdown_options.category='setor') mesclados com fallback estático
+  const { data: setoresDb = [] } = useDropdownOptions("setor");
+  const SETORES_OPTIONS = useMemo(() => {
+    const dyn = (setoresDb as any[]).map((o) => o.value || o.label).filter(Boolean);
+    const merged = Array.from(new Set([...(dyn.length ? dyn : []), ...SETORES]));
+    return merged;
+  }, [setoresDb]);
 
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ["eng-profiles"],
@@ -329,12 +339,33 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     setEditSetor((profile as any).setor || "");
     setEditEmpresa((profile as any).empresa || "mobis_brasil");
     setEditEmpresaTerceira((profile as any).empresa_terceira || "");
+    setEditErrors({});
     setEditOpen(true);
   };
 
+  const validateEdit = () => {
+    const errs: Record<string, string> = {};
+    if (!editFullName.trim()) errs.fullName = "Nome completo é obrigatório.";
+    if (!editEmployeeNumber.trim()) errs.employeeNumber = "Matrícula/Identificação é obrigatória.";
+    if (!editEmpresa) errs.empresa = "Selecione a empresa.";
+    if (editEmpresa === "empresa_terceira" && !editEmpresaTerceira) {
+      errs.empresaTerceira = "Selecione a empresa terceira.";
+    }
+    if (!editTurno) errs.turno = "Selecione o turno.";
+    if (!editCargo) errs.cargo = "Selecione o cargo.";
+    if (!editSetor) errs.setor = "Selecione o setor.";
+    if (!editRole) errs.role = "Selecione o perfil de acesso.";
+    if (editEmail && !/^\S+@\S+\.\S+$/.test(editEmail.trim())) {
+      errs.email = "E-mail inválido.";
+    }
+    return errs;
+  };
+
   const handleSaveEdit = async () => {
-    if (!editFullName || !editEmployeeNumber) {
-      toast.error("Preencha todos os campos obrigatórios");
+    const errs = validateEdit();
+    setEditErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Corrija os campos destacados antes de salvar.");
       return;
     }
     setSaving(true);
@@ -342,10 +373,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          full_name: editFullName,
-          employee_number: editEmployeeNumber,
+          full_name: editFullName.trim(),
+          employee_number: editEmployeeNumber.trim(),
           turno: editTurno || null,
-          email: editEmail || null,
+          email: editEmail.trim() || null,
           empresa: editEmpresa,
           empresa_terceira: editEmpresa === "empresa_terceira" ? editEmpresaTerceira : null,
           cargo: editCargo || null,
@@ -363,6 +394,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
       toast.success("Perfil atualizado com sucesso!");
       qc.invalidateQueries({ queryKey: ["eng-profiles"] });
       qc.invalidateQueries({ queryKey: ["eng-user-roles"] });
+      setEditErrors({});
       setEditOpen(false);
     } catch (e: any) {
       toast.error(e.message);
@@ -857,10 +889,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                 <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
               </div>
               <div className="pl-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="text-xs">{editEmpresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
                   <div className="flex gap-2">
-                    <Input value={editEmployeeNumber} onChange={(e) => setEditEmployeeNumber(e.target.value)} placeholder={editEmpresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
+                    <Input
+                      value={editEmployeeNumber}
+                      onChange={(e) => { setEditEmployeeNumber(e.target.value); if (editErrors.employeeNumber) setEditErrors((p) => ({ ...p, employeeNumber: "" })); }}
+                      placeholder={editEmpresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"}
+                      className={editErrors.employeeNumber ? "border-destructive focus-visible:ring-destructive" : ""}
+                    />
                     {editEmpresa === "empresa_terceira" && (
                       <Button
                         type="button"
@@ -879,6 +916,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                       </Button>
                     )}
                   </div>
+                  {editErrors.employeeNumber && <p className="text-[11px] text-destructive">{editErrors.employeeNumber}</p>}
                   {editEmpresa === "empresa_terceira" && editPP && (
                     nextPreviewEdit ? (
                       <p className="text-[11px] text-muted-foreground">
@@ -891,13 +929,26 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     )
                   )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <Label className="text-xs">Nome Completo *</Label>
-                  <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} placeholder="Nome completo" />
+                  <Input
+                    value={editFullName}
+                    onChange={(e) => { setEditFullName(e.target.value); if (editErrors.fullName) setEditErrors((p) => ({ ...p, fullName: "" })); }}
+                    placeholder="Nome completo"
+                    className={editErrors.fullName ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {editErrors.fullName && <p className="text-[11px] text-destructive">{editErrors.fullName}</p>}
                 </div>
-                <div className="space-y-2 sm:col-span-2">
+                <div className="space-y-1.5 sm:col-span-2">
                   <Label className="text-xs">E-mail</Label>
-                  <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="email@exemplo.com" />
+                  <Input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => { setEditEmail(e.target.value); if (editErrors.email) setEditErrors((p) => ({ ...p, email: "" })); }}
+                    placeholder="email@exemplo.com"
+                    className={editErrors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {editErrors.email && <p className="text-[11px] text-destructive">{editErrors.email}</p>}
                 </div>
               </div>
             </section>
@@ -909,26 +960,29 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                 <h3 className="text-sm font-semibold text-foreground">Perfil de Trabalho</h3>
               </div>
               <div className="pl-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-xs">Turno</Label>
-                  <Select value={editTurno} onValueChange={setEditTurno}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Turno *</Label>
+                  <Select value={editTurno} onValueChange={(v) => { setEditTurno(v); if (editErrors.turno) setEditErrors((p) => ({ ...p, turno: "" })); }}>
+                    <SelectTrigger className={editErrors.turno ? "border-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
+                  {editErrors.turno && <p className="text-[11px] text-destructive">{editErrors.turno}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Cargo</Label>
-                  <Select value={editCargo} onValueChange={setEditCargo}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Cargo *</Label>
+                  <Select value={editCargo} onValueChange={(v) => { setEditCargo(v); if (editErrors.cargo) setEditErrors((p) => ({ ...p, cargo: "" })); }}>
+                    <SelectTrigger className={editErrors.cargo ? "border-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
                     <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
+                  {editErrors.cargo && <p className="text-[11px] text-destructive">{editErrors.cargo}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Setor</Label>
-                  <Select value={editSetor} onValueChange={setEditSetor}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>{SETORES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Setor *</Label>
+                  <Select value={editSetor} onValueChange={(v) => { setEditSetor(v); if (editErrors.setor) setEditErrors((p) => ({ ...p, setor: "" })); }}>
+                    <SelectTrigger className={editErrors.setor ? "border-destructive" : ""}><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{SETORES_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                   </Select>
+                  {editErrors.setor && <p className="text-[11px] text-destructive">{editErrors.setor}</p>}
                 </div>
               </div>
             </section>
@@ -939,19 +993,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                 <div className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">4</div>
                 <h3 className="text-sm font-semibold text-foreground">Acesso ao Sistema</h3>
               </div>
-              <div className="pl-8 space-y-2">
-                <Label className="text-xs">Perfil</Label>
-                <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+              <div className="pl-8 space-y-1.5">
+                <Label className="text-xs">Perfil *</Label>
+                <Select value={editRole} onValueChange={(v) => { setEditRole(v); if (editErrors.role) setEditErrors((p) => ({ ...p, role: "" })); }}>
+                  <SelectTrigger className={editErrors.role ? "border-destructive" : ""}><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Padrão</SelectItem>
                     <SelectItem value="engenharia">Engenharia</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
+                {editErrors.role && <p className="text-[11px] text-destructive">{editErrors.role}</p>}
               </div>
             </section>
           </div>
+
 
           <DialogFooter className="px-6 py-4 border-t bg-muted/30 gap-2">
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancelar</Button>

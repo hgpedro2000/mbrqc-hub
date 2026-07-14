@@ -32,10 +32,28 @@ export const PresenceProvider = ({ children }: { children: ReactNode }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const channelRef = useRef<any>(null);
 
+  // Hydrate preference from DB when profile loads (DB wins, so it works across devices)
+  useEffect(() => {
+    const dbVal = (profile as any)?.social_enabled;
+    if (typeof dbVal === "boolean") {
+      setSocialEnabledState(dbVal);
+      try { localStorage.setItem(STORAGE_KEY, dbVal ? "1" : "0"); } catch {}
+    }
+  }, [profile?.id, (profile as any)?.social_enabled]);
+
   const setSocialEnabled = useCallback((v: boolean) => {
     setSocialEnabledState(v);
     try { localStorage.setItem(STORAGE_KEY, v ? "1" : "0"); } catch {}
-  }, []);
+    if (user?.id) {
+      supabase
+        .from("profiles")
+        .update({ social_enabled: v } as any)
+        .eq("id", user.id)
+        .then(({ error }) => {
+          if (error) console.warn("[Presence] failed to persist social_enabled:", error.message);
+        });
+    }
+  }, [user?.id]);
 
   // Presence: join a shared channel while signed in
   useEffect(() => {

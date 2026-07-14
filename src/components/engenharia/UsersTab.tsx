@@ -1102,7 +1102,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             {filtered.map((p: any) => (
               <div key={p.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${p.status !== "active" ? "opacity-50" : ""}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{p.full_name}</p>
+                  <p className="font-medium text-sm truncate flex items-center gap-1.5">
+                    {socialEnabled && (
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
+                        title={isOnline(p.id) ? "Online agora" : "Offline"}
+                      />
+                    )}
+                    {p.full_name}
+                  </p>
                   <p className="text-xs text-muted-foreground font-mono">{p.employee_number}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <Badge variant="outline" className={`text-[10px] ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>

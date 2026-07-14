@@ -19,12 +19,17 @@ import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 
-const TURNOS = ["1T", "2T", "3T"];
+const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
   "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
   "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
   "Gerente de Qualidade", "Diretor de Qualidade",
+  "Residente", "Membro Administrativo",
+];
+const SETORES = [
+  "Qualidade", "Produção", "Engenharia", "Logística", "Manutenção",
+  "PCP", "Compras", "RH", "SESMT", "TI", "Financeiro", "Administrativo", "Comercial",
 ];
 
 interface UsersTabProps {

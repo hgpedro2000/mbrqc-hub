@@ -23,9 +23,9 @@ import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
-  "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
-  "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
-  "Gerente de Qualidade", "Diretor de Qualidade",
+  "Auxiliar", "Inspetor", "Assistente",
+  "Lider", "Analista", "Supervisor",
+  "Gerente", "Diretor",
   "Residente", "Membro Administrativo",
 ];
 const SETORES = [

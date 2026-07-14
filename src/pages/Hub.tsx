@@ -76,12 +76,12 @@ const SUB_HUBS: SubHub[] = [
     id: "sesmt",
     permission: "subhub_sesmt",
     title: "SESMT",
-    description: "Segurança do Trabalho, Meio Ambiente e Saúde Ocupacional. Em breve.",
-    path: null,
+    description: "Segurança do Trabalho, Meio Ambiente e Saúde Ocupacional.",
+    path: "/sesmt",
     icon: HardHat,
     color: "from-orange-500/15 to-red-500/5",
     iconBg: "bg-orange-500/10 text-orange-600",
-    status: "coming_soon",
+    status: "active",
   },
 ];
 

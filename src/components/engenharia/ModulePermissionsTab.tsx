@@ -327,7 +327,7 @@ const ModulePermissionsTab = () => {
           errors++;
         }
       }
-      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      await qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
       if (errors === 0) {
         toast.success(`${success} usuário(s) atualizado(s) com sucesso`);
         clearSelection();
@@ -335,6 +335,7 @@ const ModulePermissionsTab = () => {
         toast.error(`Falha ao atualizar ${errors} usuário(s)`);
       } else {
         toast.warning(`${success} sucesso(s) • ${errors} erro(s)`);
+        clearSelection();
       }
     } finally {
       setBulkRunning(false);
@@ -478,14 +479,22 @@ const ModulePermissionsTab = () => {
                 </p>
                 {selectableFilteredIds.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
-                      <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
+                    <button
+                      type="button"
+                      onClick={togglePageSelection}
+                      className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none hover:text-foreground"
+                    >
+                      <Checkbox checked={allPageSelected} className="h-3.5 w-3.5 pointer-events-none" />
                       Página
-                    </label>
-                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
-                      <Checkbox checked={allFilteredSelected} onCheckedChange={toggleFilteredSelection} className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleFilteredSelection}
+                      className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none hover:text-foreground"
+                    >
+                      <Checkbox checked={allFilteredSelected} className="h-3.5 w-3.5 pointer-events-none" />
                       Todos ({selectableFilteredIds.length})
-                    </label>
+                    </button>
                   </div>
                 )}
               </div>

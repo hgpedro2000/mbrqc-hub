@@ -1233,6 +1233,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                           </Badge>
                           {p.turno && <Badge variant="outline" className="text-[10px]">{p.turno}</Badge>}
                           {p.cargo && <Badge variant="outline" className="text-[10px] font-normal">{p.cargo}</Badge>}
+                          {(p as any).setor && <Badge variant="outline" className="text-[10px] border-violet-400/60 text-violet-700 bg-violet-500/10">{(p as any).setor}</Badge>}
                           <Badge variant="secondary" className="text-[10px] capitalize">{getRoleForUser(p.id)}</Badge>
                         </div>
                         {p.email && (

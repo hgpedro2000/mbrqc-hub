@@ -563,7 +563,6 @@ const ModulePermissionsTab = () => {
                       disabled={isAdmin(selectedUser.id) || saving === `all-${selectedUser.id}`}
                       onClick={() => enableAllModules(selectedUser.id)}
                       className="gap-1.5"
-                    
                     >
                       {saving === `all-${selectedUser.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
                       Ativar todos

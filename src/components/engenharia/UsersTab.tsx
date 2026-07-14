@@ -326,6 +326,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     setEditTurno((profile as any).turno || "");
     setEditEmail(profile.email || "");
     setEditCargo((profile as any).cargo || "");
+    setEditSetor((profile as any).setor || "");
     setEditEmpresa((profile as any).empresa || "mobis_brasil");
     setEditEmpresaTerceira((profile as any).empresa_terceira || "");
     setEditOpen(true);

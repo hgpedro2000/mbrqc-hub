@@ -2349,6 +2349,47 @@ export type Database = {
         }
         Relationships: []
       }
+      sesmt_training_history: {
+        Row: {
+          category_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          next_training_date: string | null
+          notes: string | null
+          training_date: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_training_date?: string | null
+          notes?: string | null
+          training_date: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          next_training_date?: string | null
+          notes?: string | null
+          training_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sesmt_training_history_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "sesmt_training_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sesmt_training_records: {
         Row: {
           category_id: string

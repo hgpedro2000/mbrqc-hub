@@ -461,10 +461,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     setEmployeeNumber("");
     setFullName("");
     setRole("user");
-    setPassword("");
     setTurno("");
     setEmail("");
     setCargo("");
+    setSetor("");
     setEmpresa("mobis_brasil");
     setEmpresaTerceira("");
   };

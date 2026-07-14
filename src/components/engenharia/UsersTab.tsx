@@ -1186,13 +1186,12 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {filtered.map((p: any) => {
-                const isOn = socialEnabled && isOnline(p.id);
                 const inactive = p.status !== "active";
                 const initials = (p.full_name || "?").split(/\s+/).slice(0, 2).map((n: string) => n[0]?.toUpperCase()).join("");
                 return (
                   <div
                     key={p.id}
-                    className={`group relative border rounded-xl p-4 bg-card transition-all hover:shadow-md hover:border-primary/40 ${inactive ? "opacity-50" : ""} ${isOn ? "ring-1 ring-emerald-400/40" : ""}`}
+                    className={`group relative border rounded-xl p-4 bg-card transition-all hover:shadow-md hover:border-primary/40 ${inactive ? "opacity-50" : ""}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="pt-1">
@@ -1202,12 +1201,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                         <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold ${p.empresa === "empresa_terceira" ? "bg-orange-500/15 text-orange-700 dark:text-orange-300" : "bg-blue-500/15 text-blue-700 dark:text-blue-300"}`}>
                           {initials || "?"}
                         </div>
-                        {socialEnabled && (
-                          <span
-                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${isOn ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/40"}`}
-                            title={isOn ? "Online agora" : "Offline"}
-                          />
-                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">

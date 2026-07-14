@@ -573,13 +573,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
 
-          <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-emerald-400/60 bg-emerald-50 text-emerald-700 text-xs font-medium">
-            <Radio className="w-4 h-4 animate-pulse" />
-            {online.size} online
-            {unreadCount > 0 && (
-              <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-red-500 text-white">{unreadCount}</Badge>
-            )}
-          </div>
+          {unreadCount > 0 && (
+            <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-red-400/60 bg-red-50 text-red-700 text-xs font-medium">
+              <MessageSquare className="w-4 h-4" />
+              {unreadCount} não lida{unreadCount === 1 ? "" : "s"}
+            </div>
+          )}
+
 
 
           {selectedIds.size > 0 && (
@@ -1104,15 +1104,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             {filtered.map((p: any) => (
               <div key={p.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${p.status !== "active" ? "opacity-50" : ""}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate flex items-center gap-1.5">
-                    {socialEnabled && (
-                      <span
-                        className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
-                        title={isOnline(p.id) ? "Online agora" : "Offline"}
-                      />
-                    )}
-                    {p.full_name}
-                  </p>
+                  <p className="font-medium text-sm truncate">{p.full_name}</p>
                   <p className="text-xs text-muted-foreground font-mono">{p.employee_number}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <Badge variant="outline" className={`text-[10px] ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
@@ -1124,11 +1116,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
-                  {socialEnabled && (
-                    <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} className="h-8 w-8 p-0 text-emerald-600" title="Enviar mensagem">
-                      <MessageSquare className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
+                  <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} className="h-8 w-8 p-0 text-emerald-600" title="Enviar mensagem">
+                    <MessageSquare className="w-3.5 h-3.5" />
+                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
@@ -1177,9 +1167,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             <div className="flex items-center justify-between mb-3 px-1">
               <p className="text-xs text-muted-foreground">
                 {filtered.length} {filtered.length === 1 ? "usuário" : "usuários"}
-                {socialEnabled && online.size > 0 && (
-                  <> · <span className="text-emerald-600 font-medium">{filtered.filter((p: any) => isOnline(p.id)).length} online</span></>
-                )}
               </p>
               {filtered.length > 0 && (
                 <label className="text-xs text-muted-foreground flex items-center gap-2 cursor-pointer select-none">
@@ -1197,13 +1184,12 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {filtered.map((p: any) => {
-                const isOn = socialEnabled && isOnline(p.id);
                 const inactive = p.status !== "active";
                 const initials = (p.full_name || "?").split(/\s+/).slice(0, 2).map((n: string) => n[0]?.toUpperCase()).join("");
                 return (
                   <div
                     key={p.id}
-                    className={`group relative border rounded-xl p-4 bg-card transition-all hover:shadow-md hover:border-primary/40 ${inactive ? "opacity-50" : ""} ${isOn ? "ring-1 ring-emerald-400/40" : ""}`}
+                    className={`group relative border rounded-xl p-4 bg-card transition-all hover:shadow-md hover:border-primary/40 ${inactive ? "opacity-50" : ""}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="pt-1">
@@ -1213,12 +1199,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                         <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold ${p.empresa === "empresa_terceira" ? "bg-orange-500/15 text-orange-700 dark:text-orange-300" : "bg-blue-500/15 text-blue-700 dark:text-blue-300"}`}>
                           {initials || "?"}
                         </div>
-                        {socialEnabled && (
-                          <span
-                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${isOn ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/40"}`}
-                            title={isOn ? "Online agora" : "Offline"}
-                          />
-                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
@@ -1245,11 +1225,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                             {p.last_login_at ? new Date(p.last_login_at).toLocaleDateString("pt-BR") : "Nunca acessou"}
                           </span>
                           <div className="flex items-center gap-0.5">
-                            {socialEnabled && (
-                              <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 p-0 text-emerald-600">
-                                <MessageSquare className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 p-0 text-emerald-600">
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
                               <Pencil className="w-3.5 h-3.5" />
                             </Button>

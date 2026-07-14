@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import {
   LogOut, Settings2, QrCode, ShieldCheck, Factory, Briefcase, HardHat, ClipboardCheck, Lock, ArrowRight,
 } from "lucide-react";
@@ -14,6 +14,8 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 import VersionBadge from "@/components/VersionBadge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type SubHub = {
   id: string;
@@ -86,7 +88,7 @@ const SUB_HUBS: SubHub[] = [
 ];
 
 const Hub = () => {
-  const { signOut, profile, isAdmin: realIsAdmin } = useAuth();
+  const { signOut, profile, isAdmin: realIsAdmin, user } = useAuth();
   const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
   const { enabledModules } = useEnabledModules(impersonating?.id);
@@ -114,6 +116,48 @@ const Hub = () => {
     if (isAdmin && !impersonating) return true;
     return enabledSet.has(permission as any);
   };
+
+  // Show quick-notice popups when entering the Hub for any unread direct messages.
+  const shownMsgIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data: msgs } = await supabase
+        .from("direct_messages" as any)
+        .select("id, body, from_user_id, created_at")
+        .eq("to_user_id", user.id)
+        .is("read_at", null)
+        .order("created_at", { ascending: true });
+      if (cancelled || !msgs || msgs.length === 0) return;
+
+      const fromIds = Array.from(new Set(msgs.map((m: any) => m.from_user_id).filter(Boolean)));
+      const { data: senders } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", fromIds);
+      const nameMap = new Map((senders || []).map((s: any) => [s.id, s.full_name]));
+
+      const ids: string[] = [];
+      for (const m of msgs as any[]) {
+        if (shownMsgIdsRef.current.has(m.id)) continue;
+        shownMsgIdsRef.current.add(m.id);
+        ids.push(m.id);
+        const name = nameMap.get(m.from_user_id) || "Alguém";
+        toast.info(`💬 Mensagem de ${name}`, {
+          description: (m.body || "").slice(0, 200),
+          duration: 10000,
+        });
+      }
+      if (ids.length > 0) {
+        await supabase
+          .from("direct_messages" as any)
+          .update({ read_at: new Date().toISOString() })
+          .in("id", ids);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   return (
     <div className="min-h-screen bg-background">

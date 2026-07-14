@@ -1,0 +1,2 @@
+CREATE POLICY "Admins read all direct messages" ON public.direct_messages FOR SELECT USING (public.has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins mark any as read" ON public.direct_messages FOR UPDATE USING (public.has_role(auth.uid(), 'admin'::app_role));

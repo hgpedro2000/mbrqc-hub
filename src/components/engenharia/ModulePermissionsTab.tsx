@@ -153,6 +153,27 @@ const ModulePermissionsTab = () => {
     }
   };
 
+  const BASIC_MODULES = ["subhub_qualidade", "consulta-pecas", "apontamentos", "apontamentos_incoming"];
+  const enableBasicModules = async (userId: string) => {
+    setSaving(`basic-${userId}`);
+    try {
+      for (const mid of BASIC_MODULES) {
+        const existing = permissions.find((p: any) => p.user_id === userId && p.module === mid);
+        if (existing) {
+          if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+        } else {
+          await supabase.from("user_module_permissions").insert({ user_id: userId, module: mid, enabled: true });
+        }
+      }
+      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      toast.success("Permissões básicas ativadas");
+    } catch {
+      toast.error("Erro ao ativar permissões básicas");
+    } finally {
+      setSaving(null);
+    }
+  };
+
   const empresaOptions = useMemo(() => {
     const set = new Set<string>();
     profiles.forEach((p: any) => p.empresa && set.add(p.empresa));

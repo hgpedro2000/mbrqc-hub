@@ -263,12 +263,23 @@ const ModulePermissionsTab = () => {
   };
   const clearSelection = () => setSelectedIds(new Set());
 
-  const bulkApply = async (mode: "enable" | "disable") => {
+  const bulkApply = async (mode: "enable" | "disable" | "basic") => {
     const ids = Array.from(selectedIds).filter((id) => !isAdmin(id));
     if (ids.length === 0) return;
     setBulkRunning(true);
     try {
       for (const uid of ids) {
+        if (mode === "basic") {
+          for (const mid of BASIC_MODULES) {
+            const existing = permissions.find((p: any) => p.user_id === uid && p.module === mid);
+            if (existing) {
+              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+            } else {
+              await supabase.from("user_module_permissions").insert({ user_id: uid, module: mid, enabled: true });
+            }
+          }
+          continue;
+        }
         for (const m of ALL_MODULES) {
           const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
           if (mode === "enable") {

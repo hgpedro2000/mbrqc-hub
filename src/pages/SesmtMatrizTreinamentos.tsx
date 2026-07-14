@@ -168,18 +168,6 @@ const SesmtMatrizTreinamentos = () => {
     return m;
   }, [records]);
 
-  const filteredProfiles = useMemo(() => {
-    const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const term = norm(search.trim());
-    return (profiles as any[]).filter((p) => {
-      if (turnoFilter && p.turno !== turnoFilter) return false;
-      if (!term) return true;
-      return norm(p.full_name || "").includes(term) ||
-        norm(p.employee_number || "").includes(term) ||
-        norm(p.cargo || "").includes(term);
-    });
-  }, [profiles, search, turnoFilter]);
-
   const overallStatus = (userId: string): "apto" | "atencao" | "na" => {
     const userRecs = records.filter((r) => r.user_id === userId && r.habilitado);
     if (userRecs.length === 0) return "na";
@@ -190,12 +178,44 @@ const SesmtMatrizTreinamentos = () => {
     return anyBad ? "atencao" : "apto";
   };
 
+  const visibleCategories = useMemo(
+    () => (categoryFilter ? categories.filter((c) => c.id === categoryFilter) : categories),
+    [categories, categoryFilter]
+  );
+
+  const STATUS_RANK: Record<string, number> = { atencao: 0, apto: 1, na: 2 };
+
+  const filteredProfiles = useMemo(() => {
+    const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const term = norm(search.trim());
+    const list = (profiles as any[]).filter((p) => {
+      if (turnoFilter && p.turno !== turnoFilter) return false;
+      if (statusFilter && overallStatus(p.id) !== statusFilter) return false;
+      if (term) {
+        const match = norm(p.full_name || "").includes(term) ||
+          norm(p.employee_number || "").includes(term) ||
+          norm(p.cargo || "").includes(term);
+        if (!match) return false;
+      }
+      return true;
+    });
+    // Auto-sort: Atenção → Apto → —, then by name
+    return list.sort((a, b) => {
+      const sa = STATUS_RANK[overallStatus(a.id)] ?? 3;
+      const sb = STATUS_RANK[overallStatus(b.id)] ?? 3;
+      if (sa !== sb) return sa - sb;
+      return (a.full_name || "").localeCompare(b.full_name || "");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles, search, turnoFilter, statusFilter, records]);
+
   // Agenda: for each category, list users with expired or warning
   const agendaData = useMemo(() => {
-    const catMap = new Map<string, Category>();
-    categories.forEach((c) => catMap.set(c.id, c));
+    const cats = agendaCategoryFilter
+      ? categories.filter((c) => c.id === agendaCategoryFilter)
+      : categories;
     const result: { category: Category; items: { profile: any; rec: Rec; status: string }[] }[] = [];
-    for (const cat of categories) {
+    for (const cat of cats) {
       const items: any[] = [];
       for (const p of profiles as any[]) {
         const rec = recordMap.get(`${p.id}:${cat.id}`);
@@ -204,7 +224,6 @@ const SesmtMatrizTreinamentos = () => {
         if (s === "expired" || s === "warning") items.push({ profile: p, rec, status: s });
       }
       if (items.length > 0) {
-        // expired first, then closest next date
         items.sort((a, b) => {
           if (a.status !== b.status) return a.status === "expired" ? -1 : 1;
           return (a.rec.next_training_date || "").localeCompare(b.rec.next_training_date || "");
@@ -213,7 +232,8 @@ const SesmtMatrizTreinamentos = () => {
       }
     }
     return result;
-  }, [categories, profiles, recordMap]);
+  }, [categories, profiles, recordMap, agendaCategoryFilter]);
+
 
   const totalAlerts = agendaData.reduce((sum, g) => sum + g.items.length, 0);
 

@@ -384,10 +384,53 @@ const ModulePermissionsTab = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
-                {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
-              </p>
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+                  <SelectTrigger className="h-8 text-xs flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <ArrowUpDown className="w-3 h-3 shrink-0" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name-asc">Nome (A-Z)</SelectItem>
+                    <SelectItem value="name-desc">Nome (Z-A)</SelectItem>
+                    <SelectItem value="role">Perfil (Admin primeiro)</SelectItem>
+                    <SelectItem value="progress-desc">Mais módulos ativos</SelectItem>
+                    <SelectItem value="progress-asc">Menos módulos ativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
+                  {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
+                </p>
+                {selectablePageIds.length > 0 && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                    <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
+                    Selecionar página
+                  </label>
+                )}
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
+                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <Button size="sm" className="h-7 flex-1 text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
+                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+                      Ativar
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
+                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
               {pagedProfiles.map((p: any) => {

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import {
   LogOut, Settings2, QrCode, ShieldCheck, Factory, Briefcase, HardHat, ClipboardCheck, Lock, ArrowRight,
 } from "lucide-react";
@@ -14,6 +14,8 @@ import LanguageToggle from "@/components/LanguageToggle";
 import ReportErrorButton from "@/components/ReportErrorButton";
 import { useTranslation } from "react-i18next";
 import VersionBadge from "@/components/VersionBadge";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type SubHub = {
   id: string;

@@ -36,6 +36,9 @@ export const ALL_MODULES = [
   { id: "consulta-pecas", label: "Consulta de Peças", subHub: "subhub_qualidade" },
   { id: "matriz-versatilidade", label: "Matriz de Versatilidade", subHub: "subhub_qualidade" },
   { id: "analise-risco", label: "Análise de Risco", subHub: "subhub_qualidade" },
+
+  // SESMT modules
+  { id: "sesmt-matriz-treinamentos", label: "Matriz de Treinamentos SESMT", subHub: "subhub_sesmt" },
 ] as const;
 
 export type ModuleId = typeof ALL_MODULES[number]["id"];

@@ -23,9 +23,9 @@ import { useDropdownOptions } from "@/hooks/useDropdownOptions";
 const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
-  "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
-  "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
-  "Gerente de Qualidade", "Diretor de Qualidade",
+  "Auxiliar", "Inspetor", "Assistente",
+  "Lider", "Analista", "Supervisor",
+  "Gerente", "Diretor",
   "Residente", "Membro Administrativo",
 ];
 const SETORES = [
@@ -138,6 +138,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [confirmSaveEditOpen, setConfirmSaveEditOpen] = useState(false);
 
   // Setores dinâmicos (dropdown_options.category='setor') mesclados com fallback estático
   const { data: setoresDb = [] } = useDropdownOptions("setor");
@@ -1011,13 +1012,52 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
 
           <DialogFooter className="px-6 py-4 border-t bg-muted/30 gap-2">
             <Button variant="outline" onClick={() => setEditOpen(false)} disabled={saving}>Cancelar</Button>
-            <Button onClick={handleSaveEdit} disabled={saving}>
+            <Button
+              onClick={() => {
+                const errs = validateEdit();
+                setEditErrors(errs);
+                if (Object.keys(errs).length > 0) {
+                  toast.error("Corrija os campos destacados antes de salvar.");
+                  return;
+                }
+                setConfirmSaveEditOpen(true);
+              }}
+              disabled={saving}
+            >
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Pencil className="w-4 h-4 mr-1" />}
               Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmação antes de salvar edição */}
+      <AlertDialog open={confirmSaveEditOpen} onOpenChange={setConfirmSaveEditOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar alterações</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a atualizar o perfil de <strong>{editFullName || "usuário"}</strong> ({editEmployeeNumber}).
+              As alterações serão aplicadas imediatamente. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleSaveEdit();
+                setConfirmSaveEditOpen(false);
+              }}
+              disabled={saving}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+              Confirmar e salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Bulk delete dialog */}
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>

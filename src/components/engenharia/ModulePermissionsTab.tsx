@@ -545,13 +545,25 @@ const ModulePermissionsTab = () => {
                       {selectedUser.cargo ? ` • ${selectedUser.cargo}` : ""}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isAdmin(selectedUser.id) || saving === `basic-${selectedUser.id}`}
+                      onClick={() => enableBasicModules(selectedUser.id)}
+                      className="gap-1.5"
+                      title="Ativa Consulta de Peças e Apontamentos → Incoming"
+                    >
+                      {saving === `basic-${selectedUser.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
+                      Básico
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       disabled={isAdmin(selectedUser.id) || saving === `all-${selectedUser.id}`}
                       onClick={() => enableAllModules(selectedUser.id)}
                       className="gap-1.5"
+                    
                     >
                       {saving === `all-${selectedUser.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
                       Ativar todos

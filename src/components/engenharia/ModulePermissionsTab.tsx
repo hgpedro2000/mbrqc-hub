@@ -728,6 +728,34 @@ const ModulePermissionsTab = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmBasicOpen} onOpenChange={(o) => !bulkRunning && setConfirmBasicOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" />
+              Aplicar permissões Básicas
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a ativar as permissões básicas (Sub-Hub Qualidade, Consulta de Peças, Apontamentos e Incoming) para <strong>{selectedIds.size}</strong> usuário(s) selecionado(s). Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkRunning}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkRunning}
+              onClick={async (e) => {
+                e.preventDefault();
+                await bulkApply("basic");
+                setConfirmBasicOpen(false);
+              }}
+            >
+              {bulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Shield className="w-3.5 h-3.5 mr-1.5" />}
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

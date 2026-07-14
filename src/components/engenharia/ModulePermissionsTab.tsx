@@ -238,22 +238,88 @@ const ModulePermissionsTab = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
           {/* Users list */}
           <div className="border border-border rounded-lg bg-card overflow-hidden flex flex-col max-h-[70vh]">
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t("engenharia.searchUser")}
-                  className="pl-9 h-9"
-                />
+            <div className="p-3 border-b border-border space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t("engenharia.searchUser")}
+                    className="pl-9 h-9"
+                  />
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 px-2 relative">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      {activeFilterCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold">Filtros avançados</p>
+                      {activeFilterCount > 0 && (
+                        <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={clearAdvancedFilters}>Limpar</Button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Empresa</label>
+                      <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas</SelectItem>
+                          {empresaOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Turno</label>
+                      <Select value={turnoFilter} onValueChange={setTurnoFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          {turnoOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Perfil</label>
+                      <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="admin">Admins</SelectItem>
+                          <SelectItem value="user">Usuários</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Acesso</label>
+                      <Select value={accessFilter} onValueChange={setAccessFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Qualquer</SelectItem>
+                          <SelectItem value="none">Sem módulos</SelectItem>
+                          <SelectItem value="some">Parcial</SelectItem>
+                          <SelectItem value="full">Todos ativos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-[11px] text-muted-foreground">
                 {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
+                {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
               </p>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
-              {filteredProfiles.map((p: any) => {
+              {pagedProfiles.map((p: any) => {
                 const active = p.id === selectedId;
                 const admin = isAdmin(p.id);
                 const count = enabledCount(p.id);
@@ -287,6 +353,19 @@ const ModulePermissionsTab = () => {
                 <p className="text-center text-muted-foreground py-8 text-sm">Nenhum usuário encontrado</p>
               )}
             </div>
+            {totalPages > 1 && (
+              <div className="border-t border-border p-2 flex items-center justify-between gap-2">
+                <Button variant="ghost" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <span className="text-[11px] text-muted-foreground">Página {page} de {totalPages}</span>
+                <Button variant="ghost" size="sm" className="h-7 px-2" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+
           </div>
 
           {/* Detail panel */}

@@ -77,6 +77,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { socialEnabled, setSocialEnabled, isOnline, online, unreadCount } = usePresence();
+  const [msgTarget, setMsgTarget] = useState<{ id: string; full_name: string; employee_number?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [pendingListOpen, setPendingListOpen] = useState(false);

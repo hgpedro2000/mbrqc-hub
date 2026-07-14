@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
+import ModuleGuard from "@/components/ModuleGuard";
 
 import Hub from "./pages/Hub";
 import QualidadeHub from "./pages/QualidadeHub";

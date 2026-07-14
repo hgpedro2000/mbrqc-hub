@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
 import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
+import ModuleGuard from "@/components/ModuleGuard";
 
 import Hub from "./pages/Hub";
 import QualidadeHub from "./pages/QualidadeHub";
@@ -161,67 +162,68 @@ const App = () => (
             <Route path="/mfa-verify" element={<ProtectedRoute><MfaVerify /></ProtectedRoute>} />
             <Route path="/engenharia" element={<ProtectedRoute><AdminRoute><Engenharia /></AdminRoute></ProtectedRoute>} />
             <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
-            <Route path="/qualidade" element={<ProtectedRoute><QualidadeHub /></ProtectedRoute>} />
+            <Route path="/qualidade" element={<ProtectedRoute><ModuleGuard module="subhub_qualidade"><QualidadeHub /></ModuleGuard></ProtectedRoute>} />
             
             
             {/* Tryout */}
-            <Route path="/tryout" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/tryout/injecao" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
-            <Route path="/tryout/injecao/editar/:id" element={<ProtectedRoute><InjectionForm /></ProtectedRoute>} />
-            <Route path="/tryout/pintura" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
-            <Route path="/tryout/pintura/editar/:id" element={<ProtectedRoute><PaintingPage /></ProtectedRoute>} />
-            <Route path="/tryout/montagem" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
-            <Route path="/tryout/montagem/editar/:id" element={<ProtectedRoute><AssemblyPage /></ProtectedRoute>} />
-            <Route path="/tryout/registros" element={<ProtectedRoute><TryoutRegistros /></ProtectedRoute>} />
-            <Route path="/tryout/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/tryout" element={<ProtectedRoute><ModuleGuard module="tryout"><Index /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/injecao" element={<ProtectedRoute><ModuleGuard module="tryout"><InjectionForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/injecao/editar/:id" element={<ProtectedRoute><ModuleGuard module="tryout"><InjectionForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/pintura" element={<ProtectedRoute><ModuleGuard module="tryout"><PaintingPage /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/pintura/editar/:id" element={<ProtectedRoute><ModuleGuard module="tryout"><PaintingPage /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/montagem" element={<ProtectedRoute><ModuleGuard module="tryout"><AssemblyPage /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/montagem/editar/:id" element={<ProtectedRoute><ModuleGuard module="tryout"><AssemblyPage /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/registros" element={<ProtectedRoute><ModuleGuard module="tryout"><TryoutRegistros /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/tryout/dashboard" element={<ProtectedRoute><ModuleGuard module="tryout"><Dashboard /></ModuleGuard></ProtectedRoute>} />
             
             {/* Auditorias */}
-            <Route path="/auditorias" element={<ProtectedRoute><Auditorias /></ProtectedRoute>} />
-            <Route path="/auditorias/nova" element={<ProtectedRoute><AuditoriaWizard /></ProtectedRoute>} />
-            <Route path="/auditorias/editar/:id" element={<ProtectedRoute><AuditoriaWizard /></ProtectedRoute>} />
-            <Route path="/auditorias/legado/nova" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
-            <Route path="/auditorias/legado/editar/:id" element={<ProtectedRoute><AuditoriaForm /></ProtectedRoute>} />
-            <Route path="/auditorias/dashboard" element={<ProtectedRoute><AuditoriaDashboard /></ProtectedRoute>} />
-            <Route path="/auditorias/agenda" element={<ProtectedRoute><AuditoriaAgenda /></ProtectedRoute>} />
-            <Route path="/auditorias/:id" element={<ProtectedRoute><AuditoriaDetalhe /></ProtectedRoute>} />
+            <Route path="/auditorias" element={<ProtectedRoute><ModuleGuard module="auditorias"><Auditorias /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/nova" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaWizard /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/editar/:id" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaWizard /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/legado/nova" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/legado/editar/:id" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/dashboard" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaDashboard /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/agenda" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaAgenda /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/auditorias/:id" element={<ProtectedRoute><ModuleGuard module="auditorias"><AuditoriaDetalhe /></ModuleGuard></ProtectedRoute>} />
             
             {/* Contenção */}
-            <Route path="/contencao" element={<ProtectedRoute><Contencao /></ProtectedRoute>} />
-            <Route path="/contencao/nova" element={<ProtectedRoute><ContencaoForm /></ProtectedRoute>} />
-            <Route path="/contencao/editar/:id" element={<ProtectedRoute><ContencaoForm /></ProtectedRoute>} />
-            <Route path="/contencao/dashboard" element={<ProtectedRoute><ContencaoDashboard /></ProtectedRoute>} />
+            <Route path="/contencao" element={<ProtectedRoute><ModuleGuard module="contencao"><Contencao /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/contencao/nova" element={<ProtectedRoute><ModuleGuard module="contencao"><ContencaoForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/contencao/editar/:id" element={<ProtectedRoute><ModuleGuard module="contencao"><ContencaoForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/contencao/dashboard" element={<ProtectedRoute><ModuleGuard module="contencao"><ContencaoDashboard /></ModuleGuard></ProtectedRoute>} />
             
             {/* Apontamentos */}
-            <Route path="/apontamentos" element={<ProtectedRoute><Apontamentos /></ProtectedRoute>} />
-            <Route path="/apontamentos/novo/:tipo" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
-            <Route path="/apontamentos/editar/:id" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
-            <Route path="/apontamentos/ver/:id" element={<ProtectedRoute><ApontamentoForm /></ProtectedRoute>} />
-            <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ApontamentoDashboard /></ProtectedRoute>} />
+            <Route path="/apontamentos" element={<ProtectedRoute><ModuleGuard module="apontamentos"><Apontamentos /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/apontamentos/novo/:tipo" element={<ProtectedRoute><ModuleGuard module="apontamentos"><ApontamentoForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/apontamentos/editar/:id" element={<ProtectedRoute><ModuleGuard module="apontamentos"><ApontamentoForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/apontamentos/ver/:id" element={<ProtectedRoute><ModuleGuard module="apontamentos"><ApontamentoForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/apontamentos/dashboard" element={<ProtectedRoute><ModuleGuard module="apontamentos"><ApontamentoDashboard /></ModuleGuard></ProtectedRoute>} />
             <Route path="/apontamentos/admin/part-name" element={<ProtectedRoute><AdminRoute><AdminPartNameFix /></AdminRoute></ProtectedRoute>} />
             <Route path="/monitor" element={<Monitor />} />
             <Route path="/monitor/admin" element={<ProtectedRoute><AdminRoute><MonitorAdmin /></AdminRoute></ProtectedRoute>} />
 
             
             {/* Alertas de Qualidade */}
-            <Route path="/alerta-qualidade" element={<ProtectedRoute><AlertaQualidade /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><AlertaQualidadeForm /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/ver/:id" element={<ProtectedRoute><AlertaQualidadeView /></ProtectedRoute>} />
-            <Route path="/alerta-qualidade/feed" element={<ProtectedRoute><AlertaQualidadeFeed /></ProtectedRoute>} />
+            <Route path="/alerta-qualidade" element={<ProtectedRoute><ModuleGuard module="alerta-qualidade"><AlertaQualidade /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/novo" element={<ProtectedRoute><ModuleGuard module="alerta-qualidade"><AlertaQualidadeForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/editar/:id" element={<ProtectedRoute><ModuleGuard module="alerta-qualidade"><AlertaQualidadeForm /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/ver/:id" element={<ProtectedRoute><ModuleGuard module="alerta-qualidade"><AlertaQualidadeView /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/alerta-qualidade/feed" element={<ProtectedRoute><ModuleGuard module="alerta-qualidade"><AlertaQualidadeFeed /></ModuleGuard></ProtectedRoute>} />
             
             {/* Consumíveis */}
-            <Route path="/consumiveis" element={<ProtectedRoute><ConsumiveisPage /></ProtectedRoute>} />
+            <Route path="/consumiveis" element={<ProtectedRoute><ModuleGuard module="consumiveis"><ConsumiveisPage /></ModuleGuard></ProtectedRoute>} />
             
             {/* QR Profile */}
             <Route path="/meu-qr" element={<ProtectedRoute><QrProfilePage /></ProtectedRoute>} />
             
             {/* Consulta de Peças */}
-            <Route path="/consulta-pecas" element={<ProtectedRoute><ConsultaPecas /></ProtectedRoute>} />
-            <Route path="/analise-risco" element={<ProtectedRoute><AnaliseRisco /></ProtectedRoute>} />
+            <Route path="/consulta-pecas" element={<ProtectedRoute><ModuleGuard module="consulta-pecas"><ConsultaPecas /></ModuleGuard></ProtectedRoute>} />
+            <Route path="/analise-risco" element={<ProtectedRoute><ModuleGuard module="analise-risco"><AnaliseRisco /></ModuleGuard></ProtectedRoute>} />
             <Route path="/spec-switch-panel" element={<ProtectedRoute><SpecSwitchPanelCheck /></ProtectedRoute>} />
             
             {/* Matriz de Versatilidade */}
-            <Route path="/matriz-versatilidade" element={<ProtectedRoute><MatrizVersatilidade /></ProtectedRoute>} />
+            <Route path="/matriz-versatilidade" element={<ProtectedRoute><ModuleGuard module="matriz-versatilidade"><MatrizVersatilidade /></ModuleGuard></ProtectedRoute>} />
+
 
             {/* Barcode Scanner H/KMC */}
             <Route path="/barcode-scanner" element={<ProtectedRoute><BarcodeScanner /></ProtectedRoute>} />

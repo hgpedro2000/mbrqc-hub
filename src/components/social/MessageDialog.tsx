@@ -89,17 +89,17 @@ export const MessageDialog = ({ open, onOpenChange, target, online }: Props) => 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-3xl w-[95vw] sm:w-full">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             {target?.full_name}
-            {online && <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />}
+            {online && <span className="inline-flex items-center gap-1 text-[11px] font-normal text-emerald-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-emerald-500/30" />online</span>}
             {target?.employee_number && <Badge variant="outline" className="text-[10px] font-mono">{target.employee_number}</Badge>}
           </DialogTitle>
           <DialogDescription>Mensagem direta ao usuário</DialogDescription>
         </DialogHeader>
 
-        <div ref={listRef} className="h-64 overflow-y-auto rounded-md border bg-muted/20 p-3 space-y-2">
+        <div ref={listRef} className="h-[60vh] overflow-y-auto rounded-md border bg-muted/20 p-3 space-y-2">
           {loading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : messages.length === 0 ? (

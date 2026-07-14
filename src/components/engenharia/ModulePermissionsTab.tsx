@@ -1,15 +1,19 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, User as UserIcon } from "lucide-react";
+import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 25;
 
 const stripPrefix = (label: string) => label.replace(/^\s*↳\s*/, "").replace(/^Sub-Hub:\s*/, "");
 
@@ -22,6 +26,11 @@ const ModulePermissionsTab = () => {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [empresaFilter, setEmpresaFilter] = useState<string>("all");
+  const [turnoFilter, setTurnoFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all"); // all | admin | user
+  const [accessFilter, setAccessFilter] = useState<string>("all"); // all | none | some | full
+  const [page, setPage] = useState(1);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["eng-profiles"],
@@ -139,14 +148,59 @@ const ModulePermissionsTab = () => {
     }
   };
 
+  const empresaOptions = useMemo(() => {
+    const set = new Set<string>();
+    profiles.forEach((p: any) => p.empresa && set.add(p.empresa));
+    return Array.from(set).sort();
+  }, [profiles]);
+
+  const turnoOptions = useMemo(() => {
+    const set = new Set<string>();
+    profiles.forEach((p: any) => p.turno && set.add(p.turno));
+    return Array.from(set).sort();
+  }, [profiles]);
+
+  const enabledCountFor = (userId: string) =>
+    isAdmin(userId)
+      ? ALL_MODULES.length
+      : permissions.filter((p: any) => p.user_id === userId && p.enabled).length;
+
   const filteredProfiles = useMemo(() => {
     const q = normalize(search);
-    return profiles.filter((p: any) =>
-      !q ||
-      normalize(p.full_name).includes(q) ||
-      (p.employee_number || "").toLowerCase().includes(q)
-    );
-  }, [profiles, search]);
+    return profiles.filter((p: any) => {
+      if (q && !normalize(p.full_name).includes(q) && !(p.employee_number || "").toLowerCase().includes(q)) return false;
+      if (empresaFilter !== "all" && p.empresa !== empresaFilter) return false;
+      if (turnoFilter !== "all" && p.turno !== turnoFilter) return false;
+      if (roleFilter === "admin" && !isAdmin(p.id)) return false;
+      if (roleFilter === "user" && isAdmin(p.id)) return false;
+      if (accessFilter !== "all") {
+        const c = enabledCountFor(p.id);
+        if (accessFilter === "none" && c !== 0) return false;
+        if (accessFilter === "full" && c < ALL_MODULES.length) return false;
+        if (accessFilter === "some" && (c === 0 || c >= ALL_MODULES.length)) return false;
+      }
+      return true;
+    });
+  }, [profiles, search, empresaFilter, turnoFilter, roleFilter, accessFilter, roles, permissions]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredProfiles.length / PAGE_SIZE));
+  useEffect(() => { setPage(1); }, [search, empresaFilter, turnoFilter, roleFilter, accessFilter]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [totalPages, page]);
+  const pagedProfiles = useMemo(
+    () => filteredProfiles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filteredProfiles, page]
+  );
+
+  const activeFilterCount =
+    (empresaFilter !== "all" ? 1 : 0) +
+    (turnoFilter !== "all" ? 1 : 0) +
+    (roleFilter !== "all" ? 1 : 0) +
+    (accessFilter !== "all" ? 1 : 0);
+
+  const clearAdvancedFilters = () => {
+    setEmpresaFilter("all"); setTurnoFilter("all"); setRoleFilter("all"); setAccessFilter("all");
+  };
+
 
   const selectedUser = useMemo(
     () => profiles.find((p: any) => p.id === selectedId) || null,
@@ -165,10 +219,7 @@ const ModulePermissionsTab = () => {
   const childrenOf = (parentId: string) =>
     ALL_MODULES.filter((m) => (m as any).parent === parentId);
 
-  const enabledCount = (userId: string) =>
-    isAdmin(userId)
-      ? ALL_MODULES.length
-      : permissions.filter((p: any) => p.user_id === userId && p.enabled).length;
+  const enabledCount = enabledCountFor;
 
   const isLoading = loadingProfiles || loadingPerms;
 
@@ -187,22 +238,88 @@ const ModulePermissionsTab = () => {
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
           {/* Users list */}
           <div className="border border-border rounded-lg bg-card overflow-hidden flex flex-col max-h-[70vh]">
-            <div className="p-3 border-b border-border">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={t("engenharia.searchUser")}
-                  className="pl-9 h-9"
-                />
+            <div className="p-3 border-b border-border space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder={t("engenharia.searchUser")}
+                    className="pl-9 h-9"
+                  />
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 px-2 relative">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      {activeFilterCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] rounded-full w-4 h-4 flex items-center justify-center">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold">Filtros avançados</p>
+                      {activeFilterCount > 0 && (
+                        <Button variant="ghost" size="sm" className="h-6 text-[11px]" onClick={clearAdvancedFilters}>Limpar</Button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Empresa</label>
+                      <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas</SelectItem>
+                          {empresaOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Turno</label>
+                      <Select value={turnoFilter} onValueChange={setTurnoFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          {turnoOptions.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Perfil</label>
+                      <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todos</SelectItem>
+                          <SelectItem value="admin">Admins</SelectItem>
+                          <SelectItem value="user">Usuários</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground">Acesso</label>
+                      <Select value={accessFilter} onValueChange={setAccessFilter}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Qualquer</SelectItem>
+                          <SelectItem value="none">Sem módulos</SelectItem>
+                          <SelectItem value="some">Parcial</SelectItem>
+                          <SelectItem value="full">Todos ativos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-2">
+              <p className="text-[11px] text-muted-foreground">
                 {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
+                {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
               </p>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
-              {filteredProfiles.map((p: any) => {
+              {pagedProfiles.map((p: any) => {
                 const active = p.id === selectedId;
                 const admin = isAdmin(p.id);
                 const count = enabledCount(p.id);
@@ -236,6 +353,17 @@ const ModulePermissionsTab = () => {
                 <p className="text-center text-muted-foreground py-8 text-sm">Nenhum usuário encontrado</p>
               )}
             </div>
+            {totalPages > 1 && (
+              <div className="border-t border-border p-2 flex items-center justify-between gap-2">
+                <Button variant="ghost" size="sm" className="h-7 px-2" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <span className="text-[11px] text-muted-foreground">Página {page} de {totalPages}</span>
+                <Button variant="ghost" size="sm" className="h-7 px-2" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Detail panel */}

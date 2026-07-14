@@ -451,12 +451,16 @@ const ModulePermissionsTab = () => {
                     <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
                     <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
                   </div>
-                  <div className="flex gap-1.5">
-                    <Button size="sm" className="h-7 flex-1 text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
                       {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
                       Ativar
                     </Button>
-                    <Button size="sm" variant="outline" className="h-7 flex-1 text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
+                    <Button size="sm" variant="secondary" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("basic")}>
+                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+                      Básico
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
                       {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
                       Limpar
                     </Button>

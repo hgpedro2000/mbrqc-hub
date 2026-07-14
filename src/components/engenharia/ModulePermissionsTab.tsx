@@ -254,7 +254,12 @@ const ModulePermissionsTab = () => {
     () => pagedProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
     [pagedProfiles, roles]
   );
+  const selectableFilteredIds = useMemo(
+    () => filteredProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
+    [filteredProfiles, roles]
+  );
   const allPageSelected = selectablePageIds.length > 0 && selectablePageIds.every((id) => selectedIds.has(id));
+  const allFilteredSelected = selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selectedIds.has(id));
   const togglePageSelection = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -263,43 +268,74 @@ const ModulePermissionsTab = () => {
       return next;
     });
   };
+  const toggleFilteredSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) selectableFilteredIds.forEach((id) => next.delete(id));
+      else selectableFilteredIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
   const clearSelection = () => setSelectedIds(new Set());
 
   const bulkApply = async (mode: "enable" | "disable" | "basic") => {
     const ids = Array.from(selectedIds).filter((id) => !isAdmin(id));
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      toast.warning("Selecione ao menos um usuário");
+      return;
+    }
     setBulkRunning(true);
+    let success = 0;
+    let errors = 0;
     try {
       for (const uid of ids) {
-        if (mode === "basic") {
-          for (const mid of BASIC_MODULES) {
-            const existing = permissions.find((p: any) => p.user_id === uid && p.module === mid);
-            if (existing) {
-              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
-            } else {
-              await supabase.from("user_module_permissions").insert({ user_id: uid, module: mid, enabled: true });
+        try {
+          if (mode === "basic") {
+            for (const mid of BASIC_MODULES) {
+              const existing = permissions.find((p: any) => p.user_id === uid && p.module === mid);
+              if (existing) {
+                if (!existing.enabled) {
+                  const { error } = await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+                  if (error) throw error;
+                }
+              } else {
+                const { error } = await supabase.from("user_module_permissions").insert({ user_id: uid, module: mid, enabled: true });
+                if (error) throw error;
+              }
+            }
+          } else {
+            for (const m of ALL_MODULES) {
+              const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
+              if (mode === "enable") {
+                if (existing) {
+                  if (!existing.enabled) {
+                    const { error } = await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+                    if (error) throw error;
+                  }
+                } else {
+                  const { error } = await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
+                  if (error) throw error;
+                }
+              } else if (existing && existing.enabled) {
+                const { error } = await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
+                if (error) throw error;
+              }
             }
           }
-          continue;
-        }
-        for (const m of ALL_MODULES) {
-          const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
-          if (mode === "enable") {
-            if (existing) {
-              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
-            } else {
-              await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
-            }
-          } else if (existing && existing.enabled) {
-            await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
-          }
+          success++;
+        } catch {
+          errors++;
         }
       }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
-      toast.success(`${ids.length} usuário(s) atualizado(s)`);
-      clearSelection();
-    } catch {
-      toast.error("Erro na ação em lote");
+      if (errors === 0) {
+        toast.success(`${success} usuário(s) atualizado(s) com sucesso`);
+        clearSelection();
+      } else if (success === 0) {
+        toast.error(`Falha ao atualizar ${errors} usuário(s)`);
+      } else {
+        toast.warning(`${success} sucesso(s) • ${errors} erro(s)`);
+      }
     } finally {
       setBulkRunning(false);
     }

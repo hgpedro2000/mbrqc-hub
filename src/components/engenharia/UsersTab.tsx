@@ -138,6 +138,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [editEmpresa, setEditEmpresa] = useState("mobis_brasil");
   const [editEmpresaTerceira, setEditEmpresaTerceira] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [confirmSaveEditOpen, setConfirmSaveEditOpen] = useState(false);
 
   // Setores dinâmicos (dropdown_options.category='setor') mesclados com fallback estático
   const { data: setoresDb = [] } = useDropdownOptions("setor");

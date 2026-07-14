@@ -476,35 +476,48 @@ const ModulePermissionsTab = () => {
                   {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
                   {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
                 </p>
-                {selectablePageIds.length > 0 && (
-                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
-                    <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
-                    Selecionar página
-                  </label>
+                {selectableFilteredIds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                      <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
+                      Página
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                      <Checkbox checked={allFilteredSelected} onCheckedChange={toggleFilteredSelection} className="h-3.5 w-3.5" />
+                      Todos ({selectableFilteredIds.length})
+                    </label>
+                  </div>
                 )}
               </div>
-              {selectedIds.size > 0 && (
-                <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
-                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-                      Ativar
-                    </Button>
-                    <Button size="sm" variant="secondary" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("basic")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
-                      Básico
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                      Limpar
-                    </Button>
-                  </div>
+              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  {selectedIds.size > 0 ? (
+                    <>
+                      <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
+                      <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertTriangle className="w-3 h-3" />
+                      Selecione ao menos um usuário para ações em lote
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning || selectedIds.size === 0} onClick={() => bulkApply("enable")}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+                    Ativar
+                  </Button>
+                  <Button size="sm" variant="secondary" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning || selectedIds.size === 0} onClick={() => setConfirmBasicOpen(true)}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+                    Básico
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning || selectedIds.size === 0} onClick={() => bulkApply("disable")}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                    Limpar
+                  </Button>
+                </div>
+              </div>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
               {pagedProfiles.map((p: any) => {

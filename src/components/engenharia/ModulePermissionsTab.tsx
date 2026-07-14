@@ -437,30 +437,45 @@ const ModulePermissionsTab = () => {
                 const active = p.id === selectedId;
                 const admin = isAdmin(p.id);
                 const count = enabledCount(p.id);
+                const checked = selectedIds.has(p.id);
                 return (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={() => setSelectedId(p.id)}
                     className={cn(
                       "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors hover:bg-muted/50",
                       active && "bg-primary/10 hover:bg-primary/10"
                     )}
                   >
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                      admin ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                    )}>
-                      {admin ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.full_name}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono truncate">
-                        {p.employee_number}
-                        {admin ? " • Admin" : ` • ${count} módulo${count !== 1 ? "s" : ""}`}
-                      </p>
-                    </div>
-                    <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 transition-transform", active && "text-primary rotate-90")} />
-                  </button>
+                    {!admin ? (
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggleSelect(p.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-4 shrink-0" />
+                    )}
+                    <button
+                      onClick={() => setSelectedId(p.id)}
+                      className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                    >
+                      <div className={cn(
+                        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                        admin ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                      )}>
+                        {admin ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{p.full_name}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate">
+                          {p.employee_number}
+                          {admin ? " • Admin" : ` • ${count} módulo${count !== 1 ? "s" : ""}`}
+                        </p>
+                      </div>
+                      <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 transition-transform", active && "text-primary rotate-90")} />
+                    </button>
+                  </div>
                 );
               })}
               {filteredProfiles.length === 0 && (

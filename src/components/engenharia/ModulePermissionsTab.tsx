@@ -366,8 +366,6 @@ const ModulePermissionsTab = () => {
             )}
           </div>
 
-          </div>
-
           {/* Detail panel */}
           <div className="border border-border rounded-lg bg-card p-4 lg:p-6 min-h-[400px]">
             {!selectedUser ? (

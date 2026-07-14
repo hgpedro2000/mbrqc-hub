@@ -70,7 +70,21 @@ const cellClass = (s: string) => {
   }
 };
 
+const csvDownload = (filename: string, rows: (string | number | null | undefined)[][]) => {
+  const escape = (v: any) => {
+    const s = v == null ? "" : String(v);
+    return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = "\uFEFF" + rows.map((r) => r.map(escape).join(";")).join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+};
+
 const SesmtMatrizTreinamentos = () => {
+
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
@@ -78,6 +92,10 @@ const SesmtMatrizTreinamentos = () => {
 
   const [search, setSearch] = useState("");
   const [turnoFilter, setTurnoFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>(""); // filter visible categories in matrix
+  const [statusFilter, setStatusFilter] = useState<string>(""); // apto|atencao|na
+  const [agendaCategoryFilter, setAgendaCategoryFilter] = useState<string>("");
+
 
   const [catDialog, setCatDialog] = useState<{ mode: "add" | "edit"; cat?: Category } | null>(null);
   const [catForm, setCatForm] = useState<{ name: string; description: string; color: string }>({
@@ -150,18 +168,6 @@ const SesmtMatrizTreinamentos = () => {
     return m;
   }, [records]);
 
-  const filteredProfiles = useMemo(() => {
-    const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const term = norm(search.trim());
-    return (profiles as any[]).filter((p) => {
-      if (turnoFilter && p.turno !== turnoFilter) return false;
-      if (!term) return true;
-      return norm(p.full_name || "").includes(term) ||
-        norm(p.employee_number || "").includes(term) ||
-        norm(p.cargo || "").includes(term);
-    });
-  }, [profiles, search, turnoFilter]);
-
   const overallStatus = (userId: string): "apto" | "atencao" | "na" => {
     const userRecs = records.filter((r) => r.user_id === userId && r.habilitado);
     if (userRecs.length === 0) return "na";
@@ -172,12 +178,44 @@ const SesmtMatrizTreinamentos = () => {
     return anyBad ? "atencao" : "apto";
   };
 
+  const visibleCategories = useMemo(
+    () => (categoryFilter ? categories.filter((c) => c.id === categoryFilter) : categories),
+    [categories, categoryFilter]
+  );
+
+  const STATUS_RANK: Record<string, number> = { atencao: 0, apto: 1, na: 2 };
+
+  const filteredProfiles = useMemo(() => {
+    const norm = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const term = norm(search.trim());
+    const list = (profiles as any[]).filter((p) => {
+      if (turnoFilter && p.turno !== turnoFilter) return false;
+      if (statusFilter && overallStatus(p.id) !== statusFilter) return false;
+      if (term) {
+        const match = norm(p.full_name || "").includes(term) ||
+          norm(p.employee_number || "").includes(term) ||
+          norm(p.cargo || "").includes(term);
+        if (!match) return false;
+      }
+      return true;
+    });
+    // Auto-sort: Atenção → Apto → —, then by name
+    return list.sort((a, b) => {
+      const sa = STATUS_RANK[overallStatus(a.id)] ?? 3;
+      const sb = STATUS_RANK[overallStatus(b.id)] ?? 3;
+      if (sa !== sb) return sa - sb;
+      return (a.full_name || "").localeCompare(b.full_name || "");
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profiles, search, turnoFilter, statusFilter, records]);
+
   // Agenda: for each category, list users with expired or warning
   const agendaData = useMemo(() => {
-    const catMap = new Map<string, Category>();
-    categories.forEach((c) => catMap.set(c.id, c));
+    const cats = agendaCategoryFilter
+      ? categories.filter((c) => c.id === agendaCategoryFilter)
+      : categories;
     const result: { category: Category; items: { profile: any; rec: Rec; status: string }[] }[] = [];
-    for (const cat of categories) {
+    for (const cat of cats) {
       const items: any[] = [];
       for (const p of profiles as any[]) {
         const rec = recordMap.get(`${p.id}:${cat.id}`);
@@ -186,7 +224,6 @@ const SesmtMatrizTreinamentos = () => {
         if (s === "expired" || s === "warning") items.push({ profile: p, rec, status: s });
       }
       if (items.length > 0) {
-        // expired first, then closest next date
         items.sort((a, b) => {
           if (a.status !== b.status) return a.status === "expired" ? -1 : 1;
           return (a.rec.next_training_date || "").localeCompare(b.rec.next_training_date || "");
@@ -195,7 +232,8 @@ const SesmtMatrizTreinamentos = () => {
       }
     }
     return result;
-  }, [categories, profiles, recordMap]);
+  }, [categories, profiles, recordMap, agendaCategoryFilter]);
+
 
   const totalAlerts = agendaData.reduce((sum, g) => sum + g.items.length, 0);
 
@@ -370,6 +408,21 @@ const SesmtMatrizTreinamentos = () => {
     finally { setExportingAgenda(false); }
   };
 
+  const exportAgendaCsv = () => {
+    if (agendaData.length === 0) { toast.error("Sem dados para exportar"); return; }
+    const rows: any[][] = [["Aba", "Colaborador", "Matrícula", "Turno", "Cargo", "Último", "Próximo", "Situação", "Observações"]];
+    agendaData.forEach((g) => g.items.forEach((it: any) => {
+      rows.push([
+        g.category.name, it.profile.full_name, it.profile.employee_number || "",
+        it.profile.turno || "", it.profile.cargo || "",
+        it.rec.last_training_date || "", it.rec.next_training_date || "",
+        it.status === "expired" ? "Vencido" : "A vencer", it.rec.notes || "",
+      ]);
+    }));
+    csvDownload(`Agenda-SESMT-${format(new Date(), "yyyy-MM-dd")}.csv`, rows);
+    toast.success("CSV exportado");
+  };
+
   const turnos = useMemo(() => {
     const s = new Set<string>();
     (profiles as any[]).forEach((p) => p.turno && s.add(p.turno));
@@ -380,6 +433,17 @@ const SesmtMatrizTreinamentos = () => {
     if (!historyDialog) return [];
     return history.filter((h) => h.user_id === historyDialog.userId);
   }, [history, historyDialog]);
+
+  const exportHistoryCsv = () => {
+    if (!historyDialog || userHistory.length === 0) { toast.error("Sem histórico"); return; }
+    const rows: any[][] = [["Aba", "Data do treinamento", "Próximo", "Observações"]];
+    userHistory.forEach((h) => {
+      const cat = categories.find((c) => c.id === h.category_id);
+      rows.push([cat?.name || "—", h.training_date, h.next_training_date || "", h.notes || ""]);
+    });
+    csvDownload(`Historico-${historyDialog.userName}-${format(new Date(), "yyyy-MM-dd")}.csv`, rows);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -452,13 +516,30 @@ const SesmtMatrizTreinamentos = () => {
             />
           </div>
           <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-full md:w-48"><SelectValue placeholder="Todos os turnos" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-40"><SelectValue placeholder="Todos os turnos" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os turnos</SelectItem>
               {turnos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-full md:w-40"><SelectValue placeholder="Todos os status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="atencao">Atenção</SelectItem>
+              <SelectItem value="apto">Apto</SelectItem>
+              <SelectItem value="na">Sem treinamento</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter || "all"} onValueChange={(v) => setCategoryFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-full md:w-52"><SelectValue placeholder="Todas as abas / NR" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as abas / NR</SelectItem>
+              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
+
 
         {/* Legend */}
         <div className="flex flex-wrap gap-2 text-[10px] md:text-xs text-muted-foreground">
@@ -485,7 +566,7 @@ const SesmtMatrizTreinamentos = () => {
                   <th className="text-left py-2 px-2 sticky left-0 bg-muted/40 z-10 min-w-[180px]">Colaborador</th>
                   <th className="text-center py-2 px-2 min-w-[80px]">Turno</th>
                   <th className="text-center py-2 px-2 min-w-[90px]">Status</th>
-                  {categories.map((cat) => (
+                  {visibleCategories.map((cat) => (
                     <th key={cat.id} className="text-center py-2 px-2 min-w-[130px]">
                       <div className="flex flex-col items-center gap-1">
                         <div className={`${cat.color} text-white rounded px-2 py-1 text-[10px] md:text-xs font-semibold w-full truncate`} title={cat.description || cat.name}>
@@ -522,7 +603,7 @@ const SesmtMatrizTreinamentos = () => {
                         {st === "atencao" && <Badge className="bg-red-600 hover:bg-red-600 animate-pulse">Atenção</Badge>}
                         {st === "na" && <Badge variant="secondary">—</Badge>}
                       </td>
-                      {categories.map((cat) => {
+                      {visibleCategories.map((cat) => {
                         const rec = recordMap.get(`${p.id}:${cat.id}`);
                         const s = statusOf(rec);
                         return (
@@ -548,7 +629,7 @@ const SesmtMatrizTreinamentos = () => {
                   );
                 })}
                 {filteredProfiles.length === 0 && (
-                  <tr><td colSpan={categories.length + 4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</td></tr>
+                  <tr><td colSpan={visibleCategories.length + 4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</td></tr>
                 )}
               </tbody>
             </table>
@@ -567,12 +648,25 @@ const SesmtMatrizTreinamentos = () => {
               Colaboradores com treinamentos vencidos ou vencendo nos próximos 30 dias.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end">
-            <Button size="sm" onClick={exportAgendaPdf} disabled={exportingAgenda || totalAlerts === 0} className="gap-2">
-              {exportingAgenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Exportar PDF
-            </Button>
+          <div className="flex flex-col md:flex-row md:items-center gap-2 justify-between">
+            <Select value={agendaCategoryFilter || "all"} onValueChange={(v) => setAgendaCategoryFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-full md:w-64"><SelectValue placeholder="Todas as abas / NR" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as abas / NR</SelectItem>
+                {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={exportAgendaCsv} disabled={totalAlerts === 0} className="gap-2">
+                <Download className="w-4 h-4" /> CSV
+              </Button>
+              <Button size="sm" onClick={exportAgendaPdf} disabled={exportingAgenda || totalAlerts === 0} className="gap-2">
+                {exportingAgenda ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                PDF
+              </Button>
+            </div>
           </div>
+
           <div ref={agendaRef} className="bg-white text-black p-4 rounded-lg space-y-4">
             <div className="text-center border-b pb-2">
               <h2 className="text-lg font-bold">Agenda de Treinamentos — SESMT</h2>
@@ -724,6 +818,13 @@ const SesmtMatrizTreinamentos = () => {
             </DialogTitle>
             <DialogDescription>Registros de treinamentos anteriores por aba.</DialogDescription>
           </DialogHeader>
+
+          <div className="flex justify-end">
+            <Button size="sm" variant="outline" onClick={exportHistoryCsv} disabled={userHistory.length === 0} className="gap-2">
+              <Download className="w-4 h-4" /> Exportar CSV
+            </Button>
+          </div>
+
 
           {isAdmin && (
             <div className="border rounded-lg p-3 bg-muted/20 space-y-2">

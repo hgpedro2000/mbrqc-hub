@@ -1235,6 +1235,11 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     </TableCell>
                     <TableCell className="w-[104px] min-w-[104px] whitespace-nowrap">
                       <div className="flex items-center justify-end gap-0.5 flex-nowrap overflow-visible">
+                        {socialEnabled && (
+                          <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 shrink-0 p-0 text-emerald-600">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 shrink-0 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>

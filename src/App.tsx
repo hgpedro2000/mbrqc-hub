@@ -236,6 +236,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </PresenceProvider>
         </ImpersonationProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -1175,122 +1175,130 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             )}
           </div>
 
-          {/* Desktop table */}
-          <div className="hidden sm:block w-full overflow-visible">
-            <div className="w-full overflow-visible">
-            <Table className="w-full table-fixed [&_th]:px-2 [&_td]:px-2">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-9">
-                    <Checkbox
-                      checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
-                      onCheckedChange={() => {
-                        const allIds = filtered.map((p: any) => p.id);
-                        const allSelected = allIds.every((id) => selectedIds.has(id));
-                        setSelectedIds(allSelected ? new Set() : new Set(allIds));
-                      }}
-                    />
-                  </TableHead>
-                  <TableHead className="w-[76px]">Número</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden md:table-cell w-[112px]">Empresa</TableHead>
-                  <TableHead className="hidden md:table-cell w-[48px]">Turno</TableHead>
-                  <TableHead className="hidden lg:table-cell w-[150px]">E-mail</TableHead>
-                  <TableHead className="hidden md:table-cell w-[112px]">Cargo</TableHead>
-                  <TableHead className="w-[64px]">Perfil</TableHead>
-                  <TableHead className="w-[64px]">Status</TableHead>
-                  <TableHead className="hidden lg:table-cell w-[96px]">Último Login</TableHead>
-                  <TableHead className="w-[104px] min-w-[104px] text-right whitespace-nowrap">
-                    Ações
-                  </TableHead>
-                </TableRow>
-
-              </TableHeader>
-              <TableBody>
-                {filtered.map((p: any) => (
-                  <TableRow key={p.id} className={p.status !== "active" ? "opacity-50" : ""}>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
-                    </TableCell>
-                    <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
-                    <TableCell className="text-xs break-words leading-tight">
-                      <span className="inline-flex items-center gap-1.5">
+          {/* Desktop: card grid (roomier, cleaner) */}
+          <div className="hidden sm:block">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <p className="text-xs text-muted-foreground">
+                {filtered.length} {filtered.length === 1 ? "usuário" : "usuários"}
+                {socialEnabled && online.size > 0 && (
+                  <> · <span className="text-emerald-600 font-medium">{filtered.filter((p: any) => isOnline(p.id)).length} online</span></>
+                )}
+              </p>
+              {filtered.length > 0 && (
+                <label className="text-xs text-muted-foreground flex items-center gap-2 cursor-pointer select-none">
+                  <Checkbox
+                    checked={filtered.length > 0 && filtered.every((p: any) => selectedIds.has(p.id))}
+                    onCheckedChange={() => {
+                      const allIds = filtered.map((p: any) => p.id);
+                      const allSelected = allIds.every((id) => selectedIds.has(id));
+                      setSelectedIds(allSelected ? new Set() : new Set(allIds));
+                    }}
+                  />
+                  Selecionar todos
+                </label>
+              )}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {filtered.map((p: any) => {
+                const isOn = socialEnabled && isOnline(p.id);
+                const inactive = p.status !== "active";
+                const initials = (p.full_name || "?").split(/\s+/).slice(0, 2).map((n: string) => n[0]?.toUpperCase()).join("");
+                return (
+                  <div
+                    key={p.id}
+                    className={`group relative border rounded-xl p-4 bg-card transition-all hover:shadow-md hover:border-primary/40 ${inactive ? "opacity-50" : ""} ${isOn ? "ring-1 ring-emerald-400/40" : ""}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="pt-1">
+                        <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                      </div>
+                      <div className="relative shrink-0">
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold ${p.empresa === "empresa_terceira" ? "bg-orange-500/15 text-orange-700 dark:text-orange-300" : "bg-blue-500/15 text-blue-700 dark:text-blue-300"}`}>
+                          {initials || "?"}
+                        </div>
                         {socialEnabled && (
                           <span
-                            className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
-                            title={isOnline(p.id) ? "Online agora" : "Offline"}
+                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${isOn ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/40"}`}
+                            title={isOn ? "Online agora" : "Offline"}
                           />
                         )}
-                        {p.full_name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">
-                      <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
-                        {getEmpresaLabel(p)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{p.turno || "—"}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs break-all leading-tight">{p.email || "—"}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs break-words leading-tight">{p.cargo || "—"}</TableCell>
-                    <TableCell className="capitalize text-xs break-words leading-tight">{getRoleForUser(p.id)}</TableCell>
-                    <TableCell>
-                      <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">
-                      {p.last_login_at ? new Date(p.last_login_at).toLocaleString("pt-BR") : "Nunca"}
-                    </TableCell>
-                    <TableCell className="w-[104px] min-w-[104px] whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-0.5 flex-nowrap overflow-visible">
-                        {socialEnabled && (
-                          <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 shrink-0 p-0 text-emerald-600">
-                            <MessageSquare className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 shrink-0 p-0">
-                          <Pencil className="w-3.5 h-3.5" />
-                        </Button>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 shrink-0 p-0">
-                              {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent align="end" className="w-56 p-2">
-                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
-                              <KeyRound className="w-4 h-4" /> Senha provisória
-                            </Button>
-                            <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
-                              <ShieldCheck className="w-4 h-4" /> Gerar senha segura
-                            </Button>
-                          </PopoverContent>
-                        </Popover>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 shrink-0 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
-                              {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
-                              <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
                       </div>
-                    </TableCell>
-                  </TableRow>
-
-                ))}
-                {filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate leading-tight">{p.full_name}</p>
+                            <p className="text-[11px] text-muted-foreground font-mono">{p.employee_number}</p>
+                          </div>
+                          <Switch checked={p.status === "active"} onCheckedChange={() => toggleStatus(p.id, p.status)} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <Badge variant="outline" className={`text-[10px] ${p.empresa === "empresa_terceira" ? "border-orange-400/60 text-orange-600 bg-orange-500/10" : "border-blue-400/60 text-blue-600 bg-blue-500/10"}`}>
+                            {getEmpresaLabel(p)}
+                          </Badge>
+                          {p.turno && <Badge variant="outline" className="text-[10px]">{p.turno}</Badge>}
+                          {p.cargo && <Badge variant="outline" className="text-[10px] font-normal">{p.cargo}</Badge>}
+                          <Badge variant="secondary" className="text-[10px] capitalize">{getRoleForUser(p.id)}</Badge>
+                        </div>
+                        {p.email && (
+                          <p className="text-[11px] text-muted-foreground truncate mt-1.5">{p.email}</p>
+                        )}
+                        <div className="flex items-center justify-between mt-3 pt-2 border-t">
+                          <span className="text-[10px] text-muted-foreground">
+                            {p.last_login_at ? new Date(p.last_login_at).toLocaleDateString("pt-BR") : "Nunca acessou"}
+                          </span>
+                          <div className="flex items-center gap-0.5">
+                            {socialEnabled && (
+                              <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 p-0 text-emerald-600">
+                                <MessageSquare className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 p-0">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" disabled={resettingId === p.id} title="Resetar senha" className="h-7 w-7 p-0">
+                                  {resettingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent align="end" className="w-56 p-2">
+                                <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "custom")}>
+                                  <KeyRound className="w-4 h-4" /> Senha provisória
+                                </Button>
+                                <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => openResetFlow(p, "default")}>
+                                  <ShieldCheck className="w-4 h-4" /> Gerar senha segura
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" title="Excluir" className="h-7 w-7 p-0 text-destructive hover:text-destructive" disabled={deletingId === p.id}>
+                                  {deletingId === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+                                  <AlertDialogDescription>Tem certeza que deseja excluir <strong>{p.full_name}</strong>?</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground py-12 text-sm border rounded-xl bg-muted/20">
+                  Nenhum usuário encontrado
+                </div>
+              )}
             </div>
           </div>
         </>

@@ -1369,6 +1369,12 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MessageDialog
+        open={!!msgTarget}
+        onOpenChange={(v) => { if (!v) setMsgTarget(null); }}
+        target={msgTarget}
+        online={msgTarget ? isOnline(msgTarget.id) : false}
+      />
     </div>
   );
 };

@@ -37,6 +37,7 @@ const ModulePermissionsTab = () => {
   const [sortBy, setSortBy] = useState<SortKey>("name-asc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [confirmBasicOpen, setConfirmBasicOpen] = useState(false);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["eng-profiles"],

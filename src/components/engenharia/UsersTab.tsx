@@ -573,13 +573,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
 
-          <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-emerald-400/60 bg-emerald-50 text-emerald-700 text-xs font-medium">
-            <Radio className="w-4 h-4 animate-pulse" />
-            {online.size} online
-            {unreadCount > 0 && (
-              <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-red-500 text-white">{unreadCount}</Badge>
-            )}
-          </div>
+          {unreadCount > 0 && (
+            <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-red-400/60 bg-red-50 text-red-700 text-xs font-medium">
+              <MessageSquare className="w-4 h-4" />
+              {unreadCount} não lida{unreadCount === 1 ? "" : "s"}
+            </div>
+          )}
+
 
 
           {selectedIds.size > 0 && (

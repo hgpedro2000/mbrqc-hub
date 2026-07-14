@@ -1120,6 +1120,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     </Badge>
                     <span className="text-[10px] text-muted-foreground capitalize">{getRoleForUser(p.id)}</span>
                     {p.turno && <span className="text-[10px] text-muted-foreground">{p.turno}</span>}
+                    {(p as any).setor && <Badge variant="outline" className="text-[10px] border-violet-400/60 text-violet-700 bg-violet-500/10">{(p as any).setor}</Badge>}
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">

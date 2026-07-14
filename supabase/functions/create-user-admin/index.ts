@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira, cargo } = await req.json();
+    const { employee_number, full_name, password, role, turno, email, empresa, empresa_terceira, cargo, setor } = await req.json();
 
     if (!employee_number || !full_name) {
       return new Response(JSON.stringify({ error: "employee_number e full_name são obrigatórios" }), {

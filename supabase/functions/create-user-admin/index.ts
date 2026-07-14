@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
       empresa: empresa || "mobis_brasil",
       empresa_terceira: empresa_terceira || null,
       cargo: cargo || null,
+      setor: setor || null,
     });
 
     if (role) {

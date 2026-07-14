@@ -183,11 +183,16 @@ const Apontamentos = () => {
   const { data: allPhotos = [] } = useQuery({
     queryKey: ["apontamento-list-photos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("checklist_photos").select("checklist_id, file_path, file_name").eq("checklist_type", "apontamento");
+      const { data, error } = await supabase
+        .from("checklist_photos")
+        .select("checklist_id, file_path, file_name")
+        .eq("checklist_type", "apontamento")
+        .range(0, 49999);
       if (error) throw error;
       return data;
     },
   });
+
 
   // Fetch suppliers for origem info
   const { data: suppliersList = [] } = useQuery({
@@ -231,11 +236,13 @@ const Apontamentos = () => {
   // When impersonating (engineering mode), use the impersonated user's empresa to scope the view
   const effEmpresa = impersonating ? impersonating.empresa : profile?.empresa;
   const effEmpresaTerceira = impersonating ? impersonating.empresa_terceira : profile?.empresa_terceira;
-  const isTerceira = effEmpresa === "empresa_terceira";
+  const effCargo = (impersonating ? impersonating.cargo : profile?.cargo) || "";
+  const isResidente = effCargo.toLowerCase().includes("residente");
+  const isTerceira = effEmpresa === "empresa_terceira" && !isResidente;
   const terceiraName = effEmpresaTerceira || null;
   // Additional view scope granted per user (e.g. owner sees whole company group, or '*' = all)
   const viewScope = (impersonating ? null : profile?.apontamentos_view_scope) || [];
-  const viewsAll = viewScope.includes("*");
+  const viewsAll = viewScope.includes("*") || isResidente;
   const allowedEmpresas = useMemo(() => {
     const s = new Set<string>();
     if (terceiraName) s.add(terceiraName);
@@ -250,6 +257,7 @@ const Apontamentos = () => {
       return emp && allowedEmpresas.has(emp);
     });
   }, [items, isTerceira, viewsAll, allowedEmpresas, empresaByUserId]);
+
 
   const photosByItem = useMemo(() => {
     const map: Record<string, string[]> = {};

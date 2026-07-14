@@ -490,13 +490,30 @@ const SesmtMatrizTreinamentos = () => {
             />
           </div>
           <Select value={turnoFilter || "all"} onValueChange={(v) => setTurnoFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-full md:w-48"><SelectValue placeholder="Todos os turnos" /></SelectTrigger>
+            <SelectTrigger className="w-full md:w-40"><SelectValue placeholder="Todos os turnos" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os turnos</SelectItem>
               {turnos.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-full md:w-40"><SelectValue placeholder="Todos os status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="atencao">Atenção</SelectItem>
+              <SelectItem value="apto">Apto</SelectItem>
+              <SelectItem value="na">Sem treinamento</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter || "all"} onValueChange={(v) => setCategoryFilter(v === "all" ? "" : v)}>
+            <SelectTrigger className="w-full md:w-52"><SelectValue placeholder="Todas as abas / NR" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as abas / NR</SelectItem>
+              {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
+
 
         {/* Legend */}
         <div className="flex flex-wrap gap-2 text-[10px] md:text-xs text-muted-foreground">

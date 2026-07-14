@@ -2209,6 +2209,7 @@ export type Database = {
           must_change_password: boolean
           password_changed_at: string | null
           qr_code_id: string | null
+          setor: string | null
           status: string
           turno: string | null
           updated_at: string
@@ -2228,6 +2229,7 @@ export type Database = {
           must_change_password?: boolean
           password_changed_at?: string | null
           qr_code_id?: string | null
+          setor?: string | null
           status?: string
           turno?: string | null
           updated_at?: string
@@ -2247,6 +2249,7 @@ export type Database = {
           must_change_password?: boolean
           password_changed_at?: string | null
           qr_code_id?: string | null
+          setor?: string | null
           status?: string
           turno?: string | null
           updated_at?: string

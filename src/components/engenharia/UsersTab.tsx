@@ -19,12 +19,17 @@ import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 
-const TURNOS = ["1T", "2T", "3T"];
+const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
 const CARGOS = [
   "Auxiliar de Qualidade", "Inspetor de Qualidade", "Assistente de Qualidade",
   "Lider de Qualidade", "Analista de Qualidade", "Supervisor de Qualidade",
   "Gerente de Qualidade", "Diretor de Qualidade",
+  "Residente", "Membro Administrativo",
+];
+const SETORES = [
+  "Qualidade", "Produção", "Engenharia", "Logística", "Manutenção",
+  "PCP", "Compras", "RH", "SESMT", "TI", "Financeiro", "Administrativo", "Comercial",
 ];
 
 interface UsersTabProps {
@@ -58,10 +63,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [employeeNumber, setEmployeeNumber] = useState(prefillData?.employee_number || "");
   const [fullName, setFullName] = useState(prefillData?.full_name || "");
   const [role, setRole] = useState("user");
-  const [password, setPassword] = useState("");
   const [turno, setTurno] = useState(prefillData?.turno || "");
   const [email, setEmail] = useState(prefillData?.email || "");
   const [cargo, setCargo] = useState(prefillData?.cargo || "");
+  const [setor, setSetor] = useState(prefillData?.setor || "");
   const [empresa, setEmpresa] = useState(prefillData?.empresa || "mobis_brasil");
   const [empresaTerceira, setEmpresaTerceira] = useState(prefillData?.empresa_terceira || "");
   const [saving, setSaving] = useState(false);
@@ -281,13 +286,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         body: {
           employee_number: employeeNumber,
           full_name: fullName,
-          password,
           role,
           turno,
           email: email || null,
           empresa,
           empresa_terceira: empresa === "empresa_terceira" ? empresaTerceira : null,
           cargo: cargo || null,
+          setor: setor || null,
         },
       });
       if (error || data?.error) throw new Error(data?.error || error?.message);
@@ -456,10 +461,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
     setEmployeeNumber("");
     setFullName("");
     setRole("user");
-    setPassword("");
     setTurno("");
     setEmail("");
     setCargo("");
+    setSetor("");
     setEmpresa("mobis_brasil");
     setEmpresaTerceira("");
   };
@@ -565,90 +570,144 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             <DialogTrigger asChild>
               <Button size="sm" className="col-span-2 sm:col-span-1"><UserPlus className="w-4 h-4 mr-1" /> Novo Usuário</Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full max-w-lg">
-              <DialogHeader><DialogTitle>Criar Novo Usuário</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
-                <div className="space-y-2">
-                  <Label>{empresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
-                  <div className="flex gap-2">
-                    <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
-                    {empresa === "empresa_terceira" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          const next = await generateEmployeeNumber(empresa, empresaTerceira);
-                          if (next) {
-                            setEmployeeNumber(next);
-                            toast.success(`Gerado: ${next}`);
-                          }
-                        }}
-                        disabled={!empresaTerceira}
-                      >
-                        Gerar
-                      </Button>
-                    )}
+            <DialogContent className="max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full max-w-2xl p-0">
+              <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <UserPlus className="w-5 h-5 text-primary" /> Criar Novo Usuário
+                </DialogTitle>
+                <DialogDescription>Preencha os dados abaixo. A senha será definida após a criação, usando o botão "Gerar senha segura".</DialogDescription>
+              </DialogHeader>
+
+              <div className="px-6 py-5 space-y-6">
+                {/* Seção 1: Empresa */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">1</div>
+                    <h3 className="text-sm font-semibold text-foreground">Empresa</h3>
                   </div>
-                  {empresa === "empresa_terceira" && newPP && (
-                    nextPreview ? (
-                      <p className="text-xs text-muted-foreground">
-                        Próxima matrícula disponível: <span className="font-mono font-semibold text-foreground">{nextPreview}</span>
-                      </p>
-                    ) : (
-                      <p className="text-xs font-medium text-destructive">
-                        ⚠ Sequência esgotada para o prefixo <span className="font-mono">{newPP.prefix}</span> (faixa de {newPP.pad} dígitos).
-                      </p>
-                    )
-                  )}
-                </div>
+                  <div className="pl-8 space-y-3">
+                    {renderEmpresaFormFields(empresa, setEmpresa, empresaTerceira, setEmpresaTerceira)}
+                  </div>
+                </section>
 
+                {/* Seção 2: Identificação */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">2</div>
+                    <h3 className="text-sm font-semibold text-foreground">Identificação</h3>
+                  </div>
+                  <div className="pl-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-2 sm:col-span-1">
+                      <Label className="text-xs">{empresa === "mobis_brasil" ? "Número do Usuário *" : "Identificação *"}</Label>
+                      <div className="flex gap-2">
+                        <Input value={employeeNumber} onChange={(e) => setEmployeeNumber(e.target.value)} placeholder={empresa === "mobis_brasil" ? "Ex: 3501165" : "Ex: IL0001"} />
+                        {empresa === "empresa_terceira" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              const next = await generateEmployeeNumber(empresa, empresaTerceira);
+                              if (next) {
+                                setEmployeeNumber(next);
+                                toast.success(`Gerado: ${next}`);
+                              }
+                            }}
+                            disabled={!empresaTerceira}
+                          >
+                            Gerar
+                          </Button>
+                        )}
+                      </div>
+                      {empresa === "empresa_terceira" && newPP && (
+                        nextPreview ? (
+                          <p className="text-[11px] text-muted-foreground">
+                            Próxima matrícula: <span className="font-mono font-semibold text-foreground">{nextPreview}</span>
+                          </p>
+                        ) : (
+                          <p className="text-[11px] font-medium text-destructive">
+                            ⚠ Sequência esgotada para o prefixo <span className="font-mono">{newPP.prefix}</span>.
+                          </p>
+                        )
+                      )}
+                    </div>
+                    <div className="space-y-2 sm:col-span-1">
+                      <Label className="text-xs">Nome Completo *</Label>
+                      <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome completo" />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-xs">E-mail</Label>
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com (opcional)" />
+                    </div>
+                  </div>
+                </section>
 
-                <div className="space-y-2">
-                  <Label>Nome Completo *</Label>
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nome completo" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Turno *</Label>
-                  <Select value={turno} onValueChange={setTurno}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o turno" /></SelectTrigger>
-                    <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Cargo</Label>
-                  <Select value={cargo} onValueChange={setCargo}>
-                    <SelectTrigger><SelectValue placeholder="Selecione o cargo" /></SelectTrigger>
-                    <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>E-mail</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemplo.com (opcional)" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Senha Inicial</Label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Padrão: 123456" minLength={6} />
-                  <p className="text-xs text-muted-foreground">Se vazio, senha padrão será 123456</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Perfil</Label>
-                  <Select value={role} onValueChange={setRole}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">Padrão</SelectItem>
-                      <SelectItem value="engenharia">Engenharia</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <p className="text-xs text-muted-foreground">O usuário será obrigado a alterar a senha no primeiro acesso.</p>
-                <Button onClick={handleCreate} disabled={saving} className="w-full">
+                {/* Seção 3: Perfil de Trabalho */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">3</div>
+                    <h3 className="text-sm font-semibold text-foreground">Perfil de Trabalho</h3>
+                  </div>
+                  <div className="pl-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Turno *</Label>
+                      <Select value={turno} onValueChange={setTurno}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>{TURNOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Cargo</Label>
+                      <Select value={cargo} onValueChange={setCargo}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>{CARGOS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Setor</Label>
+                      <Select value={setor} onValueChange={setSetor}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>{SETORES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Seção 4: Acesso */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/15 text-primary text-xs font-bold flex items-center justify-center">4</div>
+                    <h3 className="text-sm font-semibold text-foreground">Acesso ao Sistema</h3>
+                  </div>
+                  <div className="pl-8 space-y-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Perfil</Label>
+                      <Select value={role} onValueChange={setRole}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">Padrão</SelectItem>
+                          <SelectItem value="engenharia">Engenharia</SelectItem>
+                          <SelectItem value="admin">Administrador</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+                      <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        Após criar o usuário, use o botão <strong>"Gerar senha segura"</strong> na lista para definir a senha inicial. O usuário será obrigado a alterá-la no primeiro acesso.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <DialogFooter className="px-6 py-4 border-t bg-muted/30 gap-2">
+                <Button variant="outline" onClick={() => { resetForm(); setActiveRequestId(null); }} disabled={saving}>Cancelar</Button>
+                <Button onClick={handleCreate} disabled={saving}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <UserPlus className="w-4 h-4 mr-1" />}
                   Criar Usuário
                 </Button>
-              </div>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>

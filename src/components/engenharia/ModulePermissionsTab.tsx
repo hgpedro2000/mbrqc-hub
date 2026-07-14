@@ -3,13 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const ModulePermissionsTab = () => {
   const [sortBy, setSortBy] = useState<SortKey>("name-asc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [confirmBasicOpen, setConfirmBasicOpen] = useState(false);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
     queryKey: ["eng-profiles"],
@@ -252,7 +254,12 @@ const ModulePermissionsTab = () => {
     () => pagedProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
     [pagedProfiles, roles]
   );
+  const selectableFilteredIds = useMemo(
+    () => filteredProfiles.filter((p: any) => !isAdmin(p.id)).map((p: any) => p.id),
+    [filteredProfiles, roles]
+  );
   const allPageSelected = selectablePageIds.length > 0 && selectablePageIds.every((id) => selectedIds.has(id));
+  const allFilteredSelected = selectableFilteredIds.length > 0 && selectableFilteredIds.every((id) => selectedIds.has(id));
   const togglePageSelection = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -261,43 +268,74 @@ const ModulePermissionsTab = () => {
       return next;
     });
   };
+  const toggleFilteredSelection = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allFilteredSelected) selectableFilteredIds.forEach((id) => next.delete(id));
+      else selectableFilteredIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
   const clearSelection = () => setSelectedIds(new Set());
 
   const bulkApply = async (mode: "enable" | "disable" | "basic") => {
     const ids = Array.from(selectedIds).filter((id) => !isAdmin(id));
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      toast.warning("Selecione ao menos um usuário");
+      return;
+    }
     setBulkRunning(true);
+    let success = 0;
+    let errors = 0;
     try {
       for (const uid of ids) {
-        if (mode === "basic") {
-          for (const mid of BASIC_MODULES) {
-            const existing = permissions.find((p: any) => p.user_id === uid && p.module === mid);
-            if (existing) {
-              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
-            } else {
-              await supabase.from("user_module_permissions").insert({ user_id: uid, module: mid, enabled: true });
+        try {
+          if (mode === "basic") {
+            for (const mid of BASIC_MODULES) {
+              const existing = permissions.find((p: any) => p.user_id === uid && p.module === mid);
+              if (existing) {
+                if (!existing.enabled) {
+                  const { error } = await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+                  if (error) throw error;
+                }
+              } else {
+                const { error } = await supabase.from("user_module_permissions").insert({ user_id: uid, module: mid, enabled: true });
+                if (error) throw error;
+              }
+            }
+          } else {
+            for (const m of ALL_MODULES) {
+              const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
+              if (mode === "enable") {
+                if (existing) {
+                  if (!existing.enabled) {
+                    const { error } = await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
+                    if (error) throw error;
+                  }
+                } else {
+                  const { error } = await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
+                  if (error) throw error;
+                }
+              } else if (existing && existing.enabled) {
+                const { error } = await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
+                if (error) throw error;
+              }
             }
           }
-          continue;
-        }
-        for (const m of ALL_MODULES) {
-          const existing = permissions.find((p: any) => p.user_id === uid && p.module === m.id);
-          if (mode === "enable") {
-            if (existing) {
-              if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
-            } else {
-              await supabase.from("user_module_permissions").insert({ user_id: uid, module: m.id, enabled: true });
-            }
-          } else if (existing && existing.enabled) {
-            await supabase.from("user_module_permissions").update({ enabled: false }).eq("id", existing.id);
-          }
+          success++;
+        } catch {
+          errors++;
         }
       }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
-      toast.success(`${ids.length} usuário(s) atualizado(s)`);
-      clearSelection();
-    } catch {
-      toast.error("Erro na ação em lote");
+      if (errors === 0) {
+        toast.success(`${success} usuário(s) atualizado(s) com sucesso`);
+        clearSelection();
+      } else if (success === 0) {
+        toast.error(`Falha ao atualizar ${errors} usuário(s)`);
+      } else {
+        toast.warning(`${success} sucesso(s) • ${errors} erro(s)`);
+      }
     } finally {
       setBulkRunning(false);
     }
@@ -438,35 +476,48 @@ const ModulePermissionsTab = () => {
                   {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
                   {filteredProfiles.length > PAGE_SIZE && ` • pág. ${page}/${totalPages}`}
                 </p>
-                {selectablePageIds.length > 0 && (
-                  <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
-                    <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
-                    Selecionar página
-                  </label>
+                {selectableFilteredIds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                      <Checkbox checked={allPageSelected} onCheckedChange={togglePageSelection} className="h-3.5 w-3.5" />
+                      Página
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                      <Checkbox checked={allFilteredSelected} onCheckedChange={toggleFilteredSelection} className="h-3.5 w-3.5" />
+                      Todos ({selectableFilteredIds.length})
+                    </label>
+                  </div>
                 )}
               </div>
-              {selectedIds.size > 0 && (
-                <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
-                    <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Button size="sm" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("enable")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-                      Ativar
-                    </Button>
-                    <Button size="sm" variant="secondary" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning} onClick={() => bulkApply("basic")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
-                      Básico
-                    </Button>
-                    <Button size="sm" variant="outline" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning} onClick={() => bulkApply("disable")}>
-                      {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                      Limpar
-                    </Button>
-                  </div>
+              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px]">
+                  {selectedIds.size > 0 ? (
+                    <>
+                      <span className="font-medium text-primary">{selectedIds.size} selecionado(s)</span>
+                      <Button variant="ghost" size="sm" className="h-5 px-1.5 text-[10px]" onClick={clearSelection}>Limpar</Button>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <AlertTriangle className="w-3 h-3" />
+                      Selecione ao menos um usuário para ações em lote
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning || selectedIds.size === 0} onClick={() => bulkApply("enable")}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
+                    Ativar
+                  </Button>
+                  <Button size="sm" variant="secondary" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1" disabled={bulkRunning || selectedIds.size === 0} onClick={() => setConfirmBasicOpen(true)}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <Shield className="w-3 h-3" />}
+                    Básico
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 flex-1 min-w-[80px] text-[11px] gap-1 text-destructive hover:text-destructive" disabled={bulkRunning || selectedIds.size === 0} onClick={() => bulkApply("disable")}>
+                    {bulkRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                    Limpar
+                  </Button>
+                </div>
+              </div>
             </div>
             <div className="overflow-y-auto flex-1 divide-y divide-border/50">
               {pagedProfiles.map((p: any) => {
@@ -677,6 +728,34 @@ const ModulePermissionsTab = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmBasicOpen} onOpenChange={(o) => !bulkRunning && setConfirmBasicOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Shield className="w-4 h-4 text-primary" />
+              Aplicar permissões Básicas
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a ativar as permissões básicas (Sub-Hub Qualidade, Consulta de Peças, Apontamentos e Incoming) para <strong>{selectedIds.size}</strong> usuário(s) selecionado(s). Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkRunning}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkRunning}
+              onClick={async (e) => {
+                e.preventDefault();
+                await bulkApply("basic");
+                setConfirmBasicOpen(false);
+              }}
+            >
+              {bulkRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <Shield className="w-3.5 h-3.5 mr-1.5" />}
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

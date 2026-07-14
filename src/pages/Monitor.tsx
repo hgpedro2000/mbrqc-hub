@@ -1442,20 +1442,22 @@ const Monitor = () => {
           const otherSum = Array.from(s.defects.entries()).reduce((sum, [, v]) => sum + v, 0) - topDefects.reduce((sum, d) => sum + d.value, 0);
           const pieData = topDefects.length ? [...topDefects, ...(otherSum > 0 ? [{ name: "Outros", value: otherSum }] : [])] : [];
           const totalDef = pieData.reduce((a, b) => a + b.value, 0);
-          const accent = kind === "best" ? "border-emerald-500/50 from-emerald-500/10" : "border-red-500/50 from-red-500/10";
+          const accent = kind === "best" ? "border-emerald-500/40 from-emerald-500/10" : "border-red-500/40 from-red-500/10";
           const ppmColor = kind === "best" ? "text-emerald-400" : "text-red-400";
           return (
-            <div className={cn("rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 lg:gap-4 min-w-0 shrink-0", accent)}>
-              {/* Left: Pie chart (fixed responsive square) */}
+            <div className={cn(
+              "flex-1 min-h-0 rounded-2xl border bg-gradient-to-br to-transparent backdrop-blur-md px-4 py-3 flex items-center gap-4 min-w-0 overflow-hidden",
+              accent,
+            )}>
               {pieData.length > 0 ? (
-                <div className="shrink-0 aspect-square w-16 sm:w-20 lg:w-24">
+                <div className="shrink-0 w-[92px] h-[92px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <Pie
                         data={pieData}
                         dataKey="value"
                         nameKey="name"
-                        innerRadius="50%"
+                        innerRadius="55%"
                         outerRadius="100%"
                         paddingAngle={2}
                         isAnimationActive={false}
@@ -1466,45 +1468,44 @@ const Monitor = () => {
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className="shrink-0 aspect-square w-16 sm:w-20 lg:w-24 flex items-center justify-center text-emerald-400 text-2xl sm:text-3xl font-black">✓</div>
+                <div className="shrink-0 w-[92px] h-[92px] flex items-center justify-center text-emerald-400 text-4xl font-black">✓</div>
               )}
 
-              {/* Middle: name + defects legend */}
-              <div className="flex-1 basis-0 min-w-0 flex flex-col justify-center gap-1 overflow-hidden">
-                <h4 className="text-sm sm:text-base lg:text-lg font-bold leading-tight truncate" title={s.fornecedor}>
-                  {s.fornecedor}
-                </h4>
-                <p className="text-[10px] sm:text-xs text-muted-foreground tabular-nums truncate">
-                  {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
-                </p>
+              <div className="flex-1 min-w-0 flex flex-col justify-center gap-1 overflow-hidden">
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <h4 className="text-lg font-bold leading-tight truncate min-w-0" title={s.fornecedor}>{s.fornecedor}</h4>
+                  <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">
+                    {fmtNum(s.ng)} NG · {fmtNum(s.insp)} insp.
+                  </span>
+                </div>
                 {pieData.length > 0 ? (
-                  <ul className="min-w-0 space-y-0.5 text-[10px] sm:text-[11px] lg:text-xs mt-0.5">
-                    {pieData.map((d, i) => {
+                  <ul className="min-w-0 text-[12px] leading-tight grid grid-cols-1 gap-0.5">
+                    {pieData.slice(0, 4).map((d, i) => {
                       const p = totalDef > 0 ? Math.round((d.value / totalDef) * 100) : 0;
                       return (
-                        <li key={d.name} className="flex items-center gap-1.5 min-w-0">
+                        <li key={d.name} className="flex items-center gap-2 min-w-0">
                           <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                           <span className="truncate flex-1 min-w-0" title={d.name}>{d.name}</span>
-                          <span className="tabular-nums text-muted-foreground shrink-0 font-semibold w-8 text-right">{p}%</span>
+                          <span className="tabular-nums text-muted-foreground shrink-0 font-semibold w-10 text-right">{p}%</span>
                         </li>
                       );
                     })}
                   </ul>
                 ) : (
-                  <p className="text-emerald-400 text-[11px] sm:text-xs font-semibold truncate">Sem defeitos no mês</p>
+                  <p className="text-emerald-400 text-xs font-semibold truncate">Sem defeitos no mês</p>
                 )}
               </div>
 
-              {/* Right: PPM */}
-              <div className="shrink-0 text-right leading-none self-center min-w-[48px] sm:min-w-[56px] lg:min-w-[64px]">
-                <div className={cn("text-base sm:text-xl lg:text-2xl font-black tabular-nums whitespace-nowrap", ppmColor)}>
+              <div className="shrink-0 text-right leading-none self-center pl-3 border-l border-border/40">
+                <div className={cn("text-3xl font-black tabular-nums whitespace-nowrap", ppmColor)}>
                   {fmtNum(s.ppm)}
                 </div>
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">PPM</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">PPM</div>
               </div>
             </div>
           );
         };
+
 
 
         return (

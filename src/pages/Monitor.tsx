@@ -1428,6 +1428,19 @@ const Monitor = () => {
         const best = [...sups].filter((s) => s.ng === 0 || s.ppm < 5000).sort((a, b) => a.ppm - b.ppm).slice(0, 3);
         const worst = [...sups].filter((s) => s.ng > 0).sort((a, b) => b.ppm - a.ppm).slice(0, 3);
 
+        // Peça com maior incidência de NG no mês (part_number)
+        type PartAgg = { part_number: string; part_name: string; ng: number; fornecedor: string };
+        const partMap = new Map<string, PartAgg>();
+        filtered.forEach((a) => {
+          const pn = a.part_number || "—";
+          if ((a.quantidade_ng || 0) <= 0) return;
+          const cur = partMap.get(pn) || { part_number: pn, part_name: a.part_name || a.descricao_peca || "", ng: 0, fornecedor: a.fornecedor || "—" };
+          cur.ng += a.quantidade_ng || 0;
+          if (!cur.part_name && (a.part_name || a.descricao_peca)) cur.part_name = a.part_name || a.descricao_peca || "";
+          partMap.set(pn, cur);
+        });
+        const topPart = Array.from(partMap.values()).sort((a, b) => b.ng - a.ng)[0] || null;
+
         // Month totals
         const totInsp = filtered.reduce((s, a) => s + (a.quantidade_inspecionada || a.quantidade || 0), 0);
         const totNg = filtered.reduce((s, a) => s + (a.quantidade_ng || 0), 0);

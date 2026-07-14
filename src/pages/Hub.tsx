@@ -88,7 +88,7 @@ const SUB_HUBS: SubHub[] = [
 ];
 
 const Hub = () => {
-  const { signOut, profile, isAdmin: realIsAdmin } = useAuth();
+  const { signOut, profile, isAdmin: realIsAdmin, user } = useAuth();
   const { impersonating, stopImpersonating } = useImpersonation();
   const { isAdmin } = useUserRole();
   const { enabledModules } = useEnabledModules(impersonating?.id);

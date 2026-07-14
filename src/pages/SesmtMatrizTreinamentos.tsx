@@ -92,6 +92,10 @@ const SesmtMatrizTreinamentos = () => {
 
   const [search, setSearch] = useState("");
   const [turnoFilter, setTurnoFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>(""); // filter visible categories in matrix
+  const [statusFilter, setStatusFilter] = useState<string>(""); // apto|atencao|na
+  const [agendaCategoryFilter, setAgendaCategoryFilter] = useState<string>("");
+
 
   const [catDialog, setCatDialog] = useState<{ mode: "add" | "edit"; cat?: Category } | null>(null);
   const [catForm, setCatForm] = useState<{ name: string; description: string; color: string }>({

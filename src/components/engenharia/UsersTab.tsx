@@ -19,6 +19,9 @@ import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
+import { usePresence } from "@/contexts/PresenceContext";
+import MessageDialog from "@/components/social/MessageDialog";
+import { Radio, MessageSquare } from "lucide-react";
 
 const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];
@@ -74,6 +77,8 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const { socialEnabled, setSocialEnabled, isOnline, online, unreadCount } = usePresence();
+  const [msgTarget, setMsgTarget] = useState<{ id: string; full_name: string; employee_number?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [pendingListOpen, setPendingListOpen] = useState(false);
@@ -559,6 +564,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         <h2 className="text-base sm:text-lg font-heading font-semibold text-center sm:text-left shrink-0">Usuários</h2>
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
+
+          <Button
+            size="sm"
+            variant={socialEnabled ? "default" : "outline"}
+            onClick={() => setSocialEnabled(!socialEnabled)}
+            className={`col-span-2 sm:col-span-1 gap-1 relative ${socialEnabled ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"}`}
+            title={socialEnabled ? "Recursos sociais ativados — clique para desativar" : "Ativar presença online e mensagens diretas"}
+          >
+            <Radio className={`w-4 h-4 ${socialEnabled ? "animate-pulse" : ""}`} />
+            Social {socialEnabled ? `• ${online.size} online` : "off"}
+            {socialEnabled && unreadCount > 0 && (
+              <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-red-500 text-white">{unreadCount}</Badge>
+            )}
+          </Button>
+
 
           {selectedIds.size > 0 && (
             <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)} className="col-span-2 sm:col-span-1">
@@ -1082,7 +1102,15 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             {filtered.map((p: any) => (
               <div key={p.id} className={`border rounded-lg p-3 flex justify-between items-start gap-2 ${p.status !== "active" ? "opacity-50" : ""}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{p.full_name}</p>
+                  <p className="font-medium text-sm truncate flex items-center gap-1.5">
+                    {socialEnabled && (
+                      <span
+                        className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
+                        title={isOnline(p.id) ? "Online agora" : "Offline"}
+                      />
+                    )}
+                    {p.full_name}
+                  </p>
                   <p className="text-xs text-muted-foreground font-mono">{p.employee_number}</p>
                   <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                     <Badge variant="outline" className={`text-[10px] ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
@@ -1093,6 +1121,11 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
+                  {socialEnabled && (
+                    <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} className="h-8 w-8 p-0 text-emerald-600" title="Enviar mensagem">
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-8 w-8 p-0">
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
@@ -1174,7 +1207,17 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                       <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                     </TableCell>
                     <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
-                    <TableCell className="text-xs break-words leading-tight">{p.full_name}</TableCell>
+                    <TableCell className="text-xs break-words leading-tight">
+                      <span className="inline-flex items-center gap-1.5">
+                        {socialEnabled && (
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
+                            title={isOnline(p.id) ? "Online agora" : "Offline"}
+                          />
+                        )}
+                        {p.full_name}
+                      </span>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell text-xs">
                       <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
                         {getEmpresaLabel(p)}
@@ -1192,6 +1235,11 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     </TableCell>
                     <TableCell className="w-[104px] min-w-[104px] whitespace-nowrap">
                       <div className="flex items-center justify-end gap-0.5 flex-nowrap overflow-visible">
+                        {socialEnabled && (
+                          <Button variant="ghost" size="sm" onClick={() => setMsgTarget({ id: p.id, full_name: p.full_name, employee_number: p.employee_number })} title="Enviar mensagem" className="h-7 w-7 shrink-0 p-0 text-emerald-600">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} title="Editar perfil" className="h-7 w-7 shrink-0 p-0">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -1321,6 +1369,12 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <MessageDialog
+        open={!!msgTarget}
+        onOpenChange={(v) => { if (!v) setMsgTarget(null); }}
+        target={msgTarget}
+        online={msgTarget ? isOnline(msgTarget.id) : false}
+      />
     </div>
   );
 };

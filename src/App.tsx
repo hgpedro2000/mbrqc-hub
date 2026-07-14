@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ImpersonationProvider } from "@/contexts/ImpersonationContext";
+import { PresenceProvider } from "@/contexts/PresenceContext";
 import UpdateBanner from "@/components/UpdateBanner";
 import { isPasswordExpired } from "@/lib/passwordPolicy";
 import ModuleGuard from "@/components/ModuleGuard";
@@ -149,7 +150,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <ImpersonationProvider>
+          <PresenceProvider>
           <UpdateBanner />
+
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/dev/splitflap" element={<SplitFlapHarness />} />
@@ -233,6 +236,7 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </PresenceProvider>
         </ImpersonationProvider>
         </AuthProvider>
       </BrowserRouter>

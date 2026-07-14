@@ -219,10 +219,7 @@ const ModulePermissionsTab = () => {
   const childrenOf = (parentId: string) =>
     ALL_MODULES.filter((m) => (m as any).parent === parentId);
 
-  const enabledCount = (userId: string) =>
-    isAdmin(userId)
-      ? ALL_MODULES.length
-      : permissions.filter((p: any) => p.user_id === userId && p.enabled).length;
+  const enabledCount = enabledCountFor;
 
   const isLoading = loadingProfiles || loadingPerms;
 

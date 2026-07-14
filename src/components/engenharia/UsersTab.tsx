@@ -19,6 +19,9 @@ import EmpresasTerceirasDialog from "./EmpresasTerceirasDialog";
 import { openWhatsApp, buildResetPasswordMessage } from "@/lib/whatsapp";
 import { evaluatePassword, isPasswordValid, MIN_PASSWORD_LENGTH } from "@/lib/passwordPolicy";
 import { useDropdownOptions } from "@/hooks/useDropdownOptions";
+import { usePresence } from "@/contexts/PresenceContext";
+import MessageDialog from "@/components/social/MessageDialog";
+import { Radio, MessageSquare } from "lucide-react";
 
 const TURNOS = ["1T", "2T", "3T", "ADM"];
 const EXTRA_EMPRESA_TERCEIRA_OPTIONS = ["Residente"];

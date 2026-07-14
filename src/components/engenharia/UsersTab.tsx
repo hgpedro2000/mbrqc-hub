@@ -1207,7 +1207,17 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                       <Checkbox checked={selectedIds.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
                     </TableCell>
                     <TableCell className="font-mono text-xs break-all leading-tight">{p.employee_number}</TableCell>
-                    <TableCell className="text-xs break-words leading-tight">{p.full_name}</TableCell>
+                    <TableCell className="text-xs break-words leading-tight">
+                      <span className="inline-flex items-center gap-1.5">
+                        {socialEnabled && (
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full shrink-0 ${isOnline(p.id) ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.7)]" : "bg-muted-foreground/30"}`}
+                            title={isOnline(p.id) ? "Online agora" : "Offline"}
+                          />
+                        )}
+                        {p.full_name}
+                      </span>
+                    </TableCell>
                     <TableCell className="hidden md:table-cell text-xs">
                       <Badge variant="outline" className={`max-w-full whitespace-normal break-words leading-tight ${p.empresa === "empresa_terceira" ? "border-orange-400 text-orange-600 bg-orange-500/10" : "border-blue-400 text-blue-600 bg-blue-500/10"}`}>
                         {getEmpresaLabel(p)}

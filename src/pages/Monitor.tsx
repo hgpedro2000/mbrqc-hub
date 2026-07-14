@@ -1549,7 +1549,7 @@ const Monitor = () => {
             </div>
 
             {/* Trend chart */}
-            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-3 sm:px-5 py-3 flex-shrink-0 h-[210px]">
+            <div className="rounded-2xl bg-card/60 backdrop-blur-md border border-border/60 px-3 sm:px-5 py-3 flex-shrink-0 h-[180px]">
               <p className="text-[11px] sm:text-sm uppercase tracking-[0.2em] text-muted-foreground mb-1 truncate">Tendência de NG por dia — {activeShift.label}</p>
               <ResponsiveContainer width="100%" height="86%">
                 <AreaChart data={trend} margin={{ top: 22, right: 14, left: 0, bottom: 8 }}>
@@ -1563,7 +1563,7 @@ const Monitor = () => {
                   <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" minTickGap={8} />
                   <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} width={32} allowDecimals={false} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={2.5} fill="url(#ngFill)" isAnimationActive={!reducedMotion} animationDuration={800}>
+                  <Area type="monotone" dataKey="ng" stroke="#f87171" strokeWidth={2.5} fill="url(#ngFill)" isAnimationActive={false}>
                     <LabelList
                       dataKey="ng"
                       position="top"
@@ -1576,6 +1576,32 @@ const Monitor = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+
+            {/* Peça com maior incidência de NG */}
+            <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent backdrop-blur-md px-4 py-2.5 flex items-center gap-4 flex-shrink-0 min-w-0">
+              <div className="shrink-0 w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-300" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-[0.25em] text-amber-300/90 leading-none">Peça com maior incidência</p>
+                {topPart ? (
+                  <div className="flex items-baseline gap-2 mt-1 min-w-0">
+                    <span className="font-mono font-bold text-base sm:text-lg truncate" title={topPart.part_number}>{topPart.part_number}</span>
+                    {topPart.part_name && <span className="text-xs text-muted-foreground truncate min-w-0" title={topPart.part_name}>· {topPart.part_name}</span>}
+                    <span className="text-[11px] text-muted-foreground shrink-0 whitespace-nowrap">· {topPart.fornecedor}</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-emerald-400 font-semibold mt-0.5">Sem NG registrados no mês ✓</p>
+                )}
+              </div>
+              {topPart && (
+                <div className="shrink-0 text-right leading-none pl-3 border-l border-border/40">
+                  <div className="text-2xl sm:text-3xl font-black tabular-nums text-red-400 whitespace-nowrap">{fmtNum(topPart.ng)}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">NG no mês</div>
+                </div>
+              )}
+            </div>
+
 
 
             {/* Best vs Worst — 2 columns, fills remaining height so 3 cards fit above ticker */}

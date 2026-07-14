@@ -1,42 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Search, CheckCheck, XCircle } from "lucide-react";
+import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ALL_MODULES } from "@/hooks/useModulePermissions";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-const MODULE_ABBREVIATIONS: Record<string, string> = {
-  "Sub-Hub: Qualidade": "Qualidade",
-  "Sub-Hub: G.A.": "G.A.",
-  "Sub-Hub: Produção": "Produção",
-  "Sub-Hub: Vendas": "Vendas",
-  "Sub-Hub: SESMT": "SESMT",
-  "Try-Out": "Try-Out",
-  "Auditorias": "Audit.",
-  "Contenção": "Conten.",
-  "Apontamentos": "Apont.",
-  "  ↳ Incoming": "Incoming",
-  "  ↳ Peça": "Peça",
-  "  ↳ Processo": "Processo",
-  "  ↳ OEM": "OEM",
-  "Alerta de Qualidade": "Alerta Q.",
-  "Consumíveis": "Consum.",
-  "  ↳ Requisitar Item": "Req. Item",
-  "  ↳ Inventário e Requisições": "Inv. Req.",
-  "Consulta de Peças": "Cons. Peças",
-  "Matriz de Versatilidade": "Matr. Vers.",
-  "Análise de Risco": "Análise R.",
-};
+const stripPrefix = (label: string) => label.replace(/^\s*↳\s*/, "").replace(/^Sub-Hub:\s*/, "");
+
+const normalize = (s: string) =>
+  (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 const ModulePermissionsTab = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
 
   const { data: profiles = [], isLoading: loadingProfiles } = useQuery({
@@ -91,7 +75,6 @@ const ModulePermissionsTab = () => {
           .insert({ user_id: userId, module: moduleId, enabled: true });
         if (error) throw error;
       }
-      // Auto-enable apontamentos_incoming when enabling apontamentos
       if (moduleId === "apontamentos" && newEnabled) {
         const existingIncoming = permissions.find((p: any) => p.user_id === userId && p.module === "apontamentos_incoming");
         if (!existingIncoming) {
@@ -100,7 +83,6 @@ const ModulePermissionsTab = () => {
           await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existingIncoming.id);
         }
       }
-      // Auto-enable parent Sub-Hub when enabling a child module
       const moduleDef = ALL_MODULES.find((m) => m.id === moduleId) as any;
       const parentSubHub = moduleDef?.subHub;
       if (parentSubHub && newEnabled) {
@@ -112,8 +94,7 @@ const ModulePermissionsTab = () => {
         }
       }
       qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
-      toast.success("Permissão atualizada");
-    } catch (e: any) {
+    } catch {
       toast.error("Erro ao atualizar permissão");
     } finally {
       setSaving(null);
@@ -126,9 +107,7 @@ const ModulePermissionsTab = () => {
       for (const m of ALL_MODULES) {
         const existing = permissions.find((p: any) => p.user_id === userId && p.module === m.id);
         if (existing) {
-          if (!existing.enabled) {
-            await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
-          }
+          if (!existing.enabled) await supabase.from("user_module_permissions").update({ enabled: true }).eq("id", existing.id);
         } else {
           await supabase.from("user_module_permissions").insert({ user_id: userId, module: m.id, enabled: true });
         }
@@ -160,171 +139,241 @@ const ModulePermissionsTab = () => {
     }
   };
 
-  const filteredProfiles = profiles.filter((p: any) =>
-    p.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    p.employee_number.includes(search)
+  const filteredProfiles = useMemo(() => {
+    const q = normalize(search);
+    return profiles.filter((p: any) =>
+      !q ||
+      normalize(p.full_name).includes(q) ||
+      (p.employee_number || "").toLowerCase().includes(q)
+    );
+  }, [profiles, search]);
+
+  const selectedUser = useMemo(
+    () => profiles.find((p: any) => p.id === selectedId) || null,
+    [profiles, selectedId]
   );
+
+  // Group modules by sub-hub for the detail view
+  const grouped = useMemo(() => {
+    const subHubs = ALL_MODULES.filter((m) => (m as any).isSubHub);
+    return subHubs.map((sh) => ({
+      hub: sh,
+      children: ALL_MODULES.filter((m) => (m as any).subHub === sh.id && !(m as any).parent),
+    }));
+  }, []);
+
+  const childrenOf = (parentId: string) =>
+    ALL_MODULES.filter((m) => (m as any).parent === parentId);
+
+  const enabledCount = (userId: string) =>
+    isAdmin(userId)
+      ? ALL_MODULES.length
+      : permissions.filter((p: any) => p.user_id === userId && p.enabled).length;
 
   const isLoading = loadingProfiles || loadingPerms;
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-heading font-semibold">Permissões de Módulos</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {t("engenharia.modulePermissionsDesc")}
-        </p>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t("engenharia.searchUser")}
-            className="pl-9"
-          />
-        </div>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-heading font-semibold">Permissões de Módulos</h2>
+        <p className="text-sm text-muted-foreground mt-1">{t("engenharia.modulePermissionsDesc")}</p>
+      </div>
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <>
-            {/* Mobile card layout */}
-            <div className="sm:hidden space-y-3">
+      {isLoading ? (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
+          {/* Users list */}
+          <div className="border border-border rounded-lg bg-card overflow-hidden flex flex-col max-h-[70vh]">
+            <div className="p-3 border-b border-border">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t("engenharia.searchUser")}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                {filteredProfiles.length} usuário{filteredProfiles.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="overflow-y-auto flex-1 divide-y divide-border/50">
               {filteredProfiles.map((p: any) => {
-                const userIsAdmin = isAdmin(p.id);
+                const active = p.id === selectedId;
+                const admin = isAdmin(p.id);
+                const count = enabledCount(p.id);
                 return (
-                  <div key={p.id} className={`border rounded-lg p-3 space-y-2 ${userIsAdmin ? "bg-muted/30" : ""}`}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="font-medium text-sm">{p.full_name}</span>
-                        <span className="block text-xs text-muted-foreground font-mono">{p.employee_number}</span>
-                        {userIsAdmin && <span className="text-xs text-primary font-medium">Admin (todos)</span>}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button variant="outline" size="sm" className="h-7 px-2 text-[10px]" disabled={userIsAdmin || saving === `all-${p.id}`} onClick={() => enableAllModules(p.id)}>
-                          {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-                        </Button>
-                        <Button variant="outline" size="sm" className="h-7 px-2 text-[10px] text-destructive" disabled={userIsAdmin || saving === `none-${p.id}`} onClick={() => disableAllModules(p.id)}>
-                          {saving === `none-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                        </Button>
-                      </div>
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedId(p.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-2.5 flex items-center gap-2 transition-colors hover:bg-muted/50",
+                      active && "bg-primary/10 hover:bg-primary/10"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                      admin ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                    )}>
+                      {admin ? <Shield className="w-4 h-4" /> : <UserIcon className="w-4 h-4" />}
                     </div>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                      {ALL_MODULES.map((m) => {
-                        const parentMod = (m as any).parent;
-                        const subHub = (m as any).subHub;
-                        if (parentMod && !isModuleEnabled(p.id, parentMod)) return null;
-                        if (subHub && !isModuleEnabled(p.id, subHub)) return null;
-                        const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
-                        const isSubHub = (m as any).isSubHub;
-                        return (
-                          <div key={m.id} className={`flex items-center justify-between gap-1 ${isSubHub ? "col-span-2 border-t pt-1 mt-1" : ""}`}>
-                            <span className={`text-[10px] truncate ${isSubHub ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{abbr}</span>
-                            <Switch
-                              checked={isModuleEnabled(p.id, m.id)}
-                              onCheckedChange={() => toggleModule(p.id, m.id)}
-                              disabled={userIsAdmin || saving === `${p.id}-${m.id}`}
-                              className="scale-75"
-                            />
-                          </div>
-                        );
-                      })}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.full_name}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono truncate">
+                        {p.employee_number}
+                        {admin ? " • Admin" : ` • ${count} módulo${count !== 1 ? "s" : ""}`}
+                      </p>
                     </div>
-                  </div>
+                    <ChevronRight className={cn("w-4 h-4 text-muted-foreground/50 transition-transform", active && "text-primary rotate-90")} />
+                  </button>
                 );
               })}
               {filteredProfiles.length === 0 && (
                 <p className="text-center text-muted-foreground py-8 text-sm">Nenhum usuário encontrado</p>
               )}
             </div>
+          </div>
 
-            {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto -mx-2 px-2 max-w-full">
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left py-2 px-1.5 font-semibold text-muted-foreground min-w-[100px] sticky left-0 bg-background z-10">Usuário</th>
-                    {ALL_MODULES.map((m) => {
-                      const abbr = MODULE_ABBREVIATIONS[m.label] || m.label;
-                      const isSubHub = (m as any).isSubHub;
-                      return (
-                        <th key={m.id} className={`text-center py-2 px-0.5 font-semibold ${isSubHub ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="text-[8px] leading-tight block cursor-help whitespace-nowrap">{abbr}</span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top"><p className="text-xs">{m.label}</p></TooltipContent>
-                          </Tooltip>
-                        </th>
-                      );
-                    })}
-                    <th className="text-center py-2 px-0.5 font-semibold text-muted-foreground text-[8px]">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProfiles.map((p: any) => {
-                    const userIsAdmin = isAdmin(p.id);
+          {/* Detail panel */}
+          <div className="border border-border rounded-lg bg-card p-4 lg:p-6 min-h-[400px]">
+            {!selectedUser ? (
+              <div className="h-full flex flex-col items-center justify-center text-center py-16">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <UserIcon className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-heading font-semibold text-base">Selecione um usuário</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                  Escolha um usuário à esquerda para configurar suas permissões de acesso aos módulos.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-heading font-semibold text-base">{selectedUser.full_name}</h3>
+                      {isAdmin(selectedUser.id) && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Shield className="w-3 h-3" /> Admin
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      {selectedUser.employee_number}
+                      {selectedUser.cargo ? ` • ${selectedUser.cargo}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isAdmin(selectedUser.id) || saving === `all-${selectedUser.id}`}
+                      onClick={() => enableAllModules(selectedUser.id)}
+                      className="gap-1.5"
+                    >
+                      {saving === `all-${selectedUser.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
+                      Ativar todos
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={isAdmin(selectedUser.id) || saving === `none-${selectedUser.id}`}
+                      onClick={() => disableAllModules(selectedUser.id)}
+                      className="gap-1.5 text-destructive hover:text-destructive"
+                    >
+                      {saving === `none-${selectedUser.id}` ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                      Limpar
+                    </Button>
+                  </div>
+                </div>
+
+                {isAdmin(selectedUser.id) && (
+                  <div className="rounded-md bg-primary/10 border border-primary/20 px-3 py-2 text-xs text-primary">
+                    Este usuário é administrador e tem acesso automático a todos os módulos.
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {grouped.map(({ hub, children }) => {
+                    const hubOn = isModuleEnabled(selectedUser.id, hub.id);
+                    const active = children.filter((c) => isModuleEnabled(selectedUser.id, c.id)).length;
                     return (
-                      <tr key={p.id} className={`border-b border-border/50 ${userIsAdmin ? "bg-muted/30" : ""}`}>
-                        <td className="py-1.5 px-1.5 sticky left-0 bg-background z-10">
-                          <div>
-                            <span className="font-medium text-[11px] block">{p.full_name}</span>
-                            <span className="text-[9px] text-muted-foreground font-mono">{p.employee_number}</span>
-                            {userIsAdmin && <span className="block text-[9px] text-primary font-medium">Admin</span>}
+                      <div
+                        key={hub.id}
+                        className={cn(
+                          "border rounded-lg overflow-hidden transition-colors",
+                          hubOn ? "border-primary/30 bg-primary/[0.03]" : "border-border bg-background"
+                        )}
+                      >
+                        <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
+                          <div className="flex items-center gap-2">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              hubOn ? "bg-primary" : "bg-muted-foreground/30"
+                            )} />
+                            <span className="font-semibold text-sm">{stripPrefix(hub.label)}</span>
+                            {hubOn && children.length > 0 && (
+                              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                                {active}/{children.length}
+                              </Badge>
+                            )}
                           </div>
-                        </td>
-                        {ALL_MODULES.map((m) => {
-                          const parentMod = (m as any).parent;
-                          const subHub = (m as any).subHub;
-                          const isSubHub = (m as any).isSubHub;
-                          if (parentMod && !isModuleEnabled(p.id, parentMod)) {
-                            return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
-                          }
-                          if (subHub && !isModuleEnabled(p.id, subHub)) {
-                            return <td key={m.id} className="text-center py-1 px-0.5"><span className="text-muted-foreground/30">—</span></td>;
-                          }
-                          return (
-                            <td key={m.id} className={`text-center py-1 px-0.5 ${isSubHub ? "bg-primary/5" : ""}`}>
-                              <Switch
-                                checked={isModuleEnabled(p.id, m.id)}
-                                onCheckedChange={() => toggleModule(p.id, m.id)}
-                                disabled={userIsAdmin || saving === `${p.id}-${m.id}`}
-                                className="scale-75"
-                              />
-                            </td>
-                          );
-                        })}
-                        <td className="text-center py-1 px-0.5">
-                          <div className="flex items-center justify-center gap-0.5">
-                            <Button variant="outline" size="sm" className="h-6 px-1.5 text-[9px]" disabled={userIsAdmin || saving === `all-${p.id}`} onClick={() => enableAllModules(p.id)}>
-                              {saving === `all-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-6 px-1.5 text-[9px] text-destructive hover:text-destructive" disabled={userIsAdmin || saving === `none-${p.id}`} onClick={() => disableAllModules(p.id)}>
-                              {saving === `none-${p.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                            </Button>
+                          <Switch
+                            checked={hubOn}
+                            onCheckedChange={() => toggleModule(selectedUser.id, hub.id)}
+                            disabled={isAdmin(selectedUser.id) || saving === `${selectedUser.id}-${hub.id}`}
+                          />
+                        </div>
+
+                        {hubOn && children.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 divide-y sm:divide-y-0 divide-border/50">
+                            {children.map((m) => {
+                              const on = isModuleEnabled(selectedUser.id, m.id);
+                              const subs = childrenOf(m.id);
+                              return (
+                                <div key={m.id} className="px-3 py-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm">{stripPrefix(m.label)}</span>
+                                    <Switch
+                                      checked={on}
+                                      onCheckedChange={() => toggleModule(selectedUser.id, m.id)}
+                                      disabled={isAdmin(selectedUser.id) || saving === `${selectedUser.id}-${m.id}`}
+                                    />
+                                  </div>
+                                  {on && subs.length > 0 && (
+                                    <div className="mt-1.5 pl-3 border-l-2 border-border space-y-1">
+                                      {subs.map((sm) => (
+                                        <div key={sm.id} className="flex items-center justify-between">
+                                          <span className="text-xs text-muted-foreground">{stripPrefix(sm.label)}</span>
+                                          <Switch
+                                            checked={isModuleEnabled(selectedUser.id, sm.id)}
+                                            onCheckedChange={() => toggleModule(selectedUser.id, sm.id)}
+                                            disabled={isAdmin(selectedUser.id) || saving === `${selectedUser.id}-${sm.id}`}
+                                            className="scale-75"
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                        </td>
-                      </tr>
+                        )}
+                      </div>
                     );
                   })}
-                  {filteredProfiles.length === 0 && (
-                    <tr>
-                      <td colSpan={ALL_MODULES.length + 2} className="text-center text-muted-foreground py-8">
-                        Nenhum usuário encontrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
-    </TooltipProvider>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

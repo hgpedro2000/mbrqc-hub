@@ -117,6 +117,22 @@ const Hub = () => {
     return enabledSet.has(permission as any);
   };
 
+  // Auto-redirect: if the user has access to ONLY the Qualidade sub-hub, skip this screen.
+  const accessibleActiveSubHubs = useMemo(
+    () => SUB_HUBS.filter((sh) => sh.status === "active" && canAccessSubHub(sh.permission)),
+    [enabledSet, isAdmin, impersonating]
+  );
+  useEffect(() => {
+    if (isAdmin && !impersonating) return; // admins veem tudo
+    if (
+      accessibleActiveSubHubs.length === 1 &&
+      accessibleActiveSubHubs[0].id === "qualidade" &&
+      accessibleActiveSubHubs[0].path
+    ) {
+      navigate(accessibleActiveSubHubs[0].path!, { replace: true });
+    }
+  }, [accessibleActiveSubHubs, isAdmin, impersonating, navigate]);
+
   // Show quick-notice popups when entering the Hub for any unread direct messages.
   const shownMsgIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {

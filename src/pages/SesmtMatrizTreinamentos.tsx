@@ -408,6 +408,21 @@ const SesmtMatrizTreinamentos = () => {
     finally { setExportingAgenda(false); }
   };
 
+  const exportAgendaCsv = () => {
+    if (agendaData.length === 0) { toast.error("Sem dados para exportar"); return; }
+    const rows: any[][] = [["Aba", "Colaborador", "Matrícula", "Turno", "Cargo", "Último", "Próximo", "Situação", "Observações"]];
+    agendaData.forEach((g) => g.items.forEach((it: any) => {
+      rows.push([
+        g.category.name, it.profile.full_name, it.profile.employee_number || "",
+        it.profile.turno || "", it.profile.cargo || "",
+        it.rec.last_training_date || "", it.rec.next_training_date || "",
+        it.status === "expired" ? "Vencido" : "A vencer", it.rec.notes || "",
+      ]);
+    }));
+    csvDownload(`Agenda-SESMT-${format(new Date(), "yyyy-MM-dd")}.csv`, rows);
+    toast.success("CSV exportado");
+  };
+
   const turnos = useMemo(() => {
     const s = new Set<string>();
     (profiles as any[]).forEach((p) => p.turno && s.add(p.turno));
@@ -418,6 +433,17 @@ const SesmtMatrizTreinamentos = () => {
     if (!historyDialog) return [];
     return history.filter((h) => h.user_id === historyDialog.userId);
   }, [history, historyDialog]);
+
+  const exportHistoryCsv = () => {
+    if (!historyDialog || userHistory.length === 0) { toast.error("Sem histórico"); return; }
+    const rows: any[][] = [["Aba", "Data do treinamento", "Próximo", "Observações"]];
+    userHistory.forEach((h) => {
+      const cat = categories.find((c) => c.id === h.category_id);
+      rows.push([cat?.name || "—", h.training_date, h.next_training_date || "", h.notes || ""]);
+    });
+    csvDownload(`Historico-${historyDialog.userName}-${format(new Date(), "yyyy-MM-dd")}.csv`, rows);
+  };
+
 
   return (
     <div className="min-h-screen bg-background">

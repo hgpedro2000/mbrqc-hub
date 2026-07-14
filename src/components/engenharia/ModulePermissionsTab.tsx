@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal } from "lucide-react";
+import { Loader2, Search, CheckCheck, XCircle, Shield, ChevronRight, ChevronLeft, User as UserIcon, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { ALL_MODULES } from "@/hooks/useModulePermissions";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 25;
+type SortKey = "name-asc" | "name-desc" | "role" | "progress-desc" | "progress-asc";
 
 const stripPrefix = (label: string) => label.replace(/^\s*↳\s*/, "").replace(/^Sub-Hub:\s*/, "");
 

@@ -63,10 +63,10 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [employeeNumber, setEmployeeNumber] = useState(prefillData?.employee_number || "");
   const [fullName, setFullName] = useState(prefillData?.full_name || "");
   const [role, setRole] = useState("user");
-  const [password, setPassword] = useState("");
   const [turno, setTurno] = useState(prefillData?.turno || "");
   const [email, setEmail] = useState(prefillData?.email || "");
   const [cargo, setCargo] = useState(prefillData?.cargo || "");
+  const [setor, setSetor] = useState(prefillData?.setor || "");
   const [empresa, setEmpresa] = useState(prefillData?.empresa || "mobis_brasil");
   const [empresaTerceira, setEmpresaTerceira] = useState(prefillData?.empresa_terceira || "");
   const [saving, setSaving] = useState(false);

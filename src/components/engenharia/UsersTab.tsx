@@ -282,15 +282,21 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   };
 
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return profiles;
-    const term = searchTerm.toLowerCase();
-    return profiles.filter((p: any) =>
+    const term = searchTerm.trim().toLowerCase();
+    const base = !term ? profiles : profiles.filter((p: any) =>
       p.full_name?.toLowerCase().includes(term) ||
       p.employee_number?.toLowerCase().includes(term) ||
       p.email?.toLowerCase().includes(term) ||
       getEmpresaLabel(p).toLowerCase().includes(term)
     );
-  }, [profiles, searchTerm]);
+    if (!socialEnabled) return base;
+    // Online users on top, then alphabetical (already ordered by name from query)
+    return [...base].sort((a: any, b: any) => {
+      const ao = isOnline(a.id) ? 0 : 1;
+      const bo = isOnline(b.id) ? 0 : 1;
+      return ao - bo;
+    });
+  }, [profiles, searchTerm, socialEnabled, online]);
 
   const handleCreate = async () => {
     if (!employeeNumber || !fullName || !turno) {

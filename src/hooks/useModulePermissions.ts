@@ -28,6 +28,7 @@ export const ALL_MODULES = [
   { id: "apontamentos_peca", label: "  ↳ Peça", parent: "apontamentos", subHub: "subhub_qualidade" },
   { id: "apontamentos_processo", label: "  ↳ Processo", parent: "apontamentos", subHub: "subhub_qualidade" },
   { id: "apontamentos_oem", label: "  ↳ OEM", parent: "apontamentos", subHub: "subhub_qualidade" },
+  { id: "apontamentos_contencao", label: "  ↳ Contenção", parent: "apontamentos", subHub: "subhub_qualidade" },
   { id: "alerta-qualidade", label: "Alerta de Qualidade", subHub: "subhub_qualidade" },
   { id: "consumiveis", label: "Consumíveis", subHub: "subhub_qualidade" },
   { id: "consumiveis_requisitar", label: "  ↳ Requisitar Item", parent: "consumiveis", subHub: "subhub_qualidade" },

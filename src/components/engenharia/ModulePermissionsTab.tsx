@@ -327,7 +327,7 @@ const ModulePermissionsTab = () => {
           errors++;
         }
       }
-      qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
+      await qc.invalidateQueries({ queryKey: ["all-module-permissions"] });
       if (errors === 0) {
         toast.success(`${success} usuário(s) atualizado(s) com sucesso`);
         clearSelection();
@@ -335,6 +335,7 @@ const ModulePermissionsTab = () => {
         toast.error(`Falha ao atualizar ${errors} usuário(s)`);
       } else {
         toast.warning(`${success} sucesso(s) • ${errors} erro(s)`);
+        clearSelection();
       }
     } finally {
       setBulkRunning(false);

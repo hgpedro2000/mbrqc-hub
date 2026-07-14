@@ -55,6 +55,8 @@ import AdminPartNameFix from "./pages/AdminPartNameFix";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import SplitFlapHarness from "./pages/SplitFlapHarness";
+import SesmtHub from "./pages/SesmtHub";
+import SesmtMatrizTreinamentos from "./pages/SesmtMatrizTreinamentos";
 
 const queryClient = new QueryClient({
   defaultOptions: {

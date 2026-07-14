@@ -77,7 +77,9 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const { socialEnabled, setSocialEnabled, isOnline, online, unreadCount } = usePresence();
+  const { setSocialEnabled, isOnline, online, unreadCount } = usePresence();
+  const socialEnabled = true;
+  useEffect(() => { setSocialEnabled(true); }, [setSocialEnabled]);
   const [msgTarget, setMsgTarget] = useState<{ id: string; full_name: string; employee_number?: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -571,19 +573,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
 
-          <Button
-            size="sm"
-            variant={socialEnabled ? "default" : "outline"}
-            onClick={() => setSocialEnabled(!socialEnabled)}
-            className={`col-span-2 sm:col-span-1 gap-1 relative ${socialEnabled ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"}`}
-            title={socialEnabled ? "Recursos sociais ativados — clique para desativar" : "Ativar presença online e mensagens diretas"}
-          >
-            <Radio className={`w-4 h-4 ${socialEnabled ? "animate-pulse" : ""}`} />
-            Social {socialEnabled ? `• ${online.size} online` : "off"}
-            {socialEnabled && unreadCount > 0 && (
+          <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-emerald-400/60 bg-emerald-50 text-emerald-700 text-xs font-medium">
+            <Radio className="w-4 h-4 animate-pulse" />
+            {online.size} online
+            {unreadCount > 0 && (
               <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-red-500 text-white">{unreadCount}</Badge>
             )}
-          </Button>
+          </div>
 
 
           {selectedIds.size > 0 && (
@@ -1124,6 +1120,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                     </Badge>
                     <span className="text-[10px] text-muted-foreground capitalize">{getRoleForUser(p.id)}</span>
                     {p.turno && <span className="text-[10px] text-muted-foreground">{p.turno}</span>}
+                    {(p as any).setor && <Badge variant="outline" className="text-[10px] border-violet-400/60 text-violet-700 bg-violet-500/10">{(p as any).setor}</Badge>}
                   </div>
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
@@ -1237,6 +1234,7 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
                           </Badge>
                           {p.turno && <Badge variant="outline" className="text-[10px]">{p.turno}</Badge>}
                           {p.cargo && <Badge variant="outline" className="text-[10px] font-normal">{p.cargo}</Badge>}
+                          {(p as any).setor && <Badge variant="outline" className="text-[10px] border-violet-400/60 text-violet-700 bg-violet-500/10">{(p as any).setor}</Badge>}
                           <Badge variant="secondary" className="text-[10px] capitalize">{getRoleForUser(p.id)}</Badge>
                         </div>
                         {p.email && (

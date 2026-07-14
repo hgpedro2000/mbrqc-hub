@@ -1169,9 +1169,6 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
             <div className="flex items-center justify-between mb-3 px-1">
               <p className="text-xs text-muted-foreground">
                 {filtered.length} {filtered.length === 1 ? "usuário" : "usuários"}
-                {socialEnabled && online.size > 0 && (
-                  <> · <span className="text-emerald-600 font-medium">{filtered.filter((p: any) => isOnline(p.id)).length} online</span></>
-                )}
               </p>
               {filtered.length > 0 && (
                 <label className="text-xs text-muted-foreground flex items-center gap-2 cursor-pointer select-none">

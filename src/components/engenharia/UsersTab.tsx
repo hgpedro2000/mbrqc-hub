@@ -571,19 +571,13 @@ const UsersTab = ({ pendingRequests = [], onRequestResolved, toolbarExtras }: Us
         <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-end sm:items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
           {toolbarExtras}
 
-          <Button
-            size="sm"
-            variant={socialEnabled ? "default" : "outline"}
-            onClick={() => setSocialEnabled(!socialEnabled)}
-            className={`col-span-2 sm:col-span-1 gap-1 relative ${socialEnabled ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-400 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"}`}
-            title={socialEnabled ? "Recursos sociais ativados — clique para desativar" : "Ativar presença online e mensagens diretas"}
-          >
-            <Radio className={`w-4 h-4 ${socialEnabled ? "animate-pulse" : ""}`} />
-            Social {socialEnabled ? `• ${online.size} online` : "off"}
-            {socialEnabled && unreadCount > 0 && (
+          <div className="col-span-2 sm:col-span-1 inline-flex items-center gap-1.5 px-2.5 h-9 rounded-md border border-emerald-400/60 bg-emerald-50 text-emerald-700 text-xs font-medium">
+            <Radio className="w-4 h-4 animate-pulse" />
+            {online.size} online
+            {unreadCount > 0 && (
               <Badge className="ml-1 h-4 min-w-4 px-1 text-[9px] bg-red-500 text-white">{unreadCount}</Badge>
             )}
-          </Button>
+          </div>
 
 
           {selectedIds.size > 0 && (
